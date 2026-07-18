@@ -498,6 +498,15 @@ textarea.input { min-height: 90px; resize: vertical; }
     @media (max-width: 900px){
       .input, input, select, textarea { font-size: 16px; }
     }
+    /* Native select arrows differ per platform and sit off-centre; draw our own. */
+    select.input{
+      -webkit-appearance:none; -moz-appearance:none; appearance:none;
+      background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23201f1d' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat:no-repeat;
+      background-position:right 9px center;
+      background-size:18px 18px;
+      padding-right:33px;
+    }
     @keyframes shakeX{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
   </style>
 </helmet>
@@ -560,8 +569,10 @@ textarea.input { min-height: 90px; resize: vertical; }
             <sc-if value="{{ isSearchGeneral }}">
             <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
               <input class="input" type="text" placeholder="ស្វែងរកពាក្យ ឬ 漢字…" value="{{ search }}" sc-camel-on-change="{{ onSearchChange }}" style="flex:1 1 auto;min-width:0;">
-              <select class="input" value="{{ catFilter }}" sc-camel-on-change="{{ onCatChange }}" aria-label="ប្រភេទពាក្យ" style="flex:0 0 auto;width:auto;padding-left:8px;padding-right:4px;">
-                <sc-for list="{{ catOptions }}" as="c" hint-placeholder-count="3"><option value="{{ c.id }}">{{ c.name }}</option></sc-for>
+              <select class="input" value="{{ catFilter }}" sc-camel-on-change="{{ onCatChange }}" aria-label="ប្រភេទពាក្យ" style="flex:0 0 auto;width:auto;">
+                <option value="all" label="ទាំងអស់">ទាំងអស់</option>
+                <option value="vocab" label="វាក្យសព្ទ">វាក្យសព្ទ</option>
+                <option value="grammar" label="វេយ្យាករណ៍">វេយ្យាករណ៍</option>
               </select>
             </div>
             </sc-if>
@@ -600,7 +611,7 @@ textarea.input { min-height: 90px; resize: vertical; }
             <div class="field" style="margin-bottom:10px;">
               <label>សៀវភៅ</label>
               <select class="input" value="{{ bookFilter }}" sc-camel-on-change="{{ onBookChange }}">
-                <sc-for list="{{ bookOptions }}" as="b" hint-placeholder-count="2"><option value="{{ b.id }}">{{ b.name }}</option></sc-for>
+                <sc-for list="{{ bookOptions }}" as="b" hint-placeholder-count="2"><option value="{{ b.id }}" label="{{ b.name }}"></option></sc-for>
               </select>
             </div>
             <div style="display:flex;gap:8px;margin-bottom:16px;">
@@ -884,7 +895,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               <sc-if value="{{ hasTeacherOptions }}">
               <select class="input" value="{{ adminTeacherId }}" sc-camel-on-change="{{ onAdminTeacher }}">
                 <option value="">— ជ្រើសរើសគ្រូ —</option>
-                <sc-for list="{{ teacherOptions }}" as="t" hint-placeholder-count="2"><option value="{{ t.id }}">{{ t.name }}</option></sc-for>
+                <sc-for list="{{ teacherOptions }}" as="t" hint-placeholder-count="2"><option value="{{ t.id }}" label="{{ t.name }}"></option></sc-for>
               </select>
               </sc-if>
               <sc-if value="{{ noTeacherOptions }}"><div style="font-size:12px;opacity:0.6;">សូមបង្កើតគណនីគ្រូជាមុនសិន</div></sc-if>
@@ -929,7 +940,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               <div class="field"><label>គ្រូទទួលបន្ទុក</label>
                 <select class="input" value="{{ editTeacherId }}" sc-camel-on-change="{{ onEditTeacher }}">
                   <option value="">— ជ្រើសរើសគ្រូ —</option>
-                  <sc-for list="{{ teacherOptions }}" as="t" hint-placeholder-count="2"><option value="{{ t.id }}">{{ t.name }}</option></sc-for>
+                  <sc-for list="{{ teacherOptions }}" as="t" hint-placeholder-count="2"><option value="{{ t.id }}" label="{{ t.name }}"></option></sc-for>
                 </select>
               </div>
               </sc-if>
@@ -6074,7 +6085,6 @@ class Component extends DCLogic {
       totalWordsLabel: `${WORDS.length} ពាក្យ`,
       search: s.search, onSearchChange: e => this.onSearchChange(e),
       catFilter: s.catFilter, onCatChange: e => this.onCatChange(e),
-      catOptions: [{ id:'all', name:'ទាំងអស់' }, { id:'vocab', name:'វាក្យសព្ទ' }, { id:'grammar', name:'វេយ្យាករណ៍' }],
       isCatAll: s.catFilter === 'all', isCatVocab: s.catFilter === 'vocab', isCatGrammar: s.catFilter === 'grammar',
       onCatAll: () => this.onCatAll(), onCatVocab: () => this.onCatVocab(), onCatGrammar: () => this.onCatGrammar(),
       filteredWords, noResults: filteredWords.length === 0,
