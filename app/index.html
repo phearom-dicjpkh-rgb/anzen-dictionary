@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html><head><script>window.__resources={"https://unpkg.com/react@18.3.1/umd/react.production.min.js":"vendor/8e25d012-49d0-434a-a063-ebf27a8696ac.js","https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js":"vendor/2f9f9627-86a3-401b-b12c-7abfe38abcbd.js","https://unpkg.com/@babel/standalone@7.29.0/babel.min.js":"vendor/9ceeb466-e86e-4e11-aa91-8a9657117722.js"};</script><script src="config.js"></script><script src="vendor/supabase.js"></script>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#b68235">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -11,6 +11,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="វចនានុក្រម">
 <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
+<script>
+/* iOS Safari ignores user-scalable=no, so block its pinch gestures directly.
+   Text size stays under the app's own "ទំហំអក្សរ" setting. */
+['gesturestart','gesturechange','gestureend'].forEach(function(t){
+  document.addEventListener(t, function(e){ e.preventDefault(); }, { passive:false });
+});
+document.addEventListener('wheel', function(e){ if(e.ctrlKey) e.preventDefault(); }, { passive:false });
+</script>
 <script src="vendor/fa54af41-7e64-40dd-9170-fc4da6658880.js"></script>
 </head>
 <body>
@@ -490,7 +498,10 @@ textarea.input { min-height: 90px; resize: vertical; }
 
 </style>
   <style>
-    html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:#e5e3e0;}
+    html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:#e5e3e0;
+      /* Text size is controlled only by the in-app setting, so stop the browser
+         from scaling it: no double-tap zoom, no iOS text inflation. */
+      touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     a{color:var(--color-accent-700);text-decoration:none;}
     a:hover{color:var(--color-accent-800);}
     /* iOS zooms the page when a focused field is smaller than 16px — keep
