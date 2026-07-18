@@ -490,16 +490,16 @@ textarea.input { min-height: 90px; resize: vertical; }
 
 </style>
   <style>
-    body{margin:0;background:#e5e3e0;}
+    html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:#e5e3e0;}
     a{color:var(--color-accent-700);text-decoration:none;}
     a:hover{color:var(--color-accent-800);}
     @keyframes shakeX{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
   </style>
 </helmet>
-<div style="height:100dvh;min-height:100vh;width:100%;background:var(--color-bg);display:flex;justify-content:center;font-family:var(--font-body);">
+<div style="height:100vh;height:100dvh;width:100%;overflow:hidden;background:var(--color-bg);display:flex;justify-content:center;font-family:var(--font-body);">
   <div style="height:100%;width:100%;max-width:900px;position:relative;display:flex;flex-direction:column;background:var(--color-bg);overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,0.05);">
     <sc-if value="{{ needsRole }}" hint-placeholder-val="{{ false }}">
-    <div style="padding:58px 24px 0;height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;">
+    <div style="padding:calc(58px + env(safe-area-inset-top, 0px)) 24px calc(24px + env(safe-area-inset-bottom, 0px));height:100%;overflow-y:auto;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;">
       <sc-if value="{{ hasLogo }}">
         <img src="{{ appLogo }}" alt="logo" style="width:72px;height:72px;border-radius:14px;object-fit:cover;">
       </sc-if>
@@ -533,7 +533,7 @@ textarea.input { min-height: 90px; resize: vertical; }
     </sc-if>
 
     <sc-if value="{{ hasRole }}" hint-placeholder-val="{{ true }}">
-    <div style="flex:none;width:100%;height:56px;display:flex;align-items:center;gap:11px;padding:0 18px;background:var(--color-surface);border-bottom:1px solid var(--color-divider);box-sizing:border-box;z-index:15;">
+    <div style="flex:none;width:100%;height:calc(56px + env(safe-area-inset-top, 0px));padding-top:env(safe-area-inset-top, 0px);display:flex;align-items:center;gap:11px;padding-left:18px;padding-right:18px;background:var(--color-surface);border-bottom:1px solid var(--color-divider);box-sizing:border-box;z-index:15;">
       <sc-if value="{{ hasLogo }}">
         <img src="{{ appLogo }}" alt="logo" style="width:34px;height:34px;flex:none;border-radius:8px;object-fit:cover;background:var(--color-bg);">
       </sc-if>
@@ -542,7 +542,7 @@ textarea.input { min-height: 90px; resize: vertical; }
       </sc-if>
       <div style="font-family:var(--font-heading);font-weight:600;font-size:18px;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ appName }}</div>
     </div>
-    <div style="flex:1;overflow-y:auto;overflow-x:hidden;padding-top:14px;padding-bottom:88px;box-sizing:border-box;">
+    <div style="flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:14px;padding-bottom:calc(88px + env(safe-area-inset-bottom, 0px));box-sizing:border-box;">
       <div style="zoom:{{ fontScale }};">
 
         <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
@@ -985,7 +985,7 @@ textarea.input { min-height: 90px; resize: vertical; }
     </div>
 
     <sc-if value="{{ showTabBar }}" hint-placeholder-val="{{ true }}">
-    <div style="position:absolute;left:0;right:0;bottom:0;display:flex;background:var(--color-surface);border-top:1px solid var(--color-divider);padding:8px 6px 22px;z-index:20;">
+    <div style="position:absolute;left:0;right:0;bottom:0;display:flex;background:var(--color-surface);border-top:1px solid var(--color-divider);padding:8px 6px calc(22px + env(safe-area-inset-bottom, 0px));z-index:20;">
       <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ homeColor }};" sc-camel-on-click="{{ goHome }}">
         <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ homeColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         <span style="font-size:10px;">ស្វែងរក</span>
@@ -5588,7 +5588,7 @@ class Component extends DCLogic {
     const res = await Backend.getProfile(id);
     if (res.error || !res.profile) { await Backend.signOut(); this.setState({ authStage: 'login' }); return; }
     const p = res.profile;
-    const screen = p.role === 'admin' ? 'admin' : (p.role === 'teacher' ? 'monitor' : 'home');
+    const screen = 'home';   // everyone starts on the search screen
     this.setState({
       userId: id, role: p.role, profileName: p.full_name || p.email,
       favorites: Array.isArray(p.favorites) ? p.favorites : [],
