@@ -1,0 +1,17 @@
+{
+  "name": "វចនានុក្រម Anzen",
+  "short_name": "វចនានុក្រម",
+  "description": "វចនានុក្រម ជប៉ុន–ខ្មែរ សៀវភៅជំនាញឡានដឹកទំនិញ",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#e5e3e0",
+  "theme_color": "#b68235",
+  "lang": "km",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

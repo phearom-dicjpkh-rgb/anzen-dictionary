@@ -1,7 +1,16 @@
 <!DOCTYPE html>
 <html><head><script>window.__resources={"https://unpkg.com/react@18.3.1/umd/react.production.min.js":"vendor/8e25d012-49d0-434a-a063-ebf27a8696ac.js","https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js":"vendor/2f9f9627-86a3-401b-b12c-7abfe38abcbd.js","https://unpkg.com/@babel/standalone@7.29.0/babel.min.js":"vendor/9ceeb466-e86e-4e11-aa91-8a9657117722.js"};</script><script src="config.js"></script><script src="vendor/supabase.js"></script>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#b68235">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="វចនានុក្រម">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
 <script src="vendor/fa54af41-7e64-40dd-9170-fc4da6658880.js"></script>
 </head>
 <body>
@@ -488,7 +497,7 @@ textarea.input { min-height: 90px; resize: vertical; }
   </style>
 </helmet>
 <div style="height:100dvh;min-height:100vh;width:100%;background:var(--color-bg);display:flex;justify-content:center;font-family:var(--font-body);">
-  <div style="height:100%;width:100%;max-width:480px;position:relative;display:flex;flex-direction:column;background:var(--color-bg);overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,0.05);">
+  <div style="height:100%;width:100%;max-width:900px;position:relative;display:flex;flex-direction:column;background:var(--color-bg);overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,0.05);">
     <sc-if value="{{ needsRole }}" hint-placeholder-val="{{ false }}">
     <div style="padding:58px 24px 0;height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;">
       <div style="font-size:44px;line-height:1;font-family:Georgia,serif;color:var(--color-accent);">辞</div>
