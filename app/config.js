@@ -1,9 +1,10 @@
 // ============================================================================
 //  Anzen Dictionary — Supabase configuration
-//  ដាក់ Project URL និង anon public key របស់អ្នកនៅទីនេះ (មើល SETUP.md ជំហានទី ៦)។
-//  Paste your Supabase Project URL and anon public key below.
+//  Project URL + anon (publishable) key. These are safe to expose in a
+//  frontend (protected by RLS). NEVER put a service_role / sb_secret key here.
 // ============================================================================
 window.DICT_CONFIG = {
-  SUPABASE_URL: "",       // ឧ. "https://abcd.supabase.co"
-  SUPABASE_ANON_KEY: ""   // anon public key (វែង) — មិនមែន service_role
+  SUPABASE_URL: "https://bnzwzexvocsqnoobyxzd.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_2hFZTaVF8kQPImNhWf-mwQ_NQwxalOG",
+  EDGE_CREATE_USER: "swift-task"   // name of the deployed admin-create-user Edge Function
 };

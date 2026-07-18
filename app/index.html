@@ -1541,6 +1541,7 @@ function sample(arr,n){ return shuffle(arr).slice(0, Math.min(n, arr.length)); }
 // ============================================================================
 const CFG = window.DICT_CONFIG || {};
 const HAS_SUPABASE = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY && window.supabase);
+const EDGE_CREATE_USER = CFG.EDGE_CREATE_USER || 'admin-create-user';
 
 function makeSupabaseBackend(){
   const client = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
@@ -1560,7 +1561,7 @@ function makeSupabaseBackend(){
     async listTeachers(){ const { data } = await client.from('profiles').select('id,full_name,email').eq('role','teacher').order('full_name'); return { rows:data||[] }; },
     async listAccounts(){ const { data } = await client.from('profiles').select('id,email,full_name,role,teacher_id').order('role'); return { rows:data||[] }; },
     async createAccount(payload){
-      const { data, error } = await client.functions.invoke('admin-create-user', { body: payload });
+      const { data, error } = await client.functions.invoke(EDGE_CREATE_USER, { body: payload });
       if (error) return { error: await fnError(error) };
       if (data && data.error) return { error: data.error };
       return { error:null };
