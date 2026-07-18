@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ដំឡើងកម្មវិធីវចនានុក្រម</title>
+<style>
+  :root{ --gold:#b68235; --ink:#201f1d; --line:rgba(32,31,29,.16); --bg:#f3f2f2; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+       display:flex;justify-content:center;padding:28px 18px 44px;}
+  .sheet{width:100%;max-width:520px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .mark{width:46px;height:46px;flex:none;border-radius:10px;background:var(--gold);color:#f3f2f2;
+        display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:25px}
+  h1{font-size:21px;margin:0;line-height:1.25}
+  .sub{font-size:13px;opacity:.6;margin-top:3px}
+  .qrbox{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;text-align:center}
+  .qrbox img{width:100%;max-width:300px;height:auto;display:block;margin:0 auto}
+  .link{margin-top:12px;font-size:12px;word-break:break-all;color:#7d5411}
+  .hint{text-align:center;font-size:13px;opacity:.65;margin:14px 0 24px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px}
+  .card h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+  .badge{font-size:11px;background:var(--gold);color:#fff;border-radius:20px;padding:2px 9px;font-weight:600}
+  ol{margin:0;padding-left:20px;font-size:14px;line-height:1.85}
+  .note{font-size:12px;opacity:.6;text-align:center;margin-top:20px;line-height:1.6}
+  @media print{
+    body{background:#fff;padding:0}
+    .card,.qrbox{border-color:#ccc}
+    .note{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header>
+    <div class="mark">辞</div>
+    <div>
+      <h1>ដំឡើងកម្មវិធីវចនានុក្រម</h1>
+      <div class="sub">ស្កេន QR ខាងក្រោម ដើម្បីបើកកម្មវិធី</div>
+    </div>
+  </header>
+
+  <div class="qrbox">
+    <img src="qr.png" alt="QR code">
+    <div class="link">https://phearom-dicjpkh-rgb.github.io/anzen-dictionary/</div>
+  </div>
+  <div class="hint">បើកកាមេរ៉ាទូរស័ព្ទ → ដាក់លើ QR → ចុចតំណដែលលេចឡើង</div>
+
+  <div class="card">
+    <h2><span class="badge">iPhone / iPad</span> Safari</h2>
+    <ol>
+      <li>បើកតំណក្នុង <b>Safari</b></li>
+      <li>ចុចរូប <b>Share</b> ⬆️ (ខាងក្រោមអេក្រង់)</li>
+      <li>រំកិលចុះ → ជ្រើស <b>“Add to Home Screen”</b></li>
+      <li>ចុច <b>Add</b> → រូបតំណាង 辞 លេចនៅអេក្រង់ដើម</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2><span class="badge">Android</span> Chrome</h2>
+    <ol>
+      <li>បើកតំណក្នុង <b>Chrome</b></li>
+      <li>ចុចប៊ូតុង <b>ដំឡើង</b> ដែលលេចនៅខាងលើកម្មវិធី<br>
+          (ឬចុច <b>⋮</b> → <b>Install app</b> / <b>Add to Home screen</b>)</li>
+      <li>ចុច <b>Install</b> → រូបតំណាង 辞 លេចនៅអេក្រង់ដើម</li>
+    </ol>
+  </div>
+
+  <div class="note">
+    បន្ទាប់ពីដំឡើងរួច កម្មវិធីបើកពេញអេក្រង់ដូច app ធម្មតា។<br>
+    ត្រូវការគណនី (សិស្ស ឬ គ្រូ) ដើម្បីចូលប្រើ — សូមទាក់ទងអ្នកគ្រប់គ្រង។
+  </div>
+
+</div>
+</body>
+</html>

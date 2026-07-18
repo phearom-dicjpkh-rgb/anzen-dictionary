@@ -512,6 +512,20 @@ textarea.input { min-height: 90px; resize: vertical; }
 </helmet>
 <div style="height:100vh;height:100dvh;width:100%;overflow:hidden;background:var(--color-bg);display:flex;justify-content:center;font-family:var(--font-body);">
   <div style="height:100%;width:100%;max-width:900px;position:relative;display:flex;flex-direction:column;background:var(--color-bg);overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,0.05);">
+    <sc-if value="{{ showInstall }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;width:100%;padding:calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;box-sizing:border-box;background:var(--color-accent-100);border-bottom:1px solid var(--color-divider);display:flex;align-items:center;gap:10px;z-index:25;">
+      <div style="width:30px;height:30px;flex:none;border-radius:7px;background:var(--color-accent);color:#f3f2f2;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:17px;line-height:1;">辞</div>
+      <div style="flex:1 1 auto;min-width:0;font-size:12px;line-height:1.45;">
+        <sc-if value="{{ isInstallAndroid }}">ដំឡើងកម្មវិធីទៅអេក្រង់ដើម ដើម្បីបើកបានលឿន</sc-if>
+        <sc-if value="{{ isInstallIOS }}">ដើម្បីដំឡើង៖ ចុច <b>Share</b> ⬆️ ខាងក្រោម រួចជ្រើស <b>“Add to Home Screen”</b></sc-if>
+      </div>
+      <sc-if value="{{ isInstallAndroid }}">
+        <button class="btn btn-primary" style="flex:0 0 auto;padding:6px 12px;font-size:13px;" sc-camel-on-click="{{ doInstall }}">ដំឡើង</button>
+      </sc-if>
+      <button class="btn btn-ghost" style="flex:0 0 auto;padding:4px 8px;font-size:16px;line-height:1;" sc-camel-on-click="{{ dismissInstall }}" aria-label="បិទ">✕</button>
+    </div>
+    </sc-if>
+
     <sc-if value="{{ needsRole }}" hint-placeholder-val="{{ false }}">
     <div style="padding:calc(58px + env(safe-area-inset-top, 0px)) 24px calc(24px + env(safe-area-inset-bottom, 0px));height:100%;overflow-y:auto;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;">
       <sc-if value="{{ hasLogo }}">
@@ -959,7 +973,8 @@ textarea.input { min-height: 90px; resize: vertical; }
         <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;">
           <h1 style="font-size:26px;margin:0 0 4px;">ការកំណត់</h1>
-          <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">{{ roleLabel }} · {{ profileName }} · <a href="#" sc-camel-on-click="{{ switchRole }}">ចេញពីគណនី</a></div>
+          <div style="font-size:12px;opacity:0.6;margin-bottom:6px;">{{ roleLabel }} · {{ profileName }} · <a href="#" sc-camel-on-click="{{ switchRole }}">ចេញពីគណនី</a></div>
+          <div style="font-size:12px;margin-bottom:16px;"><a href="install.html" target="_blank" rel="noopener">ទំព័រ QR សម្រាប់ចែករំលែក និងដំឡើង →</a></div>
 
           <sc-if value="{{ isAdmin }}">
           <div class="card elev-sm" style="margin-bottom:18px;gap:12px;">
@@ -5585,6 +5600,8 @@ class Component extends DCLogic {
     editBusy: false, editError: '',
     // teacher monitor
     students: [], selectedStudent: null, selectedStudentName: '', viewingViewed: [],
+    // "add to home screen" prompt
+    installShow: false, installPlatform: '',
     // app branding (header logo + name) — shared, admin-editable
     appName: DEFAULT_APP_NAME, appLogo: '',
     settingsName: '', settingsLogo: '', settingsLogoBlob: null, settingsBusy: false, settingsMsg: '', settingsError: '',
@@ -5602,7 +5619,36 @@ class Component extends DCLogic {
     pageQuizOpen: false, pageQuizQuestions: [], pageQuizIdx: 0, pageQuizScore: 0, pageQuizSelected: null, pageQuizAnswered: false, pageQuizDone: false,
   };
 
+  // — "Add to home screen" helper: Android can prompt, iOS must be told how —
+  setupInstall(){
+    try {
+      const standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+      if (standalone) return;                                        // already installed
+      if (localStorage.getItem('dict_install_hidden') === '1') return;
+      window.addEventListener('beforeinstallprompt', e => {
+        e.preventDefault();
+        this._installEvent = e;
+        this.setState({ installShow: true, installPlatform: 'android' });
+      });
+      const ua = navigator.userAgent || '';
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if (isIOS) this.setState({ installShow: true, installPlatform: 'ios' });
+    } catch(e) {}
+  }
+  async doInstall(){
+    const ev = this._installEvent;
+    if (!ev) return;
+    try { ev.prompt(); await ev.userChoice; } catch(e) {}
+    this._installEvent = null;
+    this.setState({ installShow: false });
+  }
+  dismissInstall(){
+    try { localStorage.setItem('dict_install_hidden', '1'); } catch(e) {}
+    this.setState({ installShow: false });
+  }
+
   async componentDidMount(){
+    this.setupInstall();
     this.loadAppSettings();
     try {
       const session = await Backend.currentSession();
@@ -6167,6 +6213,13 @@ class Component extends DCLogic {
       loginBtnLabel: s.authBusy ? 'កំពុងចូល…' : 'ចូល',
       hasAuthError: !!s.authError, authError: s.authError,
       isDemoMode: Backend.demo,
+      // — install prompt —
+      showInstall: s.installShow,
+      isInstallAndroid: s.installPlatform === 'android',
+      isInstallIOS: s.installPlatform === 'ios',
+      doInstall: () => this.doInstall(),
+      dismissInstall: () => this.dismissInstall(),
+
       // — branding (header) —
       appName: s.appName || DEFAULT_APP_NAME,
       appLogo: s.appLogo, hasLogo: !!s.appLogo, noLogo: !s.appLogo,
