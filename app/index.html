@@ -500,8 +500,13 @@ textarea.input { min-height: 90px; resize: vertical; }
   <div style="height:100%;width:100%;max-width:900px;position:relative;display:flex;flex-direction:column;background:var(--color-bg);overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,0.05);">
     <sc-if value="{{ needsRole }}" hint-placeholder-val="{{ false }}">
     <div style="padding:58px 24px 0;height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;">
-      <div style="font-size:44px;line-height:1;font-family:Georgia,serif;color:var(--color-accent);">辞</div>
-      <h1 style="font-size:26px;margin:0;">វចនានុក្រម</h1>
+      <sc-if value="{{ hasLogo }}">
+        <img src="{{ appLogo }}" alt="logo" style="width:72px;height:72px;border-radius:14px;object-fit:cover;">
+      </sc-if>
+      <sc-if value="{{ noLogo }}">
+        <div style="font-size:44px;line-height:1;font-family:Georgia,serif;color:var(--color-accent);">辞</div>
+      </sc-if>
+      <h1 style="font-size:26px;margin:0;">{{ appName }}</h1>
       <div style="font-size:12px;opacity:0.55;margin-bottom:4px;">សៀវភៅជំនាញឡានដឹកទំនិញ</div>
 
       <sc-if value="{{ isAuthLoading }}">
@@ -528,14 +533,22 @@ textarea.input { min-height: 90px; resize: vertical; }
     </sc-if>
 
     <sc-if value="{{ hasRole }}" hint-placeholder-val="{{ true }}">
-    <div style="flex:1;overflow-y:auto;overflow-x:hidden;padding-top:58px;padding-bottom:88px;box-sizing:border-box;">
+    <div style="flex:none;width:100%;height:56px;display:flex;align-items:center;gap:11px;padding:0 18px;background:var(--color-surface);border-bottom:1px solid var(--color-divider);box-sizing:border-box;z-index:15;">
+      <sc-if value="{{ hasLogo }}">
+        <img src="{{ appLogo }}" alt="logo" style="width:34px;height:34px;flex:none;border-radius:8px;object-fit:cover;background:var(--color-bg);">
+      </sc-if>
+      <sc-if value="{{ noLogo }}">
+        <div style="width:34px;height:34px;flex:none;border-radius:8px;background:var(--color-accent);color:#f3f2f2;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:19px;line-height:1;">辞</div>
+      </sc-if>
+      <div style="font-family:var(--font-heading);font-weight:600;font-size:18px;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ appName }}</div>
+    </div>
+    <div style="flex:1;overflow-y:auto;overflow-x:hidden;padding-top:14px;padding-bottom:88px;box-sizing:border-box;">
       <div style="zoom:{{ fontScale }};">
 
         <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
         <div>
           <div style="padding:18px 20px 8px;">
-            <h1 style="font-size:26px;margin:0 0 2px;">វចនានុក្រម</h1>
-            <div style="font-size:12px;opacity:0.55;margin-bottom:2px;">សៀវភៅជំនាញឡានដឹកទំនិញ</div>
+            <div style="font-size:12px;opacity:0.55;margin-bottom:8px;">សៀវភៅជំនាញឡានដឹកទំនិញ</div>
             
             <div class="seg" style="margin-bottom:12px;">
               <label class="seg-opt"><input type="radio" name="smode" checked="{{ isSearchGeneral }}" sc-camel-on-change="{{ setSearchGeneral }}"><span>ស្វែងរកទូទៅ</span></label>
@@ -927,6 +940,33 @@ textarea.input { min-height: 90px; resize: vertical; }
         <div style="padding:18px 20px 30px;">
           <h1 style="font-size:26px;margin:0 0 4px;">ការកំណត់</h1>
           <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">{{ roleLabel }} · {{ profileName }} · <a href="#" sc-camel-on-click="{{ switchRole }}">ចេញពីគណនី</a></div>
+
+          <sc-if value="{{ isAdmin }}">
+          <div class="card elev-sm" style="margin-bottom:18px;gap:12px;">
+            <div class="card-kicker">ឈ្មោះ និង Logo (Admin)</div>
+            <div class="field">
+              <label>ឈ្មោះវចនានុក្រម</label>
+              <input class="input" type="text" value="{{ settingsName }}" sc-camel-on-change="{{ onSettingsName }}">
+            </div>
+            <div class="field">
+              <label>Logo</label>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <sc-if value="{{ hasSettingsLogo }}">
+                  <img src="{{ settingsLogo }}" alt="logo" style="width:52px;height:52px;flex:none;border-radius:10px;object-fit:cover;border:1px solid var(--color-divider);">
+                </sc-if>
+                <div style="display:flex;flex-direction:column;gap:6px;min-width:0;">
+                  <input type="file" accept="image/*" sc-camel-on-change="{{ onSettingsLogoFile }}" style="font-size:12px;max-width:100%;">
+                  <sc-if value="{{ hasSettingsLogo }}">
+                    <a href="#" style="font-size:12px;" sc-camel-on-click="{{ clearSettingsLogo }}">លុប logo ចេញ</a>
+                  </sc-if>
+                </div>
+              </div>
+            </div>
+            <sc-if value="{{ hasSettingsError }}"><div style="font-size:12px;color:#c0392b;">{{ settingsError }}</div></sc-if>
+            <sc-if value="{{ hasSettingsMsg }}"><div style="font-size:12px;color:var(--color-accent-700);">{{ settingsMsg }}</div></sc-if>
+            <button class="btn btn-primary btn-block" sc-camel-on-click="{{ saveAppSettings }}">{{ settingsSaveLabel }}</button>
+          </div>
+          </sc-if>
           <div class="field" style="margin-bottom:18px;">
             <label>ទំហំអក្សរ</label>
             <input type="range" min="0.85" max="1.3" step="0.05" value="{{ fontScale }}" sc-camel-on-change="{{ onFontScaleChange }}" style="width:100%;">
@@ -5417,6 +5457,7 @@ function sample(arr,n){ return shuffle(arr).slice(0, Math.min(n, arr.length)); }
 const CFG = window.DICT_CONFIG || {};
 const HAS_SUPABASE = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY && window.supabase);
 const EDGE_CREATE_USER = CFG.EDGE_CREATE_USER || 'admin-create-user';
+const DEFAULT_APP_NAME = 'វចនានុក្រម';
 
 function makeSupabaseBackend(){
   const client = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
@@ -5435,6 +5476,8 @@ function makeSupabaseBackend(){
     async listStudents(teacherId){ const { data, error } = await client.from('profiles').select('id,full_name,email,viewed,favorites,history').eq('teacher_id', teacherId).eq('role','student').order('full_name'); return { rows:data||[], error: error?error.message:null }; },
     async listTeachers(){ const { data } = await client.from('profiles').select('id,full_name,email').eq('role','teacher').order('full_name'); return { rows:data||[] }; },
     async listAccounts(){ const { data } = await client.from('profiles').select('id,email,full_name,role,teacher_id').order('role'); return { rows:data||[] }; },
+    async getAppSettings(){ const { data } = await client.from('app_settings').select('app_name,logo').eq('id',1).single(); return { app_name:(data&&data.app_name)||DEFAULT_APP_NAME, logo:(data&&data.logo)||'' }; },
+    async saveAppSettings(patch){ const { error } = await client.from('app_settings').update({ app_name:patch.app_name, logo:patch.logo, updated_at:new Date().toISOString() }).eq('id',1); return { error: error ? error.message : null }; },
     async createAccount(payload){
       const { data, error } = await client.functions.invoke(EDGE_CREATE_USER, { body: payload });
       if (error) return { error: await fnError(error) };
@@ -5480,6 +5523,8 @@ function makeDemoBackend(){
     async listStudents(teacherId){ return { rows:load().filter(x=>x.role==='student'&&x.teacher_id===teacherId), error:null }; },
     async listTeachers(){ return { rows:load().filter(x=>x.role==='teacher') }; },
     async listAccounts(){ return { rows:load().map(({id,email,full_name,role,teacher_id})=>({id,email,full_name,role,teacher_id})) }; },
+    async getAppSettings(){ try { const s=JSON.parse(localStorage.getItem('dict_app_settings')||'null'); if(s) return { app_name:s.app_name||DEFAULT_APP_NAME, logo:s.logo||'' }; } catch(e){} return { app_name:DEFAULT_APP_NAME, logo:'' }; },
+    async saveAppSettings(patch){ localStorage.setItem('dict_app_settings', JSON.stringify({ app_name:patch.app_name, logo:patch.logo })); return { error:null }; },
     async createAccount(p){ const us=load(); const email=String(p.email).trim().toLowerCase(); if(us.find(x=>x.email===email)) return { error:'អ៊ីមែលនេះមានរួចហើយ' }; us.push({ id:'u-'+Date.now(), email, password:p.password, full_name:p.full_name||'', role:p.role, teacher_id:p.role==='student'?(p.teacher_id||null):null, viewed:[], favorites:[], history:[], settings:{} }); save(us); return { error:null }; },
     async updateAccount(id, patch){ const us=load(); const u=us.find(x=>x.id===id); if(!u) return { error:'not found' }; if(patch.full_name!=null) u.full_name=patch.full_name; if(patch.role!=null) u.role=patch.role; if(patch.teacher_id!==undefined) u.teacher_id=u.role==='student'?(patch.teacher_id||null):null; if(patch.password) u.password=patch.password; save(us); return { error:null }; },
     async deleteAccount(id){ let us=load(); us=us.filter(x=>x.id!==id); save(us); return { error:null }; },
@@ -5502,6 +5547,9 @@ class Component extends DCLogic {
     editBusy: false, editError: '',
     // teacher monitor
     students: [], selectedStudent: null, selectedStudentName: '', viewingViewed: [],
+    // app branding (header logo + name) — shared, admin-editable
+    appName: DEFAULT_APP_NAME, appLogo: '',
+    settingsName: '', settingsLogo: '', settingsBusy: false, settingsMsg: '', settingsError: '',
     screen: 'home', search: '', catFilter: 'all', testCat: 'all', searchMode: 'general', pageFilter: null, pageInput: '',
     detailWordId: null,
     favorites: [], history: [], viewed: [],
@@ -5516,6 +5564,7 @@ class Component extends DCLogic {
   };
 
   async componentDidMount(){
+    this.loadAppSettings();
     try {
       const session = await Backend.currentSession();
       if (!session) { this.setState({ authStage: 'login' }); return; }
@@ -5615,6 +5664,47 @@ class Component extends DCLogic {
   }
   goAdmin(){ this.setState({ screen: 'admin', adminMsg:'', adminError:'' }, () => this.loadAdminData()); }
 
+  // — App branding (name + logo), editable by admin in Settings —
+  async loadAppSettings(){
+    try {
+      const s = await Backend.getAppSettings();
+      this.setState({ appName: s.app_name || DEFAULT_APP_NAME, appLogo: s.logo || '' });
+    } catch(e) {}
+  }
+  onSettingsName(e){ this.setState({ settingsName: e.target.value }); }
+  onSettingsLogoFile(e){
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    if (!/^image\//.test(f.type)) { this.setState({ settingsError: 'សូមជ្រើសរើសរូបភាព', settingsMsg:'' }); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        // downscale so the stored data URI stays small
+        const max = 192;
+        let w = img.width, h = img.height;
+        const scale = Math.min(1, max / Math.max(w, h));
+        w = Math.max(1, Math.round(w * scale)); h = Math.max(1, Math.round(h * scale));
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        this.setState({ settingsLogo: c.toDataURL('image/png'), settingsError:'', settingsMsg:'' });
+      };
+      img.onerror = () => this.setState({ settingsError: 'អានរូបភាពមិនបាន', settingsMsg:'' });
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(f);
+  }
+  clearSettingsLogo(){ this.setState({ settingsLogo: '', settingsMsg:'', settingsError:'' }); }
+  async saveAppSettings(){
+    if (this.state.settingsBusy) return;
+    const name = (this.state.settingsName || '').trim();
+    if (!name) { this.setState({ settingsError: 'សូមបញ្ចូលឈ្មោះវចនានុក្រម', settingsMsg:'' }); return; }
+    this.setState({ settingsBusy: true, settingsError: '', settingsMsg: '' });
+    const { error } = await Backend.saveAppSettings({ app_name: name, logo: this.state.settingsLogo || '' });
+    if (error) { this.setState({ settingsBusy: false, settingsError: error }); return; }
+    this.setState({ settingsBusy: false, settingsMsg: 'រក្សាទុករួចរាល់ ✓', appName: name, appLogo: this.state.settingsLogo || '' });
+  }
+
   // — Admin: edit / delete accounts —
   startEdit(acc){ this.setState({ editingId: acc.id, editFullName: acc.full_name || '', editRole: acc.role === 'teacher' ? 'teacher' : 'student', editTeacherId: acc.teacher_id || '', editPassword: '', editError: '', editBusy: false }); }
   cancelEdit(){ this.setState({ editingId: null }); }
@@ -5650,7 +5740,7 @@ class Component extends DCLogic {
   goHome(){ this.setState({ screen: 'home' }); }
   goFavorites(){ this.setState({ screen: 'favorites' }); }
   goTest(){ this.setState({ screen: 'test', testMode: null }); }
-  goSettings(){ this.setState({ screen: 'settings' }); }
+  goSettings(){ this.setState({ screen: 'settings', settingsName: this.state.appName, settingsLogo: this.state.appLogo, settingsMsg: '', settingsError: '' }); }
   goMonitor(){ this.setState({ screen: 'monitor' }, () => this.loadStudents()); }
 
   openDetail(id){
@@ -6013,6 +6103,18 @@ class Component extends DCLogic {
       loginBtnLabel: s.authBusy ? 'កំពុងចូល…' : 'ចូល',
       hasAuthError: !!s.authError, authError: s.authError,
       isDemoMode: Backend.demo,
+      // — branding (header) —
+      appName: s.appName || DEFAULT_APP_NAME,
+      appLogo: s.appLogo, hasLogo: !!s.appLogo, noLogo: !s.appLogo,
+      settingsName: s.settingsName, onSettingsName: e => this.onSettingsName(e),
+      settingsLogo: s.settingsLogo, hasSettingsLogo: !!s.settingsLogo,
+      onSettingsLogoFile: e => this.onSettingsLogoFile(e),
+      clearSettingsLogo: () => this.clearSettingsLogo(),
+      saveAppSettings: () => this.saveAppSettings(),
+      settingsSaveLabel: s.settingsBusy ? 'កំពុងរក្សាទុក…' : 'រក្សាទុក',
+      hasSettingsMsg: !!s.settingsMsg, settingsMsg: s.settingsMsg,
+      hasSettingsError: !!s.settingsError, settingsError: s.settingsError,
+
       isTeacher: s.role === 'teacher', isStudent: s.role === 'student',
       roleLabel: ({ admin:'អ្នកគ្រប់គ្រង', teacher:'គ្រូ', student:'សិស្ស' })[s.role] || '',
       profileName: s.profileName,
