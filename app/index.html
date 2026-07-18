@@ -493,6 +493,11 @@ textarea.input { min-height: 90px; resize: vertical; }
     html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:#e5e3e0;}
     a{color:var(--color-accent-700);text-decoration:none;}
     a:hover{color:var(--color-accent-800);}
+    /* iOS zooms the page when a focused field is smaller than 16px — keep
+       touch-size fields at 16px so tapping an input never zooms the layout. */
+    @media (max-width: 900px){
+      .input, input, select, textarea { font-size: 16px; }
+    }
     @keyframes shakeX{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
   </style>
 </helmet>
@@ -542,7 +547,7 @@ textarea.input { min-height: 90px; resize: vertical; }
       </sc-if>
       <div style="font-family:var(--font-heading);font-weight:600;font-size:18px;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ appName }}</div>
     </div>
-    <div style="flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:14px;padding-bottom:calc(88px + env(safe-area-inset-bottom, 0px));box-sizing:border-box;">
+    <div style="flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:14px;padding-bottom:calc(70px + env(safe-area-inset-bottom, 0px));box-sizing:border-box;">
       <div style="zoom:{{ fontScale }};">
 
         <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
@@ -595,8 +600,8 @@ textarea.input { min-height: 90px; resize: vertical; }
           <div style="padding:0 20px 20px;">
             
             <div style="display:flex;gap:8px;margin-bottom:16px;">
-              <input class="input" type="number" min="1" placeholder="លេខទំព័រ" value="{{ pageInput }}" sc-camel-on-change="{{ onPageInputChange }}" style="flex:1;">
-              <button class="btn btn-primary" sc-camel-on-click="{{ goToPage }}">ស្វែងរក</button>
+              <input class="input" type="number" min="1" placeholder="លេខទំព័រ" value="{{ pageInput }}" sc-camel-on-change="{{ onPageInputChange }}" style="flex:1 1 auto;min-width:0;">
+              <button class="btn btn-primary" style="flex:0 0 auto;white-space:nowrap;" sc-camel-on-click="{{ goToPage }}">ស្វែងរក</button>
             </div>
             <sc-if value="{{ noPageFilter }}"><div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">សូមជ្រើសរើសទំព័រមួយ</div></sc-if>
             <sc-if value="{{ pageWordsEmpty }}"><div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">មិនមានពាក្យក្នុងទំព័រនេះទេ</div></sc-if>
@@ -985,7 +990,7 @@ textarea.input { min-height: 90px; resize: vertical; }
     </div>
 
     <sc-if value="{{ showTabBar }}" hint-placeholder-val="{{ true }}">
-    <div style="position:absolute;left:0;right:0;bottom:0;display:flex;background:var(--color-surface);border-top:1px solid var(--color-divider);padding:8px 6px calc(22px + env(safe-area-inset-bottom, 0px));z-index:20;">
+    <div style="position:absolute;left:0;right:0;bottom:0;display:flex;background:var(--color-surface);border-top:1px solid var(--color-divider);padding:5px 6px calc(5px + env(safe-area-inset-bottom, 0px));z-index:20;">
       <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ homeColor }};" sc-camel-on-click="{{ goHome }}">
         <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ homeColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         <span style="font-size:10px;">ស្វែងរក</span>
