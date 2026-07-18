@@ -487,9 +487,8 @@ textarea.input { min-height: 90px; resize: vertical; }
     @keyframes shakeX{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
   </style>
 </helmet>
-<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#e5e3e0;padding:36px;box-sizing:border-box;font-family:var(--font-body);">
-<x-import component-from-global-scope="IOSDevice" from="components/b1636346-074b-4709-8003-dce91507c6b2.jsx#/ios-frame.jsx" hint-size="402,874">
-  <div style="height:100%;width:100%;position:relative;display:flex;flex-direction:column;background:var(--color-bg);overflow:hidden;">
+<div style="height:100dvh;min-height:100vh;width:100%;background:var(--color-bg);display:flex;justify-content:center;font-family:var(--font-body);">
+  <div style="height:100%;width:100%;max-width:480px;position:relative;display:flex;flex-direction:column;background:var(--color-bg);overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,0.05);">
     <sc-if value="{{ needsRole }}" hint-placeholder-val="{{ false }}">
     <div style="padding:58px 24px 0;height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;">
       <div style="font-size:44px;line-height:1;font-family:Georgia,serif;color:var(--color-accent);">辞</div>
@@ -1011,7 +1010,6 @@ textarea.input { min-height: 90px; resize: vertical; }
     </sc-if>
 
   </div>
-</x-import>
 </div>
 
 </x-dc>
