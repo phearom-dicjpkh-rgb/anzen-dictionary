@@ -565,6 +565,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               </div>
             </sc-for>
             <sc-if value="{{ noResults }}"><div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">រកមិនឃើញពាក្យទេ</div></sc-if>
+            <sc-if value="{{ resultsTruncated }}"><div style="text-align:center;padding:14px 0 4px;opacity:0.55;font-size:12px;">{{ resultInfo }} · សូមវាយបន្ថែម ឬប្រើ «តាមទំព័រ»</div></sc-if>
           </div>
           </sc-if>
 
@@ -5802,7 +5803,11 @@ class Component extends DCLogic {
 
     const pool = this.wordsForCat(s.catFilter);
     const q = s.search.trim().toLowerCase();
-    const filteredWords = (q ? pool.filter(w => w.jp.includes(s.search) || w.kana.includes(s.search) || w.km.toLowerCase().includes(q)) : pool).map(decorate);
+    const matches = q ? pool.filter(w => w.jp.includes(s.search) || w.kana.includes(s.search) || w.km.toLowerCase().includes(q)) : pool;
+    const MAX_RESULTS = 60;
+    const filteredWords = matches.slice(0, MAX_RESULTS).map(decorate);
+    const resultsTruncated = matches.length > MAX_RESULTS;
+    const resultInfo = `បង្ហាញ ${filteredWords.length} ក្នុងចំណោម ${matches.length} ពាក្យ`;
 
     const favoriteWordsList = WORDS.filter(w => s.favorites.includes(w.id)).map(decorate);
 
@@ -5923,6 +5928,7 @@ class Component extends DCLogic {
       isCatAll: s.catFilter === 'all', isCatVocab: s.catFilter === 'vocab', isCatGrammar: s.catFilter === 'grammar',
       onCatAll: () => this.onCatAll(), onCatVocab: () => this.onCatVocab(), onCatGrammar: () => this.onCatGrammar(),
       filteredWords, noResults: filteredWords.length === 0,
+      resultsTruncated, resultInfo,
 
       isSearchGeneral: s.searchMode === 'general', isSearchByPage: s.searchMode === 'page',
       setSearchGeneral: () => this.setSearchGeneral(), setSearchByPage: () => this.setSearchByPage(),
