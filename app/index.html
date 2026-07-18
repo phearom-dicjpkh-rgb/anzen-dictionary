@@ -553,7 +553,7 @@ textarea.input { min-height: 90px; resize: vertical; }
         <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
         <div>
           <div style="padding:18px 20px 8px;">
-            <div style="font-size:12px;opacity:0.55;margin-bottom:8px;">សៀវភៅជំនាញឡានដឹកទំនិញ</div>
+            <div style="font-size:12px;opacity:0.55;margin-bottom:8px;">{{ homeSubtitle }}</div>
             
             <div class="seg" style="margin-bottom:12px;">
               <label class="seg-opt"><input type="radio" name="smode" checked="{{ isSearchGeneral }}" sc-camel-on-change="{{ setSearchGeneral }}"><span>ស្វែងរកទូទៅ</span></label>
@@ -599,6 +599,12 @@ textarea.input { min-height: 90px; resize: vertical; }
           <sc-if value="{{ isSearchByPage }}">
           <div style="padding:0 20px 20px;">
             
+            <div class="field" style="margin-bottom:10px;">
+              <label>សៀវភៅ</label>
+              <select class="input" value="{{ bookFilter }}" sc-camel-on-change="{{ onBookChange }}">
+                <sc-for list="{{ bookOptions }}" as="b" hint-placeholder-count="2"><option value="{{ b.id }}">{{ b.name }}</option></sc-for>
+              </select>
+            </div>
             <div style="display:flex;gap:8px;margin-bottom:16px;">
               <input class="input" type="number" min="1" placeholder="លេខទំព័រ" value="{{ pageInput }}" sc-camel-on-change="{{ onPageInputChange }}" style="flex:1 1 auto;min-width:0;">
               <button class="btn btn-primary" style="flex:0 0 auto;white-space:nowrap;" sc-camel-on-click="{{ goToPage }}">ស្វែងរក</button>
@@ -1031,6 +1037,7 @@ textarea.input { min-height: 90px; resize: vertical; }
           <div>
             <div style="font-size:13px;opacity:0.55;margin-bottom:2px;">{{ detailWord.kana }}</div>
             <div style="font-family:var(--font-heading);font-weight:600;font-size:34px;line-height:1.05;">{{ detailWord.jp }}</div>
+            <div style="font-size:11px;opacity:0.45;margin-top:5px;">{{ detailWord.sourceLabel }}</div>
           </div>
           <button class="btn btn-icon btn-ghost" sc-camel-on-click="{{ toggleDetailFavorite }}" aria-label="favorite">
             <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="{{ detailWord.favFill }}" stroke="var(--color-accent-700)" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
@@ -5447,7 +5454,12 @@ const RAW_WORDS = [
 ["p189_06","〜と（〜と）","","វេយ្យាករណ៍","នៅពេលដែល... / ប្រសិនបើ... (ឧទាហរណ៍៖ 多く使うと = ប្រសិនបើប្រើប្រាស់ច្រើនពេក)","","","grammar",189],
 ["p189_07","〜について（〜について）","","វេយ្យាករណ៍","អំពី... / ទាក់ទងនឹង…","","","grammar",189]
 ];
-const WORDS = RAW_WORDS.map(r => ({ id:r[0], jp:r[1], kana:r[2], pos:r[3].trim(), km:r[4], ex_jp:r[5], ex_km:r[6], cat:r[7], page:r[8] || 2 }));
+// r[9] = book. Existing rows have no 10th field, so they fall back to the
+// first book; new books simply carry their own name in that slot.
+const DEFAULT_BOOK = 'SSW-Truck';
+const WORDS = RAW_WORDS.map(r => ({ id:r[0], jp:r[1], kana:r[2], pos:r[3].trim(), km:r[4], ex_jp:r[5], ex_km:r[6], cat:r[7], page:r[8] || 2, book:r[9] || DEFAULT_BOOK }));
+const BOOKS = Array.from(new Set(WORDS.map(w => w.book)));
+const pagesOfBook = b => Array.from(new Set(WORDS.filter(w => w.book === b).map(w => w.page))).sort((a,b)=>a-b);
 const PAGES = Array.from(new Set(WORDS.map(w => w.page))).sort((a,b)=>a-b);
 const MODE_LABEL = { flashcard:'Flashcard', mc:'ជ្រើសរើសត្រូវ', matching:'ផ្គូផ្គង', write:'សរសេរអត្ថន័យ' };
 
@@ -5568,6 +5580,7 @@ class Component extends DCLogic {
     appName: DEFAULT_APP_NAME, appLogo: '',
     settingsName: '', settingsLogo: '', settingsLogoBlob: null, settingsBusy: false, settingsMsg: '', settingsError: '',
     screen: 'home', search: '', catFilter: 'all', testCat: 'all', searchMode: 'general', pageFilter: null, pageInput: '',
+    bookFilter: BOOKS[0] || DEFAULT_BOOK,
     detailWordId: null,
     favorites: [], history: [], viewed: [],
     settings: { fontScale: 1, autoAudio: false },
@@ -5889,7 +5902,8 @@ class Component extends DCLogic {
   setSearchGeneral(){ this.setState({ searchMode: 'general' }); }
   setSearchByPage(){ this.setState({ searchMode: 'page' }); }
   selectPage(p){ this.setState({ pageFilter: p }); }
-  wordsForPage(page){ return WORDS.filter(w => w.page === page); }
+  wordsForPage(page){ return WORDS.filter(w => w.page === page && w.book === this.state.bookFilter); }
+  onBookChange(e){ this.setState({ bookFilter: e.target.value, pageFilter: null, pageInput: '' }); }
   startPageQuiz(){
     const pool = this.wordsForPage(this.state.pageFilter);
     const qWords = sample(pool, Math.min(10, pool.length));
@@ -5941,8 +5955,9 @@ class Component extends DCLogic {
 
     const favoriteWordsList = WORDS.filter(w => s.favorites.includes(w.id)).map(decorate);
 
-    const pages = PAGES.map(p => ({ num: p, label: `ទំព័រ ${p}`, btnClass: s.pageFilter === p ? 'btn-primary' : 'btn-secondary', onSelect: () => this.selectPage(p) }));
-    const pageWordsList = s.pageFilter != null ? WORDS.filter(w => w.page === s.pageFilter).map(decorate) : [];
+    const bookPages = pagesOfBook(s.bookFilter);
+    const pages = bookPages.map(p => ({ num: p, label: `ទំព័រ ${p}`, btnClass: s.pageFilter === p ? 'btn-primary' : 'btn-secondary', onSelect: () => this.selectPage(p) }));
+    const pageWordsList = s.pageFilter != null ? WORDS.filter(w => w.page === s.pageFilter && w.book === s.bookFilter).map(decorate) : [];
     const pageVocabList = pageWordsList.filter(w => w.cat === 'vocab').map(w => ({ ...w, line: `${w.jp}（${w.kana}）：${w.km}` }));
     const pageGrammarList = pageWordsList.filter(w => w.cat === 'grammar').map(w => ({ ...w, line: `${w.jp}：${w.km}` }));
     const allPageViewed = pageWordsList.length > 0 && pageWordsList.every(w => w.isViewed);
@@ -5960,7 +5975,7 @@ class Component extends DCLogic {
     }) : [];
 
     const detailW = WORDS.find(w => w.id === s.detailWordId);
-    const detailWord = detailW ? { ...detailW, tagClass: tagClassFor(detailW.pos), favFill: s.favorites.includes(detailW.id) ? 'var(--color-accent-700)' : 'transparent' } : { jp:'', kana:'', pos:'', km:'', ex_jp:'', ex_km:'', tagClass:'tag tag-neutral', favFill:'transparent' };
+    const detailWord = detailW ? { ...detailW, tagClass: tagClassFor(detailW.pos), favFill: s.favorites.includes(detailW.id) ? 'var(--color-accent-700)' : 'transparent', sourceLabel: `${detailW.book} · ទំព័រ ${detailW.page}` } : { jp:'', kana:'', pos:'', km:'', ex_jp:'', ex_km:'', tagClass:'tag tag-neutral', favFill:'transparent', sourceLabel:'' };
 
     const recentHistory = s.history.slice(-6).reverse().map(h => {
       const d = new Date(h.date);
@@ -5997,12 +6012,16 @@ class Component extends DCLogic {
     const isMatchingTest = testMode === 'matching';
 
     const viewingSet = s.viewingViewed;
-    const monitorPageProgress = PAGES.map(p => {
-      const words = WORDS.filter(w => w.page === p);
-      const viewedCount = words.filter(w => viewingSet.includes(w.id)).length;
-      const pct = words.length ? Math.round(viewedCount / words.length * 100) : 0;
-      return { num: p, label: `ទំព័រ ${p}`, viewedCount, total: words.length, pct, pctLabel: `${pct}%`, barWidth: `${pct}%` };
-    });
+    const multiBook = BOOKS.length > 1;
+    const monitorPageProgress = [];
+    for (const b of BOOKS) {
+      for (const p of pagesOfBook(b)) {
+        const words = WORDS.filter(w => w.book === b && w.page === p);
+        const viewedCount = words.filter(w => viewingSet.includes(w.id)).length;
+        const pct = words.length ? Math.round(viewedCount / words.length * 100) : 0;
+        monitorPageProgress.push({ num: p, label: (multiBook ? b + ' · ' : '') + `ទំព័រ ${p}`, viewedCount, total: words.length, pct, pctLabel: `${pct}%`, barWidth: `${pct}%` });
+      }
+    }
     const monitorOverallViewed = viewingSet.length;
     const monitorOverallPct = WORDS.length ? Math.round(monitorOverallViewed / WORDS.length * 100) : 0;
     const studentNameItems = s.students.map(st => ({ name: st.full_name || st.email, onSelect: () => this.selectStudentToView(st) }));
@@ -6062,6 +6081,10 @@ class Component extends DCLogic {
 
       isSearchGeneral: s.searchMode === 'general', isSearchByPage: s.searchMode === 'page',
       setSearchGeneral: () => this.setSearchGeneral(), setSearchByPage: () => this.setSearchByPage(),
+      homeSubtitle: s.searchMode === 'general' ? `គ្រប់សៀវភៅ · ${WORDS.length} ពាក្យ` : s.bookFilter,
+      bookOptions: BOOKS.map(b => ({ id: b, name: b })), bookFilter: s.bookFilter,
+      onBookChange: e => this.onBookChange(e),
+      bookLabel: s.bookFilter, hasManyBooks: BOOKS.length > 1,
       pages, pageWordsList, hasPageFilter: s.pageFilter != null, noPageFilter: s.pageFilter == null,
       pageWordsEmpty: s.pageFilter != null && pageWordsList.length === 0,
       pageInput: s.pageInput, onPageInputChange: e => this.onPageInputChange(e), goToPage: () => this.goToPage(),
