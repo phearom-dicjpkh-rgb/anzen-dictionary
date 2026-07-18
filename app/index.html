@@ -553,18 +553,16 @@ textarea.input { min-height: 90px; resize: vertical; }
         <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
         <div>
           <div style="padding:18px 20px 8px;">
-            <div style="font-size:12px;opacity:0.55;margin-bottom:8px;">{{ homeSubtitle }}</div>
-            
             <div class="seg" style="margin-bottom:12px;">
               <label class="seg-opt"><input type="radio" name="smode" checked="{{ isSearchGeneral }}" sc-camel-on-change="{{ setSearchGeneral }}"><span>ស្វែងរកទូទៅ</span></label>
               <label class="seg-opt"><input type="radio" name="smode" checked="{{ isSearchByPage }}" sc-camel-on-change="{{ setSearchByPage }}"><span>តាមទំព័រ</span></label>
             </div>
             <sc-if value="{{ isSearchGeneral }}">
-            <input class="input" type="text" placeholder="ស្វែងរកពាក្យ ឬ 漢字…" value="{{ search }}" sc-camel-on-change="{{ onSearchChange }}" style="margin-bottom:12px;">
-            <div class="seg" style="margin-bottom:6px;">
-              <label class="seg-opt"><input type="radio" name="cat" checked="{{ isCatAll }}" sc-camel-on-change="{{ onCatAll }}"><span>ទាំងអស់</span></label>
-              <label class="seg-opt"><input type="radio" name="cat" checked="{{ isCatVocab }}" sc-camel-on-change="{{ onCatVocab }}"><span>វាក្យសព្ទ</span></label>
-              <label class="seg-opt"><input type="radio" name="cat" checked="{{ isCatGrammar }}" sc-camel-on-change="{{ onCatGrammar }}"><span>វេយ្យាករណ៍</span></label>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+              <input class="input" type="text" placeholder="ស្វែងរកពាក្យ ឬ 漢字…" value="{{ search }}" sc-camel-on-change="{{ onSearchChange }}" style="flex:1 1 auto;min-width:0;">
+              <select class="input" value="{{ catFilter }}" sc-camel-on-change="{{ onCatChange }}" aria-label="ប្រភេទពាក្យ" style="flex:0 0 auto;width:auto;padding-left:8px;padding-right:4px;">
+                <sc-for list="{{ catOptions }}" as="c" hint-placeholder-count="3"><option value="{{ c.id }}">{{ c.name }}</option></sc-for>
+              </select>
             </div>
             </sc-if>
           </div>
@@ -5896,6 +5894,7 @@ class Component extends DCLogic {
   writeGradeWrong(){ this.writeAdvance(); }
 
   onSearchChange(e){ this.setState({ search: e.target.value }); }
+  onCatChange(e){ this.setState({ catFilter: e.target.value }); }
   onCatAll(){ this.setState({ catFilter: 'all' }); }
   onCatVocab(){ this.setState({ catFilter: 'vocab' }); }
   onCatGrammar(){ this.setState({ catFilter: 'grammar' }); }
@@ -6074,6 +6073,8 @@ class Component extends DCLogic {
 
       totalWordsLabel: `${WORDS.length} ពាក្យ`,
       search: s.search, onSearchChange: e => this.onSearchChange(e),
+      catFilter: s.catFilter, onCatChange: e => this.onCatChange(e),
+      catOptions: [{ id:'all', name:'ទាំងអស់' }, { id:'vocab', name:'វាក្យសព្ទ' }, { id:'grammar', name:'វេយ្យាករណ៍' }],
       isCatAll: s.catFilter === 'all', isCatVocab: s.catFilter === 'vocab', isCatGrammar: s.catFilter === 'grammar',
       onCatAll: () => this.onCatAll(), onCatVocab: () => this.onCatVocab(), onCatGrammar: () => this.onCatGrammar(),
       filteredWords, noResults: filteredWords.length === 0,
@@ -6081,7 +6082,6 @@ class Component extends DCLogic {
 
       isSearchGeneral: s.searchMode === 'general', isSearchByPage: s.searchMode === 'page',
       setSearchGeneral: () => this.setSearchGeneral(), setSearchByPage: () => this.setSearchByPage(),
-      homeSubtitle: s.searchMode === 'general' ? `គ្រប់សៀវភៅ · ${WORDS.length} ពាក្យ` : s.bookFilter,
       bookOptions: BOOKS.map(b => ({ id: b, name: b })), bookFilter: s.bookFilter,
       onBookChange: e => this.onBookChange(e),
       bookLabel: s.bookFilter, hasManyBooks: BOOKS.length > 1,
