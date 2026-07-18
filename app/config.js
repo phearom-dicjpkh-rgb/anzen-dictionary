@@ -6,5 +6,5 @@
 window.DICT_CONFIG = {
   SUPABASE_URL: "https://bnzwzexvocsqnoobyxzd.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_2hFZTaVF8kQPImNhWf-mwQ_NQwxalOG",
-  EDGE_CREATE_USER: "swift-task"   // name of the deployed admin-create-user Edge Function
+  EDGE_CREATE_USER: "swift-task"   // name of the deployed admin account-management Edge Function
 };

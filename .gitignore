@@ -9,3 +9,6 @@ node_modules/
 # NOTE: app/config.js IS committed on purpose — it holds only the Supabase
 # Project URL + anon public key, which are safe to expose in a frontend.
 # NEVER put the service_role key anywhere in this repo.
+
+# Claude Code local settings (machine-specific)
+.claude/settings.local.json
