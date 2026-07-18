@@ -5484,6 +5484,14 @@ const DEFAULT_BOOK = 'SSW-Truck';
 const WORDS = RAW_WORDS.map(r => ({ id:r[0], jp:r[1], kana:r[2], pos:r[3].trim(), km:r[4], ex_jp:r[5], ex_km:r[6], cat:r[7], page:r[8] || 2, book:r[9] || DEFAULT_BOOK }));
 const BOOKS = Array.from(new Set(WORDS.map(w => w.book)));
 const pagesOfBook = b => Array.from(new Set(WORDS.filter(w => w.book === b).map(w => w.page))).sort((a,b)=>a-b);
+// The books repeat their key vocabulary on many pages, so the same word can
+// appear dozens of times. Lists show one card per distinct word.
+function dedupeWords(list){
+  const seen = new Set(); const out = [];
+  for (const w of list) { const k = w.jp + '|' + w.kana; if (seen.has(k)) continue; seen.add(k); out.push(w); }
+  return out;
+}
+const UNIQUE_WORDS = dedupeWords(WORDS);
 const PAGES = Array.from(new Set(WORDS.map(w => w.page))).sort((a,b)=>a-b);
 const MODE_LABEL = { flashcard:'Flashcard', mc:'ជ្រើសរើសត្រូវ', matching:'ផ្គូផ្គង', write:'សរសេរអត្ថន័យ' };
 
@@ -5864,7 +5872,7 @@ class Component extends DCLogic {
     }, 1400);
   }
 
-  wordsForCat(cat){ return cat === 'all' ? WORDS : WORDS.filter(w => w.cat === cat); }
+  wordsForCat(cat){ return dedupeWords(cat === 'all' ? WORDS : WORDS.filter(w => w.cat === cat)); }
 
   startTest(mode){
     const pool = this.wordsForCat(this.state.testCat);
@@ -5958,7 +5966,7 @@ class Component extends DCLogic {
   setSearchGeneral(){ this.setState({ searchMode: 'general' }); }
   setSearchByPage(){ this.setState({ searchMode: 'page' }); }
   selectPage(p){ this.setState({ pageFilter: p }); }
-  wordsForPage(page){ return WORDS.filter(w => w.page === page && w.book === this.state.bookFilter); }
+  wordsForPage(page){ return dedupeWords(WORDS.filter(w => w.page === page && w.book === this.state.bookFilter)); }
   onBookChange(e){ this.setState({ bookFilter: e.target.value, pageFilter: null, pageInput: '' }); }
   startPageQuiz(){
     const pool = this.wordsForPage(this.state.pageFilter);
@@ -6009,11 +6017,11 @@ class Component extends DCLogic {
     const resultsTruncated = matches.length > MAX_RESULTS;
     const resultInfo = `បង្ហាញ ${filteredWords.length} ក្នុងចំណោម ${matches.length} ពាក្យ`;
 
-    const favoriteWordsList = WORDS.filter(w => s.favorites.includes(w.id)).map(decorate);
+    const favoriteWordsList = dedupeWords(WORDS.filter(w => s.favorites.includes(w.id))).map(decorate);
 
     const bookPages = pagesOfBook(s.bookFilter);
     const pages = bookPages.map(p => ({ num: p, label: `ទំព័រ ${p}`, btnClass: s.pageFilter === p ? 'btn-primary' : 'btn-secondary', onSelect: () => this.selectPage(p) }));
-    const pageWordsList = s.pageFilter != null ? WORDS.filter(w => w.page === s.pageFilter && w.book === s.bookFilter).map(decorate) : [];
+    const pageWordsList = s.pageFilter != null ? dedupeWords(WORDS.filter(w => w.page === s.pageFilter && w.book === s.bookFilter)).map(decorate) : [];
     const pageVocabList = pageWordsList.filter(w => w.cat === 'vocab').map(w => ({ ...w, line: `${w.jp}（${w.kana}）：${w.km}` }));
     const pageGrammarList = pageWordsList.filter(w => w.cat === 'grammar').map(w => ({ ...w, line: `${w.jp}：${w.km}` }));
     const allPageViewed = pageWordsList.length > 0 && pageWordsList.every(w => w.isViewed);
@@ -6031,7 +6039,7 @@ class Component extends DCLogic {
     }) : [];
 
     const detailW = WORDS.find(w => w.id === s.detailWordId);
-    const detailWord = detailW ? { ...detailW, tagClass: tagClassFor(detailW.pos), favFill: s.favorites.includes(detailW.id) ? 'var(--color-accent-700)' : 'transparent', sourceLabel: `${detailW.book} · ទំព័រ ${detailW.page}` } : { jp:'', kana:'', pos:'', km:'', ex_jp:'', ex_km:'', tagClass:'tag tag-neutral', favFill:'transparent', sourceLabel:'' };
+    const detailWord = detailW ? { ...detailW, tagClass: tagClassFor(detailW.pos), favFill: s.favorites.includes(detailW.id) ? 'var(--color-accent-700)' : 'transparent', sourceLabel: `${detailW.book} · ទំព័រ ${[...new Set(WORDS.filter(w => w.jp === detailW.jp && w.kana === detailW.kana && w.book === detailW.book).map(w => w.page))].sort((a,b)=>a-b).join(', ')}` } : { jp:'', kana:'', pos:'', km:'', ex_jp:'', ex_km:'', tagClass:'tag tag-neutral', favFill:'transparent', sourceLabel:'' };
 
     const recentHistory = s.history.slice(-6).reverse().map(h => {
       const d = new Date(h.date);
@@ -6070,16 +6078,19 @@ class Component extends DCLogic {
     const viewingSet = s.viewingViewed;
     const multiBook = BOOKS.length > 1;
     const monitorPageProgress = [];
+    let monitorTotal = 0;
     for (const b of BOOKS) {
       for (const p of pagesOfBook(b)) {
-        const words = WORDS.filter(w => w.book === b && w.page === p);
+        // count what the student can actually see on that page (deduped)
+        const words = dedupeWords(WORDS.filter(w => w.book === b && w.page === p));
+        monitorTotal += words.length;
         const viewedCount = words.filter(w => viewingSet.includes(w.id)).length;
         const pct = words.length ? Math.round(viewedCount / words.length * 100) : 0;
         monitorPageProgress.push({ num: p, label: (multiBook ? b + ' · ' : '') + `ទំព័រ ${p}`, viewedCount, total: words.length, pct, pctLabel: `${pct}%`, barWidth: `${pct}%` });
       }
     }
     const monitorOverallViewed = viewingSet.length;
-    const monitorOverallPct = WORDS.length ? Math.round(monitorOverallViewed / WORDS.length * 100) : 0;
+    const monitorOverallPct = monitorTotal ? Math.min(100, Math.round(monitorOverallViewed / monitorTotal * 100)) : 0;
     const studentNameItems = s.students.map(st => ({ name: st.full_name || st.email, onSelect: () => this.selectStudentToView(st) }));
 
     const ROLE_LABEL = { admin: 'អ្នកគ្រប់គ្រង', teacher: 'គ្រូ', student: 'សិស្ស' };
@@ -6093,7 +6104,7 @@ class Component extends DCLogic {
       isMonitor: s.screen === 'monitor',
       goMonitor: () => this.goMonitor(),
       monitorColor: s.screen === 'monitor' ? 'var(--color-accent-700)' : 'var(--color-text)',
-      monitorPageProgress, monitorOverallViewed, monitorOverallPct, overallTotal: WORDS.length,
+      monitorPageProgress, monitorOverallViewed, monitorOverallPct, overallTotal: monitorTotal,
       studentNameItems, hasStudents: studentNameItems.length > 0,
       hasSelectedStudent: !!s.selectedStudent, noSelectedStudent: !s.selectedStudent, selectedStudent: s.selectedStudentName,
       noStudents: studentNameItems.length === 0,
@@ -6128,7 +6139,7 @@ class Component extends DCLogic {
       isWrite: testMode === 'write', isResults: testMode === 'results',
       showTabBar: !(s.screen === 'test' && testMode && testMode !== 'results'),
 
-      totalWordsLabel: `${WORDS.length} ពាក្យ`,
+      totalWordsLabel: `${UNIQUE_WORDS.length} ពាក្យ`,
       search: s.search, onSearchChange: e => this.onSearchChange(e),
       catFilter: s.catFilter, onCatChange: e => this.onCatChange(e),
       isCatAll: s.catFilter === 'all', isCatVocab: s.catFilter === 'vocab', isCatGrammar: s.catFilter === 'grammar',
