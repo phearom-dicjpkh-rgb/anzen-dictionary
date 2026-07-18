@@ -568,29 +568,29 @@ textarea.input { min-height: 90px; resize: vertical; }
       <sc-if value="{{ noLogo }}">
         <div style="width:34px;height:34px;flex:none;border-radius:8px;background:var(--color-accent);color:#f3f2f2;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:19px;line-height:1;">辞</div>
       </sc-if>
-      <div style="font-family:var(--font-heading);font-weight:600;font-size:18px;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ appName }}</div>
+      <div style="flex:1 1 auto;min-width:0;font-family:var(--font-heading);font-weight:600;font-size:18px;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ appName }}</div>
+      <sc-if value="{{ isHome }}">
+        <select class="input" value="{{ searchMode }}" sc-camel-on-change="{{ onSearchModeChange }}" aria-label="របៀបស្វែងរក" style="flex:0 0 auto;width:auto;min-height:32px;padding-top:2px;padding-bottom:2px;background-color:var(--color-bg);">
+          <option value="general" label="ស្វែងរកទូទៅ">ស្វែងរកទូទៅ</option>
+          <option value="page" label="តាមទំព័រ">តាមទំព័រ</option>
+        </select>
+      </sc-if>
     </div>
-    <div style="flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:14px;padding-bottom:calc(70px + env(safe-area-inset-bottom, 0px));box-sizing:border-box;">
+    <div style="flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:0;padding-bottom:calc(70px + env(safe-area-inset-bottom, 0px));box-sizing:border-box;">
       <div style="zoom:{{ fontScale }};">
 
         <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
         <div>
-          <div style="padding:18px 20px 8px;">
-            <div class="seg" style="margin-bottom:12px;">
-              <label class="seg-opt"><input type="radio" name="smode" checked="{{ isSearchGeneral }}" sc-camel-on-change="{{ setSearchGeneral }}"><span>ស្វែងរកទូទៅ</span></label>
-              <label class="seg-opt"><input type="radio" name="smode" checked="{{ isSearchByPage }}" sc-camel-on-change="{{ setSearchByPage }}"><span>តាមទំព័រ</span></label>
-            </div>
-            <sc-if value="{{ isSearchGeneral }}">
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
-              <input class="input" type="text" placeholder="ស្វែងរកពាក្យ ឬ 漢字…" value="{{ search }}" sc-camel-on-change="{{ onSearchChange }}" style="flex:1 1 auto;min-width:0;">
-              <select class="input" value="{{ catFilter }}" sc-camel-on-change="{{ onCatChange }}" aria-label="ប្រភេទពាក្យ" style="flex:0 0 auto;width:auto;">
-                <option value="all" label="ទាំងអស់">ទាំងអស់</option>
-                <option value="vocab" label="វាក្យសព្ទ">វាក្យសព្ទ</option>
-                <option value="grammar" label="វេយ្យាករណ៍">វេយ្យាករណ៍</option>
-              </select>
-            </div>
-            </sc-if>
+          <sc-if value="{{ isSearchGeneral }}">
+          <div style="position:sticky;top:0;z-index:8;background:var(--color-bg);padding:14px 20px 10px;display:flex;gap:8px;align-items:center;">
+            <input class="input" type="text" placeholder="ស្វែងរកពាក្យ ឬ 漢字…" value="{{ search }}" sc-camel-on-change="{{ onSearchChange }}" style="flex:1 1 auto;min-width:0;">
+            <select class="input" value="{{ catFilter }}" sc-camel-on-change="{{ onCatChange }}" aria-label="ប្រភេទពាក្យ" style="flex:0 0 auto;width:auto;">
+              <option value="all" label="ទាំងអស់">ទាំងអស់</option>
+              <option value="vocab" label="វាក្យសព្ទ">វាក្យសព្ទ</option>
+              <option value="grammar" label="វេយ្យាករណ៍">វេយ្យាករណ៍</option>
+            </select>
           </div>
+          </sc-if>
 
           <sc-if value="{{ isSearchGeneral }}">
           <div style="padding:8px 20px 20px;display:flex;flex-direction:column;gap:8px;">
@@ -621,16 +621,14 @@ textarea.input { min-height: 90px; resize: vertical; }
 
           <sc-if value="{{ isSearchByPage }}">
           <div style="padding:0 20px 20px;">
-            
-            <div class="field" style="margin-bottom:10px;">
-              <label>សៀវភៅ</label>
-              <select class="input" value="{{ bookFilter }}" sc-camel-on-change="{{ onBookChange }}">
-                <sc-for list="{{ bookOptions }}" as="b" hint-placeholder-count="2"><option value="{{ b.id }}" label="{{ b.name }}"></option></sc-for>
-              </select>
-            </div>
-            <div style="display:flex;gap:8px;margin-bottom:16px;">
-              <input class="input" type="number" min="1" placeholder="លេខទំព័រ" value="{{ pageInput }}" sc-camel-on-change="{{ onPageInputChange }}" style="flex:1 1 auto;min-width:0;">
-              <button class="btn btn-primary" style="flex:0 0 auto;white-space:nowrap;" sc-camel-on-click="{{ goToPage }}">ស្វែងរក</button>
+            <div style="position:sticky;top:0;z-index:8;background:var(--color-bg);padding:14px 0 10px;">
+              <div style="display:flex;gap:8px;align-items:center;">
+                <select class="input" value="{{ bookFilter }}" sc-camel-on-change="{{ onBookChange }}" aria-label="សៀវភៅ" style="flex:1 1 auto;min-width:0;">
+                  <sc-for list="{{ bookOptions }}" as="b" hint-placeholder-count="2"><option value="{{ b.id }}" label="{{ b.name }}"></option></sc-for>
+                </select>
+                <input class="input" type="number" min="1" placeholder="ទំព័រ" value="{{ pageInput }}" sc-camel-on-change="{{ onPageInputChange }}" style="flex:0 0 auto;width:88px;">
+                <button class="btn btn-primary" style="flex:0 0 auto;white-space:nowrap;" sc-camel-on-click="{{ goToPage }}">ស្វែងរក</button>
+              </div>
             </div>
             <sc-if value="{{ noPageFilter }}"><div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">សូមជ្រើសរើសទំព័រមួយ</div></sc-if>
             <sc-if value="{{ pageWordsEmpty }}"><div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">មិនមានពាក្យក្នុងទំព័រនេះទេ</div></sc-if>
@@ -5963,6 +5961,7 @@ class Component extends DCLogic {
   onCatAll(){ this.setState({ catFilter: 'all' }); }
   onCatVocab(){ this.setState({ catFilter: 'vocab' }); }
   onCatGrammar(){ this.setState({ catFilter: 'grammar' }); }
+  onSearchModeChange(e){ this.setState({ searchMode: e.target.value }); }
   setSearchGeneral(){ this.setState({ searchMode: 'general' }); }
   setSearchByPage(){ this.setState({ searchMode: 'page' }); }
   selectPage(p){ this.setState({ pageFilter: p }); }
@@ -6148,6 +6147,7 @@ class Component extends DCLogic {
       resultsTruncated, resultInfo,
 
       isSearchGeneral: s.searchMode === 'general', isSearchByPage: s.searchMode === 'page',
+      searchMode: s.searchMode, onSearchModeChange: e => this.onSearchModeChange(e),
       setSearchGeneral: () => this.setSearchGeneral(), setSearchByPage: () => this.setSearchByPage(),
       bookOptions: BOOKS.map(b => ({ id: b, name: b })), bookFilter: s.bookFilter,
       onBookChange: e => this.onBookChange(e),
