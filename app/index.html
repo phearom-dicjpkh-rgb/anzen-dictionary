@@ -1,0 +1,2094 @@
+<!DOCTYPE html>
+<html><head><script>window.__resources={"https://unpkg.com/react@18.3.1/umd/react.production.min.js":"vendor/8e25d012-49d0-434a-a063-ebf27a8696ac.js","https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js":"vendor/2f9f9627-86a3-401b-b12c-7abfe38abcbd.js","https://unpkg.com/@babel/standalone@7.29.0/babel.min.js":"vendor/9ceeb466-e86e-4e11-aa91-8a9657117722.js"};</script><script src="config.js"></script><script src="vendor/supabase.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="vendor/fa54af41-7e64-40dd-9170-fc4da6658880.js"></script>
+</head>
+<body>
+
+<x-dc>
+<helmet>
+  <style>/* Classical — design-system tokens and component classes. This file is the source of truth for the system's look; retune it here and see readme.md. */
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/e2e7a4bf-50fb-4f59-87ad-c2689bbdc516.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/5dd754e6-4737-4056-a6c9-ec5216270577.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/7b0c5818-8325-4096-8767-fa9886104cf2.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/12d71934-ce03-422a-98de-84635c18af93.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/ca2bb85e-68bf-45d3-ac65-b95f0515e999.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/e2e7a4bf-50fb-4f59-87ad-c2689bbdc516.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/5dd754e6-4737-4056-a6c9-ec5216270577.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/7b0c5818-8325-4096-8767-fa9886104cf2.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/12d71934-ce03-422a-98de-84635c18af93.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/ca2bb85e-68bf-45d3-ac65-b95f0515e999.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/73c90c41-b7b0-4142-8f7d-5adfb62cd105.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/0a07e9ee-7214-4aa1-8e43-3c26825350d4.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* math */
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/77a17e60-8c90-4ff7-b922-c7841f578b51.woff2") format('woff2');
+  unicode-range: U+0302-0303, U+0305, U+0307-0308, U+0310, U+0312, U+0315, U+031A, U+0326-0327, U+032C, U+032F-0330, U+0332-0333, U+0338, U+033A, U+0346, U+034D, U+0391-03A1, U+03A3-03A9, U+03B1-03C9, U+03D1, U+03D5-03D6, U+03F0-03F1, U+03F4-03F5, U+2016-2017, U+2034-2038, U+203C, U+2040, U+2043, U+2047, U+2050, U+2057, U+205F, U+2070-2071, U+2074-208E, U+2090-209C, U+20D0-20DC, U+20E1, U+20E5-20EF, U+2100-2112, U+2114-2115, U+2117-2121, U+2123-214F, U+2190, U+2192, U+2194-21AE, U+21B0-21E5, U+21F1-21F2, U+21F4-2211, U+2213-2214, U+2216-22FF, U+2308-230B, U+2310, U+2319, U+231C-2321, U+2336-237A, U+237C, U+2395, U+239B-23B7, U+23D0, U+23DC-23E1, U+2474-2475, U+25AF, U+25B3, U+25B7, U+25BD, U+25C1, U+25CA, U+25CC, U+25FB, U+266D-266F, U+27C0-27FF, U+2900-2AFF, U+2B0E-2B11, U+2B30-2B4C, U+2BFE, U+3030, U+FF5B, U+FF5D, U+1D400-1D7FF, U+1EE00-1EEFF;
+}
+/* symbols */
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/9fdb19c5-a09f-4778-8b31-0e282e0228be.woff2") format('woff2');
+  unicode-range: U+0001-000C, U+000E-001F, U+007F-009F, U+20DD-20E0, U+20E2-20E4, U+2150-218F, U+2190, U+2192, U+2194-2199, U+21AF, U+21E6-21F0, U+21F3, U+2218-2219, U+2299, U+22C4-22C6, U+2300-243F, U+2440-244A, U+2460-24FF, U+25A0-27BF, U+2800-28FF, U+2921-2922, U+2981, U+29BF, U+29EB, U+2B00-2BFF, U+4DC0-4DFF, U+FFF9-FFFB, U+10140-1018E, U+10190-1019C, U+101A0, U+101D0-101FD, U+102E0-102FB, U+10E60-10E7E, U+1D2C0-1D2D3, U+1D2E0-1D37F, U+1F000-1F0FF, U+1F100-1F1AD, U+1F1E6-1F1FF, U+1F30D-1F30F, U+1F315, U+1F31C, U+1F31E, U+1F320-1F32C, U+1F336, U+1F378, U+1F37D, U+1F382, U+1F393-1F39F, U+1F3A7-1F3A8, U+1F3AC-1F3AF, U+1F3C2, U+1F3C4-1F3C6, U+1F3CA-1F3CE, U+1F3D4-1F3E0, U+1F3ED, U+1F3F1-1F3F3, U+1F3F5-1F3F7, U+1F408, U+1F415, U+1F41F, U+1F426, U+1F43F, U+1F441-1F442, U+1F444, U+1F446-1F449, U+1F44C-1F44E, U+1F453, U+1F46A, U+1F47D, U+1F4A3, U+1F4B0, U+1F4B3, U+1F4B9, U+1F4BB, U+1F4BF, U+1F4C8-1F4CB, U+1F4D6, U+1F4DA, U+1F4DF, U+1F4E3-1F4E6, U+1F4EA-1F4ED, U+1F4F7, U+1F4F9-1F4FB, U+1F4FD-1F4FE, U+1F503, U+1F507-1F50B, U+1F50D, U+1F512-1F513, U+1F53E-1F54A, U+1F54F-1F5FA, U+1F610, U+1F650-1F67F, U+1F687, U+1F68D, U+1F691, U+1F694, U+1F698, U+1F6AD, U+1F6B2, U+1F6B9-1F6BA, U+1F6BC, U+1F6C6-1F6CF, U+1F6D3-1F6D7, U+1F6E0-1F6EA, U+1F6F0-1F6F3, U+1F6F7-1F6FC, U+1F700-1F7FF, U+1F800-1F80B, U+1F810-1F847, U+1F850-1F859, U+1F860-1F887, U+1F890-1F8AD, U+1F8B0-1F8BB, U+1F8C0-1F8C1, U+1F900-1F90B, U+1F93B, U+1F946, U+1F984, U+1F996, U+1F9E9, U+1FA00-1FA6F, U+1FA70-1FA7C, U+1FA80-1FA89, U+1FA8F-1FAC6, U+1FACE-1FADC, U+1FADF-1FAE9, U+1FAF0-1FAF8, U+1FB00-1FBFF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/1c497c5f-92ee-4073-b635-5bc6764cdd73.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/3f6197d5-6353-41ad-91fc-92503e68a9cf.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/5f95697e-1621-4956-b18f-05a5bde87456.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/73c90c41-b7b0-4142-8f7d-5adfb62cd105.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/0a07e9ee-7214-4aa1-8e43-3c26825350d4.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* math */
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/77a17e60-8c90-4ff7-b922-c7841f578b51.woff2") format('woff2');
+  unicode-range: U+0302-0303, U+0305, U+0307-0308, U+0310, U+0312, U+0315, U+031A, U+0326-0327, U+032C, U+032F-0330, U+0332-0333, U+0338, U+033A, U+0346, U+034D, U+0391-03A1, U+03A3-03A9, U+03B1-03C9, U+03D1, U+03D5-03D6, U+03F0-03F1, U+03F4-03F5, U+2016-2017, U+2034-2038, U+203C, U+2040, U+2043, U+2047, U+2050, U+2057, U+205F, U+2070-2071, U+2074-208E, U+2090-209C, U+20D0-20DC, U+20E1, U+20E5-20EF, U+2100-2112, U+2114-2115, U+2117-2121, U+2123-214F, U+2190, U+2192, U+2194-21AE, U+21B0-21E5, U+21F1-21F2, U+21F4-2211, U+2213-2214, U+2216-22FF, U+2308-230B, U+2310, U+2319, U+231C-2321, U+2336-237A, U+237C, U+2395, U+239B-23B7, U+23D0, U+23DC-23E1, U+2474-2475, U+25AF, U+25B3, U+25B7, U+25BD, U+25C1, U+25CA, U+25CC, U+25FB, U+266D-266F, U+27C0-27FF, U+2900-2AFF, U+2B0E-2B11, U+2B30-2B4C, U+2BFE, U+3030, U+FF5B, U+FF5D, U+1D400-1D7FF, U+1EE00-1EEFF;
+}
+/* symbols */
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/9fdb19c5-a09f-4778-8b31-0e282e0228be.woff2") format('woff2');
+  unicode-range: U+0001-000C, U+000E-001F, U+007F-009F, U+20DD-20E0, U+20E2-20E4, U+2150-218F, U+2190, U+2192, U+2194-2199, U+21AF, U+21E6-21F0, U+21F3, U+2218-2219, U+2299, U+22C4-22C6, U+2300-243F, U+2440-244A, U+2460-24FF, U+25A0-27BF, U+2800-28FF, U+2921-2922, U+2981, U+29BF, U+29EB, U+2B00-2BFF, U+4DC0-4DFF, U+FFF9-FFFB, U+10140-1018E, U+10190-1019C, U+101A0, U+101D0-101FD, U+102E0-102FB, U+10E60-10E7E, U+1D2C0-1D2D3, U+1D2E0-1D37F, U+1F000-1F0FF, U+1F100-1F1AD, U+1F1E6-1F1FF, U+1F30D-1F30F, U+1F315, U+1F31C, U+1F31E, U+1F320-1F32C, U+1F336, U+1F378, U+1F37D, U+1F382, U+1F393-1F39F, U+1F3A7-1F3A8, U+1F3AC-1F3AF, U+1F3C2, U+1F3C4-1F3C6, U+1F3CA-1F3CE, U+1F3D4-1F3E0, U+1F3ED, U+1F3F1-1F3F3, U+1F3F5-1F3F7, U+1F408, U+1F415, U+1F41F, U+1F426, U+1F43F, U+1F441-1F442, U+1F444, U+1F446-1F449, U+1F44C-1F44E, U+1F453, U+1F46A, U+1F47D, U+1F4A3, U+1F4B0, U+1F4B3, U+1F4B9, U+1F4BB, U+1F4BF, U+1F4C8-1F4CB, U+1F4D6, U+1F4DA, U+1F4DF, U+1F4E3-1F4E6, U+1F4EA-1F4ED, U+1F4F7, U+1F4F9-1F4FB, U+1F4FD-1F4FE, U+1F503, U+1F507-1F50B, U+1F50D, U+1F512-1F513, U+1F53E-1F54A, U+1F54F-1F5FA, U+1F610, U+1F650-1F67F, U+1F687, U+1F68D, U+1F691, U+1F694, U+1F698, U+1F6AD, U+1F6B2, U+1F6B9-1F6BA, U+1F6BC, U+1F6C6-1F6CF, U+1F6D3-1F6D7, U+1F6E0-1F6EA, U+1F6F0-1F6F3, U+1F6F7-1F6FC, U+1F700-1F7FF, U+1F800-1F80B, U+1F810-1F847, U+1F850-1F859, U+1F860-1F887, U+1F890-1F8AD, U+1F8B0-1F8BB, U+1F8C0-1F8C1, U+1F900-1F90B, U+1F93B, U+1F946, U+1F984, U+1F996, U+1F9E9, U+1FA00-1FA6F, U+1FA70-1FA7C, U+1FA80-1FA89, U+1FA8F-1FAC6, U+1FACE-1FADC, U+1FADF-1FAE9, U+1FAF0-1FAF8, U+1FB00-1FBFF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/1c497c5f-92ee-4073-b635-5bc6764cdd73.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/3f6197d5-6353-41ad-91fc-92503e68a9cf.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/5f95697e-1621-4956-b18f-05a5bde87456.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+
+:root {
+  --color-bg: #f3f2f2;
+  --color-surface: #eae9e9;
+  --color-text: #201f1d;
+  --color-accent: #b68235;
+  --color-accent-2: #ac803e;
+  --color-divider: color-mix(in srgb, #201f1d 16%, transparent);
+
+  /* Tonal ramps — generated in OKLCH on one shared lightness scale, so the
+     same step of any role matches the others in visual value. */
+  --color-neutral-100: #f8f4f4;
+  --color-neutral-200: #eae7e7;
+  --color-neutral-300: #d7d3d3;
+  --color-neutral-400: #bab6b6;
+  --color-neutral-500: #9b9797;
+  --color-neutral-600: #7d7979;
+  --color-neutral-700: #605d5d;
+  --color-neutral-800: #444141;
+  --color-neutral-900: #2d2b2b;
+
+  --color-accent-100: #fff3e4;
+  --color-accent-200: #ffe3bf;
+  --color-accent-300: #facb8d;
+  --color-accent-400: #e1ad66;
+  --color-accent-500: #c28d41;
+  --color-accent-600: #a06f24;
+  --color-accent-700: #7d5411;
+  --color-accent-800: #5a3b0a;
+  --color-accent-900: #3a270d;
+
+  --color-accent-2-100: #fff3e4;
+  --color-accent-2-200: #ffe3be;
+  --color-accent-2-300: #f5cd96;
+  --color-accent-2-400: #dbaf70;
+  --color-accent-2-500: #bc8f4e;
+  --color-accent-2-600: #9b7232;
+  --color-accent-2-700: #79561f;
+  --color-accent-2-800: #573d14;
+  --color-accent-2-900: #382810;
+
+  --font-heading: "Cormorant Garamond", system-ui, sans-serif;
+  --font-heading-weight: 600; /* review round 3: bold retired — semibold is the
+     interface headings' ceiling (they need the weight at small sizes); display
+     text goes lighter still, to the normal cut (see the deck) */
+  --font-body: "Lora", system-ui, sans-serif;
+
+  --space-1: 4.6px;
+  --space-2: 9.2px;
+  --space-3: 13.8px;
+  --space-4: 18.4px;
+  --space-6: 27.6px;
+  --space-8: 36.8px;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 7px;
+
+  /* Elevation — derived from the ground: soft ink-tinted shadows on a
+     light theme, a hairline edge + ambient darkness on a dark one. */
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #2d2b2b 14%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+}
+h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: var(--font-heading-weight); }
+
+.plate{filter:sepia(0.22) saturate(0.82) contrast(1.05);box-sizing:border-box;
+  border:6px solid var(--color-surface);outline:1px solid var(--color-divider)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Components — built with the tokens above. Plain CSS
+   on plain HTML: no JavaScript, no build step. Each class is documented in
+   readme.md and demonstrated in foundations/ and components/.
+   ══════════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-size: 15px; line-height: 1.55; font-weight: 400; }
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  line-height: 1.12; letter-spacing: -0.015em; margin: 0 0 var(--space-2);
+}
+h1 { font-size: 42px; }
+h2 { font-size: 32px; }
+h3 { font-size: 25px; }
+h4 { font-size: 20px; }
+h5 { font-size: 16px; }
+h6 { font-size: 13px; }
+h6 { letter-spacing: 0.08em; text-transform: uppercase; }
+p { margin: 0 0 var(--space-3); }
+a { color: var(--color-accent); text-underline-offset: 3px; }
+img { display: block; max-width: 100%; }
+figure { margin: 0; }
+figcaption {
+  font-size: 11px; margin-top: var(--space-1);
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+.text-muted { color: color-mix(in srgb, var(--color-text) 55%, transparent); }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
+
+/* — rules — */
+.hr {
+  height: 1px; border: 0; margin: var(--space-4) 0;
+  background: var(--color-divider);
+}
+
+/* — buttons — */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; text-decoration: none;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 14px; line-height: 1.2; color: var(--color-text); /* matches the .input's 14px —
+     the pair sits side by side in sign-up rows */
+  background: transparent; border: 1px solid transparent;
+  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  border-radius: var(--radius-md);
+}
+.btn svg { display: block; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { color: var(--color-accent); border-color: var(--color-accent); }
+.btn-primary:hover { background: color-mix(in srgb, var(--color-accent) 12%, transparent); }
+.btn-primary:active { background: color-mix(in srgb, var(--color-accent) 22%, transparent); }
+.btn-secondary { border-color: var(--color-divider); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
+.btn-ghost { color: var(--color-accent); padding-inline: var(--space-1); }
+.btn-ghost:hover { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+.btn-ghost:active { background: color-mix(in srgb, var(--color-accent) 18%, transparent); }
+.btn-icon { width: 36px; height: 36px; padding: 0; }
+.btn-block { width: 100%; margin-top: var(--space-2); }
+
+/* — forms — */
+.field > label {
+  display: block; font-size: 12px; margin-bottom: 5px;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+.input {
+  width: 100%; min-height: 36px; padding: 6px 10px; font: inherit;
+  font-size: 14px; color: var(--color-text); caret-color: var(--color-accent);
+  background: transparent;
+  border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+}
+.input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+.input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
+textarea.input { min-height: 90px; resize: vertical; }
+.radio { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+.radio input, .seg-opt input {
+  position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;
+}
+.radio .dot {
+  width: 16px; height: 16px; flex: none; border-radius: 50%;
+  border: 1.5px solid var(--color-divider);
+}
+.radio:hover .dot { border-color: var(--color-accent); }
+.radio input:checked + .dot {
+  border-color: var(--color-accent); background: var(--color-accent);
+  box-shadow: inset 0 0 0 4px var(--color-bg);
+}
+.radio input:focus-visible + .dot { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.seg {
+  display: inline-flex; overflow: hidden;
+  border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+}
+.seg-opt {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; font-size: 13px; cursor: pointer;
+}
+.seg-opt + .seg-opt { border-left: 1px solid var(--color-divider); }
+.seg-opt:has(input:checked) { color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-accent); }
+.seg-opt:not(:has(input:checked)):hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.seg-opt:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+
+/* — cards — */
+.card {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding: var(--space-3); border-radius: var(--radius-md); background: transparent; border: 1px solid var(--color-divider);
+}
+.card-kicker { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); }
+.card-title {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 17px; line-height: 1.2;
+}
+.card-body { margin: 0; font-size: 13px; opacity: 0.8; flex: 1; }
+.card-meta {
+  display: flex; align-items: center; gap: 6px; font-size: 11px;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+}
+.elev-sm { box-shadow: var(--shadow-sm); }
+.elev-md { box-shadow: var(--shadow-md); }
+.elev-lg { box-shadow: var(--shadow-lg); }
+
+/* — tags — */
+.tag {
+  display: inline-flex; align-items: center; font-size: 11px;
+  letter-spacing: 0.02em; padding: 3px 10px;
+  border-radius: calc(var(--radius-md) * 0.75);
+}
+.tag-accent { background: var(--color-accent-100); color: var(--color-accent-800); }
+.tag-accent-2 { background: var(--color-accent-2-100); color: var(--color-accent-2-800); }
+.tag-neutral { background: var(--color-neutral-100); color: var(--color-neutral-800); }
+.tag-outline { border: 1px solid var(--color-accent); color: var(--color-accent); }
+
+/* — navigation — */
+.nav {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-divider);
+}
+.nav-brand {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 18px; margin-right: auto;
+}
+.nav a { color: inherit; text-decoration: none; font-size: 14px; }
+.nav a:hover, .nav a[aria-current='page'] { color: var(--color-accent); }
+
+/* — tables — */
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th {
+  text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+  padding: var(--space-2); border-bottom: 1px solid var(--color-divider);
+}
+.table td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-divider);
+}
+.table tbody tr:hover { background: color-mix(in srgb, var(--color-text) 4%, transparent); }
+
+/* — dialog — */
+.dialog-backdrop {
+  position: fixed; inset: 0; display: grid; place-items: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--color-neutral-900) 50%, transparent);
+}
+.dialog {
+  width: min(440px, 100%); display: flex; flex-direction: column; gap: var(--space-3);
+  padding: var(--space-4); border-radius: var(--radius-lg);
+  background: var(--color-surface); box-shadow: var(--shadow-lg); border: 1px solid var(--color-divider);
+}
+.dialog-title {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 20px;
+}
+.dialog-body { font-size: 14px; opacity: 0.85; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }
+
+</style>
+  <style>
+    body{margin:0;background:#e5e3e0;}
+    a{color:var(--color-accent-700);text-decoration:none;}
+    a:hover{color:var(--color-accent-800);}
+    @keyframes shakeX{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  </style>
+</helmet>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#e5e3e0;padding:36px;box-sizing:border-box;font-family:var(--font-body);">
+<x-import component-from-global-scope="IOSDevice" from="components/b1636346-074b-4709-8003-dce91507c6b2.jsx#/ios-frame.jsx" hint-size="402,874">
+  <div style="height:100%;width:100%;position:relative;display:flex;flex-direction:column;background:var(--color-bg);overflow:hidden;">
+    <sc-if value="{{ needsRole }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:58px 24px 0;height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;">
+      <div style="font-size:44px;line-height:1;font-family:Georgia,serif;color:var(--color-accent);">辞</div>
+      <h1 style="font-size:26px;margin:0;">វចនានុក្រម</h1>
+      <div style="font-size:12px;opacity:0.55;margin-bottom:4px;">សៀវភៅជំនាញឡានដឹកទំនិញ</div>
+
+      <sc-if value="{{ isAuthLoading }}">
+        <div style="opacity:0.6;font-size:13px;padding:20px 0;">កំពុងពិនិត្យគណនី…</div>
+      </sc-if>
+
+      <sc-if value="{{ isLoginScreen }}">
+      <div style="width:100%;display:flex;flex-direction:column;gap:12px;">
+        <div style="font-size:13px;opacity:0.6;margin-bottom:2px;">សូមចូលគណនី</div>
+        <input class="input" type="email" placeholder="អ៊ីមែល" value="{{ email }}" sc-camel-on-change="{{ onEmailChange }}" style="width:100%;text-align:center;">
+        <input class="input" type="password" placeholder="ពាក្យសម្ងាត់" value="{{ password }}" sc-camel-on-change="{{ onPasswordChange }}" style="width:100%;text-align:center;">
+        <sc-if value="{{ hasAuthError }}"><div style="font-size:12px;color:#c0392b;">{{ authError }}</div></sc-if>
+        <button class="btn btn-primary btn-block" sc-camel-on-click="{{ doLogin }}">{{ loginBtnLabel }}</button>
+        <sc-if value="{{ isDemoMode }}">
+          <div style="font-size:11px;opacity:0.5;line-height:1.6;margin-top:6px;border-top:1px solid var(--color-divider);padding-top:10px;">
+            <b>Demo mode</b> (មិនទាន់ភ្ជាប់ Supabase)<br>
+            admin@demo · teacher@demo · student@demo<br>
+            ពាក្យសម្ងាត់ទាំងអស់៖ <b>demo</b>
+          </div>
+        </sc-if>
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ hasRole }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;overflow-y:auto;overflow-x:hidden;padding-top:58px;padding-bottom:88px;box-sizing:border-box;">
+      <div style="zoom:{{ fontScale }};">
+
+        <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="padding:18px 20px 8px;">
+            <h1 style="font-size:26px;margin:0 0 2px;">វចនានុក្រម</h1>
+            <div style="font-size:12px;opacity:0.55;margin-bottom:2px;">សៀវភៅជំនាញឡានដឹកទំនិញ</div>
+            
+            <div class="seg" style="margin-bottom:12px;">
+              <label class="seg-opt"><input type="radio" name="smode" checked="{{ isSearchGeneral }}" sc-camel-on-change="{{ setSearchGeneral }}"><span>ស្វែងរកទូទៅ</span></label>
+              <label class="seg-opt"><input type="radio" name="smode" checked="{{ isSearchByPage }}" sc-camel-on-change="{{ setSearchByPage }}"><span>តាមទំព័រ</span></label>
+            </div>
+            <sc-if value="{{ isSearchGeneral }}">
+            <input class="input" type="text" placeholder="ស្វែងរកពាក្យ ឬ 漢字…" value="{{ search }}" sc-camel-on-change="{{ onSearchChange }}" style="margin-bottom:12px;">
+            <div class="seg" style="margin-bottom:6px;">
+              <label class="seg-opt"><input type="radio" name="cat" checked="{{ isCatAll }}" sc-camel-on-change="{{ onCatAll }}"><span>ទាំងអស់</span></label>
+              <label class="seg-opt"><input type="radio" name="cat" checked="{{ isCatVocab }}" sc-camel-on-change="{{ onCatVocab }}"><span>វាក្យសព្ទ</span></label>
+              <label class="seg-opt"><input type="radio" name="cat" checked="{{ isCatGrammar }}" sc-camel-on-change="{{ onCatGrammar }}"><span>វេយ្យាករណ៍</span></label>
+            </div>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ isSearchGeneral }}">
+          <div style="padding:8px 20px 20px;display:flex;flex-direction:column;gap:8px;">
+            <sc-for list="{{ filteredWords }}" as="w" hint-placeholder-count="8">
+              <div class="card" style="cursor:pointer;flex-direction:row;align-items:center;justify-content:space-between;" sc-camel-on-click="{{ w.onOpen }}">
+                <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                  <button sc-camel-on-click="{{ w.onToggleViewed }}" aria-label="viewed" style="width:16px;height:16px;flex:none;border-radius:50%;padding:0;border:1.5px solid var(--color-neutral-400);cursor:pointer;background:{{ w.viewedBg }};"></button>
+                  <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                      <span style="font-family:var(--font-heading);font-weight:600;font-size:19px;">{{ w.jp }}</span>
+                      <span style="font-size:12px;opacity:0.55;">{{ w.kana }}</span>
+                    </div>
+                    <div style="font-size:13px;opacity:0.8;">{{ w.km }}</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;flex:none;">
+                  
+                  <sc-if value="{{ w.isFav }}">
+                    <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="var(--color-accent-700)"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ noResults }}"><div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">រកមិនឃើញពាក្យទេ</div></sc-if>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ isSearchByPage }}">
+          <div style="padding:0 20px 20px;">
+            
+            <div style="display:flex;gap:8px;margin-bottom:16px;">
+              <input class="input" type="number" min="1" placeholder="លេខទំព័រ" value="{{ pageInput }}" sc-camel-on-change="{{ onPageInputChange }}" style="flex:1;">
+              <button class="btn btn-primary" sc-camel-on-click="{{ goToPage }}">ស្វែងរក</button>
+            </div>
+            <sc-if value="{{ noPageFilter }}"><div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">សូមជ្រើសរើសទំព័រមួយ</div></sc-if>
+            <sc-if value="{{ pageWordsEmpty }}"><div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">មិនមានពាក្យក្នុងទំព័រនេះទេ</div></sc-if>
+            <sc-if value="{{ hasPageFilter }}">
+            <div style="background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-md);padding:20px 18px;">
+              <sc-if value="{{ hasPageVocab }}">
+                <div style="font-family:var(--font-heading);font-weight:600;font-size:14px;margin-bottom:8px;">អត្ថន័យនៃពាក្យគន្លឹះ (ពាក្យសំខាន់ៗដែលមាន 漢字)</div>
+                <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
+                  <sc-for list="{{ pageVocabList }}" as="w" hint-placeholder-count="10">
+                    <div style="display:flex;align-items:flex-start;gap:8px;">
+                      <button sc-camel-on-click="{{ w.onToggleViewed }}" aria-label="viewed" style="width:14px;height:14px;flex:none;margin-top:4px;border-radius:50%;padding:0;border:1.5px solid var(--color-neutral-400);cursor:pointer;background:{{ w.viewedBg }};"></button>
+                      <div style="font-size:14px;line-height:1.5;cursor:pointer;" sc-camel-on-click="{{ w.onOpen }}">{{ w.line }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ hasPageGrammar }}">
+                <div class="hr"></div>
+                <div style="font-family:var(--font-heading);font-weight:600;font-size:14px;margin:12px 0 8px;">អត្ថន័យនៃវេយ្យាករណ៍គន្លឹះ (ទម្រង់វេយ្យាករណ៍ដែលមាន 漢字)</div>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                  <sc-for list="{{ pageGrammarList }}" as="w" hint-placeholder-count="5">
+                    <div style="display:flex;align-items:flex-start;gap:8px;">
+                      <button sc-camel-on-click="{{ w.onToggleViewed }}" aria-label="viewed" style="width:14px;height:14px;flex:none;margin-top:4px;border-radius:50%;padding:0;border:1.5px solid var(--color-neutral-400);cursor:pointer;background:{{ w.viewedBg }};"></button>
+                      <div style="font-size:14px;line-height:1.5;cursor:pointer;" sc-camel-on-click="{{ w.onOpen }}">{{ w.line }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ allPageViewed }}">
+                <button class="btn btn-primary btn-block" sc-camel-on-click="{{ startPageQuiz }}">បានមើលចប់</button>
+              </sc-if>
+            </div>
+            </sc-if>
+          </div>
+          </sc-if>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isFavorites }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px 20px;">
+          <h1 style="font-size:26px;margin:0 0 14px;">ពាក្យសំណព្វ</h1>
+          <sc-if value="{{ hasFavorites }}">
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <sc-for list="{{ favoriteWordsList }}" as="w" hint-placeholder-count="4">
+                <div class="card" style="cursor:pointer;flex-direction:row;align-items:center;justify-content:space-between;" sc-camel-on-click="{{ w.onOpen }}">
+                  <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                    <button sc-camel-on-click="{{ w.onToggleViewed }}" aria-label="viewed" style="width:16px;height:16px;flex:none;border-radius:50%;padding:0;border:1.5px solid var(--color-neutral-400);cursor:pointer;background:{{ w.viewedBg }};"></button>
+                    <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                      <div style="display:flex;align-items:baseline;gap:8px;">
+                        <span style="font-family:var(--font-heading);font-weight:600;font-size:19px;">{{ w.jp }}</span>
+                        <span style="font-size:12px;opacity:0.55;">{{ w.kana }}</span>
+                      </div>
+                      <div style="font-size:13px;opacity:0.8;">{{ w.km }}</div>
+                    </div>
+                  </div>
+                  <span class="{{ w.tagClass }}">{{ w.pos }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noFavorites }}"><div style="text-align:center;padding:60px 0;opacity:0.5;font-size:13px;">មិនទាន់មានពាក្យសំណព្វទេ<br>ចុចផ្កាយនៅលើពាក្យណាមួយដើម្បីរក្សាទុក</div></sc-if>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isTestHub }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px 20px;">
+          <h1 style="font-size:26px;margin:0 0 4px;">តេស្តពាក្យ</h1>
+          <div style="font-size:12px;opacity:0.6;margin-bottom:14px;">ជ្រើសរើសប្រភេទពាក្យ រួចចាប់ផ្តើមតេស្ត</div>
+          <div class="seg" style="margin-bottom:16px;">
+            <label class="seg-opt"><input type="radio" name="tcat" checked="{{ isTestCatAll }}" sc-camel-on-change="{{ onTestCatAll }}"><span>ទាំងអស់</span></label>
+            <label class="seg-opt"><input type="radio" name="tcat" checked="{{ isTestCatVocab }}" sc-camel-on-change="{{ onTestCatVocab }}"><span>វាក្យសព្ទ</span></label>
+            <label class="seg-opt"><input type="radio" name="tcat" checked="{{ isTestCatGrammar }}" sc-camel-on-change="{{ onTestCatGrammar }}"><span>វេយ្យាករណ៍</span></label>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
+            <div class="card elev-sm" style="cursor:pointer;text-align:center;" sc-camel-on-click="{{ startFlashcard }}">
+              <div class="card-title" style="font-size:15px;">Flashcard</div>
+              <div class="card-body" style="font-size:11px;">មើលពាក្យ ចាំចម្លើយ</div>
+            </div>
+            <div class="card elev-sm" style="cursor:pointer;text-align:center;" sc-camel-on-click="{{ startMC }}">
+              <div class="card-title" style="font-size:15px;">ជ្រើសរើសត្រូវ</div>
+              <div class="card-body" style="font-size:11px;">ជ្រើសរើសអត្ថន័យត្រឹមត្រូវ</div>
+            </div>
+            <div class="card elev-sm" style="cursor:pointer;text-align:center;" sc-camel-on-click="{{ startMatching }}">
+              <div class="card-title" style="font-size:15px;">ផ្គូផ្គងពាក្យ</div>
+              <div class="card-body" style="font-size:11px;">ផ្គូផ្គងពាក្យនិងអត្ថន័យ</div>
+            </div>
+            <div class="card elev-sm" style="cursor:pointer;text-align:center;" sc-camel-on-click="{{ startWrite }}">
+              <div class="card-title" style="font-size:15px;">សរសេរអត្ថន័យ</div>
+              <div class="card-body" style="font-size:11px;">សរសេរនិងវាយតម្លៃខ្លួនឯង</div>
+            </div>
+          </div>
+          <div class="hr"></div>
+          <div style="margin-top:14px;">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;opacity:0.55;margin-bottom:8px;">ប្រវត្តិតេស្តថ្មីៗ</div>
+            <sc-if value="{{ hasHistory }}">
+              <sc-for list="{{ recentHistory }}" as="h" hint-placeholder-count="3">
+                <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--color-divider);font-size:13px;">
+                  <span>{{ h.label }}</span>
+                  <span style="opacity:0.65;">{{ h.scoreLabel }} · {{ h.dateLabel }}</span>
+                </div>
+              </sc-for>
+            </sc-if>
+            <sc-if value="{{ noHistory }}"><div style="font-size:12px;opacity:0.5;">មិនទាន់មានប្រវត្តិតេស្តទេ</div></sc-if>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isFlashcard }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px;min-height:660px;display:flex;flex-direction:column;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <button class="btn btn-ghost" sc-camel-on-click="{{ backToHub }}">← ត្រឡប់</button>
+            <span style="font-size:12px;opacity:0.6;">{{ testProgressLabel }}</span>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;" sc-camel-on-click="{{ flashFlip }}">
+            <div class="card elev-md" style="width:100%;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer;padding:30px 20px;">
+              <sc-if value="{{ flashShowFront }}">
+                <div style="font-size:13px;opacity:0.5;margin-bottom:8px;">{{ currentWord.kana }}</div>
+                <div style="font-family:var(--font-heading);font-weight:600;font-size:36px;">{{ currentWord.jp }}</div>
+                <div style="font-size:11px;opacity:0.4;margin-top:14px;">ចុចដើម្បីមើលចម្លើយ</div>
+              </sc-if>
+              <sc-if value="{{ flashShowBack }}">
+                <span class="{{ currentWord.tagClass }}" style="margin-bottom:10px;">{{ currentWord.pos }}</span>
+                <div style="font-size:19px;margin-top:10px;">{{ currentWord.km }}</div>
+                <div style="font-size:12px;opacity:0.65;margin-top:12px;">{{ currentWord.ex_jp }}</div>
+                <div style="font-size:11px;opacity:0.5;">{{ currentWord.ex_km }}</div>
+              </sc-if>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:16px;">
+            <button class="btn btn-secondary btn-block" style="margin-top:0;" sc-camel-on-click="{{ flashMarkUnknown }}">មិនទាន់ចាំ</button>
+            <button class="btn btn-primary btn-block" style="margin-top:0;" sc-camel-on-click="{{ flashMarkKnown }}">ចាំបានហើយ</button>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isMC }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px;min-height:660px;display:flex;flex-direction:column;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <button class="btn btn-ghost" sc-camel-on-click="{{ backToHub }}">← ត្រឡប់</button>
+            <span style="font-size:12px;opacity:0.6;">{{ testProgressLabel }}</span>
+          </div>
+          <div style="text-align:center;margin:16px 0 22px;">
+            <div style="font-size:13px;opacity:0.5;margin-bottom:6px;">{{ currentWord.kana }}</div>
+            <div style="font-family:var(--font-heading);font-weight:600;font-size:34px;">{{ currentWord.jp }}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <sc-for list="{{ mcOptions }}" as="opt" hint-placeholder-count="4">
+              <button class="btn btn-secondary" style="justify-content:flex-start;padding:14px 16px;font-family:var(--font-body);font-weight:400;font-size:14px;{{ opt.style }}" sc-camel-on-click="{{ opt.onSelect }}">{{ opt.km }}</button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ mcAnswered }}"><button class="btn btn-primary btn-block" style="margin-top:20px;" sc-camel-on-click="{{ mcNext }}">{{ mcNextLabel }}</button></sc-if>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isMatching }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px;min-height:660px;display:flex;flex-direction:column;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <button class="btn btn-ghost" sc-camel-on-click="{{ backToHub }}">← ត្រឡប់</button>
+            <span style="font-size:12px;opacity:0.6;">{{ matchProgressLabel }}</span>
+          </div>
+          <div style="font-size:11px;opacity:0.5;text-align:center;margin-bottom:10px;">ចុចពាក្យ រួចចុចអត្ថន័យដែលត្រូវគ្នា</div>
+          <div style="display:flex;gap:10px;">
+            <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+              <sc-for list="{{ matchLeftTiles }}" as="t" hint-placeholder-count="6">
+                <button class="btn btn-secondary" style="width:100%;justify-content:center;font-size:16px;font-family:var(--font-heading);{{ t.style }}" sc-camel-on-click="{{ t.onSelect }}">{{ t.label }}</button>
+              </sc-for>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+              <sc-for list="{{ matchRightTiles }}" as="t" hint-placeholder-count="6">
+                <button class="btn btn-secondary" style="width:100%;justify-content:center;font-size:12px;{{ t.style }}" sc-camel-on-click="{{ t.onSelect }}">{{ t.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isWrite }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px;min-height:660px;display:flex;flex-direction:column;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <button class="btn btn-ghost" sc-camel-on-click="{{ backToHub }}">← ត្រឡប់</button>
+            <span style="font-size:12px;opacity:0.6;">{{ testProgressLabel }}</span>
+          </div>
+          <div style="text-align:center;margin:14px 0 20px;">
+            <div style="font-size:13px;opacity:0.5;margin-bottom:6px;">{{ currentWord.kana }}</div>
+            <div style="font-family:var(--font-heading);font-weight:600;font-size:34px;">{{ currentWord.jp }}</div>
+          </div>
+          <div class="field" style="margin-bottom:14px;">
+            <label>សរសេរអត្ថន័យជាភាសាខ្មែរ</label>
+            <textarea class="input" value="{{ writeInput }}" sc-camel-on-change="{{ onWriteInputChange }}" placeholder="វាយអត្ថន័យរបស់អ្នក…"></textarea>
+          </div>
+          <sc-if value="{{ writeNotRevealed }}"><button class="btn btn-primary btn-block" sc-camel-on-click="{{ writeReveal }}">បង្ហាញចម្លើយត្រឹមត្រូវ</button></sc-if>
+          <sc-if value="{{ writeRevealed }}">
+            <div class="card" style="margin-bottom:14px;">
+              <div class="card-kicker">ចម្លើយត្រឹមត្រូវ</div>
+              <div class="card-title" style="font-size:16px;">{{ currentWord.km }}</div>
+            </div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-secondary btn-block" style="margin-top:0;" sc-camel-on-click="{{ writeGradeWrong }}">ខ្ញុំខុស</button>
+              <button class="btn btn-primary btn-block" style="margin-top:0;" sc-camel-on-click="{{ writeGradeRight }}">ខ្ញុំត្រូវ</button>
+            </div>
+          </sc-if>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isResults }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:24px;min-height:660px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+          <div style="font-size:12px;opacity:0.55;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">លទ្ធផលតេស្ត</div>
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:52px;">{{ resultScoreLabel }}</div>
+          <div style="font-size:14px;opacity:0.7;margin:6px 0 22px;">{{ resultPercentLabel }}</div>
+          <div style="display:flex;gap:10px;width:100%;">
+            <button class="btn btn-secondary btn-block" style="margin-top:0;" sc-camel-on-click="{{ backToHub }}">ត្រឡប់</button>
+            <button class="btn btn-primary btn-block" style="margin-top:0;" sc-camel-on-click="{{ retryTest }}">ធ្វើម្តងទៀត</button>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isMonitor }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px 30px;">
+          <h1 style="font-size:26px;margin:0 0 4px;">ត្រួតពិនិត្យសិស្ស</h1>
+          <sc-if value="{{ hasSelectedStudent }}">
+            <div style="font-size:12px;opacity:0.6;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+              <span>សិស្ស៖ {{ selectedStudent }}</span>
+              <a href="#" sc-camel-on-click="{{ backToStudentList }}">ប្តូរសិស្ស</a>
+            </div>
+            <div class="card elev-sm" style="margin-bottom:16px;">
+              <div class="card-kicker">សរុប</div>
+              <div class="card-title" style="font-size:16px;">{{ monitorOverallViewed }} / {{ overallTotal }} ពាក្យ ({{ monitorOverallPct }}%)</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <sc-for list="{{ monitorPageProgress }}" as="p" hint-placeholder-count="8">
+                <div>
+                  <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+                    <span>{{ p.label }}</span>
+                    <span style="opacity:0.65;">{{ p.viewedCount }} / {{ p.total }} · {{ p.pctLabel }}</span>
+                  </div>
+                  <div style="height:6px;background:var(--color-neutral-200);border-radius:99px;overflow:hidden;">
+                    <div style="height:100%;background:var(--color-accent);width:{{ p.barWidth }};"></div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noSelectedStudent }}" hint-placeholder-val="{{ true }}">
+            <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">ជ្រើសរើសឈ្មោះសិស្សដើម្បីមើលលទ្ធផលសិក្សា</div>
+            <sc-if value="{{ hasStudents }}">
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <sc-for list="{{ studentNameItems }}" as="st" hint-placeholder-count="3">
+                  <button class="btn btn-secondary" style="justify-content:space-between;" sc-camel-on-click="{{ st.onSelect }}">{{ st.name }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ noStudents }}" hint-placeholder-val="{{ false }}">
+              <div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">មិនទាន់មានសិស្សប្រើកម្មវិធីនេះទេ</div>
+            </sc-if>
+          </sc-if>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isAdminScreen }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px 30px;">
+          <h1 style="font-size:26px;margin:0 0 4px;">គ្រប់គ្រងគណនី</h1>
+          <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">បង្កើតគណនី គ្រូ ឬ សិស្ស</div>
+
+          <div class="card elev-sm" style="margin-bottom:22px;gap:12px;">
+            <div class="field"><label>ឈ្មោះ</label><input class="input" type="text" value="{{ adminFullName }}" sc-camel-on-change="{{ onAdminFullName }}"></div>
+            <div class="field"><label>អ៊ីមែល</label><input class="input" type="email" value="{{ adminEmail }}" sc-camel-on-change="{{ onAdminEmail }}"></div>
+            <div class="field"><label>ពាក្យសម្ងាត់</label><input class="input" type="text" value="{{ adminPassword }}" sc-camel-on-change="{{ onAdminPassword }}"></div>
+            <div class="field"><label>ប្រភេទគណនី</label>
+              <div class="seg">
+                <label class="seg-opt"><input type="radio" name="arole" checked="{{ isAdminRoleStudent }}" sc-camel-on-change="{{ setAdminRoleStudent }}"><span>សិស្ស</span></label>
+                <label class="seg-opt"><input type="radio" name="arole" checked="{{ isAdminRoleTeacher }}" sc-camel-on-change="{{ setAdminRoleTeacher }}"><span>គ្រូ</span></label>
+              </div>
+            </div>
+            <sc-if value="{{ isAdminRoleStudent }}">
+            <div class="field"><label>គ្រូទទួលបន្ទុក</label>
+              <sc-if value="{{ hasTeacherOptions }}">
+              <select class="input" value="{{ adminTeacherId }}" sc-camel-on-change="{{ onAdminTeacher }}">
+                <option value="">— ជ្រើសរើសគ្រូ —</option>
+                <sc-for list="{{ teacherOptions }}" as="t" hint-placeholder-count="2"><option value="{{ t.id }}">{{ t.name }}</option></sc-for>
+              </select>
+              </sc-if>
+              <sc-if value="{{ noTeacherOptions }}"><div style="font-size:12px;opacity:0.6;">សូមបង្កើតគណនីគ្រូជាមុនសិន</div></sc-if>
+            </div>
+            </sc-if>
+            <sc-if value="{{ hasAdminError }}"><div style="font-size:12px;color:#c0392b;">{{ adminError }}</div></sc-if>
+            <sc-if value="{{ hasAdminMsg }}"><div style="font-size:12px;color:var(--color-accent-700);">{{ adminMsg }}</div></sc-if>
+            <button class="btn btn-primary btn-block" sc-camel-on-click="{{ createAccount }}">{{ createBtnLabel }}</button>
+          </div>
+
+          <h4 style="font-size:15px;margin:0 0 8px;">គណនីទាំងអស់</h4>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <sc-for list="{{ accountsList }}" as="a" hint-placeholder-count="4">
+              <div class="card" style="flex-direction:row;justify-content:space-between;align-items:center;padding:10px 12px;">
+                <div style="min-width:0;">
+                  <div style="font-size:14px;">{{ a.name }}</div>
+                  <div style="font-size:11px;opacity:0.55;">{{ a.email }}</div>
+                </div>
+                <span class="{{ a.tagClass }}">{{ a.roleLabel }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px 30px;">
+          <h1 style="font-size:26px;margin:0 0 4px;">ការកំណត់</h1>
+          <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">{{ roleLabel }} · {{ profileName }} · <a href="#" sc-camel-on-click="{{ switchRole }}">ចេញពីគណនី</a></div>
+          <sc-if value="{{ isTeacher }}">
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-kicker">ទិន្នន័យ</div>
+            <div class="card-title" style="font-size:15px;">ទាញទិន្នន័យ</div>
+            <div class="card-body">{{ syncStatusLabel }}</div>
+            <button class="btn btn-primary btn-block" sc-camel-on-click="{{ startSync }}">{{ syncButtonLabel }}</button>
+          </div>
+          </sc-if>
+          <div class="field" style="margin-bottom:18px;">
+            <label>ទំហំអក្សរ</label>
+            <input type="range" min="0.85" max="1.3" step="0.05" value="{{ fontScale }}" sc-camel-on-change="{{ onFontScaleChange }}" style="width:100%;">
+          </div>
+          <label class="radio" style="margin-bottom:18px;">
+            <input type="checkbox" checked="{{ autoAudio }}" sc-camel-on-change="{{ onAutoAudioChange }}">
+            <span class="dot" style="border-radius:4px;"></span>
+            <span>លេងសម្លេងស្វ័យប្រវត្តិនៅពេលបើកមើលពាក្យ</span>
+          </label>
+          <div class="hr"></div>
+          <div style="font-size:12px;opacity:0.55;margin-top:14px;">កម្មវិធីនេះជាគំរូ (prototype) សម្រាប់សិស្សប្រើសិក្សា និងតេស្តពាក្យវាក្យសព្ទ និងវេយ្យាករណ៍ភាសាជប៉ុន។</div>
+        </div>
+        </sc-if>
+
+      </div>
+    </div>
+
+    <sc-if value="{{ showTabBar }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;left:0;right:0;bottom:0;display:flex;background:var(--color-surface);border-top:1px solid var(--color-divider);padding:8px 6px 22px;z-index:20;">
+      <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ homeColor }};" sc-camel-on-click="{{ goHome }}">
+        <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ homeColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <span style="font-size:10px;">ស្វែងរក</span>
+      </button>
+      <sc-if value="{{ isStudent }}">
+      <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ favColor }};" sc-camel-on-click="{{ goFavorites }}">
+        <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ favColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+        <span style="font-size:10px;">សំណព្វ</span>
+      </button>
+      <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ testColor }};" sc-camel-on-click="{{ goTest }}">
+        <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ testColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path></svg>
+        <span style="font-size:10px;">តេស្ត</span>
+      </button>
+      </sc-if>
+      <sc-if value="{{ isTeacher }}">
+      <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ monitorColor }};" sc-camel-on-click="{{ goMonitor }}">
+        <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ monitorColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M18 9l-5 5-3-3-4 4"></path></svg>
+        <span style="font-size:10px;">ត្រួតពិនិត្យ</span>
+      </button>
+      </sc-if>
+      <sc-if value="{{ isAdmin }}">
+      <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ adminColor }};" sc-camel-on-click="{{ goAdmin }}">
+        <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ adminColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg>
+        <span style="font-size:10px;">គណនី</span>
+      </button>
+      </sc-if>
+      <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ settingsColor }};" sc-camel-on-click="{{ goSettings }}">
+        <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ settingsColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
+        <span style="font-size:10px;">កំណត់</span>
+      </button>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isDetailOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:color-mix(in srgb, var(--color-neutral-900) 45%, transparent);z-index:40;display:flex;align-items:flex-end;" sc-camel-on-click="{{ closeDetail }}">
+      <div style="background:var(--color-bg);width:100%;border-radius:20px 20px 0 0;padding:22px 22px 28px;box-shadow:var(--shadow-lg);max-height:82%;overflow-y:auto;box-sizing:border-box;" sc-camel-on-click="{{ stopProp }}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div>
+            <div style="font-size:13px;opacity:0.55;margin-bottom:2px;">{{ detailWord.kana }}</div>
+            <div style="font-family:var(--font-heading);font-weight:600;font-size:34px;line-height:1.05;">{{ detailWord.jp }}</div>
+          </div>
+          <button class="btn btn-icon btn-ghost" sc-camel-on-click="{{ toggleDetailFavorite }}" aria-label="favorite">
+            <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="{{ detailWord.favFill }}" stroke="var(--color-accent-700)" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+          </button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;">
+          <span class="{{ detailWord.tagClass }}">{{ detailWord.pos }}</span>
+          <button class="btn btn-secondary" sc-camel-on-click="{{ playDetailAudio }}">
+            <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M15.54 8.46a5 5 0 010 7.07"></path></svg>
+            ស្តាប់សម្លេង
+          </button>
+        </div>
+        <div class="hr"></div>
+        <div style="margin:16px 0;">
+          <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.55;margin-bottom:4px;">និយមន័យ</div>
+          <div style="font-size:17px;">{{ detailWord.km }}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.55;margin-bottom:4px;">ឧទាហរណ៍</div>
+          <div style="font-size:15px;margin-bottom:3px;">{{ detailWord.ex_jp }}</div>
+          <div style="font-size:13px;opacity:0.7;">{{ detailWord.ex_km }}</div>
+        </div>
+        <button class="btn btn-secondary btn-block" sc-camel-on-click="{{ closeDetail }}">បិទ</button>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isPageQuizOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:var(--color-bg);z-index:45;display:flex;flex-direction:column;padding:20px;box-sizing:border-box;">
+      <sc-if value="{{ isPageQuizActive }}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <span style="font-size:12px;opacity:0.6;">{{ pageQuizProgressLabel }}</span>
+          <button class="btn btn-ghost" sc-camel-on-click="{{ closePageQuiz }}">បិទ</button>
+        </div>
+        <div class="card elev-md" style="padding:24px 18px;text-align:center;margin-bottom:20px;">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;opacity:0.55;margin-bottom:10px;">សូមជ្រើសរើសពាក្យជប៉ុនត្រឹមត្រូវ</div>
+          <div style="font-size:19px;">{{ pageQuizQuestionKm }}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <sc-for list="{{ pageQuizOptions }}" as="opt" hint-placeholder-count="2">
+            <button class="btn btn-secondary" style="justify-content:center;padding:16px;font-family:var(--font-heading);font-size:18px;font-weight:600;{{ opt.style }}" sc-camel-on-click="{{ opt.onSelect }}">{{ opt.jp }}</button>
+          </sc-for>
+        </div>
+        <sc-if value="{{ pageQuizAnswered }}"><button class="btn btn-primary btn-block" style="margin-top:20px;" sc-camel-on-click="{{ nextPageQuizQuestion }}">{{ pageQuizNextLabel }}</button></sc-if>
+      </sc-if>
+      <sc-if value="{{ isPageQuizDone }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;">
+          <div style="font-size:12px;opacity:0.55;text-transform:uppercase;letter-spacing:0.08em;">លទ្ធផលតេស្ត</div>
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:44px;">{{ pageQuizScoreLabel }}</div>
+          <button class="btn btn-primary btn-block" style="margin-top:14px;" sc-camel-on-click="{{ closePageQuiz }}">បិទ</button>
+        </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:20px;right:20px;bottom:96px;z-index:50;background:var(--color-neutral-900);color:#fff;padding:10px 16px;border-radius:var(--radius-md);font-size:13px;text-align:center;box-shadow:var(--shadow-md);">{{ toast }}</div>
+    </sc-if>
+    </sc-if>
+
+  </div>
+</x-import>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script="">
+
+const POS_CLASS = { 'ន.':'tag tag-neutral', 'កិ.':'tag tag-accent', 'គុណ.':'tag tag-accent-2' };
+function tagClassFor(pos){ return POS_CLASS[pos] || 'tag tag-outline'; }
+
+const RAW_WORDS = [
+['w1','人々','ひとびと','ន.','ប្រជាជន / មនុស្សម្នា','世界中の人々が集まる。','មនុស្សគ្រប់គ្នានៅលើពិភពលោកជួបជុំគ្នា។','vocab'],
+['w2','生活','せいかつ','ន.','ជីវភាពរស់នៅ / ការរស់នៅ','日本での生活に慣れる。','ធ្វើឲ្យស៊ាំនឹងជីវភាពនៅជប៉ុន។','vocab'],
+['w3','仕事','しごと','ន.','ការងារ','仕事を探している。','កំពុងស្វែងរកការងារ។','vocab'],
+['w4','支える','ささえる','កិ.','គាំទ្រ / ជ្រោមជ្រែង','家族を支える。','គាំទ្រគ្រួសារ។','vocab'],
+['w5','役割','やくわり','ន.','តួនាទី','大切な役割を果たす。','បំពេញតួនាទីសំខាន់។','vocab'],
+['w6','今','いま','ន.','ឥឡូវនេះ','今、忙しいです。','ឥឡូវនេះខ្ញុំកំពុងរវល់។','vocab'],
+['w7','日本','にほん','ន.','ប្រទេសជប៉ុន','日本で働きたい。','ចង់ធ្វើការនៅប្រទេសជប៉ុន។','vocab'],
+['w8','運転者','うんてんしゃ','ន.','អ្នកបើកបរ','運転者は注意深い。','អ្នកបើកបរប្រុងប្រយ័ត្ន។','vocab'],
+['w9','勉強','べんきょう','ន.','ការសិក្សា / ការរៀនសូត្រ','毎日日本語を勉強する。','សិក្សាភាសាជប៉ុនរាល់ថ្ងៃ។','vocab'],
+['w10','始める','はじめる','កិ.','ចាប់ផ្តើម','新しい仕事を始める。','ចាប់ផ្តើមការងារថ្មី។','vocab'],
+['w11','思う','おもう','កិ.','គិត / យល់ឃើញ','将来のことを思う。','គិតអំពីអនាគត។','vocab'],
+['w12','活躍','かつやく','ន.','ការបំពេញការងារយ៉ាងសកម្ម','世界で活躍する。','បំពេញការងារយ៉ាងសកម្មនៅលើពិភពលោក។','vocab'],
+['w13','身近','みぢか','គុណ.','ដែលនៅជិតខ្លួន / ដែលទាក់ទងនឹងជីវិតប្រចាំថ្ងៃ','身近な問題を考える。','គិតអំពីបញ្ហាដែលនៅជិតខ្លួន។','vocab'],
+['w14','食料品','しょくりょうひん','ន.','គ្រឿងឧបភោគបរិភោគ / អាហារ','食料品を買いに行く。','ទៅទិញអាហារ។','vocab'],
+['w15','衣料','いりょう','ន.','សម្លៀកបំពាក់','衣料を輸入する。','នាំចូលសម្លៀកបំពាក់។','vocab'],
+['w16','雑貨','ざっか','ន.','ទំនិញទូទៅ / របស់ប្រើប្រាស់ប្រចាំថ្ងៃផ្សេងៗ','雑貨を売る店。','ហាងលក់ទំនិញទូទៅ។','vocab'],
+['w17','工業製品','こうぎょうせいひん','ន.','ផលិតផលឧស្សាហកម្ម','工業製品を輸出する。','នាំចេញផលិតផលឧស្សាហកម្ម។','vocab'],
+['w18','部品','ぶひん','ន.','គ្រឿងបន្លាស់ / គ្រឿងបង្គុំ','車の部品を作る。','ផលិតគ្រឿងបន្លាស់រថយន្ត។','vocab'],
+['w19','建設資材','けんせつしざい','ន.','សម្ភារៈសំណង់','建設資材を運ぶ。','ដឹកជញ្ជូនសម្ភារៈសំណង់។','vocab'],
+['w20','石油','せきゆ','ន.','ប្រេងកាត / ប្រេងឥន្ធនៈ','石油を輸入する国。','ប្រទេសនាំចូលប្រេងកាត។','vocab'],
+['w21','液体','えきたい','ន.','វត្ថុរាវ','液体を容器に入れる。','ដាក់វត្ថុរាវទៅក្នុងធុង។','vocab'],
+['w22','気体','きたい','ន.','ឧស្ម័ន / ហ្គាស','気体は目に見えない。','ឧស្ម័នមើលមិនឃើញ។','vocab'],
+['w23','運ぶ','はこぶ','កិ.','ដឹកជញ្ជូន / ជញ្ជូន','荷物を運ぶ。','ដឹកជញ្ជូនអីវ៉ាន់។','vocab'],
+['w24','巨大','きょだい','គុណ.','ដែលធំសម្បើម / ធំធេង','巨大な建物。','អាគារដ៏ធំសម្បើម។','vocab'],
+['w25','橋','はし','ន.','ស្ពាន','大きな橋を渡る。','ឆ្លងកាត់ស្ពានធំមួយ។','vocab'],
+['w26','設備','せつび','ន.','បរិក្ខារ / ប្រព័ន្ធម៉ាស៊ីន','新しい設備を導入する。','ដាក់ឲ្យប្រើប្រាស់បរិក្ខារថ្មី។','vocab'],
+['w27','特殊','とくしゅ','គុណ.','ដែលពិសេសខុសពីធម្មតា','特殊な技術が必要だ。','ត្រូវការបច្ចេកទេសពិសេស។','vocab'],
+['w28','物','もの','ន.','របស់របរ / វត្ថុ','これは大切な物です。','នេះជារបស់សំខាន់។','vocab'],
+['w29','宅配便','たくはいびん','ន.','សេវាកម្មដឹកជញ្ជូនទំនិញដល់ផ្ទះ','宅配便で送る。','ផ្ញើតាមសេវាដឹកជញ្ជូនដល់ផ្ទះ។','vocab'],
+['w30','荷物','にもつ','ន.','អីវ៉ាន់ / ភស្តុភារ','荷物を空港に運ぶ。','ដឹកជញ្ជូនអីវ៉ាន់ទៅព្រលានយន្តហោះ។','vocab'],
+['w31','鉄道','てつどう','ន.','ផ្លូវរថភ្លើង / ប្រព័ន្ធរថភ្លើង','鉄道で移動する。','ធ្វើដំណើរដោយផ្លូវរថភ្លើង។','vocab'],
+['w32','船','ふね','ន.','កប៉ាល់ / ទូក','船で荷物を運ぶ。','ដឹកជញ្ជូនអីវ៉ាន់ដោយកប៉ាល់។','vocab'],
+['w33','飛行機','ひこうき','ន.','យន្តហោះ','飛行機に乗る。','ជិះយន្តហោះ។','vocab'],
+['w34','輸送','ゆそう','ន.','ការដឹកជញ្ជូន','輸送の方法を選ぶ。','ជ្រើសរើសវិធីដឹកជញ្ជូន។','vocab'],
+['w35','行う','おこなう','កិ.','ធ្វើ / អនុវត្ត','会議を行う。','រៀបចំកិច្ចប្រជុំ។','vocab'],
+['w36','駅','えき','ន.','ស្ថានីយរថភ្លើង','駅で待ち合わせる。','ណាត់ជួបគ្នានៅស្ថានីយ។','vocab'],
+['w37','港','みなと','ន.','កំពង់ផែ','港に船が着く。','កប៉ាល់មកដល់កំពង់ផែ។','vocab'],
+['w38','空港','くうこう','ន.','ព្រលានយន្តហោះ','空港まで送る。','ជូនទៅដល់ព្រលានយន្តហោះ។','vocab'],
+['w39','国内貨物','こくないかもつ','ន.','ទំនិញដឹកជញ្ជូនក្នុងស្រុក','国内貨物の量が増える。','បរិមាណទំនិញដឹកជញ្ជូនក្នុងស្រុកកើនឡើង។','vocab'],
+['w40','割以上','わりいじょう','ន.','ចាប់ពី...ភាគដប់ឡើងទៅ','九割以上が賛成した。','ជាង៩០ភាគរយបានយល់ព្រម។','vocab'],
+['w41','社会生活','しゃかいせいかつ','ន.','ជីវិតរស់នៅក្នុងសង្គម','社会生活に必要な知識。','ចំណេះដឹងចាំបាច់សម្រាប់ជីវិតសង្គម។','vocab'],
+['w42','欠かす','かかす','កិ.','ខកខាន / ខ្វះ','挨拶を欠かさない。','មិនខកខានធ្វើការស្វាគមន៍។','vocab'],
+['g1','〜をはじめ','',' វេយ្យាករណ៍','ចាប់ផ្តើមពី... / រាប់ចាប់តាំងពី...','野菜をはじめ、多くの食品を輸入している。','នាំចូលអាហារជាច្រើន ចាប់ផ្តើមពីបន្លែ។','grammar'],
+['g2','〜のほか','',' វេយ្យាករណ៍','ក្រៅពី... / បន្ថែមលើ...','米のほか、野菜も育てる。','ក្រៅពីអង្ករ ក៏ដាំបន្លែផងដែរ។','grammar'],
+['g3','〜の先','',' វេយ្យាករណ៍','បន្តពី... / ទៅមុខទៀតពី...','駅の先にコンビニがある。','មានហាងទំនិញនៅបន្តពីស្ថានីយរថភ្លើង។','grammar'],
+['g4','〜このように','',' វេយ្យាករណ៍','ដូចដែលបានរៀបរាប់នេះ / តាមរបៀបនេះ','このように、社会は変化している。','តាមរបៀបនេះ សង្គមកំពុងផ្លាស់ប្តូរ។','grammar'],
+['g5','〜以上','',' វេយ្យាករណ៍','ចាប់ពី...ឡើងទៅ / លើសពី…','十歳以上の子供が対象だ。','សម្រាប់កុមារអាយុចាប់ពី១០ឆ្នាំឡើងទៅ។','grammar',2],
+
+['w3_01','輸送','ゆそう','ន.','ការដឹកជញ្ជូន','輸送の方法を選ぶ。','ជ្រើសរើសវិធីដឹកជញ្ជូន។','vocab',3],
+['w3_02','止まる','とまる','កិ.','ឈប់ / ផ្អាក / គាំងជាប់','車が止まる。','រថយន្តឈប់។','vocab',3],
+['w3_03','大切','たいせつ','គុណ.','សំខាន់','大切な物です。','វត្ថុសំខាន់មួយ។','vocab',3],
+['w3_04','日本中','にほんじゅう','ន.','ទូទាំងប្រទេសជប៉ុន','日本中で売られている。','លក់ទូទាំងប្រទេសជប៉ុន។','vocab',3],
+['w3_05','商品','しょうひん','ន.','ទំនិញ / ផលិតផល','商品を運ぶ。','ដឹកជញ្ជូនទំនិញ។','vocab',3],
+['w3_06','薬','くすり','ន.','ថ្នាំសង្កូវ / ឱសថ','薬を買う。','ទិញថ្នាំ។','vocab',3],
+['w3_07','お店','おみせ','ន.','ហាង / ហាងលក់ទំនិញ','お店で働く。','ធ្វើការនៅហាង។','vocab',3],
+['w3_08','工場','こうじょう','ន.','រោងចក្រ','工場で働く。','ធ្វើការនៅរោងចក្រ។','vocab',3],
+['w3_09','病院','びょういん','ន.','មន្ទីរពេទ្យ','病院に行く。','ទៅមន្ទីរពេទ្យ។','vocab',3],
+['w3_10','東日本大震災','ひがしにほんだいしんさい','ន.','គ្រោះមហន្តរាយរញ្ជួយដីធំនៅភាគខាងកើតជប៉ុន','東日本大震災が起こった。','គ្រោះមហន្តរាយនោះបានកើតឡើង។','vocab',3],
+['w3_11','直後','ちょくご','ន.','ភ្លាមៗបន្ទាប់ពី','地震の直後、道路が混乱した。','ភ្លាមៗបន្ទាប់ពីរញ្ជួយដី ផ្លូវច្របូកច្របល់។','vocab',3],
+['w3_12','燃料不足','ねんりょうぶそく','ន.','ការកង្វះខាតប្រេងឥន្ធនៈ','燃料不足が続いた。','ការខ្វះប្រេងបានបន្ត។','vocab',3],
+['w3_13','多く','おおく','ន.','ជាច្រើន','多くの人が困った。','មនុស្សជាច្រើនជួបការលំបាក។','vocab',3],
+['w3_14','走る','はしる','កិ.','រត់ / បើកបរ','トラックが走る。','ឡានដឹកទំនិញរត់លើផ្លូវ។','vocab',3],
+['w3_15','間','あいだ','ន.','កំឡុងពេល / រយៈពេល','その間、待っていた。','រង់ចាំក្នុងកំឡុងពេលនោះ។','vocab',3],
+['w3_16','買う','かう','កិ.','ទិញ','食料品を買う。','ទិញអាហារ។','vocab',3],
+['w3_17','時々','ときどき','ន.','ជារឿយៗ / ជួនកាល','時々、買い物に行く。','ជួនកាលទៅទិញអីវ៉ាន់។','vocab',3],
+['w3_18','市民','しみん','ន.','ប្រជាពលរដ្ឋ / អ្នកក្រុង','市民が困った。','ប្រជាពលរដ្ឋជួបការលំបាក។','vocab',3],
+['w3_19','買い物','かいもの','ន.','ការទិញអីវ៉ាន់','買い物に行く。','ទៅទិញអីវ៉ាន់។','vocab',3],
+['w3_20','行く','いく','កិ.','ទៅ','お店に行く。','ទៅហាង។','vocab',3],
+['w3_21','困った','こまった','គុណ.','ដែលលំបាក / ដែលជួបបញ្ហា','困った事態が起こった。','ស្ថានការណ៍លំបាកបានកើតឡើង។','vocab',3],
+['w3_22','事態','じたい','ន.','ស្ថានការណ៍ / ហេតុការណ៍','困った事態が起こる。','ស្ថានការណ៍លំបាកកើតឡើង។','vocab',3],
+['w3_23','起こる','おこる','កិ.','កើតឡើង','事故が起こる。','គ្រោះថ្នាក់កើតឡើង។','vocab',3],
+['w3_24','同じ','おなじ','គុណ.','ដូចគ្នា','同じ物を買う。','ទិញរបស់ដូចគ្នា។','vocab',3],
+['w3_25','生産活動','せいさんかつどう','ន.','សកម្មភាពផលិតកម្ម','生産活動が止まる。','សកម្មភាពផលិតកម្មឈប់។','vocab',3],
+['w3_26','市場','いちば','ន.','ទីផ្សារ','市場で働く。','ធ្វើការនៅទីផ្សារ។','vocab',3],
+['w3_27','建設現場','けんせつげんば','ន.','ការដ្ឋានសំណង់','建設現場で働く。','ធ្វើការនៅការដ្ឋានសំណង់។','vocab',3],
+['w3_28','可能性','かのうせい','ន.','លទ្ធភាព / ភាគរយដែលអាចកើតឡើង','可能性がある。','មានលទ្ធភាព។','vocab',3],
+['w3_29','経済活動','けいざいかつどう','ន.','សកម្មភាពសេដ្ឋកិច្ច','経済活動が止まる。','សកម្មភាពសេដ្ឋកិច្ចឈប់។','vocab',3],
+['w3_30','知る','しる','កិ.','ដឹង / យល់ដឹង','事故の状況を知る。','ដឹងពីស្ថានភាពគ្រោះថ្នាក់។','vocab',3],
+['g3_1','〜中','〜じゅう','វេយ្យាករណ៍','ទូទាំង... / ពេញមួយ...','日本中で使われている。','ត្រូវបានប្រើប្រាស់ទូទាំងប្រទេសជប៉ុន។','grammar',3],
+['g3_2','〜直後','〜ちょくご','វេយ្យាករណ៍','ភ្លាមៗបន្ទាប់ពី...','地震の直後に起こった。','បានកើតឡើងភ្លាមៗបន្ទាប់ពីរញ្ជួយដី។','grammar',3],
+['g3_3','〜の間','〜のあいだ','វេយ្យាករណ៍','ក្នុងកំឡុងពេល...','その間に準備する。','ត្រៀមរៀបចំក្នុងកំឡុងពេលនោះ។','grammar',3],
+['g3_4','〜のために','〜のために','វេយ្យាករណ៍','ដើម្បី... / សម្រាប់…','安全のために注意する。','ប្រុងប្រយ័ត្នដើម្បីសុវត្ថិភាព។','grammar',3],
+
+['w4_01','運転免許','うんてんめんきょ','ន.','ប័ណ្ណបើកបរ / ច្បាប់បើកបរ','運転免許を取る。','យកប័ណ្ណបើកបរ។','vocab',4],
+['w4_02','仕組み','しくみ','ន.','ប្រព័ន្ធ / រចនាសម្ព័ន្ធ','仕組みを理解する。','យល់ពីរបៀបដំណើរការ។','vocab',4],
+['w4_03','事業用','じぎょうよう','ន.','សម្រាប់អាជីវកម្ម','事業用のトラック。','ឡានសម្រាប់អាជីវកម្ម។','vocab',4],
+['w4_04','自家用','じかよう','ន.','សម្រាប់ប្រើប្រាស់ផ្ទាល់ខ្លួន','自家用の車。','រថយន្តសម្រាប់ប្រើផ្ទាល់ខ្លួន។','vocab',4],
+['w4_05','違い','ちがい','ន.','ភាពខុសគ្នា','違いを説明する。','ពន្យល់ពីភាពខុសគ្នា។','vocab',4],
+['w4_06','大きさ','おおきさ','ន.','ទំហំ','車の大きさ。','ទំហំរថយន្ត។','vocab',4],
+['w4_07','種類','しゅるい','ន.','ប្រភេទ','車の種類が多い。','មានប្រភេទរថយន្តច្រើន។','vocab',4],
+['w4_08','自動車','じどうしゃ','ន.','រថយន្ត / ឡាន','自動車を運転する。','បើកបររថយន្ត។','vocab',4],
+['w4_09','大型','おおがた','ន.','ខ្នាតធំ / ទំហំធំ','大型のトラック。','ឡានធុនធំ។','vocab',4],
+['w4_10','中型','ちゅうがた','ន.','ខ្នាតមធ្យម','中型のトラック。','ឡានធុនមធ្យម។','vocab',4],
+['w4_11','普通','ふつう','ន.','ធម្មតា / ទូទៅ','普通の免許。','ប័ណ្ណបើកបរធម្មតា។','vocab',4],
+['w4_12','小型特殊','こがたとくしゅ','ន.','ប្រភេទពិសេសខ្នាតតូច','小型特殊自動車。','យានយន្តពិសេសខ្នាតតូច។','vocab',4],
+['w4_13','国土交通大臣','こくどこうつうだいじん','ន.','រដ្ឋមន្ត្រីក្រសួងដីធ្លីនិងដឹកជញ្ជូនជប៉ុន','国土交通大臣が許可する。','រដ្ឋមន្ត្រីជាអ្នកអនុញ្ញាត។','vocab',4],
+['w4_14','営業','えいぎょう','ន.','ការធ្វើអាជីវកម្ម','営業を始める。','ចាប់ផ្តើមធ្វើអាជីវកម្ម។','vocab',4],
+['w4_15','許可','きょか','ន.','ការអនុញ្ញាត','許可を受ける。','ទទួលការអនុញ្ញាត។','vocab',4],
+['w4_16','運送事業者','うんそうじぎょうしゃ','ន.','ក្រុមហ៊ុនដឹកជញ្ជូន','運送事業者になる。','ក្លាយជាអាជីវករដឹកជញ្ជូន។','vocab',4],
+['w4_17','お客様','おきゃくさま','ន.','អតិថិជន / ភ្ញៀវ','お客様を大切にする。','ថែរក្សាអតិថិជនឱ្យបានល្អ។','vocab',4],
+['w4_18','有償','ゆうしょう','ន.','ការមានកម្រៃ / ការបង់ប្រាក់','有償で運ぶ。','ដឹកជញ្ជូនដោយមានកម្រៃ។','vocab',4],
+['g4_1','〜ために','〜ために','វេយ្យាករណ៍','ដើម្បី... / សម្រាប់...','安全のために確認する。','ពិនិត្យដើម្បីសុវត្ថិភាព។','grammar',4],
+['g4_2','〜に応じた','〜におうじた','វេយ្យាករណ៍','ទៅតាម... / ស្របទៅតាម...','状況に応じた対応をする。','ដោះស្រាយទៅតាមស្ថានភាព។','grammar',4],
+['g4_3','〜のとおり','〜のとおり','វេយ្យាករណ៍','ដូចដែលបាន... / តាម...','説明のとおりに行う。','ធ្វើតាមការពន្យល់។','grammar',4],
+
+['w5_01','お客様','おきゃくさま','ន.','អតិថិជន / ភ្ញៀវ','','','vocab',5],
+['w5_02','荷物','にもつ','ន.','អីវ៉ាន់ / ភស្តុភារ','','','vocab',5],
+['w5_03','運ぶ','はこぶ','កិ.','ដឹកជញ្ជូន / ជញ្ជូន','','','vocab',5],
+['w5_04','事業用','じぎょうよう','ន.','សម្រាប់អាជីវកម្ម','','','vocab',5],
+['w5_05','緑地','みどりぢ','ន.','ផ្ទៃពណ៌បៃតង','','','vocab',5],
+['w5_06','白い','しろい','គុណ.','ពណ៌ស','','','vocab',5],
+['w5_07','文字','もじ','ន.','អក្សរ / តួអក្សរ','','','vocab',5],
+['w5_08','緑ナンバー','みどりナンバー','ន.','ស្លាកលេខពណ៌បៃតង','','','vocab',5],
+['w5_09','呼ぶ','よぶ','កិ.','ហៅ','','','vocab',5],
+['w5_10','自家用','じかよう','ន.','សម្រាប់ប្រើប្រាស់ផ្ទាល់ខ្លួន','','','vocab',5],
+['w5_11','会社','かいしゃ','ន.','ក្រុមហ៊ុន','','','vocab',5],
+['w5_12','お店','おみせ','ន.','ហាង','','','vocab',5],
+['w5_13','個人','こじん','ន.','បុគ្គល / ឯកជន','','','vocab',5],
+['w5_14','自分','じぶん','ន.','ខ្លួនឯង','','','vocab',5],
+['w5_15','有償','ゆうしょう','ន.','ការមានកម្រៃ / ការបង់ប្រាក់','','','vocab',5],
+['w5_16','白地','しろじ','ន.','ផ្ទៃពណ៌ស','','','vocab',5],
+['w5_17','緑','みどり','ន.','ពណ៌បៃតង','','','vocab',5],
+['w5_18','白ナンバー','しろナンバー','ន.','ស្លាកលេខពណ៌ស','','','vocab',5],
+
+['w6_01','事故','じこ','ន.','គ្រោះថ្នាក់ / ឧបទ្ទវហេតុ','','','vocab',6],
+['w6_02','社会的影響','しゃかいてきえいきょう','ន.','ឥទ្ធិពលចំពោះសង្គម','','','vocab',6],
+['w6_03','大きい','おおきい','គុណ.','ធំ','','','vocab',6],
+['w6_04','安全','あんぜん','ន.','សុវត្ថិភាព','','','vocab',6],
+['w6_05','安心','あんしん','ន.','ភាពកក់ក្តៅ / សេចក្តីសុខសាន្ត','','','vocab',6],
+['w6_06','確実','かくじつ','គុណ.','ប្រាកដប្រជា / ច្បាស់លាស់','','','vocab',6],
+['w6_07','輸送','ゆそう','ន.','ការដឹកជញ្ជូន','','','vocab',6],
+['w6_08','最優先','さいゆうせん','ន.','អាទិភាពខ្ពស់បំផុត','','','vocab',6],
+['w6_09','特に','とくに','ន.','ជាពិសេស','','','vocab',6],
+['w6_10','交通事故','こうつうじこ','ន.','គ្រោះថ្នាក់ចរាចរណ៍','','','vocab',6],
+['w6_11','命','いのち','ន.','ជីវិត / អាយុជីវិត','','','vocab',6],
+['w6_12','奪う','うばう','កិ.','ឆក់យក / ដណ្តើមយក','','','vocab',6],
+['w6_13','傷つける','きずつける','កិ.','ធ្វើឱ្យរបួស / ធ្វើឱ្យខូចខាត','','','vocab',6],
+['w6_14','経営','けいえい','ន.','ការគ្រប់គ្រងអាជីវកម្ម','','','vocab',6],
+['w6_15','与える','あたえる','កិ.','ផ្តល់ឱ្យ / បង្កឱ្យមាន','','','vocab',6],
+['w6_16','車体','しゃたい','ន.','តួឡាន / តួយានយន្ត','','','vocab',6],
+['w6_17','重い','おもい','គុណ.','ធ្ងន់','','','vocab',6],
+['w6_18','起こす','おこす','កិ.','បង្កឱ្យកើតមាន','','','vocab',6],
+['w6_19','重大事故','じゅうだいじこ','ន.','គ្រោះថ្នាក់ធ្ងន់ធ្ងរ','','','vocab',6],
+['w6_20','被害者','ひがいしゃ','ន.','ជនរងគ្រោះ','','','vocab',6],
+['w6_21','家族','かぞく','ន.','គ្រួសារ','','','vocab',6],
+['w6_22','運送業界','うんそうぎょうかい','ន.','វិស័យដឹកជញ្ជូន','','','vocab',6],
+['w6_23','社会全体','しゃかいぜんたい','ន.','សង្គមទាំងមូល','','','vocab',6],
+['w6_24','大きな損失','おおきなそんしつ','ន.','ការខាតបង់យ៉ាងធំធេង','','','vocab',6],
+['w6_25','影響を受ける','えいきょうをうける','កិ.','ទទួលរងឥទ្ធិពល','','','vocab',6],
+['w6_26','忘れる','わすれる','កិ.','ភ្លេច','','','vocab',6],
+['w6_27','一般','いっぱん','ន.','ទូទៅ / ធម្មតា','','','vocab',6],
+['w6_28','違う','ちがう','កិ.','ខុសគ្នា / មិនដូចគ្នា','','','vocab',6],
+['w6_29','職業','しょくぎょう','ន.','មុខរបរ / អាជីព','','','vocab',6],
+['w6_30','意識','いしき','ន.','មនសិការ / ការដឹងខ្លួន','','','vocab',6],
+['w6_31','絶対','ぜったい','ន.','ដាច់ខាត / ពិតប្រាកដ','','','vocab',6],
+['w6_32','強い信念','つよいしんねん','ន.','ជំនឿចិត្តយ៉ាងមុតមាំ','','','vocab',6],
+['w6_33','持つ','もつ','កិ.','មាន / កាន់កាប់','','','vocab',6],
+['g6_1','〜のために','〜のために','វេយ្យាករណ៍','ដើម្បី... / សម្រាប់...','','','grammar',6],
+['g6_2','〜なければいけません','〜なければいけません','វេយ្យាករណ៍','ត្រូវតែ...','','','grammar',6],
+['g6_3','〜だけでなく','〜だけでなく','វេយ្យាករណ៍','មិនត្រឹមតែ...ប៉ុណ្ណោះទេ','','','grammar',6],
+['g6_4','〜に比べて','〜にくらべて','វេយ្យាករណ៍','បើប្រៀបធៀបជាមួយ...','','','grammar',6],
+['g6_5','〜によって','〜によって','វេយ្យាករណ៍','ដោយសារ... / តាមរយៈ...','','','grammar',6],
+['g6_6','〜とはまったく違う','〜とはまったくちがう','វេយ្យាករណ៍','គឺខុសគ្នាស្រឡះពី...','','','grammar',6],
+
+['w7_01','追突事故','ついとつじこ','ន.','គ្រោះថ្នាក់បុកពីក្រោយ','','','vocab',7],
+['w7_02','発生状況','はっせいじょうきょう','ន.','ស្ថានភាពនៃការកើតឡើង','','','vocab',7],
+['w7_03','半分','はんぶん','ន.','ពាក់កណ្តាល','','','vocab',7],
+['w7_04','漫然運転','まんぜんうんてん','ន.','ការបើកបរដោយខ្វះការប្រុងប្រយ័ត្ន','','','vocab',7],
+['w7_05','十分','じゅうぶん','ន.','គ្រប់គ្រាន់','','','vocab',7],
+['w7_06','脇見運転','わきみうんてん','ន.','ការបើកបរដោយមិនមើលផ្លូវត្រង់','','','vocab',7],
+['w7_07','居眠り運転','いねむりうんてん','ន.','ការបើកបរងងុយដេក','','','vocab',7],
+['w7_08','過労運転','かろううんてん','ន.','ការបើកបរទាំងនឿយហត់ខ្លាំង','','','vocab',7],
+['w7_09','含まれる','ふくまれる','កិ.','ត្រូវបានរាប់បញ្ចូល','','','vocab',7],
+['w7_10','一般道路','いっぱんどうろ','ន.','ផ្លូវថ្នល់ទូទៅ','','','vocab',7],
+['w7_11','渋滞','じゅうたい','ន.','ការកកស្ទះចរាចរណ៍','','','vocab',7],
+['w7_12','遅い','おそい','គុណ.','យឺត','','','vocab',7],
+['w7_13','速度','そくど','ន.','ល្បឿន','','','vocab',7],
+['w7_14','高速道路','こうそくどうろ','ន.','ផ្លូវល្បឿនលឿន','','','vocab',7],
+['w7_15','停止','ていし','ន.','ការឈប់','','','vocab',7],
+['w7_16','速い','はやい','គុណ.','លឿន','','','vocab',7],
+['w7_17','目立つ','めだつ','កិ.','លេចធ្លោ / គួរឱ្យកត់សម្គាល់','','','vocab',7],
+['g7_1','〜のうち','〜のうち','វេយ្យាករណ៍','ក្នុងចំណោម...','','','grammar',7],
+['g7_2','〜によるもの','〜によるもの','វេយ្យាករណ៍','គឺបណ្តាលមកពី...','','','grammar',7],
+['g7_3','〜の中には','〜のなかには','វេយ្យាករណ៍','នៅក្នុងនោះក៏មាន...ដែរ','','','grammar',7],
+['g7_4','〜なども','〜なども','វេយ្យាករណ៍','...ជាដើម ក៏...ដែរ','','','grammar',7],
+['g7_5','〜（動詞て形）いる','〜ている','វេយ្យាករណ៍','កំពុងតែ...','','','grammar',7],
+
+['w8_01','交差点','こうさてん','ន.','ផ្លូវបំបែក','','','vocab',8],
+['w8_02','歩行者','ほこうしゃ','ន.','អ្នកថ្មើរជើង','','','vocab',8],
+['w8_03','自転車','じてんしゃ','ន.','កង់','','','vocab',8],
+['w8_04','死亡事故','しぼうじこ','ន.','គ្រោះថ្នាក់បណ្តាលឱ្យស្លាប់','','','vocab',8],
+['w8_05','全体','ぜんたい','ន.','ទាំងមូល / សរុប','','','vocab',8],
+['w8_06','占める','しめる','កិ.','គ្របដណ្តប់ / ចែករំលែកភាគរយ','','','vocab',8],
+['w8_07','左折時','させつじ','ន.','នៅពេលបត់ឆ្វេង','','','vocab',8],
+['w8_08','右折時','うせつじ','ន.','នៅពេលបត់ស្តាំ','','','vocab',8],
+['g8_1','〜のうち','〜のうち','វេយ្យាករណ៍','ក្នុងចំណោម...','','','grammar',8],
+['g8_2','〜での','〜での','វេយ្យាករណ៍','នៅឯ... / នៅត្រង់...','','','grammar',8],
+['g8_3','〜時','〜じ','វេយ្យាករណ៍','នៅពេល... / ក្នុងកំឡុងពេល...','','','grammar',8],
+['g8_4','〜（動詞て形）います','〜ています','វេយ្យាករណ៍','កំពុងតែ...','','','grammar',8],
+
+['w9_01','健康起因事故','けんこうきいんじこ','ន.','គ្រោះថ្នាក់ដែលមានមូលហេតុមកពីសុខភាព','','','vocab',9],
+['w9_02','防止','ぼうし','ន.','ការបង្ការ / ការទប់ស្កាត់','','','vocab',9],
+['w9_03','疾病','しっぺい','ន.','ជំងឺ','','','vocab',9],
+['w9_04','病気','びょうき','ន.','ជំងឺ','','','vocab',9],
+['w9_05','続ける','つづける','កិ.','បន្ត / ធ្វើបន្ត','','','vocab',9],
+['w9_06','長時間','ちょうじかん','ន.','រយៈពេលយូរ','','','vocab',9],
+['w9_07','条件','じょうけん','ន.','លក្ខខណ្ឌ','','','vocab',9],
+['w9_08','体調','たいちょう','ន.','ស្ថានភាពសុខភាព','','','vocab',9],
+['w9_09','悪い','わるい','គុណ.','មិនល្អ / អាក្រក់','','','vocab',9],
+['w9_10','注意力','ちゅういりょく','ន.','សមត្ថភាពប្រុងប្រយ័ត្ន','','','vocab',9],
+['w9_11','集中力','しゅうちゅうりょく','ន.','សមត្ថភាពផ្ដោតអារម្មណ៍','','','vocab',9],
+['w9_12','低下','ていか','ន.','ការធ្លាក់ចុះ / ការថយចុះ','','','vocab',9],
+['w9_13','高血圧','こうけつあつ','ន.','ជំងឺលើសឈាម','','','vocab',9],
+['w9_14','糖尿病','とうにょうびょう','ន.','ជំងឺទឹកនោមផ្អែម','','','vocab',9],
+['w9_15','肥満','ひまん','ន.','ភាពធាត់ជ្រុល','','','vocab',9],
+['w9_16','生活習慣病','せいかつしゅうかんびょう','ន.','ជំងឺដែលបណ្តាលមកពីទម្លាប់រស់នៅ','','','vocab',9],
+['w9_17','脳卒中','のうそっちゅう','ន.','ជំងឺដាច់សរសៃឈាមខួរក្បាល','','','vocab',9],
+['w9_18','心臓発作','しんぞうほっさ','ន.','ជំងឺគាំងបេះដូង','','','vocab',9],
+['w9_19','定期健康診断','ていきけんこうしんだん','ន.','ការពិនិត្យសុខភាពប្រចាំកាលកំណត់','','','vocab',9],
+['w9_20','必ず','かならず','ន.','ដាច់ខាត / ត្រូវតែ','','','vocab',9],
+['w9_21','受ける','うける','កិ.','ទទួល','','','vocab',9],
+['w9_22','日頃','ひごろ','ន.','ជាធម្មតា / ជាប្រចាំថ្ងៃ','','','vocab',9],
+['w9_23','睡眠','すいみん','ន.','ការគេង','','','vocab',9],
+['w9_24','適度','てきど','ន.','ក្នុងកម្រិតល្មម','','','vocab',9],
+['w9_25','運動','うんどう','ន.','ការហាត់ប្រាណ','','','vocab',9],
+['w9_26','体調管理','たいちょうかんり','ន.','ការថែទាំសុខភាព','','','vocab',9],
+['w9_27','行う','おこなう','កិ.','ធ្វើ / អនុវត្ត','','','vocab',9],
+['w9_28','努める','つとめる','កិ.','ខិតខំប្រឹងប្រែង','','','vocab',9],
+['g9_1','〜とは','〜とは','វេយ្យាករណ៍','... គឺជា...','','','grammar',9],
+['g9_2','〜によって','〜によって','វេយ្យាករណ៍','ដោយសារ... / តាមរយៈ...','','','grammar',9],
+['g9_3','〜にとって','〜にとって','វេយ្យាករណ៍','ចំពោះ... / សម្រាប់...','','','grammar',9],
+['g9_4','〜中','〜ちゅう','វេយ្យាករណ៍','ក្នុងកំឡុងពេលកំពុង...','','','grammar',9],
+['g9_5','〜とともに','〜とともに','វេយ្យាករណ៍','ព្រមជាមួយគ្នានោះដែរ...','','','grammar',9],
+['g9_6','〜過ぎる','〜すぎる','វេយ្យាករណ៍','...ជ្រុល / ...ហួសហេតុ','','','grammar',9],
+
+['w10_01','安全管理機器','あんぜんかんりきき','ន.','ឧបករណ៍គ្រប់គ្រងសុវត្ថិភាព','','','vocab',10],
+['w10_02','活用','かつよう','ន.','ការប្រើប្រាស់ឱ្យមានប្រសិទ្ធភាព','','','vocab',10],
+['w10_03','運行','うんこう','ន.','ការបើកបរដំណើរការ','','','vocab',10],
+['w10_04','時間','じかん','ន.','ពេលវេលា / ម៉ោង','','','vocab',10],
+['w10_05','記録','きろく','ន.','ការកត់ត្រា','','','vocab',10],
+['w10_06','装置','そうち','ន.','ឧបករណ៍ / ប្រព័ន្ធម៉ាស៊ីន','','','vocab',10],
+['w10_07','機種','きしゅ','ន.','ប្រភេទម៉ូដែល','','','vocab',10],
+['w10_08','急制動','きゅうせいどう','ន.','ការចាប់ហ្វ្រាំងបន្ទាន់','','','vocab',10],
+['w10_09','急発進','きゅうはっしん','ន.','ការចេញដំណើរភ្លាមៗ','','','vocab',10],
+['w10_10','燃料消費量','ねんりょうしょうひりょう','ន.','បរិមាណនៃការប្រើប្រាស់ប្រេងឥន្ធនៈ','','','vocab',10],
+['w10_11','走行','そうこう','ន.','ការបើកបរ','','','vocab',10],
+['w10_12','詳しく','くわしく','ន.','យ៉ាងលម្អិត','','','vocab',10],
+['w10_13','分析','ぶんせき','ន.','ការវិភាគ','','','vocab',10],
+['w10_14','安全運転','あんぜんうんてん','ន.','ការបើកបរដោយសុវត្ថិភាព','','','vocab',10],
+['w10_15','指導','しどう','ន.','ការណែនាំ / ការបង្រៀន','','','vocab',10],
+['w10_16','容易','ようい','ន.','ងាយស្រួល','','','vocab',10],
+['w10_17','映像','えいぞう','ន.','វីដេអូ / រូបភាព','','','vocab',10],
+['w10_18','急ブレーキ','きゅうブレーキ','ន.','ការជាន់ហ្វ្រាំងបន្ទាន់','','','vocab',10],
+['w10_19','衝突','しょうとつ','ន.','ការបុកគ្នា','','','vocab',10],
+['w10_20','衝撃','しょうげき','ន.','កម្លាំងបុកទង្គិច','','','vocab',10],
+['w10_21','前後','ぜんご','ន.','មុននិងក្រោយ','','','vocab',10],
+['w10_22','可能','かのう','ន.','ដែលអាចទៅរួច','','','vocab',10],
+['g10_1','〜のために','〜のために','វេយ្យាករណ៍','ដើម្បី... / សម្រាប់...','','','grammar',10],
+['g10_2','〜のうち','〜のうち','វេយ្យាករណ៍','ក្នុងចំណោម...','','','grammar',10],
+['g10_3','〜によっては','〜によっては','វេយ្យាករណ៍','ទៅតាម... / អាស្រ័យលើ...','','','grammar',10],
+['g10_4','〜によって','〜によって','វេយ្យាករណ៍','ដោយសារ... / តាមរយៈ...','','','grammar',10],
+['g10_5','〜中','〜ちゅう','វេយ្យាករណ៍','ក្នុងកំឡុងពេលកំពុង...','','','grammar',10],
+['g10_6','〜ば','〜ば','វេយ្យាករណ៍','បើ... / ឱ្យតែ...','','','grammar',10],
+
+['w11_01','心構え','こころがまえ','ន.','ការរៀបចំចិត្តគំនិត','','','vocab',11],
+['w11_02','社内','しゃない','ន.','ក្នុងក្រុមហ៊ុន','','','vocab',11],
+['w11_03','良い','よい','គុណ.','ល្អ','','','vocab',11],
+['w11_04','人間関係','にんげんかんけい','ន.','ទំនាក់ទំនងរវាងមនុស្ស','','','vocab',11],
+['w11_05','笑顔','えがお','ន.','ស្នាមញញឹម','','','vocab',11],
+['w11_06','明るい声','あかるいこえ','ន.','សំឡេងស្រស់ស្រាយ','','','vocab',11],
+['w11_07','相手','あいて','ន.','ដៃគូ / ម្ខាងទៀត','','','vocab',11],
+['w11_08','見る','みる','កិ.','មើល','','','vocab',11],
+['w11_09','社外','しゃがい','ន.','ក្រៅក្រុមហ៊ុន','','','vocab',11],
+['w11_10','望む','のぞむ','កិ.','ប្រាថ្នា / ចង់បាន','','','vocab',11],
+['w11_11','丁寧','ていねい','គុណ.','ដែលហ្មត់ចត់ / ទន់ភ្លន់គួរសម','','','vocab',11],
+['w11_12','扱う','あつかう','កិ.','កាន់កាប់ / ចាត់ចែង','','','vocab',11],
+['w11_13','守る','まもる','កិ.','រក្សា / គោរព','','','vocab',11],
+['w11_14','服装','ふくそう','ន.','សម្លៀកបំពាក់','','','vocab',11],
+['w11_15','身なり','みなり','ន.','ការរៀបចំខ្លួនប្រាណ','','','vocab',11],
+['w11_16','言葉づかい','ことばづかい','ន.','ការប្រើប្រាស់ពាក្យសម្តី','','','vocab',11],
+['w11_17','態度','たいど','ន.','ឥរិយាបថ / ចរិត','','','vocab',11],
+['w11_18','代表','だいひょう','ន.','តំណាង','','','vocab',11],
+['w11_19','顔','かお','ន.','មុខ / មុខមាត់','','','vocab',11],
+['w11_20','悪くなる','わるくなる','កិ.','ក្លាយជាមិនល្អ','','','vocab',11],
+['w11_21','理解','りかい','ន.','ការយល់ដឹង','','','vocab',11],
+['g11_1','〜としての','〜としての','វេយ្យាករណ៍','ក្នុងនាមជា...','','','grammar',11],
+['g11_2','〜からはじまる','〜からはじまる','វេយ្យាករណ៍','ចាប់ផ្តើមចេញពី...','','','grammar',11],
+['g11_3','〜ために','〜ために','វេយ្យាករណ៍','ដើម្បី... / សម្រាប់...','','','grammar',11],
+['g11_4','〜に気をつける','〜にきをつける','វេយ្យាករណ៍','យកចិត្តទុកដាក់លើ...','','','grammar',11],
+['g11_5','〜に加えて','〜にくわえて','វេយ្យាករណ៍','បន្ថែមទៅលើ...','','','grammar',11],
+['g11_6','〜から(理由)','〜から','វេយ្យាករណ៍','ដោយសារតែ... / ព្រោះតែ...','','','grammar',11],
+['g11_7','〜なければ','〜なければ','វេយ្យាករណ៍','បើមិន...ទេនោះ','','','grammar',11],
+
+['w12_01','身だしなみ','みだしなみ','ន.','ការរៀបចំខ្លួនប្រាណឱ្យសមរម្យ','','','vocab',12],
+['w12_02','不快感','ふかいかん','ន.','អារម្មណ៍មិនល្អ','','','vocab',12],
+['w12_03','人柄','ひとがら','ន.','អត្តចរិត','','','vocab',12],
+['w12_04','対する','たいする','កិ.','ចំពោះ... / ទៅលើ...','','','vocab',12],
+['w12_05','印象','いんしょう','ន.','ចំណាប់អារម្មណ៍','','','vocab',12],
+['w12_06','不安感','ふあんかん','ន.','អារម្មណ៍មិនមានសុវត្ថិភាព','','','vocab',12],
+['w12_07','本人','ほんにん','ន.','សាមីខ្លួន','','','vocab',12],
+['w12_08','大きなマイナス','おおきなマイナス','ន.','ការខូចខាតយ៉ាងធំ','','','vocab',12],
+['w12_09','清潔感','せいけつかん','ន.','ភាពស្អាតបាតមានអនាម័យ','','','vocab',12],
+['w12_10','心がける','こころがける','កិ.','យកចិត្តទុកដាក់','','','vocab',12],
+['w12_11','乱れる','みだれる','កិ.','រញ៉េរញ៉ៃ / មិនរៀបរយ','','','vocab',12],
+['w12_12','休憩','きゅうけい','ន.','ការសម្រាក','','','vocab',12],
+['w12_13','名札','なふだ','ន.','កាតឈ្មោះ','','','vocab',12],
+['w12_14','正しい','ただしい','គុណ.','ត្រឹមត្រូវ','','','vocab',12],
+['w12_15','爪','つめ','ន.','ក្រចក','','','vocab',12],
+['w12_16','汚れる','よごれる','កិ.','ប្រឡាក់ / កខ្វក់','','','vocab',12],
+['w12_17','主な','おもな','គុណ.','ចម្បងៗ / សំខាន់ៗ','','','vocab',12],
+['w12_18','項目','こうもく','ន.','ចំណុច','','','vocab',12],
+['w12_19','参考','さんこう','ន.','ឯកសារយោង','','','vocab',12],
+['w12_20','髪','かみ','ន.','សក់','','','vocab',12],
+['w12_21','長い','ながい','គុណ.','វែង','','','vocab',12],
+['w12_22','帽子','ぼうし','ន.','មួក','','','vocab',12],
+['w12_23','向く','むく','កិ.','ងាក / បែរមុខទៅ','','','vocab',12],
+['w12_24','頭','あたま','ន.','ក្បាល','','','vocab',12],
+['w12_25','首','くび','ន.','ក','','','vocab',12],
+['w12_26','場合','ばあい','ន.','ករណី','','','vocab',12],
+['w12_27','踏む','ふむ','កិ.','ជាន់','','','vocab',12],
+['g12_1','〜とは','〜とは','វេយ្យាករណ៍','... គឺជា...','','','grammar',12],
+['g12_2','〜に対する','〜にたいする','វេយ្យាករណ៍','ចំពោះ... / ទៅលើ...','','','grammar',12],
+['g12_3','〜だけでなく','〜だけでなく','វេយ្យាករណ៍','មិនត្រឹមតែ...ប៉ុណ្ណោះទេ','','','grammar',12],
+['g12_4','〜ことがあります','〜ことがあります','វេយ្យាករណ៍','ធ្លាប់មានករណី...','','','grammar',12],
+['g12_5','〜中','〜ちゅう','វេយ្យាករណ៍','ក្នុងកំឡុងពេលកំពុង...','','','grammar',12],
+['g12_6','〜ときなどには','〜ときなどには','វេយ្យាករណ៍','នៅពេលដូចជា...ជាដើម','','','grammar',12],
+['g12_7','〜（動詞ない形）か','〜ないか','វេយ្យាករណ៍','ថាតើមិន...មែនទេ?','','','grammar',12],
+['g12_8','〜場合','〜ばあい','វេយ្យាករណ៍','ក្នុងករណី... / បើ...','','','grammar',12],
+['g12_9','〜について','〜について','វេយ្យាករណ៍','អំពី... / ទាក់ទងនឹង...','','','grammar',12],
+
+['w13_01','職場','しょくば','ន.','កន្លែងធ្វើការ','','','vocab',13],
+['w13_02','協調性','きょうちょうせい','ន.','ស្មារតីសហការ','','','vocab',13],
+['w13_03','集まり','あつまり','ន.','ការជួបជុំ','','','vocab',13],
+['w13_04','働く','はたらく','កិ.','ធ្វើការ','','','vocab',13],
+['w13_05','全員','ぜんいん','ន.','សមាជិកទាំងអស់គ្នា','','','vocab',13],
+['w13_06','自覚','じかく','ន.','ការដឹងខ្លួន','','','vocab',13],
+['w13_07','協調','きょうちょう','ន.','ការសហការគ្នា','','','vocab',13],
+['w13_08','進める','すすめる','កិ.','បន្តទៅមុខ','','','vocab',13],
+['w13_09','責任','せきにん','ន.','ការទទួលខុសត្រូវ','','','vocab',13],
+['w13_10','果たす','はたす','កិ.','បំពេញ','','','vocab',13],
+['w13_11','発展','はってん','ន.','ការអភិវឌ្ឍ','','','vocab',13],
+['w13_12','成長','せいちょう','ន.','ការលូតលាស់','','','vocab',13],
+['w13_13','従業員','じゅうぎょういん','ន.','បុគ្គលិក','','','vocab',13],
+['w13_14','幸福','こうふく','ន.','សេចក្តីសុខ','','','vocab',13],
+['w13_15','生まれる','うまれる','កិ.','កើតឡើង / ចាប់កំណើត','','','vocab',13],
+['w13_16','単独','たんどく','ន.','តែម្នាក់ឯង','','','vocab',13],
+['w13_17','点呼時','てんこじ','ន.','នៅពេលស្រង់វត្តមាន','','','vocab',13],
+['w13_18','管理者','かんりしゃ','ន.','អ្នកគ្រប់គ្រង','','','vocab',13],
+['w13_19','相談','そうだん','ន.','ការពិគ្រោះយោបល់','','','vocab',13],
+['w13_20','気軽','きがる','ន.','ដោយមិនបារម្ភ','','','vocab',13],
+['w13_21','軽くなる','かるくなる','កិ.','ស្រាលជាងមុន / ថយចុះ','','','vocab',13],
+['w13_22','能率','のうりつ','ន.','ប្រសិទ្ធភាពការងារ','','','vocab',13],
+['g13_1','〜全体','〜ぜんたい','វេយ្យាករណ៍','...ទាំងមូល','','','grammar',13],
+['g13_2','〜によって','〜によって','វេយ្យាករណ៍','ដោយសារ... / តាមរយៈ...','','','grammar',13],
+['g13_3','〜ていく','〜ていく','វេយ្យាករណ៍','...ទៅមុខទៀត','','','grammar',13],
+['g13_4','〜ば','〜ば','វេយ្យាករណ៍','បើ... / ឱ្យតែ...','','','grammar',13],
+['g13_5','〜時','〜じ','វេយ្យាករណ៍','នៅពេល... / ក្នុងកំឡុងពេល...','','','grammar',13],
+
+['w14_01','言葉づかい','ことばづかい','ន.','ការប្រើប្រាស់ពាក្យសម្តី','','','vocab',14],
+['w14_02','基本','きほん','ន.','មូលដ្ឋានគ្រឹះ','','','vocab',14],
+['w14_03','話','はなし','ន.','ការនិយាយ','','','vocab',14],
+['w14_04','使い方','つかいかた','ន.','របៀបប្រើ','','','vocab',14],
+['w14_05','良好','りょうこう','គុណ.','ល្អ / ល្អប្រសើរ','','','vocab',14],
+['w14_06','伝える','つたえる','កិ.','ប្រាប់ / ធ្វើឱ្យគេយល់','','','vocab',14],
+['w14_07','早く','はやく','ន.','លឿន / ឆាប់រហ័ស','','','vocab',14],
+['w14_08','声','こえ','ន.','សំឡេង','','','vocab',14],
+['w14_09','小さい','ちいさい','គុណ.','តូច','','','vocab',14],
+['w14_10','好感','こうかん','ន.','ចំណាប់អារម្មណ៍ល្អ','','','vocab',14],
+['w14_11','明るさ','あかるさ','ន.','ភាពស្រស់ស្រាយ','','','vocab',14],
+['w14_12','第一','だいいち','ន.','ចម្បងបំផុត','','','vocab',14],
+['w14_13','誠実','せいじつ','គុណ.','ស្មោះត្រង់','','','vocab',14],
+['w14_14','多少','たしょう','ន.','បន្តិចបន្តួច','','','vocab',14],
+['w14_15','間違え','まちがえ','ន.','ការខុសឆ្គង','','','vocab',14],
+['w14_16','点','てん','ន.','ចំណុច','','','vocab',14],
+['w14_17','表現','ひょうげん','ន.','ការសម្តែងមតិ','','','vocab',14],
+['w14_18','使わない','つかわない','កិ.','មិនប្រើប្រាស់','','','vocab',14],
+['g14_1','〜に応じ','〜におうじ','វេយ្យាករណ៍','ទៅតាម... / ស្របទៅតាម...','','','grammar',14],
+['g14_2','〜に対して','〜にたいして','វេយ្យាករណ៍','ចំពោះ... / ទៅលើ...','','','grammar',14],
+['g14_3','〜のおそれがあります','〜のおそれがあります','វេយ្យាករណ៍','ប្រឈមនឹងហានិភ័យ...','','','grammar',14],
+['g14_4','〜により','〜により','វេយ្យាករណ៍','ដោយសារ... / តាមរយៈ...','','','grammar',14],
+['g14_5','〜としたとしても','〜としたとしても','វេយ្យាករណ៍','ទោះបីជា...ក៏ដោយ','','','grammar',14],
+['g14_6','〜やすい','〜やすい','វេយ្យាករណ៍','ងាយស្រួលនឹង...','','','grammar',14],
+['g14_7','〜のために','〜のために','វេយ្យាករណ៍','ដើម្បីការនោះ...','','','grammar',14],
+
+['w15_01','整理整頓','せいりせいとん','ន.','ការរៀបចំទុកដាក់ឱ្យមានរបៀបរៀបរយ','','','vocab',15],
+['w15_02','大切さ','たいせつさ','ន.','សារៈសំខាន់','','','vocab',15],
+['w15_03','清掃','せいそう','ន.','ការសម្អាត','','','vocab',15],
+['w15_04','清潔','せいけつ','ន.','ភាពស្អាតបាត','','','vocab',15],
+['w15_05','頭文字','かしらもじ','ន.','អក្សរកាត់ខាងដើម','','','vocab',15],
+['w15_06','実行','じっこう','ន.','ការអនុវត្ត','','','vocab',15],
+['w15_07','視界','しかい','ន.','ចក្ខុវិស័យ','','','vocab',15],
+['w15_08','保つ','たもつ','កិ.','រក្សាទុក','','','vocab',15],
+['w15_09','事故防止','じこぼうし','ន.','ការការពារគ្រោះថ្នាក់ចរាចរណ៍','','','vocab',15],
+['w15_10','状態','じょうたい','ន.','ស្ថានភាព','','','vocab',15],
+['w15_11','整える','ととのえる','កិ.','រៀបចំឱ្យមានរបៀប','','','vocab',15],
+['w15_12','区別','くべつ','ន.','ការបែងចែក','','','vocab',15],
+['w15_13','処分','しょぶん','ន.','ការបោះចោល','','','vocab',15],
+['w15_14','助手席側','じょしゅせきがわ','ន.','ខាងចំហៀងកៅអីអ្នកដំណើរ','','','vocab',15],
+['w15_15','安全窓','あんぜんまど','ន.','បង្អួចសុវត្ថិភាព','','','vocab',15],
+['w15_16','付近','ふきん','ន.','ក្បែរៗ / ម្តុំ','','','vocab',15],
+['w15_17','伝票','でんぴょう','ន.','វិក្កយបត្រ','','','vocab',15],
+['w15_18','地図','ちず','ន.','ផែនទី','','','vocab',15],
+['w15_19','見落とす','みおとす','កិ.','មើលរំលង','','','vocab',15],
+['w15_20','片付けておく','かたづけておく','កិ.','រៀបចំទុកដាក់ឱ្យស្អាតជាមុន','','','vocab',15],
+['g15_1','〜とは','〜とは','វេយ្យាករណ៍','... គឺជា...','','','grammar',15],
+['g15_2','〜を実行することは','〜をじっこうすることは','វេយ្យាករណ៍','ការអនុវត្តនូវ... គឺ...','','','grammar',15],
+['g15_3','〜につながります','〜につながります','វេយ្យាករណ៍','នាំទៅរក...','','','grammar',15],
+['g15_4','〜であり、〜','〜であり','វេយ្យាករណ៍','គឺជានិង...','','','grammar',15],
+['g15_5','〜側','〜がわ','វេយ្យាករណ៍','ខាង... / ផ្នែកខាង...','','','grammar',15],
+['g15_6','〜ようにしましょう','〜ようにしましょう','វេយ្យាករណ៍','សូមព្យាយាម...','','','grammar',15],
+
+['w16_01','整頓','せいとん','ន.','ការរៀបចំទុកដាក់ឱ្យមានសណ្តាប់ធ្នាប់','','','vocab',16],
+['w16_02','使いやすい','つかいやすい','គុណ.','ងាយស្រួលប្រើប្រាស់','','','vocab',16],
+['w16_03','場所','ばしょ','ន.','កន្លែង / ទីតាំង','','','vocab',16],
+['w16_04','置く','おく','កិ.','ដាក់ / ទុក','','','vocab',16],
+['w16_05','妨げ','さまたげ','ន.','ការរំខាន / ឧបសគ្គ','','','vocab',16],
+['w16_06','置き場所','おきばしょ','ន.','កន្លែងដាក់របស់របរ','','','vocab',16],
+['w16_07','置き方','おきかた','ន.','របៀបដាក់','','','vocab',16],
+['w16_08','書類','しょるい','ន.','ឯកសារ','','','vocab',16],
+['w16_09','映る','うつる','កិ.','ចាំង / ឆ្លុះ','','','vocab',16],
+['w16_10','車内','しゃない','ន.','ក្នុងឡាន','','','vocab',16],
+['w16_11','空缶','あきかん','ន.','កំប៉ុងទទេ','','','vocab',16],
+['w16_12','床','ゆか','ន.','បាតឡាន','','','vocab',16],
+['w16_13','散らかる','ちらかる','កិ.','រញ៉េរញ៉ៃ','','','vocab',16],
+['w16_14','片付ける','かたづける','កិ.','រៀបចំទុកដាក់ឱ្យស្អាត','','','vocab',16],
+['w16_15','手間','てま','ន.','កម្លាំងនិងពេលវេលា','','','vocab',16],
+['w16_16','習慣','しゅうかん','ន.','ទម្លាប់','','','vocab',16],
+['g16_1','〜は...ことです','〜はことです','វេយ្យាករណ៍','... គឺការ...','','','grammar',16],
+['g16_2','〜ときには','〜ときには','វេយ្យាករណ៍','នៅពេល...','','','grammar',16],
+['g16_3','〜方','〜かた','វេយ្យាករណ៍','វិធី... / របៀប...','','','grammar',16],
+['g16_4','〜ましょう','〜ましょう','វេយ្យាករណ៍','តោះ... / គួរតែ...','','','grammar',16],
+['g16_5','〜させる','〜させる','វេយ្យាករណ៍','ធ្វើឱ្យ... / បង្កឱ្យ...','','','grammar',16],
+['g16_6','〜ておきましょう','〜ておきましょう','វេយ្យាករណ៍','សូមធ្វើ...ទុកជាមុន','','','grammar',16],
+
+['w17_01','整理','せいり','ន.','ការរៀបចំទុកដាក់វត្ថុចាំបាច់','','','vocab',17],
+['w17_02','活動','かつどう','ន.','សកម្មភាព','','','vocab',17],
+['w17_03','気持ち','きもち','ន.','អារម្មណ៍','','','vocab',17],
+['w17_04','薄れて','うすれて','កិ.','ថយចុះ / ស្រាលស្តើងទៅៗ','','','vocab',17],
+['w17_05','乱暴','らんぼう','គុណ.','កាចសាហាវ / ខ្ជីខ្ជា','','','vocab',17],
+['w17_06','走る','はしる','កិ.','រត់ / បើកបរ','','','vocab',17],
+['w17_07','広告塔','こうこくとう','ន.','ប៉មផ្សាយពាណិជ្ជកម្ម','','','vocab',17],
+['w17_08','名前','なまえ','ន.','ឈ្មោះ','','','vocab',17],
+['w17_09','書かれた','かかれた','កិ.','ដែលបានសរសេរទុក','','','vocab',17],
+['w17_10','宣伝','せんでん','ន.','ការផ្សព្វផ្សាយពាណិជ្ជកម្ម','','','vocab',17],
+['w17_11','広告','こうこく','ន.','ការផ្សាយពាណិជ្ជកម្ម','','','vocab',17],
+['w17_12','強まります','つよまります','កិ.','កាន់តែខ្លាំងក្លាឡើង','','','vocab',17],
+['g17_1','〜とは','〜とは','វេយ្យាករណ៍','... គឺជា...','','','grammar',17],
+['g17_2','〜ないと','〜ないと','វេយ្យាករណ៍','បើសិនជាមិន...ទេនោះ','','','grammar',17],
+['g17_3','〜がちです','〜がちです','វេយ្យាករណ៍','ងាយនឹង...','','','grammar',17],
+['g17_4','〜ば','〜ば','វេយ្យាករណ៍','បើ... / ឱ្យតែ...','','','grammar',17],
+['g17_5','〜ながら','〜ながら','វេយ្យាករណ៍','បណ្តើរ...បណ្តើរ','','','grammar',17],
+['g17_6','〜から(理由)','〜から','វេយ្យាករណ៍','ដោយសារតែ...','','','grammar',17],
+['g17_7','〜につながります','〜につながります','វេយ្យាករណ៍','នាំទៅរក...','','','grammar',17],
+
+['w18_01','特性','とくせい','ន.','លក្ខណៈពិសេស','','','vocab',18],
+['w18_02','技能','ぎのう','ន.','ជំនាញ / បច្ចេកទេស','','','vocab',18],
+['w18_03','習得','しゅうとく','ន.','ការរៀនសូត្រឱ្យចេះស្ទាត់ជំនាញ','','','vocab',18],
+['w18_04','大半','たいはん','ន.','ភាគច្រើន','','','vocab',18],
+['w18_05','学ぶ','まなぶ','កិ.','រៀន / សិក្សា','','','vocab',18],
+['w18_06','身につける','みにつける','កិ.','ចេះចាំស្ទាត់','','','vocab',18],
+['w18_07','慣れた','なれた','កិ.','ដែលស៊ាំ','','','vocab',18],
+['w18_08','頃','ころ','ន.','កំឡុងពេល','','','vocab',18],
+['w18_09','落とし穴','おとしあな','ន.','អន្ទាក់','','','vocab',18],
+['w18_10','緊張感','きんちょうかん','ន.','អារម្មណ៍ប្រុងប្រយ័ត្នខ្ពស់','','','vocab',18],
+['w18_11','薄れ','うすれ','កិ.','ថយចុះ','','','vocab',18],
+['w18_12','油断','ゆだん','ន.','ការធ្វេសប្រហែស','','','vocab',18],
+['w18_13','生まれ','うまれ','កិ.','កើតឡើង','','','vocab',18],
+['w18_14','基本動作','きほんどうさ','ន.','ចលនាមូលដ្ឋាន','','','vocab',18],
+['w18_15','始めた','はじめた','កិ.','បានចាប់ផ្តើម','','','vocab',18],
+['w18_16','慎重さ','しんちょうさ','ន.','ភាពម៉ត់ចត់','','','vocab',18],
+['g18_1','〜に応じた','〜におうじた','វេយ្យាករណ៍','ទៅតាម... / ស្របទៅតាម...','','','grammar',18],
+['g18_2','〜とは違う','〜とはちがう','វេយ្យាករណ៍','គឺខុសគ្នាពី...','','','grammar',18],
+['g18_3','〜（動詞て形）いても','〜ていても','វេយ្យាករណ៍','ទោះបីជា...ក៏ដោយ','','','grammar',18],
+['g18_4','〜やすい','〜やすい','វេយ្យាករណ៍','ងាយនឹង...','','','grammar',18],
+['g18_5','〜そのため','〜そのため','វេយ្យាករណ៍','ហេតុដូច្នេះហើយ...','','','grammar',18],
+['g18_6','〜につながります','〜につながります','វេយ្យាករណ៍','នាំទៅរក...','','','grammar',18],
+['g18_7','〜ようにしましょう','〜ようにしましょう','វេយ្យាករណ៍','សូមព្យាយាម...','','','grammar',18],
+
+['w19_01','安全運転','あんぜんうんてん','ន.','ការបើកបរដោយសុវត្ថិភាព','','','vocab',19],
+['w19_02','日常','にちじょう','ន.','ប្រចាំថ្ងៃ','','','vocab',19],
+['w19_03','休日','きゅうじつ','ន.','ថ្ងៃឈប់សម្រាក','','','vocab',19],
+['w19_04','健康管理','けんこうかんり','ន.','ការថែទាំសុខភាព','','','vocab',19],
+['w19_05','心身','しんしん','ន.','រាងកាយនិងចិត្តគំនិត','','','vocab',19],
+['w19_06','作業','さぎょう','ន.','ការងារ','','','vocab',19],
+['w19_07','特徴','とくちょう','ន.','លក្ខណៈពិសេស','','','vocab',19],
+['w19_08','非常に短い時間','ひじょうにみじかいじかん','ន.','រយៈពេលខ្លីបំផុត','','','vocab',19],
+['w19_09','判断','はんだん','ន.','ការវិនិច្ឆ័យ','','','vocab',19],
+['w19_10','緊急','きんきゅう','ន.','បន្ទាន់','','','vocab',19],
+['w19_11','冷静','れいせい','ន.','ភាពស្ងប់ស្ងៀម','','','vocab',19],
+['w19_12','適切','てきせつ','ន.','សមស្រប / ត្រឹមត្រូវ','','','vocab',19],
+['w19_13','運転席','うんてんせき','ន.','កៅអីអ្នកបើកបរ','','','vocab',19],
+['w19_14','座り続け','すわりつづけ','កិ.','អង្គុយជាប់','','','vocab',19],
+['w19_15','動く','うごく','កិ.','ចលនា / ផ្លាស់ទី','','','vocab',19],
+['w19_16','姿勢','しせい','ន.','ឥរិយាបថរាងកាយ','','','vocab',19],
+['w19_17','変える','かえる','កិ.','ផ្លាស់ប្តូរ','','','vocab',19],
+['w19_18','続く','つづく','កិ.','បន្ត','','','vocab',19],
+['w19_19','欠かせない','かかせない','គុណ.','ដែលមិនអាចខ្វះបាន','','','vocab',19],
+['g19_1','〜にとって','〜にとって','វេយ្យាករណ៍','ចំពោះ... / សម្រាប់...','','','grammar',19],
+['g19_2','〜のは、〜からです','〜のはからです','វេយ្យាករណ៍','ការដែល... គឺដោយសារតែ...','','','grammar',19],
+['g19_3','〜のような','〜のような','វេយ្យាករណ៍','ដូចជា...','','','grammar',19],
+['g19_4','〜なければなりません','〜なければなりません','វេយ្យាករណ៍','ត្រូវតែ...','','','grammar',19],
+['g19_5','〜中','〜ちゅう','វេយ្យាករណ៍','ក្នុងកំឡុងពេលកំពុង...','','','grammar',19],
+['g19_6','〜続ける','〜つづける','វេយ្យាករណ៍','បន្តធ្វើសកម្មភាពនោះរហូត','','','grammar',19],
+['g19_7','〜ば','〜ば','វេយ្យាករណ៍','បើ... / ឱ្យតែ...','','','grammar',19],
+['g19_8','〜ことができず','〜ことができず','វេយ្យាករណ៍','មិនអាច...បានឡើយ','','','grammar',19],
+];
+const WORDS = RAW_WORDS.map(r => ({ id:r[0], jp:r[1], kana:r[2], pos:r[3].trim(), km:r[4], ex_jp:r[5], ex_km:r[6], cat:r[7], page:r[8] || 2 }));
+const PAGES = Array.from(new Set(WORDS.map(w => w.page))).sort((a,b)=>a-b);
+const MODE_LABEL = { flashcard:'Flashcard', mc:'ជ្រើសរើសត្រូវ', matching:'ផ្គូផ្គង', write:'សរសេរអត្ថន័យ' };
+
+function shuffle(arr){ const a = arr.slice(); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function sample(arr,n){ return shuffle(arr).slice(0, Math.min(n, arr.length)); }
+
+// ============================================================================
+//  Backend — real Supabase when configured (config.js), otherwise a local
+//  "demo" backend backed by localStorage so the app works before setup.
+//  Both expose the same small interface used by the app.
+// ============================================================================
+const CFG = window.DICT_CONFIG || {};
+const HAS_SUPABASE = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY && window.supabase);
+
+function makeSupabaseBackend(){
+  const client = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
+  async function fnError(error){
+    let msg = error && error.message ? error.message : 'មានបញ្ហា';
+    try { if (error && error.context && error.context.json) { const b = await error.context.json(); if (b && b.error) msg = b.error; } } catch(e){}
+    return msg;
+  }
+  return {
+    demo:false,
+    async currentSession(){ const { data } = await client.auth.getSession(); return data.session ? { user:{ id:data.session.user.id, email:data.session.user.email } } : null; },
+    async signIn(email,password){ const { error } = await client.auth.signInWithPassword({ email, password }); return { error: error ? 'អ៊ីមែល ឬ ពាក្យសម្ងាត់ មិនត្រឹមត្រូវ' : null }; },
+    async signOut(){ try { await client.auth.signOut(); } catch(e){} },
+    async getProfile(id){ const { data, error } = await client.from('profiles').select('*').eq('id', id).single(); return error ? { error:error.message } : { profile:data }; },
+    async saveProgress(id,patch){ const { error } = await client.from('profiles').update(patch).eq('id', id); return { error: error ? error.message : null }; },
+    async listStudents(teacherId){ const { data, error } = await client.from('profiles').select('id,full_name,email,viewed,favorites,history').eq('teacher_id', teacherId).eq('role','student').order('full_name'); return { rows:data||[], error: error?error.message:null }; },
+    async listTeachers(){ const { data } = await client.from('profiles').select('id,full_name,email').eq('role','teacher').order('full_name'); return { rows:data||[] }; },
+    async listAccounts(){ const { data } = await client.from('profiles').select('id,email,full_name,role,teacher_id').order('role'); return { rows:data||[] }; },
+    async createAccount(payload){
+      const { data, error } = await client.functions.invoke('admin-create-user', { body: payload });
+      if (error) return { error: await fnError(error) };
+      if (data && data.error) return { error: data.error };
+      return { error:null };
+    },
+  };
+}
+
+function makeDemoBackend(){
+  function load(){
+    let u = null; try { u = JSON.parse(localStorage.getItem('dict_demo_users')||'null'); } catch(e){}
+    if (!u) {
+      u = [
+        { id:'u-admin',   email:'admin@demo',   password:'demo', full_name:'អ្នកគ្រប់គ្រង', role:'admin',   teacher_id:null,       viewed:[], favorites:[], history:[], settings:{} },
+        { id:'u-teacher', email:'teacher@demo', password:'demo', full_name:'គ្រូ សំណាង',    role:'teacher', teacher_id:null,       viewed:[], favorites:[], history:[], settings:{} },
+        { id:'u-student', email:'student@demo', password:'demo', full_name:'សិស្ស ស្រីនាថ',  role:'student', teacher_id:'u-teacher', viewed:[], favorites:[], history:[], settings:{} },
+      ];
+      localStorage.setItem('dict_demo_users', JSON.stringify(u));
+    }
+    return u;
+  }
+  function save(u){ localStorage.setItem('dict_demo_users', JSON.stringify(u)); }
+  return {
+    demo:true,
+    async currentSession(){ const id=localStorage.getItem('dict_demo_session'); if(!id) return null; const u=load().find(x=>x.id===id); return u?{ user:{ id:u.id, email:u.email } }:null; },
+    async signIn(email,password){ const u=load().find(x=>x.email===String(email).trim().toLowerCase()); if(!u||u.password!==password) return { error:'អ៊ីមែល ឬ ពាក្យសម្ងាត់ មិនត្រឹមត្រូវ' }; localStorage.setItem('dict_demo_session', u.id); return { error:null }; },
+    async signOut(){ localStorage.removeItem('dict_demo_session'); },
+    async getProfile(id){ const u=load().find(x=>x.id===id); return u?{ profile:JSON.parse(JSON.stringify(u)) }:{ error:'not found' }; },
+    async saveProgress(id,patch){ const us=load(); const u=us.find(x=>x.id===id); if(u){ Object.assign(u, patch); save(us); } return { error:null }; },
+    async listStudents(teacherId){ return { rows:load().filter(x=>x.role==='student'&&x.teacher_id===teacherId), error:null }; },
+    async listTeachers(){ return { rows:load().filter(x=>x.role==='teacher') }; },
+    async listAccounts(){ return { rows:load().map(({id,email,full_name,role,teacher_id})=>({id,email,full_name,role,teacher_id})) }; },
+    async createAccount(p){ const us=load(); const email=String(p.email).trim().toLowerCase(); if(us.find(x=>x.email===email)) return { error:'អ៊ីមែលនេះមានរួចហើយ' }; us.push({ id:'u-'+Date.now(), email, password:p.password, full_name:p.full_name||'', role:p.role, teacher_id:p.role==='student'?(p.teacher_id||null):null, viewed:[], favorites:[], history:[], settings:{} }); save(us); return { error:null }; },
+  };
+}
+
+const Backend = HAS_SUPABASE ? makeSupabaseBackend() : makeDemoBackend();
+
+class Component extends DCLogic {
+  state = {
+    // auth
+    authStage: 'loading', // 'loading' | 'login' | 'app'
+    email: '', password: '', authError: '', authBusy: false,
+    userId: null, role: null, profileName: '',
+    // admin (create accounts)
+    adminFullName: '', adminEmail: '', adminPassword: '', adminRole: 'student', adminTeacherId: '',
+    adminBusy: false, adminMsg: '', adminError: '', teachers: [], accounts: [],
+    // teacher monitor
+    students: [], selectedStudent: null, selectedStudentName: '', viewingViewed: [],
+    screen: 'home', search: '', catFilter: 'all', testCat: 'all', searchMode: 'general', pageFilter: null, pageInput: '',
+    detailWordId: null,
+    favorites: [], history: [], viewed: [],
+    settings: { fontScale: 1, autoAudio: false },
+    syncing: false, lastSync: null, toast: null,
+    testMode: null, testWords: [], testIdx: 0, testScore: 0,
+    flashFlipped: false,
+    mcOptions: [], mcSelected: null, mcAnswered: false,
+    matchLeft: [], matchRight: [], matchSelLeft: null, matchSelRight: null, matchMatched: [],
+    writeInput: '', writeRevealed: false,
+    pageQuizOpen: false, pageQuizQuestions: [], pageQuizIdx: 0, pageQuizScore: 0, pageQuizSelected: null, pageQuizAnswered: false, pageQuizDone: false,
+  };
+
+  async componentDidMount(){
+    try {
+      const session = await Backend.currentSession();
+      if (!session) { this.setState({ authStage: 'login' }); return; }
+      await this.loadForUser(session.user.id);
+    } catch(e) { this.setState({ authStage: 'login' }); }
+  }
+
+  async loadForUser(id){
+    const res = await Backend.getProfile(id);
+    if (res.error || !res.profile) { await Backend.signOut(); this.setState({ authStage: 'login' }); return; }
+    const p = res.profile;
+    const screen = p.role === 'admin' ? 'admin' : (p.role === 'teacher' ? 'monitor' : 'home');
+    this.setState({
+      userId: id, role: p.role, profileName: p.full_name || p.email,
+      favorites: Array.isArray(p.favorites) ? p.favorites : [],
+      history:   Array.isArray(p.history)   ? p.history   : [],
+      viewed:    Array.isArray(p.viewed)    ? p.viewed    : [],
+      settings:  Object.assign({ fontScale:1, autoAudio:false }, p.settings || {}),
+      authStage: 'app', screen, email:'', password:'', authBusy:false, authError:'',
+    }, () => {
+      if (p.role === 'admin')   this.loadAdminData();
+      if (p.role === 'teacher') this.loadStudents();
+    });
+  }
+
+  persist(){
+    if (this._saveT) clearTimeout(this._saveT);
+    const snap = { viewed:this.state.viewed, favorites:this.state.favorites, history:this.state.history, settings:this.state.settings };
+    const id = this.state.userId;
+    this._saveT = setTimeout(() => { if (id) Backend.saveProgress(id, snap); }, 600);
+  }
+
+  toggleViewed(id, e){
+    if (e) e.stopPropagation();
+    const has = this.state.viewed.includes(id);
+    const viewed = has ? this.state.viewed.filter(x => x !== id) : [...this.state.viewed, id];
+    this.setState({ viewed }, () => this.persist());
+  }
+
+  showToast(msg){
+    this.setState({ toast: msg });
+    setTimeout(() => this.setState(s => s.toast === msg ? { toast: null } : null), 1800);
+  }
+
+  playAudio(text){
+    try {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ja-JP';
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    } catch(e) {}
+  }
+
+  // — Login / logout —
+  onEmailChange(e){ this.setState({ email: e.target.value }); }
+  onPasswordChange(e){ this.setState({ password: e.target.value }); }
+  async doLogin(){
+    if (this.state.authBusy) return;
+    const email = this.state.email.trim(), password = this.state.password;
+    if (!email || !password) { this.setState({ authError: 'សូមបញ្ចូលអ៊ីមែល និង ពាក្យសម្ងាត់' }); return; }
+    this.setState({ authBusy: true, authError: '' });
+    const { error } = await Backend.signIn(email, password);
+    if (error) { this.setState({ authBusy: false, authError: error }); return; }
+    const session = await Backend.currentSession();
+    if (!session) { this.setState({ authBusy: false, authError: 'ចូលមិនបានសម្រេច' }); return; }
+    await this.loadForUser(session.user.id);
+  }
+  async logout(){
+    if (this._saveT) { clearTimeout(this._saveT); if (this.state.userId) await Backend.saveProgress(this.state.userId, { viewed:this.state.viewed, favorites:this.state.favorites, history:this.state.history, settings:this.state.settings }); }
+    await Backend.signOut();
+    this.setState({ authStage:'login', userId:null, role:null, profileName:'', screen:'home',
+      email:'', password:'', authBusy:false, authError:'',
+      favorites:[], history:[], viewed:[], selectedStudent:null, selectedStudentName:'', viewingViewed:[] });
+  }
+
+  // — Admin: create accounts —
+  async loadAdminData(){
+    const t = await Backend.listTeachers();
+    const a = await Backend.listAccounts();
+    this.setState({ teachers: t.rows || [], accounts: a.rows || [] });
+  }
+  onAdminFullName(e){ this.setState({ adminFullName: e.target.value }); }
+  onAdminEmail(e){ this.setState({ adminEmail: e.target.value }); }
+  onAdminPassword(e){ this.setState({ adminPassword: e.target.value }); }
+  setAdminRoleStudent(){ this.setState({ adminRole: 'student' }); }
+  setAdminRoleTeacher(){ this.setState({ adminRole: 'teacher' }); }
+  onAdminTeacher(e){ this.setState({ adminTeacherId: e.target.value }); }
+  async createAccount(){
+    if (this.state.adminBusy) return;
+    const { adminEmail, adminPassword, adminFullName, adminRole, adminTeacherId } = this.state;
+    if (!adminEmail.trim() || !adminPassword) { this.setState({ adminError: 'សូមបញ្ចូលអ៊ីមែល និង ពាក្យសម្ងាត់', adminMsg: '' }); return; }
+    if (adminRole === 'student' && !adminTeacherId) { this.setState({ adminError: 'សូមជ្រើសរើសគ្រូសម្រាប់សិស្ស', adminMsg: '' }); return; }
+    this.setState({ adminBusy: true, adminError: '', adminMsg: '' });
+    const { error } = await Backend.createAccount({ email: adminEmail.trim(), password: adminPassword, full_name: adminFullName.trim(), role: adminRole, teacher_id: adminRole === 'student' ? adminTeacherId : null });
+    if (error) { this.setState({ adminBusy: false, adminError: error }); return; }
+    this.setState({ adminBusy: false, adminMsg: 'បង្កើតគណនីជោគជ័យ ✓', adminEmail: '', adminPassword: '', adminFullName: '' }, () => this.loadAdminData());
+  }
+  goAdmin(){ this.setState({ screen: 'admin', adminMsg:'', adminError:'' }, () => this.loadAdminData()); }
+
+  // — Teacher monitor —
+  async loadStudents(){ const r = await Backend.listStudents(this.state.userId); this.setState({ students: r.rows || [] }); }
+  selectStudentToView(st){ this.setState({ selectedStudent: st.id, selectedStudentName: st.full_name || st.email, viewingViewed: Array.isArray(st.viewed) ? st.viewed : [] }); }
+  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [] }); }
+
+  goHome(){ this.setState({ screen: 'home' }); }
+  goFavorites(){ this.setState({ screen: 'favorites' }); }
+  goTest(){ this.setState({ screen: 'test', testMode: null }); }
+  goSettings(){ this.setState({ screen: 'settings' }); }
+  goMonitor(){ this.setState({ screen: 'monitor' }, () => this.loadStudents()); }
+
+  openDetail(id){
+    this.setState({ detailWordId: id });
+    const w = WORDS.find(x => x.id === id);
+    if (w && this.state.settings.autoAudio) setTimeout(() => this.playAudio(w.jp), 250);
+  }
+  closeDetail(){ this.setState({ detailWordId: null }); }
+  stopProp(e){ e.stopPropagation(); }
+
+  toggleFavorite(id){
+    const has = this.state.favorites.includes(id);
+    const favorites = has ? this.state.favorites.filter(x => x !== id) : [...this.state.favorites, id];
+    this.setState({ favorites }, () => this.persist());
+  }
+
+  startSync(){
+    this.setState({ syncing: true });
+    setTimeout(() => {
+      this.setState({ syncing: false, lastSync: new Date().toISOString() }, () => this.persist());
+      this.showToast('សមកាលកម្មពី Google Docs ជោគជ័យ');
+    }, 1400);
+  }
+
+  wordsForCat(cat){ return cat === 'all' ? WORDS : WORDS.filter(w => w.cat === cat); }
+
+  startTest(mode){
+    const pool = this.wordsForCat(this.state.testCat);
+    const n = mode === 'matching' ? 6 : 10;
+    const words = sample(pool, n);
+    const base = { testMode: mode, testWords: words, testIdx: 0, testScore: 0,
+      flashFlipped: false, mcSelected: null, mcAnswered: false,
+      writeInput: '', writeRevealed: false,
+      matchSelLeft: null, matchSelRight: null, matchMatched: [] };
+    if (mode === 'mc') base.mcOptions = this.buildMcOptions(words[0]);
+    if (mode === 'matching') { base.matchLeft = shuffle(words); base.matchRight = shuffle(words); }
+    this.setState(base);
+  }
+  startFlashcard(){ this.startTest('flashcard'); }
+  startMC(){ this.startTest('mc'); }
+  startMatching(){ this.startTest('matching'); }
+  startWrite(){ this.startTest('write'); }
+  retryTest(){ if (this.lastMode) this.startTest(this.lastMode); }
+  backToHub(){ this.setState({ testMode: null }); }
+
+  finishTest(){
+    this.lastMode = this.state.testMode === 'matching' ? 'matching' : this.state.testMode;
+    const total = this.state.testMode === 'matching' ? this.state.testWords.length : this.state.testWords.length;
+    const entry = { mode: this.state.testMode, score: this.state.testScore, total, date: new Date().toISOString() };
+    this.setState({ history: [...this.state.history, entry], testMode: 'results' }, () => this.persist());
+  }
+
+  buildMcOptions(word){
+    const others = WORDS.filter(w => w.id !== word.id);
+    const distractors = sample(others, 3).map(w => ({ km: w.km, correct: false }));
+    return shuffle([{ km: word.km, correct: true }, ...distractors]);
+  }
+
+  flashFlip(){ this.setState(s => ({ flashFlipped: !s.flashFlipped })); }
+  flashAdvance(){
+    const nextIdx = this.state.testIdx + 1;
+    if (nextIdx >= this.state.testWords.length) { this.finishTest(); return; }
+    this.setState({ testIdx: nextIdx, flashFlipped: false });
+  }
+  flashMarkKnown(){ this.setState(s => ({ testScore: s.testScore + 1 })); this.flashAdvance(); }
+  flashMarkUnknown(){ this.flashAdvance(); }
+
+  selectMcOption(opt){
+    if (this.state.mcAnswered) return;
+    this.setState(s => ({ mcSelected: opt, mcAnswered: true, testScore: s.testScore + (opt.correct ? 1 : 0) }));
+  }
+  mcNext(){
+    const nextIdx = this.state.testIdx + 1;
+    if (nextIdx >= this.state.testWords.length) { this.finishTest(); return; }
+    const w = this.state.testWords[nextIdx];
+    this.setState({ testIdx: nextIdx, mcSelected: null, mcAnswered: false, mcOptions: this.buildMcOptions(w) });
+  }
+
+  selectMatchTile(side, id){
+    if (this.state.matchMatched.includes(id) && side === 'pending') return;
+    if (side === 'left') {
+      if (this.state.matchMatched.includes(id)) return;
+      this.setState({ matchSelLeft: id }, () => this.tryMatch());
+    } else {
+      if (this.state.matchMatched.includes(id)) return;
+      this.setState({ matchSelRight: id }, () => this.tryMatch());
+    }
+  }
+  tryMatch(){
+    const { matchSelLeft, matchSelRight } = this.state;
+    if (matchSelLeft == null || matchSelRight == null) return;
+    if (matchSelLeft === matchSelRight) {
+      const matched = [...this.state.matchMatched, matchSelLeft];
+      this.setState({ matchMatched: matched, matchSelLeft: null, matchSelRight: null, testScore: matched.length });
+      if (matched.length >= this.state.testWords.length) setTimeout(() => this.finishTest(), 300);
+    } else {
+      setTimeout(() => this.setState({ matchSelLeft: null, matchSelRight: null }), 500);
+    }
+  }
+
+  onWriteInputChange(e){ this.setState({ writeInput: e.target.value }); }
+  writeReveal(){ this.setState({ writeRevealed: true }); }
+  writeAdvance(){
+    const nextIdx = this.state.testIdx + 1;
+    if (nextIdx >= this.state.testWords.length) { this.finishTest(); return; }
+    this.setState({ testIdx: nextIdx, writeInput: '', writeRevealed: false });
+  }
+  writeGradeRight(){ this.setState(s => ({ testScore: s.testScore + 1 })); this.writeAdvance(); }
+  writeGradeWrong(){ this.writeAdvance(); }
+
+  onSearchChange(e){ this.setState({ search: e.target.value }); }
+  onCatAll(){ this.setState({ catFilter: 'all' }); }
+  onCatVocab(){ this.setState({ catFilter: 'vocab' }); }
+  onCatGrammar(){ this.setState({ catFilter: 'grammar' }); }
+  setSearchGeneral(){ this.setState({ searchMode: 'general' }); }
+  setSearchByPage(){ this.setState({ searchMode: 'page' }); }
+  selectPage(p){ this.setState({ pageFilter: p }); }
+  wordsForPage(page){ return WORDS.filter(w => w.page === page); }
+  startPageQuiz(){
+    const pool = this.wordsForPage(this.state.pageFilter);
+    const qWords = sample(pool, Math.min(10, pool.length));
+    const questions = qWords.map(w => {
+      const others = pool.filter(x => x.id !== w.id);
+      const wrong = others.length ? sample(others, 1)[0] : sample(WORDS.filter(x => x.id !== w.id), 1)[0];
+      const options = shuffle([{ jp: w.jp, correct: true }, { jp: wrong.jp, correct: false }]);
+      return { km: w.km, kana: w.kana, options };
+    });
+    this.setState({ pageQuizOpen: true, pageQuizQuestions: questions, pageQuizIdx: 0, pageQuizScore: 0, pageQuizSelected: null, pageQuizAnswered: false, pageQuizDone: false });
+  }
+  selectPageQuizOption(opt){
+    if (this.state.pageQuizAnswered) return;
+    this.setState(s => ({ pageQuizSelected: opt, pageQuizAnswered: true, pageQuizScore: s.pageQuizScore + (opt.correct ? 1 : 0) }));
+  }
+  nextPageQuizQuestion(){
+    const nextIdx = this.state.pageQuizIdx + 1;
+    if (nextIdx >= this.state.pageQuizQuestions.length) { this.setState({ pageQuizDone: true }); return; }
+    this.setState({ pageQuizIdx: nextIdx, pageQuizSelected: null, pageQuizAnswered: false });
+  }
+  closePageQuiz(){ this.setState({ pageQuizOpen: false, pageQuizDone: false }); }
+  onPageInputChange(e){ this.setState({ pageInput: e.target.value }); }
+  goToPage(){ const n = parseInt(this.state.pageInput, 10); this.setState({ pageFilter: isNaN(n) ? null : n }); }
+  onTestCatAll(){ this.setState({ testCat: 'all' }); }
+  onTestCatVocab(){ this.setState({ testCat: 'vocab' }); }
+  onTestCatGrammar(){ this.setState({ testCat: 'grammar' }); }
+  onFontScaleChange(e){
+    const settings = { ...this.state.settings, fontScale: parseFloat(e.target.value) };
+    this.setState({ settings }, () => this.persist());
+  }
+  onAutoAudioChange(e){
+    const settings = { ...this.state.settings, autoAudio: e.target.checked };
+    this.setState({ settings }, () => this.persist());
+  }
+  toggleDetailFavorite(){ if (this.state.detailWordId) this.toggleFavorite(this.state.detailWordId); }
+  playDetailAudio(){ const w = WORDS.find(x => x.id === this.state.detailWordId); if (w) this.playAudio(w.jp); }
+
+  renderVals(){
+    const s = this.state;
+    const decorate = w => { const isViewed = s.viewed.includes(w.id); return { ...w, tagClass: tagClassFor(w.pos), isFav: s.favorites.includes(w.id), isViewed, viewedBg: isViewed ? 'var(--color-neutral-500)' : 'transparent', onOpen: () => this.openDetail(w.id), onToggleViewed: e => this.toggleViewed(w.id, e) }; };
+
+    const pool = this.wordsForCat(s.catFilter);
+    const q = s.search.trim().toLowerCase();
+    const filteredWords = (q ? pool.filter(w => w.jp.includes(s.search) || w.kana.includes(s.search) || w.km.toLowerCase().includes(q)) : pool).map(decorate);
+
+    const favoriteWordsList = WORDS.filter(w => s.favorites.includes(w.id)).map(decorate);
+
+    const pages = PAGES.map(p => ({ num: p, label: `ទំព័រ ${p}`, btnClass: s.pageFilter === p ? 'btn-primary' : 'btn-secondary', onSelect: () => this.selectPage(p) }));
+    const pageWordsList = s.pageFilter != null ? WORDS.filter(w => w.page === s.pageFilter).map(decorate) : [];
+    const pageVocabList = pageWordsList.filter(w => w.cat === 'vocab').map(w => ({ ...w, line: `${w.jp}（${w.kana}）：${w.km}` }));
+    const pageGrammarList = pageWordsList.filter(w => w.cat === 'grammar').map(w => ({ ...w, line: `${w.jp}：${w.km}` }));
+    const allPageViewed = pageWordsList.length > 0 && pageWordsList.every(w => w.isViewed);
+
+    const pqQuestions = s.pageQuizQuestions;
+    const pqCurrent = pqQuestions[s.pageQuizIdx];
+    const pageQuizOptions = pqCurrent ? pqCurrent.options.map(opt => {
+      let style = '';
+      if (s.pageQuizAnswered) {
+        if (opt.correct) style = 'border-color:var(--color-accent);background:var(--color-accent-100);color:var(--color-accent-800);';
+        else if (s.pageQuizSelected === opt) style = 'opacity:0.55;text-decoration:line-through;';
+        else style = 'opacity:0.55;';
+      }
+      return { jp: opt.jp, style, onSelect: () => this.selectPageQuizOption(opt) };
+    }) : [];
+
+    const detailW = WORDS.find(w => w.id === s.detailWordId);
+    const detailWord = detailW ? { ...detailW, tagClass: tagClassFor(detailW.pos), favFill: s.favorites.includes(detailW.id) ? 'var(--color-accent-700)' : 'transparent' } : { jp:'', kana:'', pos:'', km:'', ex_jp:'', ex_km:'', tagClass:'tag tag-neutral', favFill:'transparent' };
+
+    const recentHistory = s.history.slice(-6).reverse().map(h => {
+      const d = new Date(h.date);
+      return { label: MODE_LABEL[h.mode] || h.mode, scoreLabel: `${h.score}/${h.total}`, dateLabel: `${d.getDate()}/${d.getMonth()+1}` };
+    });
+
+    const testMode = s.testMode;
+    const currentWord = s.testWords[s.testIdx] ? decorate(s.testWords[s.testIdx]) : { jp:'', kana:'', pos:'', km:'', ex_jp:'', ex_km:'', tagClass:'tag tag-neutral' };
+
+    const mcOptions = s.mcOptions.map(opt => {
+      let style = '';
+      if (s.mcAnswered) {
+        if (opt.correct) style = 'border-color:var(--color-accent);background:var(--color-accent-100);color:var(--color-accent-800);';
+        else if (s.mcSelected === opt) style = 'opacity:0.55;text-decoration:line-through;';
+        else style = 'opacity:0.55;';
+      }
+      return { km: opt.km, style, onSelect: () => this.selectMcOption(opt) };
+    });
+
+    const matchLeftTiles = s.matchLeft.map(w => {
+      const matched = s.matchMatched.includes(w.id);
+      const selected = s.matchSelLeft === w.id;
+      let style = matched ? 'opacity:0.35;pointer-events:none;background:var(--color-accent-100);border-color:var(--color-accent);' : selected ? 'border-color:var(--color-accent);background:color-mix(in srgb, var(--color-accent) 12%, transparent);' : '';
+      return { label: w.jp, style, onSelect: () => this.selectMatchTile('left', w.id) };
+    });
+    const matchRightTiles = s.matchRight.map(w => {
+      const matched = s.matchMatched.includes(w.id);
+      const selected = s.matchSelRight === w.id;
+      let style = matched ? 'opacity:0.35;pointer-events:none;background:var(--color-accent-100);border-color:var(--color-accent);' : selected ? 'border-color:var(--color-accent);background:color-mix(in srgb, var(--color-accent) 12%, transparent);' : '';
+      return { label: w.km, style, onSelect: () => this.selectMatchTile('right', w.id) };
+    });
+
+    const total = s.testWords.length;
+    const isMatchingTest = testMode === 'matching';
+
+    const viewingSet = s.viewingViewed;
+    const monitorPageProgress = PAGES.map(p => {
+      const words = WORDS.filter(w => w.page === p);
+      const viewedCount = words.filter(w => viewingSet.includes(w.id)).length;
+      const pct = words.length ? Math.round(viewedCount / words.length * 100) : 0;
+      return { num: p, label: `ទំព័រ ${p}`, viewedCount, total: words.length, pct, pctLabel: `${pct}%`, barWidth: `${pct}%` };
+    });
+    const monitorOverallViewed = viewingSet.length;
+    const monitorOverallPct = WORDS.length ? Math.round(monitorOverallViewed / WORDS.length * 100) : 0;
+    const studentNameItems = s.students.map(st => ({ name: st.full_name || st.email, onSelect: () => this.selectStudentToView(st) }));
+
+    const ROLE_LABEL = { admin: 'អ្នកគ្រប់គ្រង', teacher: 'គ្រូ', student: 'សិស្ស' };
+    const ROLE_TAG = { admin: 'tag tag-accent', teacher: 'tag tag-accent-2', student: 'tag tag-neutral' };
+    const teacherOptions = s.teachers.map(t => ({ id: t.id, name: t.full_name || t.email }));
+    const accountsList = s.accounts.map(a => ({ id: a.id, name: a.full_name || a.email, email: a.email, roleLabel: ROLE_LABEL[a.role] || a.role, tagClass: ROLE_TAG[a.role] || 'tag tag-outline' }));
+
+    return {
+      isHome: s.screen === 'home', isFavorites: s.screen === 'favorites', isSettings: s.screen === 'settings',
+      isTestHub: s.screen === 'test' && !testMode,
+      isMonitor: s.screen === 'monitor',
+      goMonitor: () => this.goMonitor(),
+      monitorColor: s.screen === 'monitor' ? 'var(--color-accent-700)' : 'var(--color-text)',
+      monitorPageProgress, monitorOverallViewed, monitorOverallPct, overallTotal: WORDS.length,
+      studentNameItems, hasStudents: studentNameItems.length > 0,
+      hasSelectedStudent: !!s.selectedStudent, noSelectedStudent: !s.selectedStudent, selectedStudent: s.selectedStudentName,
+      noStudents: studentNameItems.length === 0,
+      backToStudentList: () => this.backToStudentList(),
+
+      // — Admin —
+      isAdmin: s.role === 'admin', isAdminScreen: s.screen === 'admin',
+      goAdmin: () => this.goAdmin(),
+      adminColor: s.screen === 'admin' ? 'var(--color-accent-700)' : 'var(--color-text)',
+      adminFullName: s.adminFullName, onAdminFullName: e => this.onAdminFullName(e),
+      adminEmail: s.adminEmail, onAdminEmail: e => this.onAdminEmail(e),
+      adminPassword: s.adminPassword, onAdminPassword: e => this.onAdminPassword(e),
+      isAdminRoleStudent: s.adminRole === 'student', isAdminRoleTeacher: s.adminRole === 'teacher',
+      setAdminRoleStudent: () => this.setAdminRoleStudent(), setAdminRoleTeacher: () => this.setAdminRoleTeacher(),
+      adminTeacherId: s.adminTeacherId, onAdminTeacher: e => this.onAdminTeacher(e),
+      teacherOptions, hasTeacherOptions: teacherOptions.length > 0, noTeacherOptions: teacherOptions.length === 0,
+      accountsList, hasAccounts: accountsList.length > 0,
+      createAccount: () => this.createAccount(),
+      createBtnLabel: s.adminBusy ? 'កំពុងបង្កើត…' : 'បង្កើតគណនី',
+      hasAdminError: !!s.adminError, adminError: s.adminError,
+      hasAdminMsg: !!s.adminMsg, adminMsg: s.adminMsg,
+      isFlashcard: testMode === 'flashcard', isMC: testMode === 'mc', isMatching: testMode === 'matching',
+      isWrite: testMode === 'write', isResults: testMode === 'results',
+      showTabBar: !(s.screen === 'test' && testMode && testMode !== 'results'),
+
+      totalWordsLabel: `${WORDS.length} ពាក្យ`,
+      search: s.search, onSearchChange: e => this.onSearchChange(e),
+      isCatAll: s.catFilter === 'all', isCatVocab: s.catFilter === 'vocab', isCatGrammar: s.catFilter === 'grammar',
+      onCatAll: () => this.onCatAll(), onCatVocab: () => this.onCatVocab(), onCatGrammar: () => this.onCatGrammar(),
+      filteredWords, noResults: filteredWords.length === 0,
+
+      isSearchGeneral: s.searchMode === 'general', isSearchByPage: s.searchMode === 'page',
+      setSearchGeneral: () => this.setSearchGeneral(), setSearchByPage: () => this.setSearchByPage(),
+      pages, pageWordsList, hasPageFilter: s.pageFilter != null, noPageFilter: s.pageFilter == null,
+      pageWordsEmpty: s.pageFilter != null && pageWordsList.length === 0,
+      pageInput: s.pageInput, onPageInputChange: e => this.onPageInputChange(e), goToPage: () => this.goToPage(),
+      pageRangeLabel: PAGES.length ? `${PAGES[0]}–${PAGES[PAGES.length-1]}` : '',
+      pageVocabList, hasPageVocab: pageVocabList.length > 0,
+      pageGrammarList, hasPageGrammar: pageGrammarList.length > 0,
+      pageNumLabel: s.pageFilter != null ? `${s.pageFilter}` : '',
+      allPageViewed, startPageQuiz: () => this.startPageQuiz(),
+
+      isPageQuizOpen: s.pageQuizOpen, isPageQuizDone: s.pageQuizDone, isPageQuizActive: s.pageQuizOpen && !s.pageQuizDone,
+      pageQuizProgressLabel: `សំណួរទី ${Math.min(s.pageQuizIdx+1, pqQuestions.length)} / ${pqQuestions.length}`,
+      pageQuizQuestionKm: pqCurrent ? pqCurrent.km : '',
+      pageQuizOptions, pageQuizAnswered: s.pageQuizAnswered,
+      nextPageQuizQuestion: () => this.nextPageQuizQuestion(),
+      pageQuizNextLabel: (s.pageQuizIdx + 1 >= pqQuestions.length) ? 'មើលលទ្ធផល' : 'សំណួរបន្ទាប់',
+      pageQuizScoreLabel: `${s.pageQuizScore} / ${pqQuestions.length}`,
+      closePageQuiz: () => this.closePageQuiz(),
+
+      favoriteWordsList, hasFavorites: favoriteWordsList.length > 0, noFavorites: favoriteWordsList.length === 0,
+
+      isTestCatAll: s.testCat === 'all', isTestCatVocab: s.testCat === 'vocab', isTestCatGrammar: s.testCat === 'grammar',
+      onTestCatAll: () => this.onTestCatAll(), onTestCatVocab: () => this.onTestCatVocab(), onTestCatGrammar: () => this.onTestCatGrammar(),
+      startFlashcard: () => this.startFlashcard(), startMC: () => this.startMC(), startMatching: () => this.startMatching(), startWrite: () => this.startWrite(),
+      hasHistory: recentHistory.length > 0, noHistory: recentHistory.length === 0, recentHistory,
+
+      backToHub: () => this.backToHub(),
+      testProgressLabel: `${Math.min(s.testIdx+1, total)} / ${total}`,
+      currentWord,
+
+      flashShowFront: !s.flashFlipped, flashShowBack: s.flashFlipped,
+      flashFlip: () => this.flashFlip(), flashMarkKnown: () => this.flashMarkKnown(), flashMarkUnknown: () => this.flashMarkUnknown(),
+
+      mcOptions, mcAnswered: s.mcAnswered, mcNext: () => this.mcNext(),
+      mcNextLabel: (s.testIdx + 1 >= total) ? 'មើលលទ្ធផល' : 'បន្ទាប់',
+
+      matchLeftTiles, matchRightTiles,
+      matchProgressLabel: `${s.matchMatched.length} / ${total} ផ្គូផ្គង`,
+
+      writeInput: s.writeInput, onWriteInputChange: e => this.onWriteInputChange(e),
+      writeRevealed: s.writeRevealed, writeNotRevealed: !s.writeRevealed,
+      writeReveal: () => this.writeReveal(), writeGradeRight: () => this.writeGradeRight(), writeGradeWrong: () => this.writeGradeWrong(),
+
+      resultScoreLabel: `${s.testScore} / ${total}`,
+      resultPercentLabel: total > 0 ? `${Math.round(s.testScore/total*100)}%` : '',
+      retryTest: () => this.retryTest(),
+
+      syncStatusLabel: s.syncing ? 'កំពុងទាញទិន្នន័យ…' : (s.lastSync ? `សមកាលកម្មចុងក្រោយ: ${new Date(s.lastSync).toLocaleString()}` : 'មិនទាន់ធ្វើសមកាលកម្មទេ'),
+      syncButtonLabel: s.syncing ? 'កំពុងទាញ…' : 'ធ្វើសមកាលកម្មឥឡូវនេះ',
+      startSync: () => this.startSync(),
+      fontScale: s.settings.fontScale, onFontScaleChange: e => this.onFontScaleChange(e),
+      autoAudio: s.settings.autoAudio, onAutoAudioChange: e => this.onAutoAudioChange(e),
+
+      isDetailOpen: !!s.detailWordId, detailWord,
+      closeDetail: () => this.closeDetail(), stopProp: e => this.stopProp(e),
+      toggleDetailFavorite: () => this.toggleDetailFavorite(), playDetailAudio: () => this.playDetailAudio(),
+
+      goHome: () => this.goHome(), goFavorites: () => this.goFavorites(), goTest: () => this.goTest(), goSettings: () => this.goSettings(),
+      homeColor: s.screen === 'home' ? 'var(--color-accent-700)' : 'var(--color-text)',
+      favColor: s.screen === 'favorites' ? 'var(--color-accent-700)' : 'var(--color-text)',
+      testColor: s.screen === 'test' ? 'var(--color-accent-700)' : 'var(--color-text)',
+      settingsColor: s.screen === 'settings' ? 'var(--color-accent-700)' : 'var(--color-text)',
+
+      hasToast: !!s.toast, toast: s.toast,
+
+      needsRole: s.authStage !== 'app', hasRole: s.authStage === 'app',
+      isAuthLoading: s.authStage === 'loading', isLoginScreen: s.authStage === 'login',
+      email: s.email, onEmailChange: e => this.onEmailChange(e),
+      password: s.password, onPasswordChange: e => this.onPasswordChange(e),
+      doLogin: () => this.doLogin(),
+      loginBtnLabel: s.authBusy ? 'កំពុងចូល…' : 'ចូល',
+      hasAuthError: !!s.authError, authError: s.authError,
+      isDemoMode: Backend.demo,
+      isTeacher: s.role === 'teacher', isStudent: s.role === 'student',
+      roleLabel: ({ admin:'អ្នកគ្រប់គ្រង', teacher:'គ្រូ', student:'សិស្ស' })[s.role] || '',
+      profileName: s.profileName,
+      switchRole: () => this.logout(),
+    };
+  }
+}
+
+
+</script>
+
+
+</body></html>

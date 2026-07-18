@@ -1,0 +1,11 @@
+# OS / editor junk
+Thumbs.db
+.DS_Store
+*.log
+
+# Node (not used, but just in case)
+node_modules/
+
+# NOTE: app/config.js IS committed on purpose — it holds only the Supabase
+# Project URL + anon public key, which are safe to expose in a frontend.
+# NEVER put the service_role key anywhere in this repo.
