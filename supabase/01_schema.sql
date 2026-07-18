@@ -68,8 +68,10 @@ create or replace function public.protect_profile_columns()
 returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  if public.is_admin() then
-    return new;                       -- admins may change anything
+  -- admins may change anything; auth.uid() IS NULL means a trusted server /
+  -- SQL-editor / service_role context (RLS already blocks untrusted anon here).
+  if public.is_admin() or auth.uid() is null then
+    return new;
   end if;
   if new.role       is distinct from old.role
      or new.teacher_id is distinct from old.teacher_id
