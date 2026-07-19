@@ -587,7 +587,7 @@ textarea.input { min-height: 90px; resize: vertical; }
         </select>
       </sc-if>
     </div>
-    <div style="flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:0;padding-bottom:calc(70px + env(safe-area-inset-bottom, 0px));box-sizing:border-box;">
+    <div data-scroll="main" style="flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:0;padding-bottom:calc(70px + env(safe-area-inset-bottom, 0px));box-sizing:border-box;">
       <div style="zoom:{{ fontScale }};">
 
         <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
@@ -1056,6 +1056,17 @@ textarea.input { min-height: 90px; resize: vertical; }
 
       </div>
     </div>
+
+    <sc-if value="{{ showPageNav }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;right:14px;bottom:calc(76px + env(safe-area-inset-bottom, 0px));display:flex;gap:9px;z-index:18;">
+      <button aria-label="ទំព័រមុន" sc-camel-on-click="{{ goPrevPage }}" style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;background:var(--color-surface);border:1px solid var(--color-divider);box-shadow:var(--shadow-md);{{ prevPageStyle }}">
+        <svg width="21" height="21" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      <button aria-label="ទំព័របន្ទាប់" sc-camel-on-click="{{ goNextPage }}" style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;background:var(--color-surface);border:1px solid var(--color-divider);box-shadow:var(--shadow-md);{{ nextPageStyle }}">
+        <svg width="21" height="21" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+    </div>
+    </sc-if>
 
     <sc-if value="{{ showTabBar }}" hint-placeholder-val="{{ true }}">
     <div style="position:absolute;left:0;right:0;bottom:0;display:flex;background:var(--color-surface);border-top:1px solid var(--color-divider);padding:5px 6px calc(5px + env(safe-area-inset-bottom, 0px));z-index:20;">
@@ -6724,6 +6735,20 @@ class Component extends DCLogic {
   closePageQuiz(){ this.setState({ pageQuizOpen: false, pageQuizDone: false }); }
   onPageInputChange(e){ this.setState({ pageInput: e.target.value }); }
   goToPage(){ const n = parseInt(this.state.pageInput, 10); this.setState({ pageFilter: isNaN(n) ? null : n }); }
+  // Step to the previous / next page that actually has words in this book.
+  stepPage(dir){
+    const pages = pagesOfBook(this.state.bookFilter);
+    const i = pages.indexOf(this.state.pageFilter);
+    if (i < 0) return;
+    const target = pages[i + dir];
+    if (target == null) return;
+    this.setState({ pageFilter: target, pageInput: String(target) }, () => {
+      const el = document.querySelector('[data-scroll="main"]');
+      if (el) el.scrollTop = 0;      // start the new page from the top
+    });
+  }
+  goPrevPage(){ this.stepPage(-1); }
+  goNextPage(){ this.stepPage(1); }
   onTestCatAll(){ this.setState({ testCat: 'all' }); }
   onTestCatVocab(){ this.setState({ testCat: 'vocab' }); }
   onTestCatGrammar(){ this.setState({ testCat: 'grammar' }); }
@@ -6922,6 +6947,12 @@ class Component extends DCLogic {
       bookMenuOpen: s.bookMenuOpen, toggleBookMenu: () => this.toggleBookMenu(),
       onBookChange: e => this.onBookChange(e),
       bookLabel: s.bookFilter, hasManyBooks: BOOKS.length > 1,
+      // floating prev / next page arrows
+      showPageNav: s.searchMode === 'page' && s.pageFilter != null && bookPages.indexOf(s.pageFilter) >= 0,
+      goPrevPage: () => this.goPrevPage(), goNextPage: () => this.goNextPage(),
+      prevPageStyle: bookPages.indexOf(s.pageFilter) > 0 ? '' : 'opacity:0.3;pointer-events:none;',
+      nextPageStyle: bookPages.indexOf(s.pageFilter) >= 0 && bookPages.indexOf(s.pageFilter) < bookPages.length - 1 ? '' : 'opacity:0.3;pointer-events:none;',
+
       pages, pageWordsList, hasPageFilter: s.pageFilter != null, noPageFilter: s.pageFilter == null,
       pageWordsEmpty: s.pageFilter != null && pageWordsList.length === 0,
       pageInput: s.pageInput, onPageInputChange: e => this.onPageInputChange(e), goToPage: () => this.goToPage(),
