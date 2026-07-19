@@ -1,0 +1,48 @@
+name: Sync words from Google Docs
+
+# Manual only: open the Actions tab, pick this workflow, press "Run workflow".
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write      # commit the refreshed word data
+  actions: write       # kick off the Pages deploy afterwards
+
+concurrency:
+  group: sync-words
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fetch docs and rebuild word data
+        id: sync
+        run: node tools/sync-words.js
+
+      - name: Commit changes
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/index.html data/words.csv
+          git commit -m "Sync words from Google Docs (${{ steps.sync.outputs.count }} entries)"
+          git push
+
+      - name: Deploy the updated site
+        if: steps.sync.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml
+
+      - name: Nothing to do
+        if: steps.sync.outputs.changed != 'true'
+        run: echo "The docs match what is already published — no deploy needed."
