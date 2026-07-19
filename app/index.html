@@ -1093,9 +1093,13 @@ textarea.input { min-height: 90px; resize: vertical; }
           <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.55;margin-bottom:6px;">ឧទាហរណ៍</div>
           <sc-for list="{{ detailWord.examples }}" as="ex" hint-placeholder-count="3">
             <div style="padding:8px 0;border-top:1px solid var(--color-divider);">
-              <div style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;" sc-camel-on-click="{{ ex.onPlay }}">
-                <svg width="17" height="17" style="flex:none;margin-top:3px;" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M15.54 8.46a5 5 0 010 7.07"></path></svg>
-                <div style="font-size:15px;line-height:1.5;">{{ ex.jp }}</div>
+              <div style="display:flex;align-items:flex-start;gap:8px;">
+                <button class="btn btn-ghost" style="flex:none;padding:2px;margin-top:2px;" sc-camel-on-click="{{ ex.onPlay }}" aria-label="ស្តាប់សម្លេង">
+                  <svg width="17" height="17" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M15.54 8.46a5 5 0 010 7.07"></path></svg>
+                </button>
+                <div style="font-size:15px;line-height:1.7;">
+                  <sc-for list="{{ ex.segments }}" as="sg" hint-placeholder-count="4"><sc-if value="{{ sg.isLink }}"><span style="color:var(--color-accent-700);border-bottom:1px dotted var(--color-accent-400);cursor:pointer;" sc-camel-on-click="{{ sg.onOpen }}">{{ sg.text }}</span></sc-if><sc-if value="{{ sg.isPlain }}"><span>{{ sg.text }}</span></sc-if></sc-for>
+                </div>
               </div>
               <div style="font-size:13px;opacity:0.7;line-height:1.5;margin-left:25px;">{{ ex.km }}</div>
             </div>
@@ -5546,6 +5550,39 @@ function dedupeWords(list){
   return out;
 }
 const UNIQUE_WORDS = dedupeWords(WORDS);
+
+// — Link headwords found inside example sentences, so tapping a word in a
+//   sentence opens its own entry. Japanese has no spaces, so scan the string
+//   and take the longest headword that starts at each position.
+const LINKABLE = (() => {
+  const byFirst = new Map();
+  for (const w of UNIQUE_WORDS) {
+    const jp = w.jp;
+    if (!jp || jp.startsWith('〜') || jp.startsWith('～')) continue;      // grammar patterns
+    // Only link 2+ characters: a lone kanji is usually just the stem of a
+    // conjugated verb in the sentence (決 out of 決められています), not the word.
+    if (jp.length < 2) continue;
+    if (!byFirst.has(jp[0])) byFirst.set(jp[0], []);
+    byFirst.get(jp[0]).push(w);
+  }
+  for (const arr of byFirst.values()) arr.sort((a, b) => b.jp.length - a.jp.length);
+  return byFirst;
+})();
+function linkSegments(sentence){
+  const segs = []; let buf = '', i = 0;
+  while (i < sentence.length) {
+    const cands = LINKABLE.get(sentence[i]);
+    let hit = null;
+    if (cands) for (const w of cands) { if (sentence.startsWith(w.jp, i)) { hit = w; break; } }
+    if (hit) {
+      if (buf) { segs.push({ text: buf, isLink: false }); buf = ''; }
+      segs.push({ text: hit.jp, isLink: true, id: hit.id });
+      i += hit.jp.length;
+    } else { buf += sentence[i]; i++; }
+  }
+  if (buf) segs.push({ text: buf, isLink: false });
+  return segs;
+}
 const PAGES = Array.from(new Set(WORDS.map(w => w.page))).sort((a,b)=>a-b);
 const MODE_LABEL = { flashcard:'Flashcard', mc:'ជ្រើសរើសត្រូវ', matching:'ផ្គូផ្គង', write:'សរសេរអត្ថន័យ' };
 
@@ -6099,7 +6136,12 @@ class Component extends DCLogic {
 
     const detailW = WORDS.find(w => w.id === s.detailWordId);
     const detailWord = detailW ? { ...detailW, tagClass: tagClassFor(detailW.pos), favFill: s.favorites.includes(detailW.id) ? 'var(--color-accent-700)' : 'transparent', sourceLabel: `${detailW.book} · ទំព័រ ${[...new Set(WORDS.filter(w => w.jp === detailW.jp && w.kana === detailW.kana && w.book === detailW.book).map(w => w.page))].sort((a,b)=>a-b).join(', ')}`,
-          examples: detailW.examples.map(ex => ({ ...ex, onPlay: () => this.playAudio(ex.jp) })),
+          examples: detailW.examples.map(ex => ({ ...ex,
+            onPlay: () => this.playAudio(ex.jp),
+            segments: linkSegments(ex.jp).map(sg => ({
+              text: sg.text, isLink: sg.isLink, isPlain: !sg.isLink,
+              onOpen: sg.isLink ? (e => { if (e) e.stopPropagation(); this.openDetail(sg.id); }) : null
+            })) })),
           hasExamples: detailW.examples.length > 0, noExamples: detailW.examples.length === 0 }
       : { jp:'', kana:'', pos:'', km:'', examples:[], hasExamples:false, noExamples:true, tagClass:'tag tag-neutral', favFill:'transparent', sourceLabel:'' };
 
