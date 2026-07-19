@@ -6488,10 +6488,20 @@ function makeSupabaseBackend(){
       if (data && data.error) return { error: data.error };
       return { error:null };
     },
+    // Profile fields go straight to the table — RLS already limits who may
+    // touch which row, and this keeps editing working without redeploying the
+    // Edge Function. Only the password needs the service role.
     async updateAccount(id, patch){
-      const { data, error } = await client.functions.invoke(EDGE_CREATE_USER, { body: { action:'update', user_id:id, ...patch } });
-      if (error) return { error: await fnError(error) };
-      if (data && data.error) return { error: data.error };
+      const { password, ...fields } = patch;
+      if (Object.keys(fields).length) {
+        const { error } = await client.from('profiles').update(fields).eq('id', id);
+        if (error) return { error: error.message };
+      }
+      if (password) {
+        const { data, error } = await client.functions.invoke(EDGE_CREATE_USER, { body: { action:'update', user_id:id, password } });
+        if (error) return { error: await fnError(error) };
+        if (data && data.error) return { error: data.error };
+      }
       return { error:null };
     },
     async deleteAccount(id){
