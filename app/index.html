@@ -909,6 +909,38 @@ textarea.input { min-height: 90px; resize: vertical; }
         </div>
         </sc-if>
 
+        <sc-if value="{{ isEditWords }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="position:sticky;top:0;z-index:8;background:var(--color-bg);padding:14px 20px 10px;">
+            <input class="input" type="text" placeholder="ស្វែងរកពាក្យដែលចង់កែ…" value="{{ editSearch }}" sc-camel-on-change="{{ onEditSearch }}" style="width:100%;">
+          </div>
+          <div style="padding:0 20px 20px;">
+            <sc-if value="{{ editNoQuery }}">
+              <div style="text-align:center;padding:40px 16px;opacity:0.55;font-size:13px;line-height:1.7;">វាយពាក្យដែលចង់កែតម្រូវ<br>(ជប៉ុន · かな · romaji · ន័យខ្មែរ)</div>
+            </sc-if>
+            <sc-if value="{{ editNoResults }}">
+              <div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">រកមិនឃើញពាក្យទេ</div>
+            </sc-if>
+            <sc-if value="{{ hasEditResults }}">
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <sc-for list="{{ editResults }}" as="w" hint-placeholder-count="6">
+                <div class="card" style="cursor:pointer;flex-direction:row;align-items:center;justify-content:space-between;gap:10px;" sc-camel-on-click="{{ w.onPick }}">
+                  <div style="min-width:0;">
+                    <div style="display:flex;align-items:baseline;gap:8px;">
+                      <span style="font-family:var(--font-heading);font-weight:600;font-size:19px;">{{ w.jp }}</span>
+                      <span style="font-size:12px;opacity:0.55;">{{ w.kana }}</span>
+                    </div>
+                    <div style="font-size:13px;opacity:0.8;">{{ w.km }}</div>
+                  </div>
+                  <span style="flex:none;font-size:11px;opacity:0.5;">{{ w.exCount }}</span>
+                </div>
+              </sc-for>
+            </div>
+            </sc-if>
+          </div>
+        </div>
+        </sc-if>
+
         <sc-if value="{{ isAdminScreen }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;">
           <h1 style="font-size:26px;margin:0 0 4px;">គ្រប់គ្រងគណនី</h1>
@@ -1101,6 +1133,10 @@ textarea.input { min-height: 90px; resize: vertical; }
       </button>
       </sc-if>
       <sc-if value="{{ isAdmin }}">
+      <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ editWordsColor }};" sc-camel-on-click="{{ goEditWords }}">
+        <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ editWordsColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        <span style="font-size:10px;">កែពាក្យ</span>
+      </button>
       <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ adminColor }};" sc-camel-on-click="{{ goAdmin }}">
         <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ adminColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg>
         <span style="font-size:10px;">គណនី</span>
@@ -1157,6 +1193,45 @@ textarea.input { min-height: 90px; resize: vertical; }
         </div>
         </sc-if>
         <button class="btn btn-secondary btn-block" sc-camel-on-click="{{ closeDetail }}">បិទ</button>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isEditingWord }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:color-mix(in srgb, var(--color-neutral-900) 45%, transparent);display:flex;align-items:flex-end;z-index:32;" sc-camel-on-click="{{ closeEditWord }}">
+      <div style="background:var(--color-bg);width:100%;border-radius:20px 20px 0 0;padding:20px 20px 26px;box-shadow:var(--shadow-lg);max-height:88%;overflow-y:auto;box-sizing:border-box;" sc-camel-on-click="{{ stopProp }}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:19px;">កែពាក្យ</div>
+          <button class="btn btn-ghost" style="padding:4px 8px;font-size:17px;line-height:1;" sc-camel-on-click="{{ closeEditWord }}" aria-label="បិទ">✕</button>
+        </div>
+
+        <div class="field" style="margin-bottom:10px;"><label>ពាក្យជប៉ុន</label>
+          <input class="input" type="text" value="{{ edJp }}" sc-camel-on-change="{{ onEdJp }}"></div>
+        <div class="field" style="margin-bottom:10px;"><label>របៀបអាន (かな)</label>
+          <input class="input" type="text" value="{{ edKana }}" sc-camel-on-change="{{ onEdKana }}"></div>
+        <div class="field" style="margin-bottom:10px;"><label>ថ្នាក់ពាក្យ (ន. · កិ. · គុណ.)</label>
+          <input class="input" type="text" value="{{ edPos }}" sc-camel-on-change="{{ onEdPos }}"></div>
+        <div class="field" style="margin-bottom:16px;"><label>ន័យខ្មែរ</label>
+          <input class="input" type="text" value="{{ edKm }}" sc-camel-on-change="{{ onEdKm }}"></div>
+
+        <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.55;margin-bottom:8px;">ឧទាហរណ៍</div>
+        <sc-for list="{{ edExamples }}" as="ex" hint-placeholder-count="2">
+          <div style="border:1px solid var(--color-divider);border-radius:var(--radius-md);padding:10px;margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:11px;opacity:0.55;">{{ ex.num }}</span>
+              <a href="#" style="font-size:12px;color:#c0392b;" sc-camel-on-click="{{ ex.onRemove }}">លុប</a>
+            </div>
+            <input class="input" type="text" placeholder="ប្រយោគជប៉ុន" value="{{ ex.jp }}" sc-camel-on-change="{{ ex.onJp }}" style="margin-bottom:6px;">
+            <input class="input" type="text" placeholder="ការបកប្រែខ្មែរ" value="{{ ex.km }}" sc-camel-on-change="{{ ex.onKm }}">
+          </div>
+        </sc-for>
+        <button class="btn btn-secondary btn-block" style="margin-bottom:16px;" sc-camel-on-click="{{ addEdExample }}">+ បន្ថែមឧទាហរណ៍</button>
+
+        <sc-if value="{{ hasEdError }}"><div style="font-size:12px;color:#c0392b;margin-bottom:8px;line-height:1.5;">{{ edError }}</div></sc-if>
+        <sc-if value="{{ hasEdMsg }}"><div style="font-size:12px;color:var(--color-accent-700);margin-bottom:8px;line-height:1.5;">{{ edMsg }}</div></sc-if>
+
+        <button class="btn btn-primary btn-block" sc-camel-on-click="{{ saveEditWord }}">{{ edSaveLabel }}</button>
+        <button class="btn btn-secondary btn-block" sc-camel-on-click="{{ resetEditWord }}">លុបការកែ (ត្រឡប់ទៅពាក្យដើម)</button>
       </div>
     </div>
     </sc-if>
@@ -6175,16 +6250,18 @@ const WORDS = RAW_WORDS.map(r => {
 // A word is relisted on many pages but its examples are written on one of
 // those rows. Share them across every occurrence, so whichever row a list
 // happens to show still carries the examples.
-(() => {
+function shareExamples(){
+  // drop anything a previous pass copied, so this can be re-run after an edit
+  for (const w of WORDS) if (w._sharedEx) { w.examples = []; w._sharedEx = false; }
   const byWord = new Map();
   for (const w of WORDS) {
     const k = w.jp + '|' + w.kana;
     if (w.examples.length && !byWord.has(k)) byWord.set(k, w.examples);
   }
   if (byWord.size) for (const w of WORDS) {
-    if (!w.examples.length) { const ex = byWord.get(w.jp + '|' + w.kana); if (ex) w.examples = ex; }
+    if (!w.examples.length) { const ex = byWord.get(w.jp + '|' + w.kana); if (ex) { w.examples = ex; w._sharedEx = true; } }
   }
-})();
+}
 
 const BOOKS = Array.from(new Set(WORDS.map(w => w.book)));
 const pagesOfBook = b => Array.from(new Set(WORDS.filter(w => w.book === b).map(w => w.page))).sort((a,b)=>a-b);
@@ -6195,12 +6272,10 @@ function dedupeWords(list){
   for (const w of list) { const k = w.jp + '|' + w.kana; if (seen.has(k)) continue; seen.add(k); out.push(w); }
   return out;
 }
-const UNIQUE_WORDS = dedupeWords(WORDS);
-
 // — Link headwords found inside example sentences, so tapping a word in a
 //   sentence opens its own entry. Japanese has no spaces, so scan the string
 //   and take the longest headword that starts at each position.
-const LINKABLE = (() => {
+function buildLinkable(){
   const byFirst = new Map();
   for (const w of UNIQUE_WORDS) {
     const jp = w.jp;
@@ -6213,7 +6288,37 @@ const LINKABLE = (() => {
   }
   for (const arr of byFirst.values()) arr.sort((a, b) => b.jp.length - a.jp.length);
   return byFirst;
-})();
+}
+
+// Rebuilt at load, and again whenever an admin correction changes a word.
+let UNIQUE_WORDS = [];
+let LINKABLE = new Map();
+function rebuildIndexes(){
+  shareExamples();
+  UNIQUE_WORDS = dedupeWords(WORDS);
+  LINKABLE = buildLinkable();
+}
+rebuildIndexes();
+
+// Admin corrections stored in Supabase, laid over the synced words.
+function applyOverrides(rows){
+  if (!rows || !rows.length) return 0;
+  const byId = new Map(WORDS.map(w => [w.id, w]));
+  let n = 0;
+  for (const o of rows) {
+    const w = byId.get(o.word_id);
+    if (!w) continue;
+    if (o.jp) w.jp = o.jp;
+    if (o.kana != null) w.kana = o.kana;
+    if (o.pos != null) w.pos = o.pos;
+    if (o.km) w.km = o.km;
+    if (Array.isArray(o.examples)) { w.examples = o.examples.filter(e => e && e.jp); w._sharedEx = false; }
+    w.romaji = kanaToRomaji(w.kana); w.romajiNorm = normRomaji(w.romaji);
+    n++;
+  }
+  if (n) rebuildIndexes();
+  return n;
+}
 function linkSegments(sentence){
   const segs = []; let buf = '', i = 0;
   while (i < sentence.length) {
@@ -6273,6 +6378,12 @@ function makeSupabaseBackend(){
       return { url: data.publicUrl + '?v=' + Date.now() };   // cache-bust so the new logo shows
     },
     async deleteLogo(){ try { await client.storage.from('logos').remove(['logo.png']); } catch(e){} return { error:null }; },
+    async getOverrides(){ const { data } = await client.from('word_overrides').select('word_id,jp,kana,pos,km,examples'); return { rows: data || [] }; },
+    async saveOverride(row){
+      const { error } = await client.from('word_overrides').upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: 'word_id' });
+      return { error: error ? error.message : null };
+    },
+    async deleteOverride(id){ const { error } = await client.from('word_overrides').delete().eq('word_id', id); return { error: error ? error.message : null }; },
     // Asks the Edge Function to start the GitHub sync workflow (the token that
     // lets it do so lives on the server, never in this page).
     async syncWords(){
@@ -6332,6 +6443,17 @@ function makeDemoBackend(){
     async uploadLogo(blob){ const url = await new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); }); return { url }; },
     async deleteLogo(){ return { error:null }; },
     async syncWords(){ return { error: 'Demo mode — គ្មានការភ្ជាប់ទៅ GitHub ទេ' }; },
+    async getOverrides(){ try { return { rows: JSON.parse(localStorage.getItem('dict_demo_overrides') || '[]') }; } catch(e) { return { rows: [] }; } },
+    async saveOverride(row){
+      const rows = (await this.getOverrides()).rows.filter(r => r.word_id !== row.word_id);
+      rows.push(row); localStorage.setItem('dict_demo_overrides', JSON.stringify(rows));
+      return { error: null };
+    },
+    async deleteOverride(id){
+      const rows = (await this.getOverrides()).rows.filter(r => r.word_id !== id);
+      localStorage.setItem('dict_demo_overrides', JSON.stringify(rows));
+      return { error: null };
+    },
     async createAccount(p){ const us=load(); const email=String(p.email).trim().toLowerCase(); if(us.find(x=>x.email===email)) return { error:'អ៊ីមែលនេះមានរួចហើយ' }; us.push({ id:'u-'+Date.now(), email, password:p.password, full_name:p.full_name||'', role:p.role, teacher_id:p.role==='student'?(p.teacher_id||null):null, viewed:[], favorites:[], history:[], settings:{} }); save(us); return { error:null }; },
     async updateAccount(id, patch){ const us=load(); const u=us.find(x=>x.id===id); if(!u) return { error:'not found' }; if(patch.full_name!=null) u.full_name=patch.full_name; if(patch.role!=null) u.role=patch.role; if(patch.teacher_id!==undefined) u.teacher_id=u.role==='student'?(patch.teacher_id||null):null; if(patch.password) u.password=patch.password; save(us); return { error:null }; },
     async deleteAccount(id){ let us=load(); us=us.filter(x=>x.id!==id); save(us); return { error:null }; },
@@ -6360,6 +6482,10 @@ class Component extends DCLogic {
     appName: DEFAULT_APP_NAME, appLogo: '',
     settingsName: '', settingsLogo: '', settingsLogoBlob: null, settingsBusy: false, settingsMsg: '', settingsError: '',
     syncBusy: false, syncMsg: '', syncError: '',
+    // admin word editor
+    editSearch: '', editWordId: null,
+    edJp: '', edKana: '', edPos: '', edKm: '', edExamples: [],
+    edBusy: false, edMsg: '', edError: '', overridesRev: 0,
     screen: 'home', search: '', catFilter: 'all', testCat: 'all', searchMode: 'general', pageFilter: null, pageInput: '',
     bookFilter: BOOKS[0] || DEFAULT_BOOK,
     pendingHide: [],   // just-ticked words, still shown for a moment
@@ -6418,6 +6544,7 @@ class Component extends DCLogic {
   async componentDidMount(){
     this.primeVoices();
     this.setupInstall();
+    this.loadOverrides();
     this.loadAppSettings();
     try {
       const session = await Backend.currentSession();
@@ -6594,6 +6721,55 @@ class Component extends DCLogic {
     reader.readAsDataURL(f);
   }
   clearSettingsLogo(){ this.setState({ settingsLogo: '', settingsLogoBlob: null, settingsMsg:'', settingsError:'' }); }
+  // — Admin word editor: corrections kept in Supabase, laid over the sync —
+  async loadOverrides(){
+    try {
+      const { rows } = await Backend.getOverrides();
+      if (applyOverrides(rows)) this.setState(s => ({ overridesRev: s.overridesRev + 1 }));
+    } catch(e) {}
+  }
+  goEditWords(){ this.setState({ screen: 'editwords', editWordId: null, edMsg: '', edError: '' }); }
+  onEditSearch(e){ this.setState({ editSearch: e.target.value }); }
+  pickEditWord(id){
+    const w = WORDS.find(x => x.id === id);
+    if (!w) return;
+    this.setState({ editWordId: id, edJp: w.jp, edKana: w.kana, edPos: w.pos, edKm: w.km,
+      edExamples: w.examples.map(e => ({ jp: e.jp, km: e.km })), edMsg: '', edError: '' });
+  }
+  closeEditWord(){ this.setState({ editWordId: null, edMsg: '', edError: '' }); }
+  onEdJp(e){ this.setState({ edJp: e.target.value }); }
+  onEdKana(e){ this.setState({ edKana: e.target.value }); }
+  onEdPos(e){ this.setState({ edPos: e.target.value }); }
+  onEdKm(e){ this.setState({ edKm: e.target.value }); }
+  onEdExampleJp(i, e){ const v = e.target.value; this.setState(s => ({ edExamples: s.edExamples.map((x, k) => k === i ? { ...x, jp: v } : x) })); }
+  onEdExampleKm(i, e){ const v = e.target.value; this.setState(s => ({ edExamples: s.edExamples.map((x, k) => k === i ? { ...x, km: v } : x) })); }
+  addEdExample(){ this.setState(s => ({ edExamples: [...s.edExamples, { jp: '', km: '' }] })); }
+  removeEdExample(i){ this.setState(s => ({ edExamples: s.edExamples.filter((_, k) => k !== i) })); }
+  async saveEditWord(){
+    if (this.state.edBusy) return;
+    const id = this.state.editWordId;
+    if (!id) return;
+    const jp = (this.state.edJp || '').trim(), km = (this.state.edKm || '').trim();
+    if (!jp || !km) { this.setState({ edError: 'ត្រូវការពាក្យជប៉ុន និងន័យខ្មែរ', edMsg: '' }); return; }
+    this.setState({ edBusy: true, edError: '', edMsg: '' });
+    const examples = this.state.edExamples
+      .map(x => ({ jp: (x.jp || '').trim(), km: (x.km || '').trim() }))
+      .filter(x => x.jp);
+    const row = { word_id: id, jp, kana: (this.state.edKana || '').trim(), pos: (this.state.edPos || '').trim(), km, examples };
+    const { error } = await Backend.saveOverride(row);
+    if (error) { this.setState({ edBusy: false, edError: error }); return; }
+    applyOverrides([row]);
+    this.setState(s => ({ edBusy: false, edMsg: 'រក្សាទុករួចរាល់ ✓', overridesRev: s.overridesRev + 1 }));
+  }
+  async resetEditWord(){
+    const id = this.state.editWordId;
+    if (!id || this.state.edBusy) return;
+    this.setState({ edBusy: true, edError: '', edMsg: '' });
+    const { error } = await Backend.deleteOverride(id);
+    if (error) { this.setState({ edBusy: false, edError: error }); return; }
+    this.setState({ edBusy: false, edMsg: 'លុបការកែរួច — សូមបិទបើកកម្មវិធីឡើងវិញដើម្បីឃើញពាក្យដើម' });
+  }
+
   async syncWords(){
     if (this.state.syncBusy) return;
     this.setState({ syncBusy: true, syncMsg: '', syncError: '' });
@@ -6869,6 +7045,17 @@ class Component extends DCLogic {
 
     const favoriteWordsList = dedupeWords(WORDS.filter(w => s.favorites.includes(w.id))).map(decorate);
 
+    // admin word editor: plain lookup, every match, no study state
+    const eq = s.editSearch.trim().toLowerCase();
+    const eqr = /^[a-z\s-]+$/.test(eq) ? normRomaji(eq.replace(/[\s-]/g, '')) : '';
+    const editResults = (eq ? UNIQUE_WORDS.filter(w =>
+        w.jp.includes(s.editSearch) || w.kana.includes(s.editSearch) || w.km.toLowerCase().includes(eq)
+        || (eqr && (w.romaji.includes(eqr) || w.romajiNorm.includes(eqr)))
+      ) : []).slice(0, 40).map(w => ({
+        id: w.id, jp: w.jp, kana: w.kana, km: w.km,
+        exCount: w.examples.length ? `${w.examples.length} ឧ.` : '',
+        onPick: () => this.pickEditWord(w.id) }));
+
     const bookPages = pagesOfBook(s.bookFilter);
     const pages = bookPages.map(p => ({ num: p, label: `ទំព័រ ${p}`, btnClass: s.pageFilter === p ? 'btn-primary' : 'btn-secondary', onSelect: () => this.selectPage(p) }));
     const pageWordsList = s.pageFilter != null ? dedupeWords(WORDS.filter(w => w.page === s.pageFilter && w.book === s.bookFilter)).map(decorate) : [];
@@ -6967,6 +7154,29 @@ class Component extends DCLogic {
       hasSelectedStudent: !!s.selectedStudent, noSelectedStudent: !s.selectedStudent, selectedStudent: s.selectedStudentName,
       noStudents: studentNameItems.length === 0,
       backToStudentList: () => this.backToStudentList(),
+
+      // — Admin word editor —
+      isEditWords: s.screen === 'editwords',
+      goEditWords: () => this.goEditWords(),
+      editWordsColor: s.screen === 'editwords' ? 'var(--color-accent-700)' : 'var(--color-text)',
+      editSearch: s.editSearch, onEditSearch: e => this.onEditSearch(e),
+      editResults, hasEditResults: editResults.length > 0,
+      editNoQuery: !s.editSearch.trim(),
+      editNoResults: !!s.editSearch.trim() && editResults.length === 0,
+      isEditingWord: !!s.editWordId, closeEditWord: () => this.closeEditWord(),
+      edJp: s.edJp, onEdJp: e => this.onEdJp(e),
+      edKana: s.edKana, onEdKana: e => this.onEdKana(e),
+      edPos: s.edPos, onEdPos: e => this.onEdPos(e),
+      edKm: s.edKm, onEdKm: e => this.onEdKm(e),
+      edExamples: s.edExamples.map((x, i) => ({
+        jp: x.jp, km: x.km, num: `ឧទាហរណ៍ ${i + 1}`,
+        onJp: e => this.onEdExampleJp(i, e), onKm: e => this.onEdExampleKm(i, e),
+        onRemove: () => this.removeEdExample(i) })),
+      addEdExample: () => this.addEdExample(),
+      saveEditWord: () => this.saveEditWord(), resetEditWord: () => this.resetEditWord(),
+      edSaveLabel: s.edBusy ? 'កំពុងរក្សាទុក…' : 'រក្សាទុក',
+      hasEdMsg: !!s.edMsg, edMsg: s.edMsg,
+      hasEdError: !!s.edError, edError: s.edError,
 
       // — Admin —
       isAdmin: s.role === 'admin', isAdminScreen: s.screen === 'admin',
