@@ -35,7 +35,24 @@ Deno.serve(async (req) => {
     const { data: { user: caller } } = await callerClient.auth.getUser();
     if (!caller) return json({ error: "Not signed in" }, 401);
     const { data: callerProfile } = await callerClient.from("profiles").select("role").eq("id", caller.id).single();
-    if (!callerProfile || callerProfile.role !== "admin") return json({ error: "Admin only" }, 403);
+    const callerRole = callerProfile?.role;
+    if (callerRole !== "admin" && callerRole !== "school") {
+      return json({ error: "Admin only" }, 403);
+    }
+    const isAdmin = callerRole === "admin";
+
+    // A school may only touch its own branch: roles it may hand out, and the
+    // members it may edit or remove.
+    const rolesAllowed = isAdmin ? ["school", "teacher", "student"] : ["teacher", "student"];
+    const assertOwns = async (userId: string) => {
+      if (isAdmin) return null;
+      const { data: target } = await callerClient
+        .from("profiles").select("id,role,school_id").eq("id", userId).single();
+      if (!target) return "រកមិនឃើញគណនីនេះទេ";
+      if (target.school_id !== caller.id) return "គណនីនេះមិនមែនរបស់សាលាអ្នកទេ";
+      if (!["teacher", "student"].includes(target.role)) return "គ្មានសិទ្ធិលើគណនីនេះទេ";
+      return null;
+    };
 
     const admin = createClient(url, service, { auth: { autoRefreshToken: false, persistSession: false } });
     const body = await req.json();
@@ -46,6 +63,8 @@ Deno.serve(async (req) => {
       const id = body.user_id;
       if (!id) return json({ error: "Missing user_id" }, 400);
       if (id === caller.id) return json({ error: "មិនអាចលុបគណនីខ្លួនឯងបានទេ" }, 400);
+      const denied = await assertOwns(id);
+      if (denied) return json({ error: denied }, 403);
       const { error } = await admin.auth.admin.deleteUser(id);
       if (error) return json({ error: error.message }, 400);
       return json({ ok: true });
@@ -55,8 +74,11 @@ Deno.serve(async (req) => {
     if (action === "update") {
       const id = body.user_id;
       if (!id) return json({ error: "Missing user_id" }, 400);
-      if (body.role && !["teacher", "student"].includes(body.role))
-        return json({ error: "role must be teacher or student" }, 400);
+      if (body.role && !rolesAllowed.includes(body.role))
+        return json({ error: `role must be one of ${rolesAllowed.join(", ")}` }, 400);
+      const denied = await assertOwns(id);
+      if (denied) return json({ error: denied }, 403);
+
       if (body.password) {
         const { error } = await admin.auth.admin.updateUserById(id, { password: body.password });
         if (error) return json({ error: error.message }, 400);
@@ -65,6 +87,10 @@ Deno.serve(async (req) => {
       if (body.full_name != null) patch.full_name = body.full_name;
       if (body.role != null) patch.role = body.role;
       if (body.teacher_id !== undefined) patch.teacher_id = body.role === "student" ? (body.teacher_id ?? null) : null;
+      // a school can never move someone out of its own branch
+      if (body.role === "school") patch.school_id = null;
+      else if (!isAdmin) patch.school_id = caller.id;
+      else if (body.school_id !== undefined) patch.school_id = body.school_id ?? null;
       if (Object.keys(patch).length) {
         const { error } = await admin.from("profiles").update(patch).eq("id", id);
         if (error) return json({ error: error.message }, 400);
@@ -106,10 +132,21 @@ Deno.serve(async (req) => {
     // ---- CREATE (default) ----
     const { email, password, full_name, role, teacher_id } = body;
     if (!email || !password) return json({ error: "Missing email/password" }, 400);
-    if (!["teacher", "student"].includes(role)) return json({ error: "role must be teacher or student" }, 400);
+    if (!rolesAllowed.includes(role)) {
+      return json({ error: `role must be one of ${rolesAllowed.join(", ")}` }, 400);
+    }
+    // A school always creates inside its own branch; an admin says which one.
+    const school_id = role === "school" ? null : (isAdmin ? (body.school_id ?? null) : caller.id);
+    if (role !== "school" && !school_id) {
+      return json({ error: "សូមជ្រើសរើសសាលា/សាខា" }, 400);
+    }
     const { data: created, error } = await admin.auth.admin.createUser({
       email, password, email_confirm: true,
-      user_metadata: { full_name: full_name ?? "", role, teacher_id: role === "student" ? (teacher_id ?? null) : null },
+      user_metadata: {
+        full_name: full_name ?? "", role,
+        teacher_id: role === "student" ? (teacher_id ?? null) : null,
+        school_id,
+      },
     });
     if (error) return json({ error: error.message }, 400);
     return json({ ok: true, user_id: created.user?.id });

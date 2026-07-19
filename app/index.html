@@ -954,8 +954,30 @@ textarea.input { min-height: 90px; resize: vertical; }
               <div class="seg">
                 <label class="seg-opt"><input type="radio" name="arole" checked="{{ isAdminRoleStudent }}" sc-camel-on-change="{{ setAdminRoleStudent }}"><span>សិស្ស</span></label>
                 <label class="seg-opt"><input type="radio" name="arole" checked="{{ isAdminRoleTeacher }}" sc-camel-on-change="{{ setAdminRoleTeacher }}"><span>គ្រូ</span></label>
+                <sc-if value="{{ canCreateSchool }}">
+                <label class="seg-opt"><input type="radio" name="arole" checked="{{ isAdminRoleSchool }}" sc-camel-on-change="{{ setAdminRoleSchool }}"><span>សាលា/សាខា</span></label>
+                </sc-if>
               </div>
             </div>
+            <sc-if value="{{ showSchoolPickCreate }}">
+            <div class="field">
+              <label>សាលា/សាខា</label>
+              <sc-if value="{{ noSchools }}"><div style="font-size:12px;opacity:0.6;">សូមបង្កើតគណនីសាលា/សាខាជាមុនសិន</div></sc-if>
+              <div style="position:relative;">
+                <button class="input" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left;cursor:pointer;" sc-camel-on-click="{{ toggleSchoolMenuCreate }}">
+                  <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ adminSchoolLabel }}</span>
+                  <svg width="16" height="16" style="flex:none;" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-text)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <sc-if value="{{ schoolMenuCreateOpen }}">
+                <div style="position:absolute;top:100%;left:0;right:0;margin-top:4px;z-index:30;max-height:210px;overflow-y:auto;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:var(--radius-md);box-shadow:var(--shadow-md);">
+                  <sc-for list="{{ schoolOptionsCreate }}" as="sc" hint-placeholder-count="2">
+                    <button style="width:100%;text-align:left;padding:11px 13px;background:transparent;border:none;border-bottom:1px solid var(--color-divider);font:inherit;cursor:pointer;{{ sc.rowStyle }}" sc-camel-on-click="{{ sc.onSelect }}">{{ sc.name }}</button>
+                  </sc-for>
+                </div>
+                </sc-if>
+              </div>
+            </div>
+            </sc-if>
             <sc-if value="{{ isAdminRoleStudent }}">
             <div class="field"><label>គ្រូទទួលបន្ទុក</label>
               <sc-if value="{{ hasTeacherOptions }}">
@@ -988,6 +1010,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <div style="min-width:0;flex:1;">
                   <div style="font-size:14px;">{{ a.name }}</div>
                   <div style="font-size:11px;opacity:0.55;">{{ a.email }}</div>
+                  <div style="font-size:11px;opacity:0.45;">{{ a.branch }}</div>
                 </div>
                 <span class="{{ a.tagClass }}" style="flex:none;">{{ a.roleLabel }}</span>
                 <sc-if value="{{ a.canManage }}">
@@ -1009,8 +1032,28 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <div class="seg">
                   <label class="seg-opt"><input type="radio" name="erole" checked="{{ isEditRoleStudent }}" sc-camel-on-change="{{ setEditRoleStudent }}"><span>សិស្ស</span></label>
                   <label class="seg-opt"><input type="radio" name="erole" checked="{{ isEditRoleTeacher }}" sc-camel-on-change="{{ setEditRoleTeacher }}"><span>គ្រូ</span></label>
+                  <sc-if value="{{ canCreateSchool }}">
+                  <label class="seg-opt"><input type="radio" name="erole" checked="{{ isEditRoleSchool }}" sc-camel-on-change="{{ setEditRoleSchool }}"><span>សាលា/សាខា</span></label>
+                  </sc-if>
                 </div>
               </div>
+              <sc-if value="{{ showSchoolPickEdit }}">
+              <div class="field"><label>សាលា/សាខា</label>
+                <div style="position:relative;">
+                  <button class="input" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left;cursor:pointer;" sc-camel-on-click="{{ toggleSchoolMenuEdit }}">
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ editSchoolLabel }}</span>
+                    <svg width="16" height="16" style="flex:none;" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-text)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </button>
+                  <sc-if value="{{ schoolMenuEditOpen }}">
+                  <div style="position:absolute;top:100%;left:0;right:0;margin-top:4px;z-index:30;max-height:210px;overflow-y:auto;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:var(--radius-md);box-shadow:var(--shadow-md);">
+                    <sc-for list="{{ schoolOptionsEdit }}" as="sc" hint-placeholder-count="2">
+                      <button style="width:100%;text-align:left;padding:11px 13px;background:transparent;border:none;border-bottom:1px solid var(--color-divider);font:inherit;cursor:pointer;{{ sc.rowStyle }}" sc-camel-on-click="{{ sc.onSelect }}">{{ sc.name }}</button>
+                    </sc-for>
+                  </div>
+                  </sc-if>
+                </div>
+              </div>
+              </sc-if>
               <sc-if value="{{ isEditRoleStudent }}">
               <div class="field"><label>គ្រូទទួលបន្ទុក</label>
                 <div style="position:relative;">
@@ -1137,6 +1180,8 @@ textarea.input { min-height: 90px; resize: vertical; }
         <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ editWordsColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
         <span style="font-size:10px;">កែពាក្យ</span>
       </button>
+      </sc-if>
+      <sc-if value="{{ canManageAccounts }}">
       <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ adminColor }};" sc-camel-on-click="{{ goAdmin }}">
         <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ adminColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg>
         <span style="font-size:10px;">គណនី</span>
@@ -6365,7 +6410,8 @@ function makeSupabaseBackend(){
     async getProfile(id){ const { data, error } = await client.from('profiles').select('*').eq('id', id).single(); return error ? { error:error.message } : { profile:data }; },
     async saveProgress(id,patch){ const { error } = await client.from('profiles').update(patch).eq('id', id); return { error: error ? error.message : null }; },
     async listStudents(teacherId){ const { data, error } = await client.from('profiles').select('id,full_name,email,viewed,favorites,history').eq('teacher_id', teacherId).eq('role','student').order('full_name'); return { rows:data||[], error: error?error.message:null }; },
-    async listTeachers(){ const { data } = await client.from('profiles').select('id,full_name,email').eq('role','teacher').order('full_name'); return { rows:data||[] }; },
+    async listTeachers(){ const { data } = await client.from('profiles').select('id,full_name,email,school_id').eq('role','teacher').order('full_name'); return { rows:data||[] }; },
+    async listSchools(){ const { data } = await client.from('profiles').select('id,full_name,email').eq('role','school').order('full_name'); return { rows:data||[] }; },
     async listAccounts(){ const { data } = await client.from('profiles').select('id,email,full_name,role,teacher_id').order('role'); return { rows:data||[] }; },
     async getAppSettings(){ const { data } = await client.from('app_settings').select('app_name,logo').eq('id',1).single(); return { app_name:(data&&data.app_name)||DEFAULT_APP_NAME, logo:(data&&data.logo)||'' }; },
     async saveAppSettings(patch){ const { error } = await client.from('app_settings').update({ app_name:patch.app_name, logo:patch.logo, updated_at:new Date().toISOString() }).eq('id',1); return { error: error ? error.message : null }; },
@@ -6418,9 +6464,10 @@ function makeDemoBackend(){
     let u = null; try { u = JSON.parse(localStorage.getItem('dict_demo_users')||'null'); } catch(e){}
     if (!u) {
       u = [
-        { id:'u-admin',   email:'admin@demo',   password:'demo', full_name:'អ្នកគ្រប់គ្រង', role:'admin',   teacher_id:null,       viewed:[], favorites:[], history:[], settings:{} },
-        { id:'u-teacher', email:'teacher@demo', password:'demo', full_name:'គ្រូ សំណាង',    role:'teacher', teacher_id:null,       viewed:[], favorites:[], history:[], settings:{} },
-        { id:'u-student', email:'student@demo', password:'demo', full_name:'សិស្ស ស្រីនាថ',  role:'student', teacher_id:'u-teacher', viewed:[], favorites:[], history:[], settings:{} },
+        { id:'u-admin',   email:'admin@demo',   password:'demo', full_name:'អ្នកគ្រប់គ្រង', role:'admin',   teacher_id:null,       school_id:null,      viewed:[], favorites:[], history:[], settings:{} },
+        { id:'u-school',  email:'school@demo',  password:'demo', full_name:'សាខាភ្នំពេញ',   role:'school',  teacher_id:null,       school_id:null,      viewed:[], favorites:[], history:[], settings:{} },
+        { id:'u-teacher', email:'teacher@demo', password:'demo', full_name:'គ្រូ សំណាង',    role:'teacher', teacher_id:null,       school_id:'u-school', viewed:[], favorites:[], history:[], settings:{} },
+        { id:'u-student', email:'student@demo', password:'demo', full_name:'សិស្ស ស្រីនាថ',  role:'student', teacher_id:'u-teacher', school_id:'u-school', viewed:[], favorites:[], history:[], settings:{} },
       ];
       localStorage.setItem('dict_demo_users', JSON.stringify(u));
     }
@@ -6435,8 +6482,19 @@ function makeDemoBackend(){
     async getProfile(id){ const u=load().find(x=>x.id===id); return u?{ profile:JSON.parse(JSON.stringify(u)) }:{ error:'not found' }; },
     async saveProgress(id,patch){ const us=load(); const u=us.find(x=>x.id===id); if(u){ Object.assign(u, patch); save(us); } return { error:null }; },
     async listStudents(teacherId){ return { rows:load().filter(x=>x.role==='student'&&x.teacher_id===teacherId), error:null }; },
-    async listTeachers(){ return { rows:load().filter(x=>x.role==='teacher') }; },
-    async listAccounts(){ return { rows:load().map(({id,email,full_name,role,teacher_id})=>({id,email,full_name,role,teacher_id})) }; },
+    // mirror the RLS rules so the demo behaves like the real backend
+    _me(){ const id=localStorage.getItem('dict_demo_session'); return load().find(u=>u.id===id) || null; },
+    async listTeachers(){ const me=this._me(); const all=load().filter(x=>x.role==='teacher');
+      return { rows: me && me.role==='school' ? all.filter(t=>t.school_id===me.id) : all }; },
+    async listSchools(){ return { rows:load().filter(x=>x.role==='school') }; },
+    async listAccounts(){
+      const me=this._me(); const all=load();
+      const visible = !me ? []
+        : me.role==='admin'  ? all
+        : me.role==='school' ? all.filter(u=>u.school_id===me.id || u.id===me.id)
+        : all.filter(u=>u.id===me.id);
+      return { rows: visible.map(({id,email,full_name,role,teacher_id,school_id})=>({id,email,full_name,role,teacher_id,school_id})) };
+    },
     async getAppSettings(){ try { const s=JSON.parse(localStorage.getItem('dict_app_settings')||'null'); if(s) return { app_name:s.app_name||DEFAULT_APP_NAME, logo:s.logo||'' }; } catch(e){} return { app_name:DEFAULT_APP_NAME, logo:'' }; },
     async saveAppSettings(patch){ localStorage.setItem('dict_app_settings', JSON.stringify({ app_name:patch.app_name, logo:patch.logo })); return { error:null }; },
     // No Storage in demo mode — keep the image inline as a data URI.
@@ -6454,8 +6512,8 @@ function makeDemoBackend(){
       localStorage.setItem('dict_demo_overrides', JSON.stringify(rows));
       return { error: null };
     },
-    async createAccount(p){ const us=load(); const email=String(p.email).trim().toLowerCase(); if(us.find(x=>x.email===email)) return { error:'អ៊ីមែលនេះមានរួចហើយ' }; us.push({ id:'u-'+Date.now(), email, password:p.password, full_name:p.full_name||'', role:p.role, teacher_id:p.role==='student'?(p.teacher_id||null):null, viewed:[], favorites:[], history:[], settings:{} }); save(us); return { error:null }; },
-    async updateAccount(id, patch){ const us=load(); const u=us.find(x=>x.id===id); if(!u) return { error:'not found' }; if(patch.full_name!=null) u.full_name=patch.full_name; if(patch.role!=null) u.role=patch.role; if(patch.teacher_id!==undefined) u.teacher_id=u.role==='student'?(patch.teacher_id||null):null; if(patch.password) u.password=patch.password; save(us); return { error:null }; },
+    async createAccount(p){ const us=load(); const email=String(p.email).trim().toLowerCase(); if(us.find(x=>x.email===email)) return { error:'អ៊ីមែលនេះមានរួចហើយ' }; us.push({ id:'u-'+Date.now(), email, password:p.password, full_name:p.full_name||'', role:p.role, teacher_id:p.role==='student'?(p.teacher_id||null):null, school_id:p.role==='school'?null:(p.school_id||null), viewed:[], favorites:[], history:[], settings:{} }); save(us); return { error:null }; },
+    async updateAccount(id, patch){ const us=load(); const u=us.find(x=>x.id===id); if(!u) return { error:'not found' }; if(patch.full_name!=null) u.full_name=patch.full_name; if(patch.role!=null) u.role=patch.role; if(patch.teacher_id!==undefined) u.teacher_id=u.role==='student'?(patch.teacher_id||null):null; if(patch.school_id!==undefined) u.school_id=u.role==='school'?null:(patch.school_id||null); if(patch.password) u.password=patch.password; save(us); return { error:null }; },
     async deleteAccount(id){ let us=load(); us=us.filter(x=>x.id!==id); save(us); return { error:null }; },
   };
 }
@@ -6469,11 +6527,12 @@ class Component extends DCLogic {
     email: '', password: '', authError: '', authBusy: false,
     userId: null, role: null, profileName: '',
     // admin (create accounts)
-    adminFullName: '', adminEmail: '', adminPassword: '', adminRole: 'student', adminTeacherId: '',
-    adminBusy: false, adminMsg: '', adminError: '', teachers: [], accounts: [],
+    adminFullName: '', adminEmail: '', adminPassword: '', adminRole: 'student', adminTeacherId: '', adminSchoolId: '',
+    adminBusy: false, adminMsg: '', adminError: '', teachers: [], accounts: [], schools: [],
     // admin (edit account dialog)
-    editingId: null, editFullName: '', editRole: 'student', editTeacherId: '', editPassword: '',
+    editingId: null, editFullName: '', editRole: 'student', editTeacherId: '', editSchoolId: '', editPassword: '',
     editBusy: false, editError: '',
+    schoolMenu: null,   // 'create' | 'edit' | null
     // teacher monitor
     students: [], selectedStudent: null, selectedStudentName: '', viewingViewed: [],
     // "add to home screen" prompt
@@ -6668,8 +6727,14 @@ class Component extends DCLogic {
   async loadAdminData(){
     const t = await Backend.listTeachers();
     const a = await Backend.listAccounts();
-    this.setState({ teachers: t.rows || [], accounts: a.rows || [] });
+    const s = await Backend.listSchools();
+    this.setState({ teachers: t.rows || [], accounts: a.rows || [], schools: s.rows || [] });
   }
+  setAdminRoleSchool(){ this.setState({ adminRole: 'school', adminTeacherId: '', adminSchoolId: '' }); }
+  setEditRoleSchool(){ this.setState({ editRole: 'school', editTeacherId: '', editSchoolId: '' }); }
+  toggleSchoolMenu(which){ this.setState(s => ({ schoolMenu: s.schoolMenu === which ? null : which })); }
+  selectSchoolCreate(id){ this.setState({ adminSchoolId: id, adminTeacherId: '', schoolMenu: null }); }
+  selectSchoolEdit(id){ this.setState({ editSchoolId: id, editTeacherId: '', schoolMenu: null }); }
   onAdminFullName(e){ this.setState({ adminFullName: e.target.value }); }
   onAdminEmail(e){ this.setState({ adminEmail: e.target.value }); }
   onAdminPassword(e){ this.setState({ adminPassword: e.target.value }); }
@@ -6678,11 +6743,14 @@ class Component extends DCLogic {
   onAdminTeacher(e){ this.setState({ adminTeacherId: e.target.value }); }
   async createAccount(){
     if (this.state.adminBusy) return;
-    const { adminEmail, adminPassword, adminFullName, adminRole, adminTeacherId } = this.state;
+    const { adminEmail, adminPassword, adminFullName, adminRole, adminTeacherId, adminSchoolId } = this.state;
     if (!adminEmail.trim() || !adminPassword) { this.setState({ adminError: 'សូមបញ្ចូលអ៊ីមែល និង ពាក្យសម្ងាត់', adminMsg: '' }); return; }
+    // an admin picks the branch; a school account always creates inside its own
+    const schoolId = this.state.role === 'school' ? this.state.userId : adminSchoolId;
+    if (adminRole !== 'school' && !schoolId) { this.setState({ adminError: 'សូមជ្រើសរើសសាលា/សាខា', adminMsg: '' }); return; }
     if (adminRole === 'student' && !adminTeacherId) { this.setState({ adminError: 'សូមជ្រើសរើសគ្រូសម្រាប់សិស្ស', adminMsg: '' }); return; }
     this.setState({ adminBusy: true, adminError: '', adminMsg: '' });
-    const { error } = await Backend.createAccount({ email: adminEmail.trim(), password: adminPassword, full_name: adminFullName.trim(), role: adminRole, teacher_id: adminRole === 'student' ? adminTeacherId : null });
+    const { error } = await Backend.createAccount({ email: adminEmail.trim(), password: adminPassword, full_name: adminFullName.trim(), role: adminRole, teacher_id: adminRole === 'student' ? adminTeacherId : null, school_id: adminRole === 'school' ? null : schoolId });
     if (error) { this.setState({ adminBusy: false, adminError: error }); return; }
     this.setState({ adminBusy: false, adminMsg: 'បង្កើតគណនីជោគជ័យ ✓', adminEmail: '', adminPassword: '', adminFullName: '' }, () => this.loadAdminData());
   }
@@ -6801,7 +6869,7 @@ class Component extends DCLogic {
   }
 
   // — Admin: edit / delete accounts —
-  startEdit(acc){ this.setState({ editingId: acc.id, editFullName: acc.full_name || '', editRole: acc.role === 'teacher' ? 'teacher' : 'student', editTeacherId: acc.teacher_id || '', editPassword: '', editError: '', editBusy: false }); }
+  startEdit(acc){ this.setState({ editingId: acc.id, editFullName: acc.full_name || '', editRole: ['school','teacher','student'].includes(acc.role) ? acc.role : 'student', editTeacherId: acc.teacher_id || '', editSchoolId: acc.school_id || '', editPassword: '', editError: '', editBusy: false }); }
   cancelEdit(){ this.setState({ editingId: null }); }
   onEditFullName(e){ this.setState({ editFullName: e.target.value }); }
   setEditRoleStudent(){ this.setState({ editRole: 'student' }); }
@@ -6810,10 +6878,12 @@ class Component extends DCLogic {
   onEditPassword(e){ this.setState({ editPassword: e.target.value }); }
   async saveEdit(){
     if (this.state.editBusy) return;
-    const { editingId, editFullName, editRole, editTeacherId, editPassword } = this.state;
+    const { editingId, editFullName, editRole, editTeacherId, editPassword, editSchoolId } = this.state;
+    const schoolId = this.state.role === 'school' ? this.state.userId : editSchoolId;
+    if (editRole !== 'school' && !schoolId) { this.setState({ editError: 'សូមជ្រើសរើសសាលា/សាខា' }); return; }
     if (editRole === 'student' && !editTeacherId) { this.setState({ editError: 'សូមជ្រើសរើសគ្រូសម្រាប់សិស្ស' }); return; }
     this.setState({ editBusy: true, editError: '' });
-    const patch = { full_name: editFullName.trim(), role: editRole, teacher_id: editRole === 'student' ? editTeacherId : null };
+    const patch = { full_name: editFullName.trim(), role: editRole, teacher_id: editRole === 'student' ? editTeacherId : null, school_id: editRole === 'school' ? null : schoolId };
     if (editPassword) patch.password = editPassword;
     const { error } = await Backend.updateAccount(editingId, patch);
     if (error) { this.setState({ editBusy: false, editError: error }); return; }
@@ -7138,10 +7208,27 @@ class Component extends DCLogic {
     const monitorOverallPct = monitorTotal ? Math.min(100, Math.round(monitorOverallViewed / monitorTotal * 100)) : 0;
     const studentNameItems = s.students.map(st => ({ name: st.full_name || st.email, onSelect: () => this.selectStudentToView(st) }));
 
-    const ROLE_LABEL = { admin: 'អ្នកគ្រប់គ្រង', teacher: 'គ្រូ', student: 'សិស្ស' };
-    const ROLE_TAG = { admin: 'tag tag-accent', teacher: 'tag tag-accent-2', student: 'tag tag-neutral' };
-    const teacherOptions = s.teachers.map(t => ({ id: t.id, name: t.full_name || t.email }));
-    const accountsList = s.accounts.map(a => ({ id: a.id, name: a.full_name || a.email, email: a.email, roleLabel: ROLE_LABEL[a.role] || a.role, tagClass: ROLE_TAG[a.role] || 'tag tag-outline', canManage: a.role !== 'admin', onEdit: () => this.startEdit(a), onDelete: () => this.deleteAccountConfirm(a) }));
+    const ROLE_LABEL = { admin: 'អ្នកគ្រប់គ្រង', school: 'សាលា/សាខា', teacher: 'គ្រូ', student: 'សិស្ស' };
+    const ROLE_TAG = { admin: 'tag tag-accent', school: 'tag tag-outline', teacher: 'tag tag-accent-2', student: 'tag tag-neutral' };
+    // A school only ever works inside its own branch; an admin picks one first,
+    // and the teacher list narrows to that branch.
+    const iAmSchool = s.role === 'school';
+    const createScope = iAmSchool ? s.userId : s.adminSchoolId;
+    const editScope   = iAmSchool ? s.userId : s.editSchoolId;
+    const teachersIn = scope => s.teachers
+      .filter(t => !scope || !t.school_id || t.school_id === scope)
+      .map(t => ({ id: t.id, name: t.full_name || t.email }));
+    const teacherOptions = teachersIn(createScope);
+    const teacherOptionsForEdit = teachersIn(editScope);
+    const schoolName = id => { const f = s.schools.find(x => x.id === id); return f ? (f.full_name || f.email) : ''; };
+    const accountsList = s.accounts.map(a => ({
+      id: a.id, name: a.full_name || a.email, email: a.email,
+      roleLabel: ROLE_LABEL[a.role] || a.role,
+      tagClass: ROLE_TAG[a.role] || 'tag tag-outline',
+      // a school may only touch its own teachers and students
+      canManage: a.id !== s.userId && (iAmSchool ? ['teacher','student'].includes(a.role) : a.role !== 'admin'),
+      branch: a.school_id ? schoolName(a.school_id) : '',
+      onEdit: () => this.startEdit(a), onDelete: () => this.deleteAccountConfirm(a) }));
 
     return {
       isHome: s.screen === 'home', isFavorites: s.screen === 'favorites', isSettings: s.screen === 'settings',
@@ -7192,10 +7279,31 @@ class Component extends DCLogic {
       // teacher pickers are custom menus for the same reason as the book one
       teacherOptionsCreate: teacherOptions.map(t => ({ ...t, onSelect: () => this.selectTeacherCreate(t.id),
         rowStyle: t.id === s.adminTeacherId ? 'color:var(--color-accent-700);font-weight:600;' : '' })),
-      teacherOptionsEdit: teacherOptions.map(t => ({ ...t, onSelect: () => this.selectTeacherEdit(t.id),
+      teacherOptionsEdit: teacherOptionsForEdit.map(t => ({ ...t, onSelect: () => this.selectTeacherEdit(t.id),
         rowStyle: t.id === s.editTeacherId ? 'color:var(--color-accent-700);font-weight:600;' : '' })),
       adminTeacherLabel: (teacherOptions.find(t => t.id === s.adminTeacherId) || {}).name || '— ជ្រើសរើសគ្រូ —',
-      editTeacherLabel: (teacherOptions.find(t => t.id === s.editTeacherId) || {}).name || '— ជ្រើសរើសគ្រូ —',
+      editTeacherLabel: (teacherOptionsForEdit.find(t => t.id === s.editTeacherId) || {}).name || '— ជ្រើសរើសគ្រូ —',
+
+      // — schools / branches —
+      canManageAccounts: s.role === 'admin' || s.role === 'school',
+      canCreateSchool: s.role === 'admin',          // only an admin opens new branches
+      // only an admin picks a branch, and not while creating the branch itself
+      showSchoolPickCreate: s.role === 'admin' && s.adminRole !== 'school',
+      showSchoolPickEdit: s.role === 'admin' && s.editRole !== 'school',
+      isAdminRoleSchool: s.adminRole === 'school', isEditRoleSchool: s.editRole === 'school',
+      setAdminRoleSchool: () => this.setAdminRoleSchool(), setEditRoleSchool: () => this.setEditRoleSchool(),
+      schoolOptionsCreate: s.schools.map(x => ({ id: x.id, name: x.full_name || x.email,
+        onSelect: () => this.selectSchoolCreate(x.id),
+        rowStyle: x.id === s.adminSchoolId ? 'color:var(--color-accent-700);font-weight:600;' : '' })),
+      schoolOptionsEdit: s.schools.map(x => ({ id: x.id, name: x.full_name || x.email,
+        onSelect: () => this.selectSchoolEdit(x.id),
+        rowStyle: x.id === s.editSchoolId ? 'color:var(--color-accent-700);font-weight:600;' : '' })),
+      adminSchoolLabel: schoolName(s.adminSchoolId) || '— ជ្រើសរើសសាលា/សាខា —',
+      editSchoolLabel: schoolName(s.editSchoolId) || '— ជ្រើសរើសសាលា/សាខា —',
+      schoolMenuCreateOpen: s.schoolMenu === 'create', schoolMenuEditOpen: s.schoolMenu === 'edit',
+      toggleSchoolMenuCreate: () => this.toggleSchoolMenu('create'),
+      toggleSchoolMenuEdit: () => this.toggleSchoolMenu('edit'),
+      noSchools: s.schools.length === 0,
       teacherMenuCreateOpen: s.teacherMenu === 'create', teacherMenuEditOpen: s.teacherMenu === 'edit',
       toggleTeacherMenuCreate: () => this.toggleTeacherMenu('create'),
       toggleTeacherMenuEdit: () => this.toggleTeacherMenu('edit'),
