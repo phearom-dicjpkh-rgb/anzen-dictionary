@@ -635,9 +635,19 @@ textarea.input { min-height: 90px; resize: vertical; }
           <div style="padding:0 20px 20px;">
             <div style="position:sticky;top:0;z-index:8;background:var(--color-bg);padding:14px 0 10px;">
               <div style="display:flex;gap:8px;align-items:center;">
-                <select class="input" value="{{ bookFilter }}" sc-camel-on-change="{{ onBookChange }}" aria-label="សៀវភៅ" style="flex:1 1 auto;min-width:0;">
-                  <sc-for list="{{ bookOptions }}" as="b" hint-placeholder-count="2"><option value="{{ b.id }}" label="{{ b.name }}"></option></sc-for>
-                </select>
+                <div style="position:relative;flex:1 1 auto;min-width:0;">
+                  <button class="input" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left;cursor:pointer;" sc-camel-on-click="{{ toggleBookMenu }}" aria-label="សៀវភៅ">
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ bookFilter }}</span>
+                    <svg width="16" height="16" style="flex:none;" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-text)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </button>
+                  <sc-if value="{{ bookMenuOpen }}">
+                  <div style="position:absolute;top:100%;left:0;right:0;margin-top:4px;z-index:30;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:var(--radius-md);box-shadow:var(--shadow-md);overflow:hidden;">
+                    <sc-for list="{{ bookOptions }}" as="b" hint-placeholder-count="2">
+                      <button style="width:100%;text-align:left;padding:11px 13px;background:transparent;border:none;border-bottom:1px solid var(--color-divider);font:inherit;cursor:pointer;{{ b.rowStyle }}" sc-camel-on-click="{{ b.onSelect }}">{{ b.name }}</button>
+                    </sc-for>
+                  </div>
+                  </sc-if>
+                </div>
                 <input class="input" type="number" min="1" placeholder="ទំព័រ" value="{{ pageInput }}" sc-camel-on-change="{{ onPageInputChange }}" style="flex:0 0 auto;width:88px;">
                 <button class="btn btn-primary" style="flex:0 0 auto;white-space:nowrap;" sc-camel-on-click="{{ goToPage }}">ស្វែងរក</button>
               </div>
@@ -917,10 +927,19 @@ textarea.input { min-height: 90px; resize: vertical; }
             <sc-if value="{{ isAdminRoleStudent }}">
             <div class="field"><label>គ្រូទទួលបន្ទុក</label>
               <sc-if value="{{ hasTeacherOptions }}">
-              <select class="input" value="{{ adminTeacherId }}" sc-camel-on-change="{{ onAdminTeacher }}">
-                <option value="">— ជ្រើសរើសគ្រូ —</option>
-                <sc-for list="{{ teacherOptions }}" as="t" hint-placeholder-count="2"><option value="{{ t.id }}" label="{{ t.name }}"></option></sc-for>
-              </select>
+              <div style="position:relative;">
+                <button class="input" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left;cursor:pointer;" sc-camel-on-click="{{ toggleTeacherMenuCreate }}">
+                  <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ adminTeacherLabel }}</span>
+                  <svg width="16" height="16" style="flex:none;" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-text)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <sc-if value="{{ teacherMenuCreateOpen }}">
+                <div style="position:absolute;top:100%;left:0;right:0;margin-top:4px;z-index:30;max-height:210px;overflow-y:auto;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:var(--radius-md);box-shadow:var(--shadow-md);">
+                  <sc-for list="{{ teacherOptionsCreate }}" as="t" hint-placeholder-count="2">
+                    <button style="width:100%;text-align:left;padding:11px 13px;background:transparent;border:none;border-bottom:1px solid var(--color-divider);font:inherit;cursor:pointer;{{ t.rowStyle }}" sc-camel-on-click="{{ t.onSelect }}">{{ t.name }}</button>
+                  </sc-for>
+                </div>
+                </sc-if>
+              </div>
               </sc-if>
               <sc-if value="{{ noTeacherOptions }}"><div style="font-size:12px;opacity:0.6;">សូមបង្កើតគណនីគ្រូជាមុនសិន</div></sc-if>
             </div>
@@ -962,10 +981,19 @@ textarea.input { min-height: 90px; resize: vertical; }
               </div>
               <sc-if value="{{ isEditRoleStudent }}">
               <div class="field"><label>គ្រូទទួលបន្ទុក</label>
-                <select class="input" value="{{ editTeacherId }}" sc-camel-on-change="{{ onEditTeacher }}">
-                  <option value="">— ជ្រើសរើសគ្រូ —</option>
-                  <sc-for list="{{ teacherOptions }}" as="t" hint-placeholder-count="2"><option value="{{ t.id }}" label="{{ t.name }}"></option></sc-for>
-                </select>
+                <div style="position:relative;">
+                  <button class="input" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left;cursor:pointer;" sc-camel-on-click="{{ toggleTeacherMenuEdit }}">
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ editTeacherLabel }}</span>
+                    <svg width="16" height="16" style="flex:none;" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-text)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </button>
+                  <sc-if value="{{ teacherMenuEditOpen }}">
+                  <div style="position:absolute;top:100%;left:0;right:0;margin-top:4px;z-index:30;max-height:210px;overflow-y:auto;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:var(--radius-md);box-shadow:var(--shadow-md);">
+                    <sc-for list="{{ teacherOptionsEdit }}" as="t" hint-placeholder-count="2">
+                      <button style="width:100%;text-align:left;padding:11px 13px;background:transparent;border:none;border-bottom:1px solid var(--color-divider);font:inherit;cursor:pointer;{{ t.rowStyle }}" sc-camel-on-click="{{ t.onSelect }}">{{ t.name }}</button>
+                    </sc-for>
+                  </div>
+                  </sc-if>
+                </div>
               </div>
               </sc-if>
               <div class="field"><label>ពាក្យសម្ងាត់ថ្មី (ទុកទទេ បើមិនប្តូរ)</label><input class="input" type="text" value="{{ editPassword }}" sc-camel-on-change="{{ onEditPassword }}" placeholder="••••••"></div>
@@ -5708,6 +5736,7 @@ class Component extends DCLogic {
     screen: 'home', search: '', catFilter: 'all', testCat: 'all', searchMode: 'general', pageFilter: null, pageInput: '',
     bookFilter: BOOKS[0] || DEFAULT_BOOK,
     pendingHide: [],   // just-ticked words, still shown for a moment
+    bookMenuOpen: false, teacherMenu: null,
     detailWordId: null,
     favorites: [], history: [], viewed: [],
     settings: { fontScale: 1, autoAudio: false },
@@ -6069,6 +6098,13 @@ class Component extends DCLogic {
   selectPage(p){ this.setState({ pageFilter: p }); }
   wordsForPage(page){ return dedupeWords(WORDS.filter(w => w.page === page && w.book === this.state.bookFilter)); }
   onBookChange(e){ this.setState({ bookFilter: e.target.value, pageFilter: null, pageInput: '' }); }
+  // iOS renders <option> with no plain-text child as blank, and dc-runtime wraps
+  // every {{ }} in a <span>, so the book picker is built from buttons instead.
+  toggleBookMenu(){ this.setState(s => ({ bookMenuOpen: !s.bookMenuOpen })); }
+  selectBook(id){ this.setState({ bookFilter: id, bookMenuOpen: false, pageFilter: null, pageInput: '' }); }
+  toggleTeacherMenu(which){ this.setState(s => ({ teacherMenu: s.teacherMenu === which ? null : which })); }
+  selectTeacherCreate(id){ this.setState({ adminTeacherId: id, teacherMenu: null }); }
+  selectTeacherEdit(id){ this.setState({ editTeacherId: id, teacherMenu: null }); }
   startPageQuiz(){
     const pool = this.wordsForPage(this.state.pageFilter);
     const qWords = sample(pool, Math.min(10, pool.length));
@@ -6244,6 +6280,16 @@ class Component extends DCLogic {
       setAdminRoleStudent: () => this.setAdminRoleStudent(), setAdminRoleTeacher: () => this.setAdminRoleTeacher(),
       adminTeacherId: s.adminTeacherId, onAdminTeacher: e => this.onAdminTeacher(e),
       teacherOptions, hasTeacherOptions: teacherOptions.length > 0, noTeacherOptions: teacherOptions.length === 0,
+      // teacher pickers are custom menus for the same reason as the book one
+      teacherOptionsCreate: teacherOptions.map(t => ({ ...t, onSelect: () => this.selectTeacherCreate(t.id),
+        rowStyle: t.id === s.adminTeacherId ? 'color:var(--color-accent-700);font-weight:600;' : '' })),
+      teacherOptionsEdit: teacherOptions.map(t => ({ ...t, onSelect: () => this.selectTeacherEdit(t.id),
+        rowStyle: t.id === s.editTeacherId ? 'color:var(--color-accent-700);font-weight:600;' : '' })),
+      adminTeacherLabel: (teacherOptions.find(t => t.id === s.adminTeacherId) || {}).name || '— ជ្រើសរើសគ្រូ —',
+      editTeacherLabel: (teacherOptions.find(t => t.id === s.editTeacherId) || {}).name || '— ជ្រើសរើសគ្រូ —',
+      teacherMenuCreateOpen: s.teacherMenu === 'create', teacherMenuEditOpen: s.teacherMenu === 'edit',
+      toggleTeacherMenuCreate: () => this.toggleTeacherMenu('create'),
+      toggleTeacherMenuEdit: () => this.toggleTeacherMenu('edit'),
       accountsList, hasAccounts: accountsList.length > 0,
       createAccount: () => this.createAccount(),
       createBtnLabel: s.adminBusy ? 'កំពុងបង្កើត…' : 'បង្កើតគណនី',
@@ -6273,7 +6319,11 @@ class Component extends DCLogic {
       isSearchGeneral: s.searchMode === 'general', isSearchByPage: s.searchMode === 'page',
       searchMode: s.searchMode, onSearchModeChange: e => this.onSearchModeChange(e),
       setSearchGeneral: () => this.setSearchGeneral(), setSearchByPage: () => this.setSearchByPage(),
-      bookOptions: BOOKS.map(b => ({ id: b, name: b })), bookFilter: s.bookFilter,
+      bookOptions: BOOKS.map(b => ({ id: b, name: b,
+        onSelect: () => this.selectBook(b),
+        rowStyle: b === s.bookFilter ? 'color:var(--color-accent-700);font-weight:600;' : '' })),
+      bookFilter: s.bookFilter,
+      bookMenuOpen: s.bookMenuOpen, toggleBookMenu: () => this.toggleBookMenu(),
       onBookChange: e => this.onBookChange(e),
       bookLabel: s.bookFilter, hasManyBooks: BOOKS.length > 1,
       pages, pageWordsList, hasPageFilter: s.pageFilter != null, noPageFilter: s.pageFilter == null,
