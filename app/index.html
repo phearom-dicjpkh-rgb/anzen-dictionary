@@ -6404,7 +6404,19 @@ class Component extends DCLogic {
     this.setState({ installShow: false });
   }
 
+  // getVoices() is empty until the engine has loaded them, so ask early and
+  // again when the list arrives — otherwise the first tap finds no voice.
+  primeVoices(){
+    try {
+      const synth = window.speechSynthesis;
+      if (!synth) return;
+      synth.getVoices();
+      if ('onvoiceschanged' in synth) synth.addEventListener('voiceschanged', () => { synth.getVoices(); });
+    } catch(e) {}
+  }
+
   async componentDidMount(){
+    this.primeVoices();
     this.setupInstall();
     this.loadAppSettings();
     try {
@@ -6458,13 +6470,49 @@ class Component extends DCLogic {
     setTimeout(() => this.setState(s => s.toast === msg ? { toast: null } : null), 1800);
   }
 
+  // Pick a Japanese voice explicitly. Relying on lang alone fails silently on
+  // devices whose voice list has no Japanese entry.
+  japaneseVoice(){
+    let vs = [];
+    try { vs = window.speechSynthesis.getVoices() || []; } catch(e) { return null; }
+    return vs.find(v => /^ja([-_]|$)/i.test(v.lang || ''))
+        || vs.find(v => /japanese|日本語|kyoko|otoya|hattori|ichiro|haruka|ayumi|nanami/i.test(v.name || ''))
+        || null;
+  }
+
   playAudio(text){
+    if (!text) return;
+    const synth = window.speechSynthesis;
+    if (!synth) { this.showToast('ឧបករណ៍នេះមិនអានសំឡេងបានទេ'); return; }
+
+    const speak = () => {
+      try {
+        const u = new SpeechSynthesisUtterance(text);
+        const v = this.japaneseVoice();
+        if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = 'ja-JP'; }
+        u.rate = 0.95;
+        u.onerror = e => {
+          if (e && e.error === 'interrupted') return;      // we cancelled it ourselves
+          this.showToast('អានសំឡេងមិនបាន — ' + ((e && e.error) || 'error'));
+        };
+        try { synth.resume(); } catch(e) {}                // iOS can leave it paused
+        synth.speak(u);
+
+        // Voices are loaded by now; if none of them is Japanese, say so rather
+        // than leaving the student tapping a button that does nothing.
+        const loaded = (synth.getVoices() || []).length;
+        if (!v && loaded) this.showToast('ឧបករណ៍នេះមិនទាន់មានសំឡេងភាសាជប៉ុន');
+      } catch(e) {
+        this.showToast('អានសំឡេងមិនបាន');
+      }
+    };
+
+    // cancel() then speak() in the same tick drops the new utterance on Safari,
+    // so only cancel when something is actually playing, and give it a moment.
     try {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'ja-JP';
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
-    } catch(e) {}
+      if (synth.speaking || synth.pending) { synth.cancel(); setTimeout(speak, 120); }
+      else speak();
+    } catch(e) { speak(); }
   }
 
   // — Login / logout —
@@ -6617,7 +6665,9 @@ class Component extends DCLogic {
   openDetail(id){
     this.setState({ detailWordId: id });
     const w = WORDS.find(x => x.id === id);
-    if (w && this.state.settings.autoAudio) setTimeout(() => this.playAudio(w.jp), 250);
+    // Speak straight away, not on a timer: iOS only allows speech that is still
+    // inside the tap that triggered it.
+    if (w && this.state.settings.autoAudio) this.playAudio(w.jp);
   }
   closeDetail(){ this.setState({ detailWordId: null }); }
   stopProp(e){ e.stopPropagation(); }
