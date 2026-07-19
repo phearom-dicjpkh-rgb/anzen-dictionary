@@ -612,7 +612,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                   <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
                     <div style="display:flex;align-items:baseline;gap:8px;">
                       <span style="font-family:var(--font-heading);font-weight:600;font-size:19px;">{{ w.jp }}</span>
-                      <span style="font-size:12px;opacity:0.55;">{{ w.kana }}</span>
+                      <span style="font-size:12px;opacity:0.55;">{{ w.kana }}</span><span style="color:#d0342c;font-size:13px;">{{ w.star }}</span>
                     </div>
                     <div style="font-size:13px;opacity:0.8;">{{ w.km }}</div>
                   </div>
@@ -662,7 +662,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                   <sc-for list="{{ pageVocabList }}" as="w" hint-placeholder-count="10">
                     <div style="display:flex;align-items:flex-start;gap:8px;">
                       <button sc-camel-on-click="{{ w.onToggleViewed }}" aria-label="viewed" style="width:14px;height:14px;flex:none;margin-top:4px;border-radius:50%;padding:0;border:1.5px solid var(--color-neutral-400);cursor:pointer;background:{{ w.viewedBg }};"></button>
-                      <div style="font-size:14px;line-height:1.5;cursor:pointer;" sc-camel-on-click="{{ w.onOpen }}">{{ w.line }}</div>
+                      <div style="font-size:14px;line-height:1.5;cursor:pointer;" sc-camel-on-click="{{ w.onOpen }}">{{ w.line }}<span style="color:#d0342c;"> {{ w.star }}</span></div>
                     </div>
                   </sc-for>
                 </div>
@@ -674,7 +674,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                   <sc-for list="{{ pageGrammarList }}" as="w" hint-placeholder-count="5">
                     <div style="display:flex;align-items:flex-start;gap:8px;">
                       <button sc-camel-on-click="{{ w.onToggleViewed }}" aria-label="viewed" style="width:14px;height:14px;flex:none;margin-top:4px;border-radius:50%;padding:0;border:1.5px solid var(--color-neutral-400);cursor:pointer;background:{{ w.viewedBg }};"></button>
-                      <div style="font-size:14px;line-height:1.5;cursor:pointer;" sc-camel-on-click="{{ w.onOpen }}">{{ w.line }}</div>
+                      <div style="font-size:14px;line-height:1.5;cursor:pointer;" sc-camel-on-click="{{ w.onOpen }}">{{ w.line }}<span style="color:#d0342c;"> {{ w.star }}</span></div>
                     </div>
                   </sc-for>
                 </div>
@@ -701,7 +701,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                     <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
                       <div style="display:flex;align-items:baseline;gap:8px;">
                         <span style="font-family:var(--font-heading);font-weight:600;font-size:19px;">{{ w.jp }}</span>
-                        <span style="font-size:12px;opacity:0.55;">{{ w.kana }}</span>
+                        <span style="font-size:12px;opacity:0.55;">{{ w.kana }}</span><span style="color:#d0342c;font-size:13px;">{{ w.star }}</span>
                       </div>
                       <div style="font-size:13px;opacity:0.8;">{{ w.km }}</div>
                     </div>
@@ -718,7 +718,8 @@ textarea.input { min-height: 90px; resize: vertical; }
         <sc-if value="{{ isTestHub }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 20px;">
           <h1 style="font-size:26px;margin:0 0 4px;">តេស្តពាក្យ</h1>
-          <div style="font-size:12px;opacity:0.6;margin-bottom:14px;">ជ្រើសរើសប្រភេទពាក្យ រួចចាប់ផ្តើមតេស្ត</div>
+          <div style="font-size:12px;opacity:0.6;margin-bottom:4px;">ជ្រើសរើសប្រភេទពាក្យ រួចចាប់ផ្តើមតេស្ត</div>
+          <div style="font-size:12px;color:var(--color-accent-700);margin-bottom:14px;">{{ testPoolLabel }}</div>
           <div class="seg" style="margin-bottom:16px;">
             <label class="seg-opt"><input type="radio" name="tcat" checked="{{ isTestCatAll }}" sc-camel-on-change="{{ onTestCatAll }}"><span>ទាំងអស់</span></label>
             <label class="seg-opt"><input type="radio" name="tcat" checked="{{ isTestCatVocab }}" sc-camel-on-change="{{ onTestCatVocab }}"><span>វាក្យសព្ទ</span></label>
@@ -924,8 +925,9 @@ textarea.input { min-height: 90px; resize: vertical; }
             <sc-if value="{{ hasEditResults }}">
             <div style="display:flex;flex-direction:column;gap:8px;">
               <sc-for list="{{ editResults }}" as="w" hint-placeholder-count="6">
-                <div class="card" style="cursor:pointer;flex-direction:row;align-items:center;justify-content:space-between;gap:10px;" sc-camel-on-click="{{ w.onPick }}">
-                  <div style="min-width:0;">
+                <div class="card" style="cursor:pointer;flex-direction:row;align-items:center;justify-content:space-between;gap:8px;" sc-camel-on-click="{{ w.onPick }}">
+                  <button sc-camel-on-click="{{ w.onToggleStar }}" aria-label="ពាក្យសំខាន់" style="flex:none;background:transparent;border:none;cursor:pointer;padding:4px 2px;font-size:20px;line-height:1;color:{{ w.starColor }};">{{ w.starGlyph }}</button>
+                  <div style="min-width:0;flex:1;">
                     <div style="display:flex;align-items:baseline;gap:8px;">
                       <span style="font-family:var(--font-heading);font-weight:600;font-size:19px;">{{ w.jp }}</span>
                       <span style="font-size:12px;opacity:0.55;">{{ w.kana }}</span>
@@ -6313,16 +6315,21 @@ const WORDS = RAW_WORDS.map(r => {
 // A word is relisted on many pages but its examples are written on one of
 // those rows. Share them across every occurrence, so whichever row a list
 // happens to show still carries the examples.
+// A word is listed on many pages, but an admin edits or stars one of those
+// rows. Spread those decisions across every occurrence of the same word.
 function shareExamples(){
   // drop anything a previous pass copied, so this can be re-run after an edit
   for (const w of WORDS) if (w._sharedEx) { w.examples = []; w._sharedEx = false; }
-  const byWord = new Map();
+  const byWord = new Map(), starred = new Set();
   for (const w of WORDS) {
     const k = w.jp + '|' + w.kana;
     if (w.examples.length && !byWord.has(k)) byWord.set(k, w.examples);
+    if (w.starred) starred.add(k);
   }
-  if (byWord.size) for (const w of WORDS) {
-    if (!w.examples.length) { const ex = byWord.get(w.jp + '|' + w.kana); if (ex) { w.examples = ex; w._sharedEx = true; } }
+  for (const w of WORDS) {
+    const k = w.jp + '|' + w.kana;
+    if (!w.examples.length) { const ex = byWord.get(k); if (ex) { w.examples = ex; w._sharedEx = true; } }
+    if (starred.has(k)) w.starred = true;
   }
 }
 
@@ -6376,6 +6383,7 @@ function applyOverrides(rows){
     if (o.pos != null) w.pos = o.pos;
     if (o.km) w.km = o.km;
     if (Array.isArray(o.examples)) { w.examples = o.examples.filter(e => e && e.jp); w._sharedEx = false; }
+    if (o.starred != null) w.starred = !!o.starred;
     w.romaji = kanaToRomaji(w.kana); w.romajiNorm = normRomaji(w.romaji);
     n++;
   }
@@ -6443,7 +6451,12 @@ function makeSupabaseBackend(){
       return { url: data.publicUrl + '?v=' + Date.now() };   // cache-bust so the new logo shows
     },
     async deleteLogo(){ try { await client.storage.from('logos').remove(['logo.png']); } catch(e){} return { error:null }; },
-    async getOverrides(){ const { data } = await client.from('word_overrides').select('word_id,jp,kana,pos,km,examples'); return { rows: data || [] }; },
+    async getOverrides(){ const { data } = await client.from('word_overrides').select('word_id,jp,kana,pos,km,examples,starred'); return { rows: data || [] }; },
+    // only touches the starred column, so it never clobbers a correction
+    async setStar(word_id, starred){
+      const { error } = await client.from('word_overrides').upsert({ word_id, starred }, { onConflict: 'word_id' });
+      return { error: error ? error.message : null };
+    },
     async saveOverride(row){
       const { error } = await client.from('word_overrides').upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: 'word_id' });
       return { error: error ? error.message : null };
@@ -6528,6 +6541,13 @@ function makeDemoBackend(){
     },
     async deleteOverride(id){
       const rows = (await this.getOverrides()).rows.filter(r => r.word_id !== id);
+      localStorage.setItem('dict_demo_overrides', JSON.stringify(rows));
+      return { error: null };
+    },
+    async setStar(word_id, starred){
+      const rows = (await this.getOverrides()).rows;
+      const hit = rows.find(r => r.word_id === word_id);
+      if (hit) hit.starred = starred; else rows.push({ word_id, starred });
       localStorage.setItem('dict_demo_overrides', JSON.stringify(rows));
       return { error: null };
     },
@@ -6817,6 +6837,18 @@ class Component extends DCLogic {
     } catch(e) {}
   }
   goEditWords(){ this.setState({ screen: 'editwords', editWordId: null, edMsg: '', edError: '' }); }
+  async toggleStar(id){
+    const w = WORDS.find(x => x.id === id);
+    if (!w) return;
+    const next = !w.starred;
+    applyOverrides([{ word_id: id, starred: next }]);          // show it at once
+    this.setState(s => ({ overridesRev: s.overridesRev + 1 }));
+    const { error } = await Backend.setStar(id, next);
+    if (error) {
+      applyOverrides([{ word_id: id, starred: !next }]);        // put it back
+      this.setState(s => ({ edError: error, overridesRev: s.overridesRev + 1 }));
+    }
+  }
   onEditSearch(e){ this.setState({ editSearch: e.target.value }); }
   pickEditWord(id){
     const w = WORDS.find(x => x.id === id);
@@ -6954,8 +6986,15 @@ class Component extends DCLogic {
 
   wordsForCat(cat){ return dedupeWords(cat === 'all' ? WORDS : WORDS.filter(w => w.cat === cat)); }
 
+  // Tests focus on the words an admin starred; if none are starred yet, fall
+  // back to the whole category so the tests still work.
+  testPool(){
+    const base = this.wordsForCat(this.state.testCat);
+    const starred = base.filter(w => w.starred);
+    return starred.length ? starred : base;
+  }
   startTest(mode){
-    const pool = this.wordsForCat(this.state.testCat);
+    const pool = this.testPool();
     const n = mode === 'matching' ? 6 : 10;
     const words = sample(pool, n);
     const base = { testMode: mode, testWords: words, testIdx: 0, testScore: 0,
@@ -7109,7 +7148,8 @@ class Component extends DCLogic {
 
   renderVals(){
     const s = this.state;
-    const decorate = w => { const isViewed = s.viewed.includes(w.id); return { ...w, tagClass: tagClassFor(w.pos), isFav: s.favorites.includes(w.id), isViewed, viewedBg: isViewed ? 'var(--color-neutral-500)' : 'transparent', onOpen: () => this.openDetail(w.id), onToggleViewed: e => this.toggleViewed(w.id, e) }; };
+    // star: '★' for important words, '' otherwise — an empty span renders nothing
+    const decorate = w => { const isViewed = s.viewed.includes(w.id); return { ...w, tagClass: tagClassFor(w.pos), isFav: s.favorites.includes(w.id), isViewed, viewedBg: isViewed ? 'var(--color-neutral-500)' : 'transparent', star: w.starred ? '★' : '', onOpen: () => this.openDetail(w.id), onToggleViewed: e => this.toggleViewed(w.id, e) }; };
 
     const pool = this.wordsForCat(s.catFilter);
     const q = s.search.trim().toLowerCase();
@@ -7144,6 +7184,9 @@ class Component extends DCLogic {
       ) : []).slice(0, 40).map(w => ({
         id: w.id, jp: w.jp, kana: w.kana, km: w.km,
         exCount: w.examples.length ? `${w.examples.length} ឧ.` : '',
+        starGlyph: w.starred ? '★' : '☆',
+        starColor: w.starred ? '#d0342c' : 'var(--color-neutral-400)',
+        onToggleStar: e => { if (e) e.stopPropagation(); this.toggleStar(w.id); },
         onPick: () => this.pickEditWord(w.id) }));
 
     const bookPages = pagesOfBook(s.bookFilter);
@@ -7416,6 +7459,10 @@ class Component extends DCLogic {
 
       favoriteWordsList, hasFavorites: favoriteWordsList.length > 0, noFavorites: favoriteWordsList.length === 0,
 
+      testPoolLabel: (() => {
+        const base = this.wordsForCat(s.testCat), st = base.filter(w => w.starred).length;
+        return st ? `តេស្តលើពាក្យសំខាន់ ★ ${st} ពាក្យ` : `មិនទាន់មានពាក្យសំខាន់ ★ — តេស្តលើ ${base.length} ពាក្យទាំងអស់`;
+      })(),
       isTestCatAll: s.testCat === 'all', isTestCatVocab: s.testCat === 'vocab', isTestCatGrammar: s.testCat === 'grammar',
       onTestCatAll: () => this.onTestCatAll(), onTestCatVocab: () => this.onTestCatVocab(), onTestCatGrammar: () => this.onTestCatGrammar(),
       startFlashcard: () => this.startFlashcard(), startMC: () => this.startMC(), startMatching: () => this.startMatching(), startWrite: () => this.startWrite(),
