@@ -1039,6 +1039,16 @@ textarea.input { min-height: 90px; resize: vertical; }
             <sc-if value="{{ hasSettingsMsg }}"><div style="font-size:12px;color:var(--color-accent-700);">{{ settingsMsg }}</div></sc-if>
             <button class="btn btn-primary btn-block" sc-camel-on-click="{{ saveAppSettings }}">{{ settingsSaveLabel }}</button>
           </div>
+
+          <div class="card elev-sm" style="margin-bottom:18px;gap:10px;">
+            <div class="card-kicker">ធ្វើបច្ចុប្បន្នភាពពាក្យ (Admin)</div>
+            <div style="font-size:12px;opacity:0.65;line-height:1.6;">
+              បន្ទាប់ពីកែពាក្យក្នុង Google Docs រួច ចុចប៊ូតុងនេះ ដើម្បីទាញចូលកម្មវិធី។
+            </div>
+            <sc-if value="{{ hasSyncError }}"><div style="font-size:12px;color:#c0392b;line-height:1.5;">{{ syncError }}</div></sc-if>
+            <sc-if value="{{ hasSyncMsg }}"><div style="font-size:12px;color:var(--color-accent-700);line-height:1.5;">{{ syncMsg }}</div></sc-if>
+            <button class="btn btn-secondary btn-block" sc-camel-on-click="{{ syncWords }}">{{ syncBtnLabel }}</button>
+          </div>
           </sc-if>
           <div class="field" style="margin-bottom:18px;">
             <label>ទំហំអក្សរ</label>
@@ -6263,6 +6273,14 @@ function makeSupabaseBackend(){
       return { url: data.publicUrl + '?v=' + Date.now() };   // cache-bust so the new logo shows
     },
     async deleteLogo(){ try { await client.storage.from('logos').remove(['logo.png']); } catch(e){} return { error:null }; },
+    // Asks the Edge Function to start the GitHub sync workflow (the token that
+    // lets it do so lives on the server, never in this page).
+    async syncWords(){
+      const { data, error } = await client.functions.invoke(EDGE_CREATE_USER, { body: { action: 'sync' } });
+      if (error) return { error: await fnError(error) };
+      if (data && data.error) return { error: data.error };
+      return { error: null };
+    },
     async createAccount(payload){
       const { data, error } = await client.functions.invoke(EDGE_CREATE_USER, { body: payload });
       if (error) return { error: await fnError(error) };
@@ -6313,6 +6331,7 @@ function makeDemoBackend(){
     // No Storage in demo mode — keep the image inline as a data URI.
     async uploadLogo(blob){ const url = await new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); }); return { url }; },
     async deleteLogo(){ return { error:null }; },
+    async syncWords(){ return { error: 'Demo mode — គ្មានការភ្ជាប់ទៅ GitHub ទេ' }; },
     async createAccount(p){ const us=load(); const email=String(p.email).trim().toLowerCase(); if(us.find(x=>x.email===email)) return { error:'អ៊ីមែលនេះមានរួចហើយ' }; us.push({ id:'u-'+Date.now(), email, password:p.password, full_name:p.full_name||'', role:p.role, teacher_id:p.role==='student'?(p.teacher_id||null):null, viewed:[], favorites:[], history:[], settings:{} }); save(us); return { error:null }; },
     async updateAccount(id, patch){ const us=load(); const u=us.find(x=>x.id===id); if(!u) return { error:'not found' }; if(patch.full_name!=null) u.full_name=patch.full_name; if(patch.role!=null) u.role=patch.role; if(patch.teacher_id!==undefined) u.teacher_id=u.role==='student'?(patch.teacher_id||null):null; if(patch.password) u.password=patch.password; save(us); return { error:null }; },
     async deleteAccount(id){ let us=load(); us=us.filter(x=>x.id!==id); save(us); return { error:null }; },
@@ -6340,6 +6359,7 @@ class Component extends DCLogic {
     // app branding (header logo + name) — shared, admin-editable
     appName: DEFAULT_APP_NAME, appLogo: '',
     settingsName: '', settingsLogo: '', settingsLogoBlob: null, settingsBusy: false, settingsMsg: '', settingsError: '',
+    syncBusy: false, syncMsg: '', syncError: '',
     screen: 'home', search: '', catFilter: 'all', testCat: 'all', searchMode: 'general', pageFilter: null, pageInput: '',
     bookFilter: BOOKS[0] || DEFAULT_BOOK,
     pendingHide: [],   // just-ticked words, still shown for a moment
@@ -6526,6 +6546,14 @@ class Component extends DCLogic {
     reader.readAsDataURL(f);
   }
   clearSettingsLogo(){ this.setState({ settingsLogo: '', settingsLogoBlob: null, settingsMsg:'', settingsError:'' }); }
+  async syncWords(){
+    if (this.state.syncBusy) return;
+    this.setState({ syncBusy: true, syncMsg: '', syncError: '' });
+    const { error } = await Backend.syncWords();
+    if (error) { this.setState({ syncBusy: false, syncError: error }); return; }
+    this.setState({ syncBusy: false, syncMsg: 'ចាប់ផ្តើមទាញពី Google Docs ហើយ ✓ រង់ចាំ ~២ នាទី រួចបិទបើក app ឡើងវិញ' });
+  }
+
   async saveAppSettings(){
     if (this.state.settingsBusy) return;
     const name = (this.state.settingsName || '').trim();
@@ -7043,6 +7071,10 @@ class Component extends DCLogic {
       settingsSaveLabel: s.settingsBusy ? 'កំពុងរក្សាទុក…' : 'រក្សាទុក',
       hasSettingsMsg: !!s.settingsMsg, settingsMsg: s.settingsMsg,
       hasSettingsError: !!s.settingsError, settingsError: s.settingsError,
+      syncWords: () => this.syncWords(),
+      syncBtnLabel: s.syncBusy ? 'កំពុងចាប់ផ្តើម…' : 'ទាញពាក្យពី Google Docs',
+      hasSyncMsg: !!s.syncMsg, syncMsg: s.syncMsg,
+      hasSyncError: !!s.syncError, syncError: s.syncError,
 
       isTeacher: s.role === 'teacher', isStudent: s.role === 'student',
       roleLabel: ({ admin:'អ្នកគ្រប់គ្រង', teacher:'គ្រូ', student:'សិស្ស' })[s.role] || '',

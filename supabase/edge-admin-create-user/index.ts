@@ -72,6 +72,37 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    // ---- SYNC: ask GitHub to run the "Sync words from Google Docs" workflow ----
+    // The GitHub token stays here as an Edge Function secret; it is never sent
+    // to the browser. Set these in Supabase → Edge Functions → Secrets:
+    //   GH_SYNC_TOKEN  fine-grained PAT, Actions: read+write, this repo only
+    //   GH_REPO        e.g. phearom-dicjpkh-rgb/anzen-dictionary
+    if (action === "sync") {
+      const token = Deno.env.get("GH_SYNC_TOKEN");
+      const repo = Deno.env.get("GH_REPO");
+      const workflow = Deno.env.get("GH_WORKFLOW") ?? "sync-words.yml";
+      if (!token || !repo) {
+        return json({ error: "មិនទាន់កំណត់ GH_SYNC_TOKEN / GH_REPO ក្នុង Supabase secrets" }, 400);
+      }
+      const gh = await fetch(
+        `https://api.github.com/repos/${repo}/actions/workflows/${workflow}/dispatches`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "anzen-dictionary-sync",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ ref: "main" }),
+        },
+      );
+      if (gh.status === 204) return json({ ok: true });
+      const detail = await gh.text();
+      return json({ error: `GitHub ${gh.status}: ${detail.slice(0, 200)}` }, 400);
+    }
+
     // ---- CREATE (default) ----
     const { email, password, full_name, role, teacher_id } = body;
     if (!email || !password) return json({ error: "Missing email/password" }, 400);
