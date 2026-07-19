@@ -978,26 +978,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               </div>
             </div>
             </sc-if>
-            <sc-if value="{{ isAdminRoleStudent }}">
-            <div class="field"><label>គ្រូទទួលបន្ទុក</label>
-              <sc-if value="{{ hasTeacherOptions }}">
-              <div style="position:relative;">
-                <button class="input" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left;cursor:pointer;" sc-camel-on-click="{{ toggleTeacherMenuCreate }}">
-                  <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ adminTeacherLabel }}</span>
-                  <svg width="16" height="16" style="flex:none;" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-text)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </button>
-                <sc-if value="{{ teacherMenuCreateOpen }}">
-                <div style="position:absolute;top:100%;left:0;right:0;margin-top:4px;z-index:30;max-height:210px;overflow-y:auto;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:var(--radius-md);box-shadow:var(--shadow-md);">
-                  <sc-for list="{{ teacherOptionsCreate }}" as="t" hint-placeholder-count="2">
-                    <button style="width:100%;text-align:left;padding:11px 13px;background:transparent;border:none;border-bottom:1px solid var(--color-divider);font:inherit;cursor:pointer;{{ t.rowStyle }}" sc-camel-on-click="{{ t.onSelect }}">{{ t.name }}</button>
-                  </sc-for>
-                </div>
-                </sc-if>
-              </div>
-              </sc-if>
-              <sc-if value="{{ noTeacherOptions }}"><div style="font-size:12px;opacity:0.6;">សូមបង្កើតគណនីគ្រូជាមុនសិន</div></sc-if>
-            </div>
-            </sc-if>
+            
             <sc-if value="{{ hasAdminError }}"><div style="font-size:12px;color:#c0392b;">{{ adminError }}</div></sc-if>
             <sc-if value="{{ hasAdminMsg }}"><div style="font-size:12px;color:var(--color-accent-700);">{{ adminMsg }}</div></sc-if>
             <button class="btn btn-primary btn-block" sc-camel-on-click="{{ createAccount }}">{{ createBtnLabel }}</button>
@@ -1005,22 +986,75 @@ textarea.input { min-height: 90px; resize: vertical; }
 
           <h4 style="font-size:15px;margin:0 0 8px;">គណនីទាំងអស់</h4>
           <div style="display:flex;flex-direction:column;gap:6px;">
-            <sc-for list="{{ accountsList }}" as="a" hint-placeholder-count="4">
+
+            <sc-for list="{{ adminRows }}" as="a" hint-placeholder-count="1">
               <div class="card" style="flex-direction:row;justify-content:space-between;align-items:center;padding:10px 12px;gap:8px;">
                 <div style="min-width:0;flex:1;">
                   <div style="font-size:14px;">{{ a.name }}</div>
                   <div style="font-size:11px;opacity:0.55;">{{ a.email }}</div>
-                  <div style="font-size:11px;opacity:0.45;">{{ a.branch }}</div>
                 </div>
                 <span class="{{ a.tagClass }}" style="flex:none;">{{ a.roleLabel }}</span>
-                <sc-if value="{{ a.canManage }}">
-                <div style="display:flex;gap:2px;flex:none;">
-                  <button class="btn btn-ghost" style="padding:4px 8px;font-size:12px;" sc-camel-on-click="{{ a.onEdit }}">កែ</button>
-                  <button class="btn btn-ghost" style="padding:4px 8px;font-size:12px;color:#c0392b;" sc-camel-on-click="{{ a.onDelete }}">លុប</button>
+              </div>
+            </sc-for>
+
+            <sc-for list="{{ branchGroups }}" as="g" hint-placeholder-count="2">
+              <div class="card" style="padding:0;overflow:hidden;">
+                <div style="display:flex;align-items:center;gap:8px;padding:12px;cursor:pointer;" sc-camel-on-click="{{ g.onToggle }}">
+                  <span style="flex:none;font-size:13px;opacity:0.6;width:12px;">{{ g.chevron }}</span>
+                  <div style="min-width:0;flex:1;">
+                    <div style="font-size:14px;font-weight:600;">{{ g.name }}</div>
+                    <div style="font-size:11px;opacity:0.55;">{{ g.countLabel }}</div>
+                  </div>
+                  <sc-if value="{{ g.self.canManage }}">
+                  <div style="display:flex;gap:2px;flex:none;">
+                    <button class="btn btn-ghost" style="padding:4px 8px;font-size:12px;" sc-camel-on-click="{{ g.self.onEdit }}">កែ</button>
+                    <button class="btn btn-ghost" style="padding:4px 8px;font-size:12px;color:#c0392b;" sc-camel-on-click="{{ g.self.onDelete }}">លុប</button>
+                  </div>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ g.expanded }}">
+                <div style="border-top:1px solid var(--color-divider);background:var(--color-surface);">
+                  <sc-if value="{{ g.noMembers }}">
+                    <div style="padding:12px 14px;font-size:12px;opacity:0.55;">មិនទាន់មានគ្រូ ឬ សិស្សទេ</div>
+                  </sc-if>
+                  <sc-for list="{{ g.members }}" as="m" hint-placeholder-count="3">
+                    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px 10px 30px;border-bottom:1px solid var(--color-divider);">
+                      <div style="min-width:0;flex:1;">
+                        <div style="font-size:13px;">{{ m.name }}</div>
+                        <div style="font-size:11px;opacity:0.55;">{{ m.email }}</div>
+                      </div>
+                      <span class="{{ m.tagClass }}" style="flex:none;">{{ m.roleLabel }}</span>
+                      <sc-if value="{{ m.canManage }}">
+                      <div style="display:flex;gap:2px;flex:none;">
+                        <button class="btn btn-ghost" style="padding:4px 6px;font-size:12px;" sc-camel-on-click="{{ m.onEdit }}">កែ</button>
+                        <button class="btn btn-ghost" style="padding:4px 6px;font-size:12px;color:#c0392b;" sc-camel-on-click="{{ m.onDelete }}">លុប</button>
+                      </div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
                 </div>
                 </sc-if>
               </div>
             </sc-for>
+
+            <sc-if value="{{ hasLooseRows }}">
+              <div style="font-size:11px;opacity:0.5;margin-top:6px;">មិនទាន់មានសាលា/សាខា</div>
+              <sc-for list="{{ looseRows }}" as="a" hint-placeholder-count="1">
+                <div class="card" style="flex-direction:row;justify-content:space-between;align-items:center;padding:10px 12px;gap:8px;">
+                  <div style="min-width:0;flex:1;">
+                    <div style="font-size:14px;">{{ a.name }}</div>
+                    <div style="font-size:11px;opacity:0.55;">{{ a.email }}</div>
+                  </div>
+                  <span class="{{ a.tagClass }}" style="flex:none;">{{ a.roleLabel }}</span>
+                  <sc-if value="{{ a.canManage }}">
+                  <div style="display:flex;gap:2px;flex:none;">
+                    <button class="btn btn-ghost" style="padding:4px 8px;font-size:12px;" sc-camel-on-click="{{ a.onEdit }}">កែ</button>
+                    <button class="btn btn-ghost" style="padding:4px 8px;font-size:12px;color:#c0392b;" sc-camel-on-click="{{ a.onDelete }}">លុប</button>
+                  </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </sc-if>
           </div>
 
           <sc-if value="{{ isEditingAccount }}">
@@ -1054,23 +1088,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                 </div>
               </div>
               </sc-if>
-              <sc-if value="{{ isEditRoleStudent }}">
-              <div class="field"><label>គ្រូទទួលបន្ទុក</label>
-                <div style="position:relative;">
-                  <button class="input" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left;cursor:pointer;" sc-camel-on-click="{{ toggleTeacherMenuEdit }}">
-                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ editTeacherLabel }}</span>
-                    <svg width="16" height="16" style="flex:none;" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-text)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                  </button>
-                  <sc-if value="{{ teacherMenuEditOpen }}">
-                  <div style="position:absolute;top:100%;left:0;right:0;margin-top:4px;z-index:30;max-height:210px;overflow-y:auto;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:var(--radius-md);box-shadow:var(--shadow-md);">
-                    <sc-for list="{{ teacherOptionsEdit }}" as="t" hint-placeholder-count="2">
-                      <button style="width:100%;text-align:left;padding:11px 13px;background:transparent;border:none;border-bottom:1px solid var(--color-divider);font:inherit;cursor:pointer;{{ t.rowStyle }}" sc-camel-on-click="{{ t.onSelect }}">{{ t.name }}</button>
-                    </sc-for>
-                  </div>
-                  </sc-if>
-                </div>
-              </div>
-              </sc-if>
+              
               <div class="field"><label>ពាក្យសម្ងាត់ថ្មី (ទុកទទេ បើមិនប្តូរ)</label><input class="input" type="text" value="{{ editPassword }}" sc-camel-on-change="{{ onEditPassword }}" placeholder="••••••"></div>
               <sc-if value="{{ hasEditError }}"><div style="font-size:12px;color:#c0392b;">{{ editError }}</div></sc-if>
               <div class="dialog-actions">
@@ -6409,7 +6427,8 @@ function makeSupabaseBackend(){
     async signOut(){ try { await client.auth.signOut(); } catch(e){} },
     async getProfile(id){ const { data, error } = await client.from('profiles').select('*').eq('id', id).single(); return error ? { error:error.message } : { profile:data }; },
     async saveProgress(id,patch){ const { error } = await client.from('profiles').update(patch).eq('id', id); return { error: error ? error.message : null }; },
-    async listStudents(teacherId){ const { data, error } = await client.from('profiles').select('id,full_name,email,viewed,favorites,history').eq('teacher_id', teacherId).eq('role','student').order('full_name'); return { rows:data||[], error: error?error.message:null }; },
+    // every teacher of a branch follows all of its students
+    async listStudents(schoolId){ const { data, error } = await client.from('profiles').select('id,full_name,email,viewed,favorites,history').eq('school_id', schoolId).eq('role','student').order('full_name'); return { rows:data||[], error: error?error.message:null }; },
     async listTeachers(){ const { data } = await client.from('profiles').select('id,full_name,email,school_id').eq('role','teacher').order('full_name'); return { rows:data||[] }; },
     async listSchools(){ const { data } = await client.from('profiles').select('id,full_name,email').eq('role','school').order('full_name'); return { rows:data||[] }; },
     async listAccounts(){ const { data } = await client.from('profiles').select('id,email,full_name,role,teacher_id').order('role'); return { rows:data||[] }; },
@@ -6481,7 +6500,7 @@ function makeDemoBackend(){
     async signOut(){ localStorage.removeItem('dict_demo_session'); },
     async getProfile(id){ const u=load().find(x=>x.id===id); return u?{ profile:JSON.parse(JSON.stringify(u)) }:{ error:'not found' }; },
     async saveProgress(id,patch){ const us=load(); const u=us.find(x=>x.id===id); if(u){ Object.assign(u, patch); save(us); } return { error:null }; },
-    async listStudents(teacherId){ return { rows:load().filter(x=>x.role==='student'&&x.teacher_id===teacherId), error:null }; },
+    async listStudents(schoolId){ return { rows:load().filter(x=>x.role==='student'&&x.school_id===schoolId), error:null }; },
     // mirror the RLS rules so the demo behaves like the real backend
     _me(){ const id=localStorage.getItem('dict_demo_session'); return load().find(u=>u.id===id) || null; },
     async listTeachers(){ const me=this._me(); const all=load().filter(x=>x.role==='teacher');
@@ -6525,7 +6544,8 @@ class Component extends DCLogic {
     // auth
     authStage: 'loading', // 'loading' | 'login' | 'app'
     email: '', password: '', authError: '', authBusy: false,
-    userId: null, role: null, profileName: '',
+    userId: null, role: null, profileName: '', mySchoolId: null,
+    expandedSchools: [],
     // admin (create accounts)
     adminFullName: '', adminEmail: '', adminPassword: '', adminRole: 'student', adminTeacherId: '', adminSchoolId: '',
     adminBusy: false, adminMsg: '', adminError: '', teachers: [], accounts: [], schools: [],
@@ -6618,7 +6638,7 @@ class Component extends DCLogic {
     const p = res.profile;
     const screen = 'home';   // everyone starts on the search screen
     this.setState({
-      userId: id, role: p.role, profileName: p.full_name || p.email,
+      userId: id, role: p.role, profileName: p.full_name || p.email, mySchoolId: p.school_id || null,
       favorites: Array.isArray(p.favorites) ? p.favorites : [],
       history:   Array.isArray(p.history)   ? p.history   : [],
       viewed:    Array.isArray(p.viewed)    ? p.viewed    : [],
@@ -6730,6 +6750,7 @@ class Component extends DCLogic {
     const s = await Backend.listSchools();
     this.setState({ teachers: t.rows || [], accounts: a.rows || [], schools: s.rows || [] });
   }
+  toggleSchoolGroup(id){ this.setState(s => ({ expandedSchools: s.expandedSchools.includes(id) ? s.expandedSchools.filter(x => x !== id) : [...s.expandedSchools, id] })); }
   setAdminRoleSchool(){ this.setState({ adminRole: 'school', adminTeacherId: '', adminSchoolId: '' }); }
   setEditRoleSchool(){ this.setState({ editRole: 'school', editTeacherId: '', editSchoolId: '' }); }
   toggleSchoolMenu(which){ this.setState(s => ({ schoolMenu: s.schoolMenu === which ? null : which })); }
@@ -6748,9 +6769,8 @@ class Component extends DCLogic {
     // an admin picks the branch; a school account always creates inside its own
     const schoolId = this.state.role === 'school' ? this.state.userId : adminSchoolId;
     if (adminRole !== 'school' && !schoolId) { this.setState({ adminError: 'សូមជ្រើសរើសសាលា/សាខា', adminMsg: '' }); return; }
-    if (adminRole === 'student' && !adminTeacherId) { this.setState({ adminError: 'សូមជ្រើសរើសគ្រូសម្រាប់សិស្ស', adminMsg: '' }); return; }
     this.setState({ adminBusy: true, adminError: '', adminMsg: '' });
-    const { error } = await Backend.createAccount({ email: adminEmail.trim(), password: adminPassword, full_name: adminFullName.trim(), role: adminRole, teacher_id: adminRole === 'student' ? adminTeacherId : null, school_id: adminRole === 'school' ? null : schoolId });
+    const { error } = await Backend.createAccount({ email: adminEmail.trim(), password: adminPassword, full_name: adminFullName.trim(), role: adminRole, teacher_id: null, school_id: adminRole === 'school' ? null : schoolId });
     if (error) { this.setState({ adminBusy: false, adminError: error }); return; }
     this.setState({ adminBusy: false, adminMsg: 'បង្កើតគណនីជោគជ័យ ✓', adminEmail: '', adminPassword: '', adminFullName: '' }, () => this.loadAdminData());
   }
@@ -6881,9 +6901,8 @@ class Component extends DCLogic {
     const { editingId, editFullName, editRole, editTeacherId, editPassword, editSchoolId } = this.state;
     const schoolId = this.state.role === 'school' ? this.state.userId : editSchoolId;
     if (editRole !== 'school' && !schoolId) { this.setState({ editError: 'សូមជ្រើសរើសសាលា/សាខា' }); return; }
-    if (editRole === 'student' && !editTeacherId) { this.setState({ editError: 'សូមជ្រើសរើសគ្រូសម្រាប់សិស្ស' }); return; }
     this.setState({ editBusy: true, editError: '' });
-    const patch = { full_name: editFullName.trim(), role: editRole, teacher_id: editRole === 'student' ? editTeacherId : null, school_id: editRole === 'school' ? null : schoolId };
+    const patch = { full_name: editFullName.trim(), role: editRole, teacher_id: null, school_id: editRole === 'school' ? null : schoolId };
     if (editPassword) patch.password = editPassword;
     const { error } = await Backend.updateAccount(editingId, patch);
     if (error) { this.setState({ editBusy: false, editError: error }); return; }
@@ -6898,7 +6917,8 @@ class Component extends DCLogic {
   }
 
   // — Teacher monitor —
-  async loadStudents(){ const r = await Backend.listStudents(this.state.userId); this.setState({ students: r.rows || [] }); }
+  // a teacher follows every student of their branch
+  async loadStudents(){ const r = await Backend.listStudents(this.state.mySchoolId); this.setState({ students: r.rows || [] }); }
   selectStudentToView(st){ this.setState({ selectedStudent: st.id, selectedStudentName: st.full_name || st.email, viewingViewed: Array.isArray(st.viewed) ? st.viewed : [] }); }
   backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [] }); }
 
@@ -7230,6 +7250,30 @@ class Component extends DCLogic {
       branch: a.school_id ? schoolName(a.school_id) : '',
       onEdit: () => this.startEdit(a), onDelete: () => this.deleteAccountConfirm(a) }));
 
+    // The list is grouped by branch: only the branch names show until one is
+    // tapped open. Admins belong to no branch, so they sit above the groups.
+    const rowOf = id => accountsList.find(x => x.id === id);
+    const adminRows = s.accounts.filter(a => a.role === 'admin').map(a => rowOf(a.id)).filter(Boolean);
+    const branchGroups = s.accounts.filter(a => a.role === 'school').map(sc => {
+      const members = s.accounts.filter(a => a.school_id === sc.id);
+      const open = s.expandedSchools.includes(sc.id);
+      const nT = members.filter(m => m.role === 'teacher').length;
+      const nS = members.filter(m => m.role === 'student').length;
+      return {
+        id: sc.id, name: sc.full_name || sc.email, email: sc.email,
+        countLabel: `គ្រូ ${nT} · សិស្ស ${nS}`,
+        expanded: open, collapsed: !open,
+        chevron: open ? '▾' : '▸',
+        onToggle: () => this.toggleSchoolGroup(sc.id),
+        self: rowOf(sc.id),
+        members: members.map(m => rowOf(m.id)).filter(Boolean),
+        noMembers: members.length === 0,
+      };
+    });
+    const looseRows = s.accounts
+      .filter(a => ['teacher','student'].includes(a.role) && !a.school_id)
+      .map(a => rowOf(a.id)).filter(Boolean);
+
     return {
       isHome: s.screen === 'home', isFavorites: s.screen === 'favorites', isSettings: s.screen === 'settings',
       isTestHub: s.screen === 'test' && !testMode,
@@ -7308,6 +7352,9 @@ class Component extends DCLogic {
       toggleTeacherMenuCreate: () => this.toggleTeacherMenu('create'),
       toggleTeacherMenuEdit: () => this.toggleTeacherMenu('edit'),
       accountsList, hasAccounts: accountsList.length > 0,
+      adminRows, hasAdminRows: adminRows.length > 0,
+      branchGroups, hasBranchGroups: branchGroups.length > 0,
+      looseRows, hasLooseRows: looseRows.length > 0,
       createAccount: () => this.createAccount(),
       createBtnLabel: s.adminBusy ? 'កំពុងបង្កើត…' : 'បង្កើតគណនី',
       hasAdminError: !!s.adminError, adminError: s.adminError,
