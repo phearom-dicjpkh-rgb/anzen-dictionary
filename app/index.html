@@ -611,8 +611,8 @@ textarea.input { min-height: 90px; resize: vertical; }
                   <button sc-camel-on-click="{{ w.onToggleViewed }}" aria-label="viewed" style="width:16px;height:16px;flex:none;border-radius:50%;padding:0;border:1.5px solid var(--color-neutral-400);cursor:pointer;background:{{ w.viewedBg }};"></button>
                   <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
                     <div style="display:flex;align-items:baseline;gap:8px;">
-                      <span style="font-family:var(--font-heading);font-weight:600;font-size:19px;">{{ w.jp }}</span>
-                      <span style="font-size:12px;opacity:0.55;">{{ w.kana }}</span><span style="color:#d0342c;font-size:13px;">{{ w.star }}</span>
+                      <span style="font-family:var(--font-heading);font-weight:600;font-size:19px;">{{ w.jp }}<span style="color:#d0342c;font-size:9px;vertical-align:super;line-height:0;margin-left:1px;">{{ w.star }}</span></span>
+                      <span style="font-size:12px;opacity:0.55;">{{ w.kana }}</span>
                     </div>
                     <div style="font-size:13px;opacity:0.8;">{{ w.km }}</div>
                   </div>
@@ -662,7 +662,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                   <sc-for list="{{ pageVocabList }}" as="w" hint-placeholder-count="10">
                     <div style="display:flex;align-items:flex-start;gap:8px;">
                       <button sc-camel-on-click="{{ w.onToggleViewed }}" aria-label="viewed" style="width:14px;height:14px;flex:none;margin-top:4px;border-radius:50%;padding:0;border:1.5px solid var(--color-neutral-400);cursor:pointer;background:{{ w.viewedBg }};"></button>
-                      <div style="font-size:14px;line-height:1.5;cursor:pointer;" sc-camel-on-click="{{ w.onOpen }}">{{ w.line }}<span style="color:#d0342c;"> {{ w.star }}</span></div>
+                      <div style="font-size:14px;line-height:1.5;cursor:pointer;" sc-camel-on-click="{{ w.onOpen }}">{{ w.jp }}<span style="color:#d0342c;font-size:9px;vertical-align:super;line-height:0;margin-left:1px;">{{ w.star }}</span>{{ w.rest }}</div>
                     </div>
                   </sc-for>
                 </div>
@@ -674,7 +674,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                   <sc-for list="{{ pageGrammarList }}" as="w" hint-placeholder-count="5">
                     <div style="display:flex;align-items:flex-start;gap:8px;">
                       <button sc-camel-on-click="{{ w.onToggleViewed }}" aria-label="viewed" style="width:14px;height:14px;flex:none;margin-top:4px;border-radius:50%;padding:0;border:1.5px solid var(--color-neutral-400);cursor:pointer;background:{{ w.viewedBg }};"></button>
-                      <div style="font-size:14px;line-height:1.5;cursor:pointer;" sc-camel-on-click="{{ w.onOpen }}">{{ w.line }}<span style="color:#d0342c;"> {{ w.star }}</span></div>
+                      <div style="font-size:14px;line-height:1.5;cursor:pointer;" sc-camel-on-click="{{ w.onOpen }}">{{ w.jp }}<span style="color:#d0342c;font-size:9px;vertical-align:super;line-height:0;margin-left:1px;">{{ w.star }}</span>{{ w.rest }}</div>
                     </div>
                   </sc-for>
                 </div>
@@ -700,8 +700,8 @@ textarea.input { min-height: 90px; resize: vertical; }
                     <button sc-camel-on-click="{{ w.onToggleViewed }}" aria-label="viewed" style="width:16px;height:16px;flex:none;border-radius:50%;padding:0;border:1.5px solid var(--color-neutral-400);cursor:pointer;background:{{ w.viewedBg }};"></button>
                     <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
                       <div style="display:flex;align-items:baseline;gap:8px;">
-                        <span style="font-family:var(--font-heading);font-weight:600;font-size:19px;">{{ w.jp }}</span>
-                        <span style="font-size:12px;opacity:0.55;">{{ w.kana }}</span><span style="color:#d0342c;font-size:13px;">{{ w.star }}</span>
+                        <span style="font-family:var(--font-heading);font-weight:600;font-size:19px;">{{ w.jp }}<span style="color:#d0342c;font-size:9px;vertical-align:super;line-height:0;margin-left:1px;">{{ w.star }}</span></span>
+                        <span style="font-size:12px;opacity:0.55;">{{ w.kana }}</span>
                       </div>
                       <div style="font-size:13px;opacity:0.8;">{{ w.km }}</div>
                     </div>
@@ -7192,8 +7192,9 @@ class Component extends DCLogic {
     const bookPages = pagesOfBook(s.bookFilter);
     const pages = bookPages.map(p => ({ num: p, label: `ទំព័រ ${p}`, btnClass: s.pageFilter === p ? 'btn-primary' : 'btn-secondary', onSelect: () => this.selectPage(p) }));
     const pageWordsList = s.pageFilter != null ? dedupeWords(WORDS.filter(w => w.page === s.pageFilter && w.book === s.bookFilter)).map(decorate) : [];
-    const pageVocabList = pageWordsList.filter(w => w.cat === 'vocab').map(w => ({ ...w, line: `${w.jp}（${w.kana}）：${w.km}` }));
-    const pageGrammarList = pageWordsList.filter(w => w.cat === 'grammar').map(w => ({ ...w, line: `${w.jp}：${w.km}` }));
+    // jp is kept apart from the rest so the star can sit right after the word
+    const pageVocabList = pageWordsList.filter(w => w.cat === 'vocab').map(w => ({ ...w, line: `${w.jp}（${w.kana}）：${w.km}`, rest: `（${w.kana}）：${w.km}` }));
+    const pageGrammarList = pageWordsList.filter(w => w.cat === 'grammar').map(w => ({ ...w, line: `${w.jp}：${w.km}`, rest: `：${w.km}` }));
     const allPageViewed = pageWordsList.length > 0 && pageWordsList.every(w => w.isViewed);
 
     const pqQuestions = s.pageQuizQuestions;
