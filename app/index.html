@@ -626,6 +626,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               </div>
             </sc-for>
             <sc-if value="{{ noResults }}"><div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">រកមិនឃើញពាក្យទេ</div></sc-if>
+            <sc-if value="{{ allViewed }}"><div style="text-align:center;padding:44px 16px;opacity:0.6;font-size:13px;line-height:1.7;">🎉 អ្នកបានមើលពាក្យទាំងអស់ហើយ!<br>ដោះគ្រីសពាក្យណាមួយ ដើម្បីមើលឡើងវិញ</div></sc-if>
             <sc-if value="{{ resultsTruncated }}"><div style="text-align:center;padding:14px 0 4px;opacity:0.55;font-size:12px;">{{ resultInfo }} · សូមវាយបន្ថែម ឬប្រើ «តាមទំព័រ»</div></sc-if>
           </div>
           </sc-if>
@@ -5706,6 +5707,7 @@ class Component extends DCLogic {
     settingsName: '', settingsLogo: '', settingsLogoBlob: null, settingsBusy: false, settingsMsg: '', settingsError: '',
     screen: 'home', search: '', catFilter: 'all', testCat: 'all', searchMode: 'general', pageFilter: null, pageInput: '',
     bookFilter: BOOKS[0] || DEFAULT_BOOK,
+    pendingHide: [],   // just-ticked words, still shown for a moment
     detailWordId: null,
     favorites: [], history: [], viewed: [],
     settings: { fontScale: 1, autoAudio: false },
@@ -5785,7 +5787,14 @@ class Component extends DCLogic {
     if (e) e.stopPropagation();
     const has = this.state.viewed.includes(id);
     const viewed = has ? this.state.viewed.filter(x => x !== id) : [...this.state.viewed, id];
-    this.setState({ viewed }, () => this.persist());
+    let pendingHide = this.state.pendingHide.filter(x => x !== id);
+    if (!has) {
+      // Just ticked: keep it on screen for a moment so the tick is visible,
+      // then let it drop out of the browse list and pull in a fresh word.
+      pendingHide = [...pendingHide, id];
+      setTimeout(() => this.setState(st => ({ pendingHide: st.pendingHide.filter(x => x !== id) })), 3000);
+    }
+    this.setState({ viewed, pendingHide }, () => this.persist());
   }
 
   showToast(msg){
@@ -6109,9 +6118,19 @@ class Component extends DCLogic {
       || (qr && (w.romaji.includes(qr) || w.romajiNorm.includes(qr)))
     ) : pool;
     const MAX_RESULTS = 60;
-    const filteredWords = matches.slice(0, MAX_RESULTS).map(decorate);
-    const resultsTruncated = matches.length > MAX_RESULTS;
-    const resultInfo = `បង្ហាញ ${filteredWords.length} ក្នុងចំណោម ${matches.length} ពាក្យ`;
+    // Browsing (no query) works as a study queue: ticked words drop out and new
+    // unseen ones take their place. While searching, keep showing everything —
+    // otherwise looking up a word you already ticked would find nothing.
+    const browsing = !q;
+    const visibleMatches = browsing
+      ? matches.filter(w => !s.viewed.includes(w.id) || s.pendingHide.includes(w.id))
+      : matches;
+    const filteredWords = visibleMatches.slice(0, MAX_RESULTS).map(decorate);
+    const resultsTruncated = visibleMatches.length > MAX_RESULTS;
+    const allViewed = browsing && matches.length > 0 && visibleMatches.length === 0;
+    const resultInfo = browsing
+      ? `បង្ហាញ ${filteredWords.length} ក្នុងចំណោម ${visibleMatches.length} ពាក្យដែលមិនទាន់មើល`
+      : `បង្ហាញ ${filteredWords.length} ក្នុងចំណោម ${visibleMatches.length} ពាក្យ`;
 
     const favoriteWordsList = dedupeWords(WORDS.filter(w => s.favorites.includes(w.id))).map(decorate);
 
@@ -6248,8 +6267,8 @@ class Component extends DCLogic {
       catFilter: s.catFilter, onCatChange: e => this.onCatChange(e),
       isCatAll: s.catFilter === 'all', isCatVocab: s.catFilter === 'vocab', isCatGrammar: s.catFilter === 'grammar',
       onCatAll: () => this.onCatAll(), onCatVocab: () => this.onCatVocab(), onCatGrammar: () => this.onCatGrammar(),
-      filteredWords, noResults: filteredWords.length === 0,
-      resultsTruncated, resultInfo,
+      filteredWords, noResults: filteredWords.length === 0 && !allViewed,
+      resultsTruncated, resultInfo, allViewed,
 
       isSearchGeneral: s.searchMode === 'general', isSearchByPage: s.searchMode === 'page',
       searchMode: s.searchMode, onSearchModeChange: e => this.onSearchModeChange(e),
