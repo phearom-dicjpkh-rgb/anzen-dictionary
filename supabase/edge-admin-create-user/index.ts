@@ -37,17 +37,20 @@ Deno.serve(async (req) => {
     // the account is created unapproved, so it can do nothing until the branch
     // approves it. Public sign-up in Supabase Auth can stay switched off.
     if (body0.action === "register") {
-      const { token, email, password, full_name, role } = body0;
+      const { token, email, password, full_name } = body0;
       if (!token) return json({ error: "តំណមិនត្រឹមត្រូវ" }, 400);
       if (!email || !password) return json({ error: "សូមបញ្ចូលអ៊ីមែល និង ពាក្យសម្ងាត់" }, 400);
-      if (!["teacher", "student"].includes(role)) return json({ error: "ប្រភេទគណនីមិនត្រឹមត្រូវ" }, 400);
       if (String(password).length < 6) return json({ error: "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៦ តួ" }, 400);
 
+      // Two links per branch: the one that was opened decides the role, so a
+      // student cannot become a teacher by editing the address.
       const { data: school } = await admin0
-        .from("profiles").select("id")
-        .eq("role", "school").eq("approved", true).eq("signup_token", token)
+        .from("profiles").select("id,token_student,token_teacher")
+        .eq("role", "school").eq("approved", true)
+        .or(`token_student.eq.${token},token_teacher.eq.${token}`)
         .maybeSingle();
       if (!school) return json({ error: "តំណនេះលែងប្រើបានហើយ" }, 400);
+      const role = school.token_teacher === token ? "teacher" : "student";
 
       const { error } = await admin0.auth.admin.createUser({
         email, password, email_confirm: true,

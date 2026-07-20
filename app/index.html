@@ -555,17 +555,13 @@ textarea.input { min-height: 90px; resize: vertical; }
       <sc-if value="{{ isJoinScreen }}">
       <div style="width:100%;display:flex;flex-direction:column;gap:12px;">
         <sc-if value="{{ joinForm }}">
-          <div style="font-size:13px;opacity:0.7;">ចុះឈ្មោះចូលរៀន</div>
+          <div style="font-size:13px;opacity:0.7;">{{ joinRoleLabel }}</div>
           <sc-if value="{{ hasJoinSchool }}">
             <div style="font-size:14px;font-weight:600;color:var(--color-accent-700);">{{ joinSchool }}</div>
           </sc-if>
           <input class="input" type="text" placeholder="ឈ្មោះ" value="{{ joinName }}" sc-camel-on-change="{{ onJoinName }}" style="width:100%;text-align:center;">
           <input class="input" type="email" placeholder="អ៊ីមែល" value="{{ joinEmail }}" sc-camel-on-change="{{ onJoinEmail }}" style="width:100%;text-align:center;">
           <input class="input" type="password" placeholder="ពាក្យសម្ងាត់ (យ៉ាងតិច ៦ តួ)" value="{{ joinPassword }}" sc-camel-on-change="{{ onJoinPassword }}" style="width:100%;text-align:center;">
-          <div class="seg" style="align-self:center;">
-            <label class="seg-opt"><input type="radio" name="jrole" checked="{{ isJoinRoleStudent }}" sc-camel-on-change="{{ setJoinRoleStudent }}"><span>សិស្ស</span></label>
-            <label class="seg-opt"><input type="radio" name="jrole" checked="{{ isJoinRoleTeacher }}" sc-camel-on-change="{{ setJoinRoleTeacher }}"><span>គ្រូ</span></label>
-          </div>
           <sc-if value="{{ hasJoinError }}"><div style="font-size:12px;color:#c0392b;line-height:1.5;">{{ joinError }}</div></sc-if>
           <button class="btn btn-primary btn-block" sc-camel-on-click="{{ submitJoin }}">{{ joinBtnLabel }}</button>
           <a href="#" style="font-size:12px;" sc-camel-on-click="{{ leaveJoin }}">មានគណនីរួចហើយ — ចូលគណនី</a>
@@ -1023,12 +1019,24 @@ textarea.input { min-height: 90px; resize: vertical; }
               ផ្ញើតំណនេះទៅគ្រូ ឬ សិស្ស ដើម្បីឲ្យពួកគេចុះឈ្មោះដោយខ្លួនឯង។
               គណនីថ្មីត្រូវរង់ចាំការអនុម័តរបស់អ្នកសិន។
             </div>
-            <sc-if value="{{ hasInviteLink }}">
-              <div style="font-size:11px;word-break:break-all;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-md);padding:9px 11px;">{{ inviteLink }}</div>
-              <button class="btn btn-primary btn-block" sc-camel-on-click="{{ copyInviteLink }}">ចម្លងតំណ</button>
-            </sc-if>
+            <div style="border:1px solid var(--color-divider);border-radius:var(--radius-md);padding:11px;">
+              <div style="font-size:12px;font-weight:600;margin-bottom:7px;">សម្រាប់ សិស្ស</div>
+              <sc-if value="{{ hasInviteStudent }}">
+                <div style="font-size:11px;word-break:break-all;background:var(--color-surface);border-radius:var(--radius-md);padding:8px 10px;margin-bottom:7px;">{{ inviteStudent }}</div>
+                <button class="btn btn-primary btn-block" style="margin-bottom:6px;" sc-camel-on-click="{{ copyInviteStudent }}">ចម្លងតំណសិស្ស</button>
+              </sc-if>
+              <button class="btn btn-secondary btn-block" sc-camel-on-click="{{ makeInviteStudent }}">{{ inviteStudentLabel }}</button>
+            </div>
+
+            <div style="border:1px solid var(--color-divider);border-radius:var(--radius-md);padding:11px;">
+              <div style="font-size:12px;font-weight:600;margin-bottom:7px;">សម្រាប់ គ្រូ</div>
+              <sc-if value="{{ hasInviteTeacher }}">
+                <div style="font-size:11px;word-break:break-all;background:var(--color-surface);border-radius:var(--radius-md);padding:8px 10px;margin-bottom:7px;">{{ inviteTeacher }}</div>
+                <button class="btn btn-primary btn-block" style="margin-bottom:6px;" sc-camel-on-click="{{ copyInviteTeacher }}">ចម្លងតំណគ្រូ</button>
+              </sc-if>
+              <button class="btn btn-secondary btn-block" sc-camel-on-click="{{ makeInviteTeacher }}">{{ inviteTeacherLabel }}</button>
+            </div>
             <sc-if value="{{ hasInviteMsg }}"><div style="font-size:12px;color:var(--color-accent-700);">{{ inviteMsg }}</div></sc-if>
-            <button class="btn btn-secondary btn-block" sc-camel-on-click="{{ makeInviteLink }}">{{ inviteBtnLabel }}</button>
           </div>
           </sc-if>
 
@@ -6518,6 +6526,8 @@ function makeSupabaseBackend(){
     async listSchools(){ const { data } = await client.from('profiles').select('id,full_name,email').eq('role','school').order('full_name'); return { rows:data||[] }; },
     // — self sign-up via a branch invite link —
     async schoolByToken(token){ const { data } = await client.rpc('school_by_token', { tok: token }); const row = Array.isArray(data) ? data[0] : data; return { school: row || null }; },
+    async saveInviteToken(id, kind, token){ const col = kind === 'teacher' ? 'token_teacher' : 'token_student'; const { error } = await client.from('profiles').update({ [col]: token }).eq('id', id); return { error: error ? error.message : null }; },
+    async myInviteTokens(id){ const { data } = await client.from('profiles').select('token_student,token_teacher').eq('id', id).single(); return { student: data && data.token_student, teacher: data && data.token_teacher }; },
     async register(payload){
       const { data, error } = await client.functions.invoke(EDGE_CREATE_USER, { body: { action:'register', ...payload } });
       if (error) return { error: await fnError(error) };
@@ -6525,8 +6535,6 @@ function makeSupabaseBackend(){
       return { error:null };
     },
     async setApproved(id, approved){ const { error } = await client.from('profiles').update({ approved }).eq('id', id); return { error: error ? error.message : null }; },
-    async saveSignupToken(id, token){ const { error } = await client.from('profiles').update({ signup_token: token }).eq('id', id); return { error: error ? error.message : null }; },
-    async myProfileToken(id){ const { data } = await client.from('profiles').select('signup_token').eq('id', id).single(); return { token: data && data.signup_token }; },
     async listAccounts(){ const { data } = await client.from('profiles').select('id,email,full_name,role,teacher_id').order('role'); return { rows:data||[] }; },
     async getAppSettings(){ const { data } = await client.from('app_settings').select('app_name,logo').eq('id',1).single(); return { app_name:(data&&data.app_name)||DEFAULT_APP_NAME, logo:(data&&data.logo)||'' }; },
     async saveAppSettings(patch){ const { error } = await client.from('app_settings').update({ app_name:patch.app_name, logo:patch.logo, updated_at:new Date().toISOString() }).eq('id',1); return { error: error ? error.message : null }; },
@@ -6617,18 +6625,22 @@ function makeDemoBackend(){
     async listTeachers(){ const me=this._me(); const all=load().filter(x=>x.role==='teacher');
       return { rows: me && me.role==='school' ? all.filter(t=>t.school_id===me.id) : all }; },
     async listSchools(){ return { rows:load().filter(x=>x.role==='school') }; },
-    async schoolByToken(token){ const s=load().find(x=>x.role==='school' && x.signup_token===token); return { school: s ? { id:s.id, full_name:s.full_name } : null }; },
+    async schoolByToken(token){
+      const s=load().find(x=>x.role==='school' && (x.token_student===token || x.token_teacher===token));
+      return { school: s ? { id:s.id, full_name:s.full_name, role: s.token_teacher===token ? 'teacher' : 'student' } : null };
+    },
+    async saveInviteToken(id, kind, token){ const us=load(); const u=us.find(x=>x.id===id); if(u) u[kind==='teacher'?'token_teacher':'token_student']=token; save(us); return { error:null }; },
+    async myInviteTokens(id){ const u=load().find(x=>x.id===id); return { student: u && u.token_student, teacher: u && u.token_teacher }; },
     async register(p){
       const us=load(); const email=String(p.email).trim().toLowerCase();
       if (us.find(x=>x.email===email)) return { error:'អ៊ីមែលនេះមានរួចហើយ' };
-      const school=us.find(x=>x.role==='school' && x.signup_token===p.token);
+      const school=us.find(x=>x.role==='school' && (x.token_student===p.token || x.token_teacher===p.token));
       if (!school) return { error:'តំណនេះលែងប្រើបានហើយ' };
-      us.push({ id:'u-'+Date.now(), email, password:p.password, full_name:p.full_name||'', role:p.role, teacher_id:null, school_id:school.id, approved:false, viewed:[], favorites:[], history:[], settings:{} });
+      const role = school.token_teacher===p.token ? 'teacher' : 'student';   // the link decides
+      us.push({ id:'u-'+Date.now(), email, password:p.password, full_name:p.full_name||'', role, teacher_id:null, school_id:school.id, approved:false, viewed:[], favorites:[], history:[], settings:{} });
       save(us); return { error:null };
     },
     async setApproved(id, approved){ const us=load(); const u=us.find(x=>x.id===id); if(u) u.approved=approved; save(us); return { error:null }; },
-    async saveSignupToken(id, token){ const us=load(); const u=us.find(x=>x.id===id); if(u) u.signup_token=token; save(us); return { error:null }; },
-    async myProfileToken(id){ const u=load().find(x=>x.id===id); return { token: u && u.signup_token }; },
     async listAccounts(){
       const me=this._me(); const all=load();
       const visible = !me ? []
@@ -6688,7 +6700,7 @@ class Component extends DCLogic {
     // self sign-up through a branch invite link
     joinToken: '', joinSchool: '', joinName: '', joinEmail: '', joinPassword: '', joinRole: 'student',
     joinBusy: false, joinError: '', joinDone: false,
-    inviteLink: '', inviteBusy: false, inviteMsg: '',
+    inviteStudent: '', inviteTeacher: '', inviteBusy: '', inviteMsg: '',
     approveBusy: '',
     // "add to home screen" prompt
     installShow: false, installPlatform: '',
@@ -6766,7 +6778,8 @@ class Component extends DCLogic {
     this.setState({ joinToken: token, authStage: 'join' });
     try {
       const { school } = await Backend.schoolByToken(token);
-      if (school) this.setState({ joinSchool: school.full_name || '' });
+      // the link itself carries the role — the form does not offer a choice
+      if (school) this.setState({ joinSchool: school.full_name || '', joinRole: school.role === 'teacher' ? 'teacher' : 'student' });
       else this.setState({ joinError: 'តំណនេះលែងប្រើបានហើយ — សូមសុំតំណថ្មី' });
     } catch(e) { this.setState({ joinError: 'តំណនេះលែងប្រើបានហើយ' }); }
     return true;
@@ -6774,8 +6787,6 @@ class Component extends DCLogic {
   onJoinName(e){ this.setState({ joinName: e.target.value }); }
   onJoinEmail(e){ this.setState({ joinEmail: e.target.value }); }
   onJoinPassword(e){ this.setState({ joinPassword: e.target.value }); }
-  setJoinRoleStudent(){ this.setState({ joinRole: 'student' }); }
-  setJoinRoleTeacher(){ this.setState({ joinRole: 'teacher' }); }
   async submitJoin(){
     if (this.state.joinBusy) return;
     const { joinToken, joinName, joinEmail, joinPassword, joinRole } = this.state;
@@ -6795,20 +6806,25 @@ class Component extends DCLogic {
   // — branch invite link + approvals —
   async loadInviteLink(){
     if (this.state.role !== 'school') return;
-    const { token } = await Backend.myProfileToken(this.state.userId);
-    if (token) this.setState({ inviteLink: this.inviteUrl(token) });
+    const { student, teacher } = await Backend.myInviteTokens(this.state.userId);
+    this.setState({
+      inviteStudent: student ? this.inviteUrl(student) : '',
+      inviteTeacher: teacher ? this.inviteUrl(teacher) : '',
+    });
   }
   inviteUrl(token){ return location.origin + location.pathname + '?join=' + token; }
-  async makeInviteLink(){
+  async makeInvite(kind){
     if (this.state.inviteBusy) return;
-    this.setState({ inviteBusy: true, inviteMsg: '' });
+    this.setState({ inviteBusy: kind, inviteMsg: '' });
     const token = 'j' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
-    const { error } = await Backend.saveSignupToken(this.state.userId, token);
-    if (error) { this.setState({ inviteBusy: false, inviteMsg: error }); return; }
-    this.setState({ inviteBusy: false, inviteLink: this.inviteUrl(token), inviteMsg: 'បង្កើតតំណថ្មីរួច ✓' });
+    const { error } = await Backend.saveInviteToken(this.state.userId, kind, token);
+    if (error) { this.setState({ inviteBusy: '', inviteMsg: error }); return; }
+    this.setState({ inviteBusy: '', inviteMsg: 'បង្កើតតំណថ្មីរួច ✓',
+      [kind === 'teacher' ? 'inviteTeacher' : 'inviteStudent']: this.inviteUrl(token) });
   }
-  async copyInviteLink(){
-    try { await navigator.clipboard.writeText(this.state.inviteLink); this.setState({ inviteMsg: 'ចម្លងរួច ✓' }); }
+  async copyInvite(kind){
+    const link = kind === 'teacher' ? this.state.inviteTeacher : this.state.inviteStudent;
+    try { await navigator.clipboard.writeText(link); this.setState({ inviteMsg: 'ចម្លងរួច ✓' }); }
     catch(e) { this.setState({ inviteMsg: 'សូមចម្លងតំណដោយដៃ' }); }
   }
   async approveAccount(id, approved){
@@ -7604,9 +7620,12 @@ class Component extends DCLogic {
 
       // invite link (branch only)
       isSchoolRole: s.role === 'school',
-      inviteLink: s.inviteLink, hasInviteLink: !!s.inviteLink, noInviteLink: !s.inviteLink,
-      makeInviteLink: () => this.makeInviteLink(), copyInviteLink: () => this.copyInviteLink(),
-      inviteBtnLabel: s.inviteBusy ? 'កំពុងបង្កើត…' : (s.inviteLink ? 'បង្កើតតំណថ្មី' : 'បង្កើតតំណអញ្ជើញ'),
+      inviteStudent: s.inviteStudent, hasInviteStudent: !!s.inviteStudent,
+      inviteTeacher: s.inviteTeacher, hasInviteTeacher: !!s.inviteTeacher,
+      makeInviteStudent: () => this.makeInvite('student'), copyInviteStudent: () => this.copyInvite('student'),
+      makeInviteTeacher: () => this.makeInvite('teacher'), copyInviteTeacher: () => this.copyInvite('teacher'),
+      inviteStudentLabel: s.inviteBusy === 'student' ? 'កំពុងបង្កើត…' : (s.inviteStudent ? 'បង្កើតតំណថ្មី' : 'បង្កើតតំណសិស្ស'),
+      inviteTeacherLabel: s.inviteBusy === 'teacher' ? 'កំពុងបង្កើត…' : (s.inviteTeacher ? 'បង្កើតតំណថ្មី' : 'បង្កើតតំណគ្រូ'),
       hasInviteMsg: !!s.inviteMsg, inviteMsg: s.inviteMsg,
 
       // sign-up screen reached through an invite link
@@ -7615,8 +7634,7 @@ class Component extends DCLogic {
       joinName: s.joinName, onJoinName: e => this.onJoinName(e),
       joinEmail: s.joinEmail, onJoinEmail: e => this.onJoinEmail(e),
       joinPassword: s.joinPassword, onJoinPassword: e => this.onJoinPassword(e),
-      isJoinRoleStudent: s.joinRole === 'student', isJoinRoleTeacher: s.joinRole === 'teacher',
-      setJoinRoleStudent: () => this.setJoinRoleStudent(), setJoinRoleTeacher: () => this.setJoinRoleTeacher(),
+      joinRoleLabel: s.joinRole === 'teacher' ? 'ចុះឈ្មោះជា គ្រូ' : 'ចុះឈ្មោះជា សិស្ស',
       submitJoin: () => this.submitJoin(), leaveJoin: () => this.leaveJoin(),
       joinBtnLabel: s.joinBusy ? 'កំពុងចុះឈ្មោះ…' : 'ចុះឈ្មោះ',
       hasJoinError: !!s.joinError, joinError: s.joinError,
