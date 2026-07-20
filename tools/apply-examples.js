@@ -31,7 +31,9 @@ for (const r of rows) {
 
 // A stray Korean or Cyrillic letter that happens to look like a kanji reads as
 // a typo to a learner and is invisible in review, so refuse the whole run.
-const STRAY = /[ᄀ-ᇿ가-힯Ѐ-ӿ฀-๿]/;
+// Khmer is here too: the danda ។ is easy to type in place of 。 while writing
+// the translation alongside.
+const STRAY = /[ᄀ-ᇿ가-힯Ѐ-ӿ฀-๿ក-៿]/;
 const bad = [];
 for (const [key, pairs] of Object.entries(examples)) {
   if (key.startsWith('_')) continue;
