@@ -29,6 +29,37 @@ Deno.serve(async (req) => {
     const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+    const admin0 = createClient(url, service, { auth: { autoRefreshToken: false, persistSession: false } });
+    const body0 = await req.clone().json().catch(() => ({}));
+
+    // ---- REGISTER (no sign-in required) ----
+    // Someone opening a branch's invite link. The token is what authorises it;
+    // the account is created unapproved, so it can do nothing until the branch
+    // approves it. Public sign-up in Supabase Auth can stay switched off.
+    if (body0.action === "register") {
+      const { token, email, password, full_name, role } = body0;
+      if (!token) return json({ error: "តំណមិនត្រឹមត្រូវ" }, 400);
+      if (!email || !password) return json({ error: "សូមបញ្ចូលអ៊ីមែល និង ពាក្យសម្ងាត់" }, 400);
+      if (!["teacher", "student"].includes(role)) return json({ error: "ប្រភេទគណនីមិនត្រឹមត្រូវ" }, 400);
+      if (String(password).length < 6) return json({ error: "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៦ តួ" }, 400);
+
+      const { data: school } = await admin0
+        .from("profiles").select("id")
+        .eq("role", "school").eq("approved", true).eq("signup_token", token)
+        .maybeSingle();
+      if (!school) return json({ error: "តំណនេះលែងប្រើបានហើយ" }, 400);
+
+      const { error } = await admin0.auth.admin.createUser({
+        email, password, email_confirm: true,
+        user_metadata: {
+          full_name: full_name ?? "", role,
+          teacher_id: null, school_id: school.id, approved: false,
+        },
+      });
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
+    }
+
     // 1) Identify caller from their bearer token, and confirm they are admin.
     const authHeader = req.headers.get("Authorization") ?? "";
     const callerClient = createClient(url, anon, { global: { headers: { Authorization: authHeader } } });
