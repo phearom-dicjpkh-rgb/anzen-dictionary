@@ -879,6 +879,42 @@ textarea.input { min-height: 90px; resize: vertical; }
               <div class="card-kicker">សរុប</div>
               <div class="card-title" style="font-size:16px;">{{ monitorOverallViewed }} / {{ overallTotal }} ពាក្យ ({{ monitorOverallPct }}%)</div>
             </div>
+
+            <h4 style="font-size:15px;margin:0 0 10px;">លទ្ធផលតេស្ត</h4>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:22px;">
+              <sc-for list="{{ monitorLessonSummary }}" as="t" hint-placeholder-count="3">
+                <div class="card elev-sm" style="gap:8px;">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:13px;">
+                    <span>{{ t.label }}</span>
+                    <span style="opacity:0.65;font-size:12px;">{{ t.passedLabel }}</span>
+                  </div>
+                  <sc-if value="{{ t.hasAny }}">
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                      <sc-for list="{{ t.chips }}" as="c" hint-placeholder-count="4">
+                        <span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}">{{ c.text }}</span>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+
+            <h4 style="font-size:15px;margin:0 0 4px;">រយៈពេលប្រើប្រាស់</h4>
+            <div style="font-size:12px;opacity:0.6;margin-bottom:12px;">ថ្ងៃនេះ {{ monitorUsageTodayLabel }} · ៧ ថ្ងៃ {{ monitorUsageWeekLabel }}</div>
+            <div class="card elev-sm" style="padding:14px 12px 10px;margin-bottom:22px;">
+              <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:6px;height:120px;">
+                <sc-for list="{{ monitorUsageDays }}" as="d" hint-placeholder-count="7">
+                  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;">
+                    <div style="font-size:10px;opacity:0.6;">{{ d.minsLabel }}</div>
+                    <div style="width:100%;height:{{ d.barHeight }};background:{{ d.barColor }};border-radius:5px 5px 0 0;"></div>
+                    <div style="font-size:11px;opacity:0.7;">{{ d.label }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="text-align:center;font-size:10px;opacity:0.45;margin-top:6px;">នាទី ក្នុងមួយថ្ងៃ</div>
+            </div>
+
+            <h4 style="font-size:15px;margin:0 0 10px;">ការមើលពាក្យតាមទំព័រ</h4>
             <div style="display:flex;flex-direction:column;gap:10px;">
               <sc-for list="{{ monitorPageProgress }}" as="p" hint-placeholder-count="8">
                 <div>
@@ -894,7 +930,7 @@ textarea.input { min-height: 90px; resize: vertical; }
             </div>
           </sc-if>
           <sc-if value="{{ noSelectedStudent }}" hint-placeholder-val="{{ true }}">
-            <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">ជ្រើសរើសឈ្មោះសិស្សដើម្បីមើលលទ្ធផលសិក្សា</div>
+            <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">ជ្រើសរើសឈ្មោះសិស្សដើម្បីមើលលទ្ធផលសិក្សា · {{ monitorScopeLabel }}</div>
             <sc-if value="{{ hasStudents }}">
               <div style="display:flex;flex-direction:column;gap:8px;">
                 <sc-for list="{{ studentNameItems }}" as="st" hint-placeholder-count="3">
@@ -936,6 +972,25 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <div style="height:8px;background:var(--color-neutral-200);border-radius:99px;overflow:hidden;">
                   <div style="height:100%;width:{{ b.barWidth }};background:var(--color-accent);border-radius:99px;"></div>
                 </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <h4 style="font-size:15px;margin:0 0 10px;">លទ្ធផលតេស្ត</h4>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:22px;">
+            <sc-for list="{{ myLessonSummary }}" as="t" hint-placeholder-count="3">
+              <div class="card elev-sm" style="gap:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:13px;">
+                  <span>{{ t.label }}</span>
+                  <span style="opacity:0.65;font-size:12px;">{{ t.passedLabel }}</span>
+                </div>
+                <sc-if value="{{ t.hasAny }}">
+                  <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                    <sc-for list="{{ t.chips }}" as="c" hint-placeholder-count="4">
+                      <span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}">{{ c.text }}</span>
+                    </sc-for>
+                  </div>
+                </sc-if>
               </div>
             </sc-for>
           </div>
@@ -1283,10 +1338,10 @@ textarea.input { min-height: 90px; resize: vertical; }
         <span style="font-size:10px;">តេស្ត</span>
       </button>
       </sc-if>
-      <sc-if value="{{ isTeacher }}">
+      <sc-if value="{{ canMonitor }}">
       <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ monitorColor }};" sc-camel-on-click="{{ goMonitor }}">
         <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ monitorColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M18 9l-5 5-3-3-4 4"></path></svg>
-        <span style="font-size:10px;">ត្រួតពិនិត្យ</span>
+        <span style="font-size:10px;">សិស្ស</span>
       </button>
       </sc-if>
       <sc-if value="{{ isAdmin }}">
@@ -6523,6 +6578,47 @@ const PAGES = Array.from(new Set(WORDS.map(w => w.page))).sort((a,b)=>a-b);
 const LESSON_SIZE = 10, LESSON_BLOCK = 5, PASS_PCT = 90;
 const MODE_LABEL = { flashcard:'Flashcard', mc_jp:'ជប៉ុន → ខ្មែរ', mc_km:'ខ្មែរ → ជប៉ុន' };
 
+// The last seven days of time in the app. Shared by a learner's own profile
+// and by the teacher's view of them, so both read the same shape.
+function buildUsageChart(usage){
+  const days = [];
+  let week = 0;
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const secs = (usage && usage[dayKey(d)]) || 0;
+    week += secs;
+    days.push({ secs, mins: Math.round(secs / 60), label: KH_WEEKDAY[d.getDay()], isToday: i === 0 });
+  }
+  const peak = Math.max(300, ...days.map(d => d.secs));   // a floor keeps tiny bars readable
+  days.forEach(d => {
+    d.barHeight = Math.max(d.secs > 0 ? 6 : 2, Math.round(d.secs / peak * 100)) + '%';
+    d.barColor = d.isToday ? 'var(--color-accent)' : 'var(--color-neutral-400)';
+    d.minsLabel = d.mins > 0 ? String(d.mins) : '';
+  });
+  return { days, todayLabel: fmtDuration((usage && usage[dayKey(new Date())]) || 0), weekLabel: fmtDuration(week) };
+}
+
+// Test results per ladder: how many lessons were passed, and the best score of
+// each one attempted.
+function buildLessonSummary(lessons){
+  return Object.keys(MODE_LABEL).map(kind => {
+    const rec = (lessons || {})[kind] || {};
+    const nums = Object.keys(rec).map(Number).filter(n => n > 0).sort((a, b) => a - b);
+    const passed = nums.filter(n => rec[n] >= PASS_PCT).length;
+    return {
+      label: MODE_LABEL[kind],
+      hasAny: nums.length > 0,
+      passedLabel: nums.length ? `ជាប់ ${passed} / ${nums.length} លំហាត់` : 'មិនទាន់ធ្វើ',
+      chips: nums.map(n => ({
+        text: `${n}៖ ${rec[n]}%`,
+        style: rec[n] >= PASS_PCT
+          ? 'background:var(--color-accent-100);color:var(--color-accent-800);border-color:var(--color-accent);'
+          : 'opacity:0.65;',
+      })),
+    };
+  });
+}
+
 function shuffle(arr){ const a = arr.slice(); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function sample(arr,n){ return shuffle(arr).slice(0, Math.min(n, arr.length)); }
 
@@ -6560,8 +6656,14 @@ function makeSupabaseBackend(){
     async signOut(){ try { await client.auth.signOut(); } catch(e){} },
     async getProfile(id){ const { data, error } = await client.from('profiles').select('*').eq('id', id).single(); return error ? { error:error.message } : { profile:data }; },
     async saveProgress(id,patch){ const { error } = await client.from('profiles').update(patch).eq('id', id); return { error: error ? error.message : null }; },
-    // every teacher of a branch follows all of its students
-    async listStudents(schoolId){ const { data, error } = await client.from('profiles').select('id,full_name,email,viewed,favorites,history').eq('school_id', schoolId).eq('role','student').order('full_name'); return { rows:data||[], error: error?error.message:null }; },
+    // Every teacher of a branch follows all of its students. No schoolId means
+    // "every student" — only an admin asks that, and RLS enforces the rest.
+    async listStudents(schoolId){
+      let q = client.from('profiles').select('id,full_name,email,school_id,viewed,favorites,history,settings,usage').eq('role','student');
+      if (schoolId) q = q.eq('school_id', schoolId);
+      const { data, error } = await q.order('full_name');
+      return { rows:data||[], error: error?error.message:null };
+    },
     async listTeachers(){ const { data } = await client.from('profiles').select('id,full_name,email,school_id').eq('role','teacher').order('full_name'); return { rows:data||[] }; },
     async listSchools(){ const { data } = await client.from('profiles').select('id,full_name,email').eq('role','school').order('full_name'); return { rows:data||[] }; },
     // — self sign-up via a branch invite link —
@@ -6659,7 +6761,7 @@ function makeDemoBackend(){
     async signOut(){ localStorage.removeItem('dict_demo_session'); },
     async getProfile(id){ const u=load().find(x=>x.id===id); return u?{ profile:JSON.parse(JSON.stringify(u)) }:{ error:'not found' }; },
     async saveProgress(id,patch){ const us=load(); const u=us.find(x=>x.id===id); if(u){ Object.assign(u, patch); save(us); } return { error:null }; },
-    async listStudents(schoolId){ return { rows:load().filter(x=>x.role==='student'&&x.school_id===schoolId), error:null }; },
+    async listStudents(schoolId){ return { rows:load().filter(x=>x.role==='student'&&(!schoolId||x.school_id===schoolId)), error:null }; },
     // mirror the RLS rules so the demo behaves like the real backend
     _me(){ const id=localStorage.getItem('dict_demo_session'); return load().find(u=>u.id===id) || null; },
     async listTeachers(){ const me=this._me(); const all=load().filter(x=>x.role==='teacher');
@@ -6738,6 +6840,7 @@ class Component extends DCLogic {
     schoolMenu: null,   // 'create' | 'edit' | null
     // teacher monitor
     students: [], selectedStudent: null, selectedStudentName: '', viewingViewed: [],
+    viewingUsage: {}, viewingLessons: {},
     // self sign-up through a branch invite link
     joinToken: '', joinSchool: '', joinName: '', joinEmail: '', joinPassword: '', joinRole: 'student',
     joinBusy: false, joinError: '', joinDone: false,
@@ -6943,7 +7046,7 @@ class Component extends DCLogic {
       authStage: 'app', screen, email:'', password:'', authBusy:false, authError:'',
     }, () => {
       if (p.role === 'admin')   this.loadAdminData();
-      if (p.role === 'teacher') this.loadStudents();
+      if (['teacher','school','admin'].includes(p.role)) this.loadStudents();
     });
   }
 
@@ -7040,7 +7143,8 @@ class Component extends DCLogic {
     await Backend.signOut();
     this.setState({ authStage:'login', userId:null, role:null, profileName:'', profileEmail:'', screen:'home',
       email:'', password:'', authBusy:false, authError:'', usage:{},
-      favorites:[], history:[], viewed:[], selectedStudent:null, selectedStudentName:'', viewingViewed:[] });
+      favorites:[], history:[], viewed:[], selectedStudent:null, selectedStudentName:'', viewingViewed:[],
+      viewingUsage:{}, viewingLessons:{}, students:[] });
   }
 
   // — Admin: create accounts —
@@ -7232,9 +7336,19 @@ class Component extends DCLogic {
 
   // — Teacher monitor —
   // a teacher follows every student of their branch
-  async loadStudents(){ const r = await Backend.listStudents(this.state.mySchoolId); this.setState({ students: r.rows || [] }); }
-  selectStudentToView(st){ this.setState({ selectedStudent: st.id, selectedStudentName: st.full_name || st.email, viewingViewed: Array.isArray(st.viewed) ? st.viewed : [] }); }
-  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [] }); }
+  // An admin follows every student; a branch or a teacher only its own.
+  async loadStudents(){
+    const scope = this.state.role === 'admin' ? null : this.state.mySchoolId;
+    const r = await Backend.listStudents(scope);
+    this.setState({ students: r.rows || [] });
+  }
+  selectStudentToView(st){
+    this.setState({ selectedStudent: st.id, selectedStudentName: st.full_name || st.email,
+      viewingViewed: Array.isArray(st.viewed) ? st.viewed : [],
+      viewingUsage: (st.usage && typeof st.usage === 'object') ? st.usage : {},
+      viewingLessons: (st.settings && st.settings.lessons) || {} });
+  }
+  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingLessons: {} }); }
 
   goHome(){ this.setState({ screen: 'home' }); }
   goFavorites(){ this.setState({ screen: 'favorites' }); }
@@ -7582,22 +7696,15 @@ class Component extends DCLogic {
                countLabel: `${seen} / ${uniq.length} ពាក្យ`, pctLabel: pct + '%', barWidth: pct + '%' };
     });
 
-    const usageDays = [];
-    let weekSecs = 0;
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(); d.setDate(d.getDate() - i);
-      const secs = (s.usage && s.usage[dayKey(d)]) || 0;
-      weekSecs += secs;
-      usageDays.push({ secs, mins: Math.round(secs / 60), label: KH_WEEKDAY[d.getDay()], isToday: i === 0 });
-    }
-    const peak = Math.max(300, ...usageDays.map(d => d.secs));   // floor keeps tiny bars readable
-    usageDays.forEach(d => {
-      d.barHeight = Math.max(d.secs > 0 ? 6 : 2, Math.round(d.secs / peak * 100)) + '%';
-      d.barColor = d.isToday ? 'var(--color-accent)' : 'var(--color-neutral-400)';
-      d.minsLabel = d.mins > 0 ? String(d.mins) : '';
-    });
-    const usageTodayLabel = fmtDuration((s.usage && s.usage[dayKey(new Date())]) || 0);
-    const usageWeekLabel = fmtDuration(weekSecs);
+    const myChart = buildUsageChart(s.usage);
+    const usageDays = myChart.days;
+    const usageTodayLabel = myChart.todayLabel;
+    const usageWeekLabel = myChart.weekLabel;
+    const myLessonSummary = buildLessonSummary(s.settings.lessons);
+
+    // the same two panels again, for whichever student is being followed
+    const monitorChart = buildUsageChart(s.viewingUsage);
+    const monitorLessonSummary = buildLessonSummary(s.viewingLessons);
 
     const ROLE_LABEL = { admin: 'អ្នកគ្រប់គ្រង', school: 'សាលា/សាខា', teacher: 'គ្រូ', student: 'សិស្ស' };
     const ROLE_TAG = { admin: 'tag tag-accent', school: 'tag tag-outline', teacher: 'tag tag-accent-2', student: 'tag tag-neutral' };
@@ -7658,6 +7765,12 @@ class Component extends DCLogic {
       hasSelectedStudent: !!s.selectedStudent, noSelectedStudent: !s.selectedStudent, selectedStudent: s.selectedStudentName,
       noStudents: studentNameItems.length === 0,
       backToStudentList: () => this.backToStudentList(),
+      canMonitor: ['teacher','school','admin'].includes(s.role),
+      monitorScopeLabel: s.role === 'admin' ? 'សិស្សទាំងអស់' : 'សិស្សក្នុងសាលា/សាខារបស់អ្នក',
+      monitorLessonSummary,
+      monitorUsageDays: monitorChart.days,
+      monitorUsageTodayLabel: monitorChart.todayLabel,
+      monitorUsageWeekLabel: monitorChart.weekLabel,
 
       // — Profile —
       isProfile: s.screen === 'profile',
@@ -7668,7 +7781,7 @@ class Component extends DCLogic {
       // only admins and branches load the school list, so others have no name
       profileBranch: schoolName(s.mySchoolId),
       hasBranch: !!(s.mySchoolId && schoolName(s.mySchoolId)),
-      bookStats, usageDays, usageTodayLabel, usageWeekLabel,
+      bookStats, usageDays, usageTodayLabel, usageWeekLabel, myLessonSummary,
       profileInitial: (s.profileName || '?').trim().charAt(0),
 
       // — Admin word editor —
