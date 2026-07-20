@@ -1045,8 +1045,33 @@ textarea.input { min-height: 90px; resize: vertical; }
         </div>
         </sc-if>
 
+        <sc-if value="{{ isMenu }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px 30px;">
+          <h1 style="font-size:26px;margin:0 0 16px;">ម៉ីនុយ</h1>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goAdmin }}">
+              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg>
+              <div style="flex:1;min-width:0;">
+                <div class="card-title" style="font-size:15px;">គណនី</div>
+                <div class="card-body" style="font-size:11px;">បង្កើត និង គ្រប់គ្រងអ្នកប្រើប្រាស់</div>
+              </div>
+              <span style="opacity:0.4;">›</span>
+            </div>
+            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goSettings }}">
+              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
+              <div style="flex:1;min-width:0;">
+                <div class="card-title" style="font-size:15px;">ការកំណត់</div>
+                <div class="card-body" style="font-size:11px;">ឈ្មោះ រូបសញ្ញា ទំហំអក្សរ សំឡេង</div>
+              </div>
+              <span style="opacity:0.4;">›</span>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
         <sc-if value="{{ isAdminScreen }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;">
+          <sc-if value="{{ hasMenuTab }}"><button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ goMenu }}">← ម៉ីនុយ</button></sc-if>
           <h1 style="font-size:26px;margin:0 0 4px;">គ្រប់គ្រងគណនី</h1>
           <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">បង្កើតគណនី គ្រូ ឬ សិស្ស</div>
 
@@ -1254,6 +1279,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;">
+          <sc-if value="{{ hasMenuTab }}"><button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ goMenu }}">← ម៉ីនុយ</button></sc-if>
           <h1 style="font-size:26px;margin:0 0 4px;">ការកំណត់</h1>
           <div style="font-size:12px;opacity:0.6;margin-bottom:6px;">{{ roleLabel }} · {{ profileName }} · <a href="#" sc-camel-on-click="{{ switchRole }}">ចេញពីគណនី</a></div>
           <div style="font-size:12px;margin-bottom:16px;"><a href="install.html" target="_blank" rel="noopener">ទំព័រ QR សម្រាប់ចែករំលែក និងដំឡើង →</a></div>
@@ -1350,7 +1376,7 @@ textarea.input { min-height: 90px; resize: vertical; }
         <span style="font-size:10px;">កែពាក្យ</span>
       </button>
       </sc-if>
-      <sc-if value="{{ canManageAccounts }}">
+      <sc-if value="{{ hasAccountsTab }}">
       <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ adminColor }};" sc-camel-on-click="{{ goAdmin }}">
         <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ adminColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg>
         <span style="font-size:10px;">គណនី</span>
@@ -1360,10 +1386,18 @@ textarea.input { min-height: 90px; resize: vertical; }
         <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ profileColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         <span style="font-size:10px;">ប្រវត្តិរូប</span>
       </button>
+      <sc-if value="{{ hasSettingsTab }}" hint-placeholder-val="{{ true }}">
       <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ settingsColor }};" sc-camel-on-click="{{ goSettings }}">
         <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ settingsColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
         <span style="font-size:10px;">កំណត់</span>
       </button>
+      </sc-if>
+      <sc-if value="{{ hasMenuTab }}" hint-placeholder-val="{{ false }}">
+      <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ menuColor }};" sc-camel-on-click="{{ goMenu }}">
+        <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ menuColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        <span style="font-size:10px;">ម៉ីនុយ</span>
+      </button>
+      </sc-if>
     </div>
     </sc-if>
 
@@ -7353,6 +7387,7 @@ class Component extends DCLogic {
   goHome(){ this.setState({ screen: 'home' }); }
   goFavorites(){ this.setState({ screen: 'favorites' }); }
   goTest(){ this.setState({ screen: 'test', testMode: null }); }
+  goMenu(){ this.setState({ screen: 'menu' }); }
   goSettings(){ this.setState({ screen: 'settings', settingsName: this.state.appName, settingsLogo: this.state.appLogo, settingsLogoBlob: null, settingsMsg: '', settingsError: '' }); }
   goMonitor(){ this.setState({ screen: 'monitor' }, () => this.loadStudents()); }
 
@@ -7766,6 +7801,13 @@ class Component extends DCLogic {
       noStudents: studentNameItems.length === 0,
       backToStudentList: () => this.backToStudentList(),
       canMonitor: ['teacher','school','admin'].includes(s.role),
+      // An admin already fills the bar, so their គណនី and កំណត់ move into ម៉ីនុយ.
+      isMenu: s.screen === 'menu',
+      hasMenuTab: s.role === 'admin',
+      hasAccountsTab: s.role === 'school',
+      hasSettingsTab: s.role !== 'admin',
+      goMenu: () => this.goMenu(),
+      menuColor: ['menu','admin','settings'].includes(s.screen) ? 'var(--color-accent-700)' : 'var(--color-text)',
       monitorScopeLabel: s.role === 'admin' ? 'សិស្សទាំងអស់' : 'សិស្សក្នុងសាលា/សាខារបស់អ្នក',
       monitorLessonSummary,
       monitorUsageDays: monitorChart.days,
