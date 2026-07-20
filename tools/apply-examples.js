@@ -29,6 +29,19 @@ for (const r of rows) {
   if (!firstRowFor.has(k)) firstRowFor.set(k, r);
 }
 
+// A stray Korean or Cyrillic letter that happens to look like a kanji reads as
+// a typo to a learner and is invisible in review, so refuse the whole run.
+const STRAY = /[ᄀ-ᇿ가-힯Ѐ-ӿ฀-๿]/;
+const bad = [];
+for (const [key, pairs] of Object.entries(examples)) {
+  if (key.startsWith('_')) continue;
+  for (const [jp] of pairs) if (STRAY.test(jp)) bad.push(`${key}: ${jp}`);
+}
+if (bad.length) {
+  console.error('Japanese sentences contain non-Japanese letters:\n  ' + bad.join('\n  '));
+  process.exit(1);
+}
+
 let written = 0, missing = [], already = 0;
 for (const [key, pairs] of Object.entries(examples)) {
   if (key.startsWith('_')) continue;                 // notes, not data
