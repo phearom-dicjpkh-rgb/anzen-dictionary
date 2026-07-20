@@ -6535,7 +6535,7 @@ function makeSupabaseBackend(){
       return { error:null };
     },
     async setApproved(id, approved){ const { error } = await client.from('profiles').update({ approved }).eq('id', id); return { error: error ? error.message : null }; },
-    async listAccounts(){ const { data } = await client.from('profiles').select('id,email,full_name,role,teacher_id').order('role'); return { rows:data||[] }; },
+    async listAccounts(){ const { data } = await client.from('profiles').select('id,email,full_name,role,teacher_id,school_id,approved').order('role'); return { rows:data||[] }; },
     async getAppSettings(){ const { data } = await client.from('app_settings').select('app_name,logo').eq('id',1).single(); return { app_name:(data&&data.app_name)||DEFAULT_APP_NAME, logo:(data&&data.logo)||'' }; },
     async saveAppSettings(patch){ const { error } = await client.from('app_settings').update({ app_name:patch.app_name, logo:patch.logo, updated_at:new Date().toISOString() }).eq('id',1); return { error: error ? error.message : null }; },
     // Logo file goes to Storage (bucket "logos"); only its URL is kept in the DB.
