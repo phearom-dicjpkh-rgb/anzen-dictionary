@@ -1453,6 +1453,12 @@ textarea.input { min-height: 90px; resize: vertical; }
             <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M15.54 8.46a5 5 0 010 7.07"></path></svg>
             ស្តាប់សម្លេង
           </button>
+          <sc-if value="{{ isAdmin }}">
+          <button class="btn btn-secondary" sc-camel-on-click="{{ editDetailWord }}">
+            <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            កែពាក្យ
+          </button>
+          </sc-if>
         </div>
         <div class="hr"></div>
         <div style="margin:16px 0;">
@@ -7303,6 +7309,14 @@ class Component extends DCLogic {
     this.setState({ editWordId: id, edJp: w.jp, edKana: w.kana, edPos: w.pos, edKm: w.km,
       edExamples: w.examples.map(e => ({ jp: e.jp, km: e.km })), edMsg: '', edError: '' });
   }
+  // Straight from the word sheet, so an admin who spots a mistake while
+  // reading can fix it there and then. The edit sheet replaces the detail.
+  editDetailWord(){
+    const id = this.state.detailWordId;
+    if (!id) return;
+    this.setState({ detailWordId: null });
+    this.pickEditWord(id);
+  }
   closeEditWord(){ this.setState({ editWordId: null, edMsg: '', edError: '' }); }
   onEdJp(e){ this.setState({ edJp: e.target.value }); }
   onEdKana(e){ this.setState({ edKana: e.target.value }); }
@@ -7908,6 +7922,7 @@ class Component extends DCLogic {
       editNoQuery: !s.editSearch.trim(),
       editNoResults: !!s.editSearch.trim() && editResults.length === 0,
       isEditingWord: !!s.editWordId, closeEditWord: () => this.closeEditWord(),
+      editDetailWord: () => this.editDetailWord(),
       edJp: s.edJp, onEdJp: e => this.onEdJp(e),
       edKana: s.edKana, onEdKana: e => this.onEdKana(e),
       edPos: s.edPos, onEdPos: e => this.onEdPos(e),
