@@ -26,6 +26,15 @@ document.addEventListener('wheel', function(e){ if(e.ctrlKey) e.preventDefault()
 <x-dc>
 <helmet>
   <style>/* Classical — design-system tokens and component classes. This file is the source of truth for the system's look; retune it here and see readme.md. */
+/* Cormorant's figures are old-style — handsome in print, but "4918" and "0%"
+   read badly at interface sizes on a phone. Hand the digits to the platform's
+   own UI sans; if none of these is present the family simply fails to match
+   and the next font in the stack takes over. */
+@font-face {
+  font-family: 'DictNum';
+  src: local('SF Pro Text'), local('Helvetica Neue'), local('Roboto'), local('Segoe UI Variable Text'), local('Segoe UI'), local('Arial');
+  unicode-range: U+0030-0039;
+}
 /* cyrillic-ext */
 @font-face {
   font-family: 'Cormorant Garamond';
@@ -284,11 +293,17 @@ document.addEventListener('wheel', function(e){ if(e.ctrlKey) e.preventDefault()
   --color-accent-2-800: #573d14;
   --color-accent-2-900: #382810;
 
-  --font-heading: "Cormorant Garamond", system-ui, sans-serif;
+  /* Japanese is set in the platform's own gothic face — the standard for text
+     on screen — rather than left to whatever the browser happens to fall back
+     to, which on some phones was a mincho with very thin strokes. Neither
+     Cormorant nor Lora carries kana or kanji, so these only ever apply to the
+     Japanese. */
+  --font-jp: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", "Noto Sans JP", "Noto Sans CJK JP", Meiryo, "MS PGothic";
+  --font-heading: "DictNum", "Cormorant Garamond", var(--font-jp), system-ui, sans-serif;
   --font-heading-weight: 600; /* review round 3: bold retired — semibold is the
      interface headings' ceiling (they need the weight at small sizes); display
      text goes lighter still, to the normal cut (see the deck) */
-  --font-body: "Lora", system-ui, sans-serif;
+  --font-body: "DictNum", "Lora", var(--font-jp), system-ui, sans-serif;
 
   --space-1: 4.6px;
   --space-2: 9.2px;
