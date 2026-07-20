@@ -947,11 +947,21 @@ textarea.input { min-height: 90px; resize: vertical; }
           <sc-if value="{{ noSelectedStudent }}" hint-placeholder-val="{{ true }}">
             <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">ជ្រើសរើសឈ្មោះសិស្សដើម្បីមើលលទ្ធផលសិក្សា · {{ monitorScopeLabel }}</div>
             <sc-if value="{{ hasStudents }}">
-              <div style="display:flex;flex-direction:column;gap:8px;">
-                <sc-for list="{{ studentNameItems }}" as="st" hint-placeholder-count="3">
-                  <button class="btn btn-secondary" style="justify-content:space-between;" sc-camel-on-click="{{ st.onSelect }}">{{ st.name }}</button>
-                </sc-for>
-              </div>
+              <sc-for list="{{ studentGroups }}" as="g" hint-placeholder-count="1">
+                <div style="margin-bottom:16px;">
+                  <sc-if value="{{ g.showName }}">
+                    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;opacity:0.55;margin-bottom:8px;">{{ g.name }}</div>
+                  </sc-if>
+                  <div style="display:flex;flex-direction:column;gap:8px;">
+                    <sc-for list="{{ g.rows }}" as="st" hint-placeholder-count="3">
+                      <div class="card elev-sm" style="gap:3px;cursor:pointer;" sc-camel-on-click="{{ st.onSelect }}">
+                        <div class="card-title" style="font-size:15px;">{{ st.name }}</div>
+                        <div class="card-body" style="font-size:11px;">{{ st.statLabel }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
             </sc-if>
             <sc-if value="{{ noStudents }}" hint-placeholder-val="{{ false }}">
               <div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">មិនទាន់មានសិស្សប្រើកម្មវិធីនេះទេ</div>
@@ -6573,11 +6583,13 @@ function buildLinkable(){
 let UNIQUE_WORDS = [];
 let LINKABLE = new Map();
 let BOOK_UNIQUE = new Map();      // book -> its distinct words, for progress %
+let WORD_KEY = new Map();         // id -> jp|kana, so a repeated word counts once
 function rebuildIndexes(){
   shareExamples();
   UNIQUE_WORDS = dedupeWords(WORDS);
   LINKABLE = buildLinkable();
   BOOK_UNIQUE = new Map(BOOKS.map(b => [b, dedupeWords(WORDS.filter(w => w.book === b))]));
+  WORD_KEY = new Map(WORDS.map(w => [w.id, w.jp + '|' + w.kana]));
 }
 rebuildIndexes();
 
@@ -7387,9 +7399,14 @@ class Component extends DCLogic {
   // a teacher follows every student of their branch
   // An admin follows every student; a branch or a teacher only its own.
   async loadStudents(){
-    const scope = this.state.role === 'admin' ? null : this.state.mySchoolId;
-    const r = await Backend.listStudents(scope);
+    const isAdmin = this.state.role === 'admin';
+    const r = await Backend.listStudents(isAdmin ? null : this.state.mySchoolId);
     this.setState({ students: r.rows || [] });
+    // an admin sees several branches at once, so the list needs their names
+    if (isAdmin && !this.state.schools.length) {
+      const sc = await Backend.listSchools();
+      this.setState({ schools: sc.rows || [] });
+    }
   }
   selectStudentToView(st){
     this.setState({ selectedStudent: st.id, selectedStudentName: st.full_name || st.email,
@@ -7731,7 +7748,6 @@ class Component extends DCLogic {
     }
     const monitorOverallViewed = viewingSet.length;
     const monitorOverallPct = monitorTotal ? Math.min(100, Math.round(monitorOverallViewed / monitorTotal * 100)) : 0;
-    const studentNameItems = s.students.map(st => ({ name: st.full_name || st.email, onSelect: () => this.selectStudentToView(st) }));
 
     // — profile: how much of each book has been looked at, and time in the app —
     // A word is counted once, however many pages repeat it.
@@ -7769,6 +7785,48 @@ class Component extends DCLogic {
     const teacherOptions = teachersIn(createScope);
     const teacherOptionsForEdit = teachersIn(editScope);
     const schoolName = id => { const f = s.schools.find(x => x.id === id); return f ? (f.full_name || f.email) : ''; };
+
+    // — the follow list: a line of results beside each name, best first, and
+    //   split by branch once more than one is in view —
+    const studentRows = s.students.map(st => {
+      const keys = new Set();
+      for (const id of (Array.isArray(st.viewed) ? st.viewed : [])) {
+        const k = WORD_KEY.get(id);
+        if (k) keys.add(k);
+      }
+      const lessons = (st.settings && st.settings.lessons) || {};
+      let passed = 0;
+      for (const kind of Object.keys(MODE_LABEL)) {
+        const rec = lessons[kind] || {};
+        for (const n of Object.keys(rec)) if (rec[n] >= PASS_PCT) passed++;
+      }
+      let week = 0;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        week += (st.usage && st.usage[dayKey(d)]) || 0;
+      }
+      // The share of the whole dictionary rounds to 0% for a long while, so the
+      // list carries the word count and leaves the percentage to the detail.
+      const parts = [`ជាប់ ${passed} លំហាត់`, `${keys.size} ពាក្យ`];
+      if (week > 0) parts.push(fmtDuration(week));
+      return {
+        schoolId: st.school_id || '',
+        name: st.full_name || st.email,
+        // lessons passed lead the order; words seen break the tie
+        rank: passed * 100000 + keys.size,
+        statLabel: parts.join(' · '),
+        onSelect: () => this.selectStudentToView(st),
+      };
+    }).sort((a, b) => b.rank - a.rank || a.name.localeCompare(b.name));
+
+    const schoolIds = [...new Set(studentRows.map(r => r.schoolId))];
+    const groupBySchool = schoolIds.length > 1;
+    const studentGroups = groupBySchool
+      ? schoolIds
+          .map(id => ({ name: schoolName(id) || 'មិនទាន់មានសាលា/សាខា', showName: true,
+                        rows: studentRows.filter(r => r.schoolId === id) }))
+          .sort((a, b) => a.name.localeCompare(b.name))
+      : [{ name: '', showName: false, rows: studentRows }];
     const accountsList = s.accounts.map(a => ({
       id: a.id, name: a.full_name || a.email, email: a.email,
       roleLabel: ROLE_LABEL[a.role] || a.role,
@@ -7811,9 +7869,9 @@ class Component extends DCLogic {
       goMonitor: () => this.goMonitor(),
       monitorColor: s.screen === 'monitor' ? 'var(--color-accent-700)' : 'var(--color-text)',
       monitorPageProgress, monitorOverallViewed, monitorOverallPct, overallTotal: monitorTotal,
-      studentNameItems, hasStudents: studentNameItems.length > 0,
+      studentGroups, hasStudents: studentRows.length > 0,
       hasSelectedStudent: !!s.selectedStudent, noSelectedStudent: !s.selectedStudent, selectedStudent: s.selectedStudentName,
-      noStudents: studentNameItems.length === 0,
+      noStudents: studentRows.length === 0,
       backToStudentList: () => this.backToStudentList(),
       canMonitor: ['teacher','school','admin'].includes(s.role),
       // An admin already fills the bar, so their គណនី and កំណត់ move into ម៉ីនុយ.
