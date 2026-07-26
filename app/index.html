@@ -970,27 +970,14 @@ textarea.input { min-height: 90px; resize: vertical; }
         </div>
         </sc-if>
 
-        <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ isRanking }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;">
-          <h1 style="font-size:26px;margin:0 0 16px;">ប្រវត្តិរូប</h1>
-
-          <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;margin-bottom:18px;">
-            <div style="width:52px;height:52px;flex:none;border-radius:50%;background:var(--color-accent);color:#f3f2f2;display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:23px;">{{ profileInitial }}</div>
-            <div style="min-width:0;">
-              <div style="font-family:var(--font-heading);font-weight:600;font-size:18px;">{{ profileName }}</div>
-              <div style="font-size:12px;opacity:0.6;overflow:hidden;text-overflow:ellipsis;">{{ profileEmail }}</div>
-              <div style="font-size:12px;color:var(--color-accent-700);margin-top:2px;">{{ profileRoleLabel }}</div>
-              <sc-if value="{{ hasBranch }}">
-                <div style="font-size:12px;opacity:0.55;">{{ profileBranch }}</div>
-              </sc-if>
-            </div>
-          </div>
-
+          <h1 style="font-size:26px;margin:0 0 14px;">ចំណាត់ថ្នាក់</h1>
           <sc-if value="{{ showLeaderboard }}">
-          <div style="border-radius:16px;overflow:hidden;margin-bottom:22px;box-shadow:var(--shadow-md);border:1px solid var(--color-divider);">
+          <div style="border-radius:16px;overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow-md);border:1px solid var(--color-divider);">
             <div style="background:linear-gradient(135deg, var(--color-accent-700), var(--color-accent));color:#f3f2f2;padding:16px 18px 20px;">
               <div style="display:flex;justify-content:space-between;align-items:baseline;">
-                <div style="font-family:var(--font-heading);font-weight:600;font-size:18px;">ចំណាត់ថ្នាក់</div>
+                <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;">សិស្សក្នុងសាលា/សាខារបស់អ្នក</div>
                 <sc-if value="{{ hasMyRank }}"><div style="font-size:12px;opacity:0.9;">{{ myRankLabel }}</div></sc-if>
               </div>
               <div style="font-size:12px;opacity:0.85;margin-top:2px;">កម្រិតរបស់អ្នក · {{ myLevel }} លំហាត់ជាប់</div>
@@ -1018,7 +1005,29 @@ textarea.input { min-height: 90px; resize: vertical; }
               </sc-for>
             </div>
           </div>
+          <div style="text-align:center;font-size:11px;opacity:0.5;line-height:1.7;">កម្រិត = ចំនួនលំហាត់ដែលបានជាប់។<br>ធ្វើតេស្តបន្ថែម ដើម្បីឡើងចំណាត់ថ្នាក់!</div>
           </sc-if>
+          <sc-if value="{{ noLeaderboard }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center;padding:50px 20px;opacity:0.55;font-size:13px;line-height:1.8;">មិនទាន់មានទិន្នន័យចំណាត់ថ្នាក់នៅឡើយទេ<br>ចាប់ផ្តើមធ្វើតេស្តដើម្បីឡើងកម្រិត</div>
+          </sc-if>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px 30px;">
+          <h1 style="font-size:26px;margin:0 0 16px;">ប្រវត្តិរូប</h1>
+
+          <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;margin-bottom:18px;">
+            <div style="width:52px;height:52px;flex:none;border-radius:50%;background:var(--color-accent);color:#f3f2f2;display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:23px;">{{ profileInitial }}</div>
+            <div style="min-width:0;">
+              <div style="font-family:var(--font-heading);font-weight:600;font-size:18px;">{{ profileName }}</div>
+              <div style="font-size:12px;opacity:0.6;overflow:hidden;text-overflow:ellipsis;">{{ profileEmail }}</div>
+              <div style="font-size:12px;color:var(--color-accent-700);margin-top:2px;">{{ profileRoleLabel }}</div>
+              <sc-if value="{{ hasBranch }}">
+                <div style="font-size:12px;opacity:0.55;">{{ profileBranch }}</div>
+              </sc-if>
+            </div>
+          </div>
 
           <h4 style="font-size:15px;margin:0 0 10px;">វឌ្ឍនភាពតាមសៀវភៅ</h4>
           <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:22px;">
@@ -1108,6 +1117,7 @@ textarea.input { min-height: 90px; resize: vertical; }
         <div style="padding:18px 20px 30px;">
           <h1 style="font-size:26px;margin:0 0 16px;">ម៉ីនុយ</h1>
           <div style="display:flex;flex-direction:column;gap:10px;">
+            <sc-if value="{{ isAdmin }}">
             <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goAdmin }}">
               <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg>
               <div style="flex:1;min-width:0;">
@@ -1116,6 +1126,25 @@ textarea.input { min-height: 90px; resize: vertical; }
               </div>
               <span style="opacity:0.4;">›</span>
             </div>
+            </sc-if>
+            <sc-if value="{{ isStudent }}">
+            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goFavorites }}">
+              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+              <div style="flex:1;min-width:0;">
+                <div class="card-title" style="font-size:15px;">សំណព្វ</div>
+                <div class="card-body" style="font-size:11px;">ពាក្យដែលបានរក្សាទុក</div>
+              </div>
+              <span style="opacity:0.4;">›</span>
+            </div>
+            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goProfile }}">
+              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              <div style="flex:1;min-width:0;">
+                <div class="card-title" style="font-size:15px;">ប្រវត្តិរូប</div>
+                <div class="card-body" style="font-size:11px;">វឌ្ឍនភាព លទ្ធផលតេស្ត និង រយៈពេលប្រើប្រាស់</div>
+              </div>
+              <span style="opacity:0.4;">›</span>
+            </div>
+            </sc-if>
             <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goSettings }}">
               <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
               <div style="flex:1;min-width:0;">
@@ -1414,13 +1443,13 @@ textarea.input { min-height: 90px; resize: vertical; }
         <span style="font-size:10px;">ស្វែងរក</span>
       </button>
       <sc-if value="{{ isStudent }}">
-      <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ favColor }};" sc-camel-on-click="{{ goFavorites }}">
-        <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ favColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-        <span style="font-size:10px;">សំណព្វ</span>
-      </button>
       <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ testColor }};" sc-camel-on-click="{{ goTest }}">
         <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ testColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path></svg>
         <span style="font-size:10px;">តេស្ត</span>
+      </button>
+      <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ rankingColor }};" sc-camel-on-click="{{ goRanking }}">
+        <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ rankingColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"></circle><path d="M8.5 12.5L7 21l5-3 5 3-1.5-8.5"></path></svg>
+        <span style="font-size:10px;">ចំណាត់ថ្នាក់</span>
       </button>
       </sc-if>
       <sc-if value="{{ canMonitor }}">
@@ -1441,10 +1470,12 @@ textarea.input { min-height: 90px; resize: vertical; }
         <span style="font-size:10px;">គណនី</span>
       </button>
       </sc-if>
+      <sc-if value="{{ hasProfileTab }}" hint-placeholder-val="{{ true }}">
       <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ profileColor }};" sc-camel-on-click="{{ goProfile }}">
         <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ profileColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         <span style="font-size:10px;">ប្រវត្តិរូប</span>
       </button>
+      </sc-if>
       <sc-if value="{{ hasSettingsTab }}" hint-placeholder-val="{{ true }}">
       <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ settingsColor }};" sc-camel-on-click="{{ goSettings }}">
         <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ settingsColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
@@ -7132,7 +7163,7 @@ class Component extends DCLogic {
       if (this._usageTicks >= 4) { this._usageTicks = 0; this.persist(); }   // save about once a minute
     });
   }
-  goProfile(){ this.setState({ screen: 'profile' }); if (this.state.role === 'student') this.loadLeaderboard(); }
+  goProfile(){ this.setState({ screen: 'profile' }); }
   async loadLeaderboard(){ const r = await Backend.leaderboard(); this.setState({ leaderboard: r.rows || [] }); }
 
   async componentDidMount(){
@@ -7492,6 +7523,7 @@ class Component extends DCLogic {
   goFavorites(){ this.setState({ screen: 'favorites' }); }
   goTest(){ this.setState({ screen: 'test', testMode: null }); }
   goMenu(){ this.setState({ screen: 'menu' }); }
+  goRanking(){ this.setState({ screen: 'ranking' }); this.loadLeaderboard(); }
   goSettings(){ this.setState({ screen: 'settings', settingsName: this.state.appName, settingsLogo: this.state.appLogo, settingsLogoBlob: null, settingsMsg: '', settingsError: '' }); }
   goMonitor(){ this.setState({ screen: 'monitor' }, () => this.loadStudents()); }
 
@@ -7981,11 +8013,19 @@ class Component extends DCLogic {
       canMonitor: ['teacher','school','admin'].includes(s.role),
       // An admin already fills the bar, so their គណនី and កំណត់ move into ម៉ីនុយ.
       isMenu: s.screen === 'menu',
-      hasMenuTab: s.role === 'admin',
+      // an admin's account + settings, or a student's favourites + profile +
+      // settings, all live behind the one ម៉ីនុយ tab
+      hasMenuTab: s.role === 'admin' || s.role === 'student',
       hasAccountsTab: s.role === 'school',
-      hasSettingsTab: s.role !== 'admin',
+      // teacher and branch keep their own settings tab; admin and student reach
+      // settings through the menu instead
+      hasSettingsTab: s.role === 'teacher' || s.role === 'school',
+      // students reach their profile through the menu, everyone else has a tab
+      hasProfileTab: s.role !== 'student',
       goMenu: () => this.goMenu(),
-      menuColor: ['menu','admin','settings'].includes(s.screen) ? 'var(--color-accent-700)' : 'var(--color-text)',
+      // the menu tab stays lit on any screen it leads to, which differs by role
+      menuColor: (s.role === 'student' ? ['menu','favorites','profile','settings'] : ['menu','admin','settings'])
+                   .includes(s.screen) ? 'var(--color-accent-700)' : 'var(--color-text)',
       monitorScopeLabel: s.role === 'admin' ? 'សិស្សទាំងអស់' : 'សិស្សក្នុងសាលា/សាខារបស់អ្នក',
       monitorLessonSummary,
       monitorUsageDays: monitorChart.days,
@@ -8003,8 +8043,12 @@ class Component extends DCLogic {
       hasBranch: !!(s.mySchoolId && schoolName(s.mySchoolId)),
       bookStats, usageDays, usageTodayLabel, usageWeekLabel, myLessonSummary,
       profileInitial: (s.profileName || '?').trim().charAt(0),
-      // — leaderboard (students) —
+      // — leaderboard (its own screen, students only) —
+      isRanking: s.screen === 'ranking',
+      goRanking: () => this.goRanking(),
+      rankingColor: s.screen === 'ranking' ? 'var(--color-accent-700)' : 'var(--color-text)',
       showLeaderboard: s.role === 'student' && rankRows.length > 0,
+      noLeaderboard: s.role === 'student' && rankRows.length === 0,
       myLevel, rankRows, podium,
       hasMyRank: !!myRow,
       myRankLabel: myRow ? `ចំណាត់ថ្នាក់ទី ${myRow.rank} / ${rankRows.length}` : '',
