@@ -869,7 +869,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isMonitor }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;">
-          <h1 style="font-size:26px;margin:0 0 4px;">ត្រួតពិនិត្យសិស្ស</h1>
+          <h1 style="font-size:26px;margin:0 0 14px;">ចំណាត់ថ្នាក់</h1>
           <sc-if value="{{ hasSelectedStudent }}">
             <div style="font-size:12px;opacity:0.6;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
               <span>សិស្ស៖ {{ selectedStudent }}</span>
@@ -930,23 +930,56 @@ textarea.input { min-height: 90px; resize: vertical; }
             </div>
           </sc-if>
           <sc-if value="{{ noSelectedStudent }}" hint-placeholder-val="{{ true }}">
-            <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">ជ្រើសរើសឈ្មោះសិស្សដើម្បីមើលលទ្ធផលសិក្សា · {{ monitorScopeLabel }}</div>
             <sc-if value="{{ hasStudents }}">
-              <sc-for list="{{ studentGroups }}" as="g" hint-placeholder-count="1">
-                <div style="margin-bottom:16px;">
-                  <sc-if value="{{ g.showName }}">
-                    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;opacity:0.55;margin-bottom:8px;">{{ g.name }}</div>
-                  </sc-if>
-                  <div style="display:flex;flex-direction:column;gap:8px;">
-                    <sc-for list="{{ g.rows }}" as="st" hint-placeholder-count="3">
-                      <div class="card elev-sm" style="gap:3px;cursor:pointer;" sc-camel-on-click="{{ st.onSelect }}">
-                        <div class="card-title" style="font-size:15px;">{{ st.name }}</div>
-                        <div class="card-body" style="font-size:11px;">{{ st.statLabel }}</div>
+            <div style="border-radius:16px;overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow-md);border:1px solid var(--color-divider);">
+              <div style="background:linear-gradient(135deg, var(--color-accent-700), var(--color-accent));color:#f3f2f2;padding:16px 18px 20px;">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                  <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ monTitle }}</div>
+                  <div style="font-size:12px;opacity:0.9;flex:none;">{{ monCountLabel }}</div>
+                </div>
+                <div style="font-size:12px;opacity:0.85;margin-top:2px;">ចុចលើឈ្មោះសិស្ស ដើម្បីមើលលំអិត</div>
+
+                <sc-if value="{{ monShowPodium }}">
+                <div style="display:flex;justify-content:center;align-items:flex-end;gap:10px;margin-top:18px;">
+                  <sc-for list="{{ monPodium }}" as="p" hint-placeholder-count="3">
+                    <div style="flex:1;max-width:96px;display:flex;flex-direction:column;align-items:center;cursor:pointer;" sc-camel-on-click="{{ p.onSelect }}">
+                      <div style="font-size:22px;line-height:1;margin-bottom:4px;">{{ p.medal }}</div>
+                      <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:19px;border:2px solid rgba(255,255,255,0.6);">{{ p.initial }}</div>
+                      <div style="font-size:11px;margin-top:5px;text-align:center;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;">{{ p.name }}</div>
+                      <div style="font-size:10px;opacity:0.85;">{{ p.levelLabel }}</div>
+                      <div style="width:100%;height:{{ p.podiumHeight }};background:{{ p.podiumBg }};border-radius:6px 6px 0 0;margin-top:6px;display:flex;align-items:flex-start;justify-content:center;padding-top:4px;font-family:var(--font-heading);font-size:15px;color:#f3f2f2;">{{ p.rank }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+                </sc-if>
+              </div>
+
+              <div style="background:var(--color-surface);padding:8px;display:flex;flex-direction:column;gap:6px;">
+                <sc-if value="{{ monFlat }}">
+                  <sc-for list="{{ monRows }}" as="r" hint-placeholder-count="5">
+                    <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid transparent;border-radius:10px;cursor:pointer;" sc-camel-on-click="{{ r.onSelect }}">
+                      <div style="flex:none;width:26px;text-align:center;{{ r.badgeStyle }}">{{ r.badge }}</div>
+                      <div style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</div>
+                      <div style="flex:none;font-size:12px;color:var(--color-accent-700);">{{ r.levelLabel }}</div>
+                      <span style="flex:none;opacity:0.35;">›</span>
+                    </div>
+                  </sc-for>
+                </sc-if>
+                <sc-if value="{{ monGrouped }}">
+                  <sc-for list="{{ monGroups }}" as="g" hint-placeholder-count="1">
+                    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;opacity:0.55;margin:6px 6px 2px;">{{ g.name }}</div>
+                    <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
+                      <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid transparent;border-radius:10px;cursor:pointer;" sc-camel-on-click="{{ r.onSelect }}">
+                        <div style="flex:none;width:26px;text-align:center;{{ r.badgeStyle }}">{{ r.badge }}</div>
+                        <div style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</div>
+                        <div style="flex:none;font-size:12px;color:var(--color-accent-700);">{{ r.levelLabel }}</div>
+                        <span style="flex:none;opacity:0.35;">›</span>
                       </div>
                     </sc-for>
-                  </div>
-                </div>
-              </sc-for>
+                  </sc-for>
+                </sc-if>
+              </div>
+            </div>
             </sc-if>
             <sc-if value="{{ noStudents }}" hint-placeholder-val="{{ false }}">
               <div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">មិនទាន់មានសិស្សប្រើកម្មវិធីនេះទេ</div>
@@ -1439,8 +1472,8 @@ textarea.input { min-height: 90px; resize: vertical; }
       </sc-if>
       <sc-if value="{{ canMonitor }}">
       <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ monitorColor }};" sc-camel-on-click="{{ goMonitor }}">
-        <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ monitorColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M18 9l-5 5-3-3-4 4"></path></svg>
-        <span style="font-size:10px;">សិស្ស</span>
+        <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ monitorColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"></circle><path d="M8.5 12.5L7 21l5-3 5 3-1.5-8.5"></path></svg>
+        <span style="font-size:10px;">ចំណាត់ថ្នាក់</span>
       </button>
       </sc-if>
       <sc-if value="{{ isAdmin }}">
@@ -7920,47 +7953,58 @@ class Component extends DCLogic {
     const teacherOptionsForEdit = teachersIn(editScope);
     const schoolName = id => { const f = s.schools.find(x => x.id === id); return f ? (f.full_name || f.email) : ''; };
 
-    // — the follow list: a line of results beside each name, best first, and
-    //   split by branch once more than one is in view —
-    const studentRows = s.students.map(st => {
+    // — the follow screen is a leaderboard too: same podium + ranked list a
+    //   student sees, but every row opens that student's full detail, and an
+    //   admin's list is split by branch. Level and word count come straight
+    //   from s.students (a teacher may read them; a student may not).
+    const monEntries = s.students.map(st => {
       const keys = new Set();
       for (const id of (Array.isArray(st.viewed) ? st.viewed : [])) {
         const k = WORD_KEY.get(id);
         if (k) keys.add(k);
       }
-      const lessons = (st.settings && st.settings.lessons) || {};
-      let passed = 0;
-      for (const kind of Object.keys(MODE_LABEL)) {
-        const rec = lessons[kind] || {};
-        for (const n of Object.keys(rec)) if (rec[n] >= PASS_PCT) passed++;
-      }
-      let week = 0;
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(); d.setDate(d.getDate() - i);
-        week += (st.usage && st.usage[dayKey(d)]) || 0;
-      }
-      // The share of the whole dictionary rounds to 0% for a long while, so the
-      // list carries the word count and leaves the percentage to the detail.
-      const parts = [`ជាប់ ${passed} លំហាត់`, `${keys.size} ពាក្យ`];
-      if (week > 0) parts.push(fmtDuration(week));
       return {
         schoolId: st.school_id || '',
-        name: st.full_name || st.email,
-        // lessons passed lead the order; words seen break the tie
-        rank: passed * 100000 + keys.size,
-        statLabel: parts.join(' · '),
-        onSelect: () => this.selectStudentToView(st),
+        name: (st.full_name || st.email || '').trim() || 'សិស្ស',
+        level: lessonsPassed((st.settings && st.settings.lessons) || {}),
+        words: keys.size,
+        st,
       };
-    }).sort((a, b) => b.rank - a.rank || a.name.localeCompare(b.name));
+    }).sort((a, b) => (b.level - a.level) || (b.words - a.words) || a.name.localeCompare(b.name));
 
-    const schoolIds = [...new Set(studentRows.map(r => r.schoolId))];
-    const groupBySchool = schoolIds.length > 1;
-    const studentGroups = groupBySchool
-      ? schoolIds
-          .map(id => ({ name: schoolName(id) || 'មិនទាន់មានសាលា/សាខា', showName: true,
-                        rows: studentRows.filter(r => r.schoolId === id) }))
-          .sort((a, b) => a.name.localeCompare(b.name))
-      : [{ name: '', showName: false, rows: studentRows }];
+    const monRowOf = (e, i) => ({
+      rank: i + 1,
+      medal: MEDALS[i] || '',
+      badge: MEDALS[i] || String(i + 1),
+      badgeStyle: i < 3
+        ? 'font-size:20px;'
+        : 'font-size:13px;font-weight:600;color:var(--color-accent-700);background:var(--color-neutral-200);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;',
+      name: e.name,
+      levelLabel: `កម្រិត ${e.level} · ${e.words} ពាក្យ`,
+      onSelect: () => this.selectStudentToView(e.st),
+    });
+
+    const monSchoolIds = [...new Set(monEntries.map(e => e.schoolId))];
+    const monGrouped = monSchoolIds.length > 1;     // only an admin sees several branches
+    let monRows = [], monGroups = [], monPodium = [];
+    if (monGrouped) {
+      monGroups = monSchoolIds
+        .map(id => ({ name: schoolName(id) || 'មិនទាន់មានសាលា/សាខា',
+                      rows: monEntries.filter(e => e.schoolId === id).map(monRowOf) }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    } else {
+      monRows = monEntries.map(monRowOf);
+      monPodium = [1, 0, 2].map(i => monRows[i]).filter(Boolean).map(r => ({
+        ...r,
+        podiumHeight: r.rank === 1 ? '78px' : r.rank === 2 ? '58px' : '46px',
+        podiumBg: r.rank === 1 ? 'var(--color-accent)' : 'var(--color-neutral-300)',
+        initial: (r.name || '?').trim().charAt(0),
+      }));
+    }
+    const monShowPodium = !monGrouped && monPodium.length > 0;
+    const monTitle = s.role === 'admin' ? 'សិស្សទាំងអស់'
+      : s.role === 'school' ? (s.profileName || 'សិស្សក្នុងសាលា/សាខារបស់អ្នក')   // a branch is its own name
+      : (schoolName(s.mySchoolId) || 'សិស្សក្នុងសាលា/សាខារបស់អ្នក');
     const accountsList = s.accounts.map(a => ({
       id: a.id, name: a.full_name || a.email, email: a.email,
       roleLabel: ROLE_LABEL[a.role] || a.role,
@@ -8003,9 +8047,11 @@ class Component extends DCLogic {
       goMonitor: () => this.goMonitor(),
       monitorColor: s.screen === 'monitor' ? 'var(--color-accent-700)' : 'var(--color-text)',
       monitorPageProgress, monitorOverallViewed, monitorOverallPct, overallTotal: monitorTotal,
-      studentGroups, hasStudents: studentRows.length > 0,
+      // leaderboard-style follow list
+      monRows, monGroups, monPodium, monShowPodium, monGrouped, monFlat: !monGrouped,
+      monTitle, monCountLabel: `${monEntries.length} សិស្ស`,
+      hasStudents: monEntries.length > 0, noStudents: monEntries.length === 0,
       hasSelectedStudent: !!s.selectedStudent, noSelectedStudent: !s.selectedStudent, selectedStudent: s.selectedStudentName,
-      noStudents: studentRows.length === 0,
       backToStudentList: () => this.backToStudentList(),
       canMonitor: ['teacher','school','admin'].includes(s.role),
       // An admin already fills the bar, so their គណនី and កំណត់ move into ម៉ីនុយ.
@@ -8023,7 +8069,6 @@ class Component extends DCLogic {
       // the menu tab stays lit on any screen it leads to, which differs by role
       menuColor: (s.role === 'student' ? ['menu','favorites','profile','settings'] : ['menu','admin','settings'])
                    .includes(s.screen) ? 'var(--color-accent-700)' : 'var(--color-text)',
-      monitorScopeLabel: s.role === 'admin' ? 'សិស្សទាំងអស់' : 'សិស្សក្នុងសាលា/សាខារបស់អ្នក',
       monitorLessonSummary,
       monitorUsageDays: monitorChart.days,
       monitorUsageTodayLabel: monitorChart.todayLabel,
