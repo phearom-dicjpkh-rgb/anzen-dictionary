@@ -14,11 +14,19 @@
 --    progress = how many words they have opened (viewed length), used only to
 --               break ties; the app never shows it
 -- ============================================================================
+-- the return type gained school_name; a changed TABLE signature needs a DROP
+-- first, so this stays safe to re-run
+drop function if exists public.leaderboard();
 create or replace function public.leaderboard()
-returns table (full_name text, level int, progress int, is_me boolean)
+returns table (full_name text, level int, progress int, is_me boolean, school_name text)
 language sql stable security definer set search_path = public as $$
+  -- the caller's branch, and the branch's own display name — a student cannot
+  -- read the school's profile row directly (RLS), so it rides along here
   with me as (
-    select school_id from public.profiles where id = auth.uid()
+    select pr.school_id, s.full_name as school_name
+    from public.profiles pr
+    left join public.profiles s on s.id = pr.school_id
+    where pr.id = auth.uid()
   )
   select
     p.full_name,
@@ -32,7 +40,8 @@ language sql stable security definer set search_path = public as $$
     coalesce(jsonb_array_length(
       case when jsonb_typeof(p.viewed) = 'array' then p.viewed else '[]'::jsonb end
     ), 0) as progress,
-    (p.id = auth.uid()) as is_me
+    (p.id = auth.uid()) as is_me,
+    me.school_name
   from public.profiles p, me
   where p.role = 'student'
     and p.school_id is not null

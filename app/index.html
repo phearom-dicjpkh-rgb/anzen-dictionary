@@ -977,7 +977,7 @@ textarea.input { min-height: 90px; resize: vertical; }
           <div style="border-radius:16px;overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow-md);border:1px solid var(--color-divider);">
             <div style="background:linear-gradient(135deg, var(--color-accent-700), var(--color-accent));color:#f3f2f2;padding:16px 18px 20px;">
               <div style="display:flex;justify-content:space-between;align-items:baseline;">
-                <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;">សិស្សក្នុងសាលា/សាខារបស់អ្នក</div>
+                <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ rankSchoolLabel }}</div>
                 <sc-if value="{{ hasMyRank }}"><div style="font-size:12px;opacity:0.9;">{{ myRankLabel }}</div></sc-if>
               </div>
               <div style="font-size:12px;opacity:0.85;margin-top:2px;">កម្រិតរបស់អ្នក · {{ myLevel }} លំហាត់ជាប់</div>
@@ -6913,9 +6913,11 @@ function makeDemoBackend(){
     // mirror the RLS rules so the demo behaves like the real backend
     _me(){ const id=localStorage.getItem('dict_demo_session'); return load().find(u=>u.id===id) || null; },
     async leaderboard(){ const me=this._me(); if(!me) return { rows:[] };
-      const rows=load().filter(x=>x.role==='student' && x.school_id && x.school_id===me.school_id).map(u=>({
+      const all=load(); const sch=all.find(x=>x.id===me.school_id);
+      const schoolName=sch?(sch.full_name||sch.email||''):'';
+      const rows=all.filter(x=>x.role==='student' && x.school_id && x.school_id===me.school_id).map(u=>({
         full_name: u.full_name||'', level: lessonsPassed((u.settings||{}).lessons),
-        progress: Array.isArray(u.viewed)?u.viewed.length:0, is_me: u.id===me.id }));
+        progress: Array.isArray(u.viewed)?u.viewed.length:0, is_me: u.id===me.id, school_name:schoolName }));
       return { rows }; },
     async listTeachers(){ const me=this._me(); const all=load().filter(x=>x.role==='teacher');
       return { rows: me && me.role==='school' ? all.filter(t=>t.school_id===me.id) : all }; },
@@ -8049,6 +8051,9 @@ class Component extends DCLogic {
       rankingColor: s.screen === 'ranking' ? 'var(--color-accent-700)' : 'var(--color-text)',
       showLeaderboard: s.role === 'student' && rankRows.length > 0,
       noLeaderboard: s.role === 'student' && rankRows.length === 0,
+      // the branch's real name (set when its account was created); every row
+      // carries it, falling back to the generic label if it was left blank
+      rankSchoolLabel: ((s.leaderboard[0] && (s.leaderboard[0].school_name || '').trim()) || 'សិស្សក្នុងសាលា/សាខារបស់អ្នក'),
       myLevel, rankRows, podium,
       hasMyRank: !!myRow,
       myRankLabel: myRow ? `ចំណាត់ថ្នាក់ទី ${myRow.rank} / ${rankRows.length}` : '',
