@@ -967,15 +967,21 @@ textarea.input { min-height: 90px; resize: vertical; }
                 </sc-if>
                 <sc-if value="{{ monGrouped }}">
                   <sc-for list="{{ monGroups }}" as="g" hint-placeholder-count="1">
-                    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;opacity:0.55;margin:6px 6px 2px;">{{ g.name }}</div>
-                    <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
-                      <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid transparent;border-radius:10px;cursor:pointer;" sc-camel-on-click="{{ r.onSelect }}">
-                        <div style="flex:none;width:26px;text-align:center;{{ r.badgeStyle }}">{{ r.badge }}</div>
-                        <div style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</div>
-                        <div style="flex:none;font-size:12px;color:var(--color-accent-700);">{{ r.levelLabel }}</div>
-                        <span style="flex:none;opacity:0.35;">›</span>
-                      </div>
-                    </sc-for>
+                    <div style="display:flex;align-items:center;gap:8px;padding:8px 6px 4px;cursor:pointer;" sc-camel-on-click="{{ g.onToggle }}">
+                      <span style="flex:none;opacity:0.6;font-size:12px;">{{ g.chevron }}</span>
+                      <span style="flex:1;min-width:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;opacity:0.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ g.name }}</span>
+                      <span style="flex:none;font-size:11px;opacity:0.5;">{{ g.countLabel }}</span>
+                    </div>
+                    <sc-if value="{{ g.open }}">
+                      <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
+                        <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid transparent;border-radius:10px;cursor:pointer;" sc-camel-on-click="{{ r.onSelect }}">
+                          <div style="flex:none;width:26px;text-align:center;{{ r.badgeStyle }}">{{ r.badge }}</div>
+                          <div style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</div>
+                          <div style="flex:none;font-size:12px;color:var(--color-accent-700);">{{ r.levelLabel }}</div>
+                          <span style="flex:none;opacity:0.35;">›</span>
+                        </div>
+                      </sc-for>
+                    </sc-if>
                   </sc-for>
                 </sc-if>
               </div>
@@ -7004,6 +7010,7 @@ class Component extends DCLogic {
     userId: null, role: null, profileName: '', mySchoolId: null,
     profileEmail: '', usage: {},
     expandedSchools: [],
+    monCollapsed: [],   // branches an admin has folded away on the leaderboard
     // admin (create accounts)
     adminFullName: '', adminEmail: '', adminPassword: '', adminRole: 'student', adminTeacherId: '', adminSchoolId: '',
     adminBusy: false, adminMsg: '', adminError: '', teachers: [], accounts: [], schools: [],
@@ -7330,6 +7337,7 @@ class Component extends DCLogic {
     this.setState({ teachers: t.rows || [], accounts: a.rows || [], schools: s.rows || [] });
   }
   toggleSchoolGroup(id){ this.setState(s => ({ expandedSchools: s.expandedSchools.includes(id) ? s.expandedSchools.filter(x => x !== id) : [...s.expandedSchools, id] })); }
+  toggleMonSchool(id){ this.setState(s => ({ monCollapsed: s.monCollapsed.includes(id) ? s.monCollapsed.filter(x => x !== id) : [...s.monCollapsed, id] })); }
   setAdminRoleSchool(){ this.setState({ adminRole: 'school', adminTeacherId: '', adminSchoolId: '' }); }
   setEditRoleSchool(){ this.setState({ editRole: 'school', editTeacherId: '', editSchoolId: '' }); }
   toggleSchoolMenu(which){ this.setState(s => ({ schoolMenu: s.schoolMenu === which ? null : which })); }
@@ -7989,8 +7997,17 @@ class Component extends DCLogic {
     let monRows = [], monGroups = [], monPodium = [];
     if (monGrouped) {
       monGroups = monSchoolIds
-        .map(id => ({ name: schoolName(id) || 'មិនទាន់មានសាលា/សាខា',
-                      rows: monEntries.filter(e => e.schoolId === id).map(monRowOf) }))
+        .map(id => {
+          const rows = monEntries.filter(e => e.schoolId === id).map(monRowOf);
+          const collapsed = s.monCollapsed.includes(id);   // tap the name to fold a branch away
+          return {
+            id, name: schoolName(id) || 'មិនទាន់មានសាលា/សាខា',
+            rows, open: !collapsed,
+            countLabel: `${rows.length} សិស្ស`,
+            chevron: collapsed ? '▸' : '▾',
+            onToggle: () => this.toggleMonSchool(id),
+          };
+        })
         .sort((a, b) => a.name.localeCompare(b.name));
     } else {
       monRows = monEntries.map(monRowOf);
