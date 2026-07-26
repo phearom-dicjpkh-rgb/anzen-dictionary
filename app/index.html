@@ -986,6 +986,40 @@ textarea.input { min-height: 90px; resize: vertical; }
             </div>
           </div>
 
+          <sc-if value="{{ showLeaderboard }}">
+          <div style="border-radius:16px;overflow:hidden;margin-bottom:22px;box-shadow:var(--shadow-md);border:1px solid var(--color-divider);">
+            <div style="background:linear-gradient(135deg, var(--color-accent-700), var(--color-accent));color:#f3f2f2;padding:16px 18px 20px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                <div style="font-family:var(--font-heading);font-weight:600;font-size:18px;">ចំណាត់ថ្នាក់</div>
+                <sc-if value="{{ hasMyRank }}"><div style="font-size:12px;opacity:0.9;">{{ myRankLabel }}</div></sc-if>
+              </div>
+              <div style="font-size:12px;opacity:0.85;margin-top:2px;">កម្រិតរបស់អ្នក · {{ myLevel }} លំហាត់ជាប់</div>
+
+              <div style="display:flex;justify-content:center;align-items:flex-end;gap:10px;margin-top:18px;">
+                <sc-for list="{{ podium }}" as="p" hint-placeholder-count="3">
+                  <div style="flex:1;max-width:96px;display:flex;flex-direction:column;align-items:center;">
+                    <div style="font-size:22px;line-height:1;margin-bottom:4px;">{{ p.medal }}</div>
+                    <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:19px;border:2px solid rgba(255,255,255,0.6);">{{ p.initial }}</div>
+                    <div style="font-size:11px;margin-top:5px;text-align:center;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;">{{ p.name }}</div>
+                    <div style="font-size:10px;opacity:0.85;">{{ p.levelLabel }}</div>
+                    <div style="width:100%;height:{{ p.podiumHeight }};background:{{ p.podiumBg }};border-radius:6px 6px 0 0;margin-top:6px;display:flex;align-items:flex-start;justify-content:center;padding-top:4px;font-family:var(--font-heading);font-size:15px;color:#f3f2f2;">{{ p.rank }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="background:var(--color-surface);padding:8px;display:flex;flex-direction:column;gap:6px;">
+              <sc-for list="{{ rankRows }}" as="r" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid transparent;border-radius:10px;{{ r.rowStyle }}">
+                  <div style="flex:none;width:26px;text-align:center;{{ r.badgeStyle }}">{{ r.badge }}</div>
+                  <div style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</div>
+                  <div style="flex:none;font-size:12px;color:var(--color-accent-700);">{{ r.levelLabel }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
           <h4 style="font-size:15px;margin:0 0 10px;">វឌ្ឍនភាពតាមសៀវភៅ</h4>
           <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:22px;">
             <sc-for list="{{ bookStats }}" as="b" hint-placeholder-count="2">
@@ -6665,6 +6699,18 @@ function buildUsageChart(usage){
   return { days, todayLabel: fmtDuration((usage && usage[dayKey(new Date())]) || 0), weekLabel: fmtDuration(week) };
 }
 
+// A learner's "level": how many lessons they have passed across every ladder.
+// Shared by the profile leaderboard and the teacher's follow list so the number
+// is the same everywhere.
+function lessonsPassed(lessons){
+  let n = 0;
+  for (const kind of Object.keys(lessons || {})) {
+    const rec = lessons[kind] || {};
+    for (const k of Object.keys(rec)) if (rec[k] >= PASS_PCT) n++;
+  }
+  return n;
+}
+
 // Test results per ladder: how many lessons were passed, and the best score of
 // each one attempted.
 function buildLessonSummary(lessons){
@@ -6733,6 +6779,10 @@ function makeSupabaseBackend(){
     },
     async listTeachers(){ const { data } = await client.from('profiles').select('id,full_name,email,school_id').eq('role','teacher').order('full_name'); return { rows:data||[] }; },
     async listSchools(){ const { data } = await client.from('profiles').select('id,full_name,email').eq('role','school').order('full_name'); return { rows:data||[] }; },
+    // The student leaderboard: a SECURITY DEFINER function returns only name +
+    // level + a tiebreak, never a classmate's email or word list, so RLS still
+    // hides the details that only a teacher may see.
+    async leaderboard(){ const { data, error } = await client.rpc('leaderboard'); return { rows:data||[], error: error?error.message:null }; },
     // — self sign-up via a branch invite link —
     async schoolByToken(token){ const { data } = await client.rpc('school_by_token', { tok: token }); const row = Array.isArray(data) ? data[0] : data; return { school: row || null }; },
     async saveInviteToken(id, kind, token){ const col = kind === 'teacher' ? 'token_teacher' : 'token_student'; const { error } = await client.from('profiles').update({ [col]: token }).eq('id', id); return { error: error ? error.message : null }; },
@@ -6831,6 +6881,11 @@ function makeDemoBackend(){
     async listStudents(schoolId){ return { rows:load().filter(x=>x.role==='student'&&(!schoolId||x.school_id===schoolId)), error:null }; },
     // mirror the RLS rules so the demo behaves like the real backend
     _me(){ const id=localStorage.getItem('dict_demo_session'); return load().find(u=>u.id===id) || null; },
+    async leaderboard(){ const me=this._me(); if(!me) return { rows:[] };
+      const rows=load().filter(x=>x.role==='student' && x.school_id && x.school_id===me.school_id).map(u=>({
+        full_name: u.full_name||'', level: lessonsPassed((u.settings||{}).lessons),
+        progress: Array.isArray(u.viewed)?u.viewed.length:0, is_me: u.id===me.id }));
+      return { rows }; },
     async listTeachers(){ const me=this._me(); const all=load().filter(x=>x.role==='teacher');
       return { rows: me && me.role==='school' ? all.filter(t=>t.school_id===me.id) : all }; },
     async listSchools(){ return { rows:load().filter(x=>x.role==='school') }; },
@@ -6908,6 +6963,8 @@ class Component extends DCLogic {
     // teacher monitor
     students: [], selectedStudent: null, selectedStudentName: '', viewingViewed: [],
     viewingUsage: {}, viewingLessons: {},
+    leaderboard: [],   // student standings, name + level only
+
     // self sign-up through a branch invite link
     joinToken: '', joinSchool: '', joinName: '', joinEmail: '', joinPassword: '', joinRole: 'student',
     joinBusy: false, joinError: '', joinDone: false,
@@ -7075,7 +7132,8 @@ class Component extends DCLogic {
       if (this._usageTicks >= 4) { this._usageTicks = 0; this.persist(); }   // save about once a minute
     });
   }
-  goProfile(){ this.setState({ screen: 'profile' }); }
+  goProfile(){ this.setState({ screen: 'profile' }); if (this.state.role === 'student') this.loadLeaderboard(); }
+  async loadLeaderboard(){ const r = await Backend.leaderboard(); this.setState({ leaderboard: r.rows || [] }); }
 
   async componentDidMount(){
     this.primeVoices();
@@ -7781,6 +7839,39 @@ class Component extends DCLogic {
     const usageTodayLabel = myChart.todayLabel;
     const usageWeekLabel = myChart.weekLabel;
     const myLessonSummary = buildLessonSummary(s.settings.lessons);
+    const myLevel = lessonsPassed(s.settings.lessons);
+
+    // — the student leaderboard —
+    // Rank by level, break ties on words seen, then name. The top three wear a
+    // medal; the learner's own row is lit up wherever it lands.
+    const MEDALS = ['🥇', '🥈', '🥉'];
+    const ranked = (s.leaderboard || []).slice()
+      .sort((a, b) => (b.level - a.level) || ((b.progress || 0) - (a.progress || 0))
+                      || String(a.full_name).localeCompare(String(b.full_name)));
+    const rankRows = ranked.map((r, i) => ({
+      rank: i + 1,
+      medal: MEDALS[i] || '',
+      isTop3: i < 3,
+      badge: MEDALS[i] || String(i + 1),
+      name: (r.full_name || '').trim() || 'សិស្ស',
+      levelLabel: `កម្រិត ${r.level}`,
+      isMe: !!r.is_me,
+      rowStyle: r.is_me
+        ? 'background:color-mix(in srgb, var(--color-accent) 14%, transparent);border-color:var(--color-accent);'
+        : '',
+      badgeStyle: i < 3
+        ? 'font-size:20px;'
+        : 'font-size:13px;font-weight:600;color:var(--color-accent-700);background:var(--color-neutral-200);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;',
+    }));
+    const myRow = rankRows.find(r => r.isMe) || null;
+    // top three, arranged 2-1-3 for a podium
+    const podiumOrder = [1, 0, 2];
+    const podium = podiumOrder.map(i => rankRows[i]).filter(Boolean).map(r => ({
+      ...r,
+      podiumHeight: r.rank === 1 ? '78px' : r.rank === 2 ? '58px' : '46px',
+      podiumBg: r.rank === 1 ? 'var(--color-accent)' : 'var(--color-neutral-300)',
+      initial: (r.name || '?').trim().charAt(0),
+    }));
 
     // the same two panels again, for whichever student is being followed
     const monitorChart = buildUsageChart(s.viewingUsage);
@@ -7912,6 +8003,11 @@ class Component extends DCLogic {
       hasBranch: !!(s.mySchoolId && schoolName(s.mySchoolId)),
       bookStats, usageDays, usageTodayLabel, usageWeekLabel, myLessonSummary,
       profileInitial: (s.profileName || '?').trim().charAt(0),
+      // — leaderboard (students) —
+      showLeaderboard: s.role === 'student' && rankRows.length > 0,
+      myLevel, rankRows, podium,
+      hasMyRank: !!myRow,
+      myRankLabel: myRow ? `ចំណាត់ថ្នាក់ទី ${myRow.rank} / ${rankRows.length}` : '',
 
       // — Admin word editor —
       isEditWords: s.screen === 'editwords',
