@@ -758,17 +758,11 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isTestHub }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 20px;">
-          <h1 style="font-size:26px;margin:0 0 4px;">តេស្តពាក្យ</h1>
-          <div style="font-size:12px;opacity:0.6;margin-bottom:4px;">ជ្រើសរើសប្រភេទតេស្ត រួចចាប់ផ្តើមលំហាត់</div>
-          <div style="font-size:12px;color:var(--color-accent-700);margin-bottom:16px;">{{ testPoolLabel }}</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
-            <div class="card elev-sm" style="cursor:pointer;text-align:center;" sc-camel-on-click="{{ startFlashLessons }}">
-              <div class="card-title" style="font-size:15px;">Flashcard</div>
-              <div class="card-body" style="font-size:11px;">មើលពាក្យ ចាំចម្លើយ</div>
-            </div>
-            <div class="card elev-sm" style="cursor:pointer;text-align:center;" sc-camel-on-click="{{ startMcLessons }}">
-              <div class="card-title" style="font-size:15px;">ជ្រើសរើសពាក្យត្រូវ</div>
-              <div class="card-body" style="font-size:11px;">ជ្រើសរើសពីរជម្រើស</div>
+          <h1 style="font-size:26px;margin:0 0 14px;">តេស្តពាក្យ</h1>
+          <div style="margin-bottom:20px;">
+            <div class="card elev-sm" style="cursor:pointer;text-align:center;padding:20px;" sc-camel-on-click="{{ startMcLessons }}">
+              <div class="card-title" style="font-size:17px;">ជ្រើសរើសពាក្យត្រូវ</div>
+              <div class="card-body" style="font-size:12px;">ជ្រើសរើសពីរជម្រើស · ជប៉ុន ↔ ខ្មែរ</div>
             </div>
           </div>
           <div class="hr"></div>
@@ -815,33 +809,6 @@ textarea.input { min-height: 90px; resize: vertical; }
         </div>
         </sc-if>
 
-        <sc-if value="{{ isFlashcard }}" hint-placeholder-val="{{ false }}">
-        <div style="padding:18px 20px;min-height:660px;display:flex;flex-direction:column;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-            <button class="btn btn-ghost" sc-camel-on-click="{{ backToLessons }}">← {{ lessonTitle }}</button>
-            <span style="font-size:12px;opacity:0.6;">{{ testProgressLabel }}</span>
-          </div>
-          <div style="flex:1;display:flex;align-items:center;justify-content:center;" sc-camel-on-click="{{ flashFlip }}">
-            <div class="card elev-md" style="width:100%;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer;padding:30px 20px;">
-              <sc-if value="{{ flashShowFront }}">
-                <div style="font-size:13px;opacity:0.5;margin-bottom:8px;">{{ currentWord.kana }}</div>
-                <div style="font-family:var(--font-heading);font-weight:600;font-size:36px;">{{ currentWord.jp }}</div>
-                <div style="font-size:11px;opacity:0.4;margin-top:14px;">ចុចដើម្បីមើលចម្លើយ</div>
-              </sc-if>
-              <sc-if value="{{ flashShowBack }}">
-                <span class="{{ currentWord.tagClass }}" style="margin-bottom:10px;">{{ currentWord.pos }}</span>
-                <div style="font-size:19px;margin-top:10px;">{{ currentWord.km }}</div>
-                <div style="font-size:12px;opacity:0.65;margin-top:12px;">{{ currentWord.ex_jp }}</div>
-                <div style="font-size:11px;opacity:0.5;">{{ currentWord.ex_km }}</div>
-              </sc-if>
-            </div>
-          </div>
-          <div style="display:flex;gap:10px;margin-top:16px;">
-            <button class="btn btn-secondary btn-block" style="margin-top:0;" sc-camel-on-click="{{ flashMarkUnknown }}">មិនទាន់ចាំ</button>
-            <button class="btn btn-primary btn-block" style="margin-top:0;" sc-camel-on-click="{{ flashMarkKnown }}">ចាំបានហើយ</button>
-          </div>
-        </div>
-        </sc-if>
 
         <sc-if value="{{ isMC }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px;min-height:660px;display:flex;flex-direction:column;">
@@ -6726,7 +6693,7 @@ const PAGES = Array.from(new Set(WORDS.map(w => w.page))).sort((a,b)=>a-b);
 // Tests are a ladder of numbered lessons: ten words each, five on show at a
 // time, and the next lesson opens only once the one before it is passed.
 const LESSON_SIZE = 10, LESSON_BLOCK = 5, PASS_PCT = 90;
-const MODE_LABEL = { flashcard:'Flashcard', mc_jp:'ជប៉ុន → ខ្មែរ', mc_km:'ខ្មែរ → ជប៉ុន' };
+const MODE_LABEL = { mc_jp:'ជប៉ុន → ខ្មែរ', mc_km:'ខ្មែរ → ជប៉ុន' };
 
 // The last seven days of time in the app. Shared by a learner's own profile
 // and by the teacher's view of them, so both read the same shape.
@@ -7039,9 +7006,8 @@ class Component extends DCLogic {
     favorites: [], history: [], viewed: [],
     settings: { fontScale: 1, autoAudio: false },
     syncing: false, lastSync: null, toast: null,
-    testMode: null, testKind: 'flashcard', testLesson: 1,
+    testMode: null, testKind: 'mc_jp', testLesson: 1,
     testWords: [], testIdx: 0, testScore: 0,
-    flashFlipped: false,
     mcOptions: [], mcSelected: null, mcAnswered: false,
     pageQuizOpen: false, pageQuizQuestions: [], pageQuizIdx: 0, pageQuizScore: 0, pageQuizSelected: null, pageQuizAnswered: false, pageQuizDone: false,
   };
@@ -7604,18 +7570,15 @@ class Component extends DCLogic {
   }
 
   openLessons(kind){ this.setState({ testMode: 'lessons', testKind: kind }); }
-  startFlashLessons(){ this.openLessons('flashcard'); }
   startMcLessons(){ this.openLessons('mc_jp'); }
   setTestKind(kind){ this.setState({ testKind: kind }); }
 
   startLesson(n){
     const words = shuffle(this.lessonWords(n));
     if (!words.length) return;
-    const base = { testMode: this.state.testKind === 'flashcard' ? 'flashcard' : 'mc',
+    this.setState({ testMode: 'mc',
       testLesson: n, testWords: words, testIdx: 0, testScore: 0,
-      flashFlipped: false, mcSelected: null, mcAnswered: false, mcOptions: [] };
-    if (this.state.testKind !== 'flashcard') base.mcOptions = this.buildMcOptions(words[0]);
-    this.setState(base);
+      mcSelected: null, mcAnswered: false, mcOptions: this.buildMcOptions(words[0]) });
   }
   retryTest(){ this.startLesson(this.state.testLesson); }
   backToLessons(){ this.setState({ testMode: 'lessons' }); }
@@ -7648,15 +7611,6 @@ class Component extends DCLogic {
     if (other) opts.push(mk(other, false));
     return shuffle(opts);
   }
-
-  flashFlip(){ this.setState(s => ({ flashFlipped: !s.flashFlipped })); }
-  flashAdvance(){
-    const nextIdx = this.state.testIdx + 1;
-    if (nextIdx >= this.state.testWords.length) { this.finishTest(); return; }
-    this.setState({ testIdx: nextIdx, flashFlipped: false });
-  }
-  flashMarkKnown(){ this.setState(s => ({ testScore: s.testScore + 1 })); this.flashAdvance(); }
-  flashMarkUnknown(){ this.flashAdvance(); }
 
   selectMcOption(opt){
     if (this.state.mcAnswered) return;
@@ -7816,7 +7770,9 @@ class Component extends DCLogic {
 
     const recentHistory = s.history.slice(-6).reverse().map(h => {
       const d = new Date(h.date);
-      const name = (MODE_LABEL[h.mode] || h.mode) + (h.lesson ? ` · លំហាត់ទី ${h.lesson}` : '');
+      // Flashcard is retired, but a fallback keeps any old history line readable
+      const modeName = MODE_LABEL[h.mode] || (h.mode === 'flashcard' ? 'Flashcard' : h.mode);
+      const name = modeName + (h.lesson ? ` · លំហាត់ទី ${h.lesson}` : '');
       return { label: name, scoreLabel: `${h.score}/${h.total}`, dateLabel: `${d.getDate()}/${d.getMonth()+1}` };
     });
 
@@ -8210,9 +8166,9 @@ class Component extends DCLogic {
       saveEdit: () => this.saveEdit(), cancelEdit: () => this.cancelEdit(),
       editSaveLabel: s.editBusy ? 'កំពុងរក្សាទុក…' : 'រក្សាទុក',
       hasEditError: !!s.editError, editError: s.editError,
-      isFlashcard: testMode === 'flashcard', isMC: testMode === 'mc',
+      isMC: testMode === 'mc',
       isResults: testMode === 'results',
-      showTabBar: !(s.screen === 'test' && (testMode === 'flashcard' || testMode === 'mc')),
+      showTabBar: !(s.screen === 'test' && testMode === 'mc'),
 
       totalWordsLabel: `${UNIQUE_WORDS.length} ពាក្យ`,
       search: s.search, onSearchChange: e => this.onSearchChange(e),
@@ -8258,20 +8214,15 @@ class Component extends DCLogic {
 
       favoriteWordsList, hasFavorites: favoriteWordsList.length > 0, noFavorites: favoriteWordsList.length === 0,
 
-      testPoolLabel: (() => {
-        const base = dedupeWords(WORDS.filter(w => w.cat === 'vocab'));
-        const st = base.filter(w => w.starred).length;
-        return st ? `តេស្តលើពាក្យសំខាន់ ★ ${st} ពាក្យ` : `មិនទាន់មានពាក្យសំខាន់ ★ — តេស្តលើ ${base.length} ពាក្យទាំងអស់`;
-      })(),
-      startFlashLessons: () => this.startFlashLessons(), startMcLessons: () => this.startMcLessons(),
+      startMcLessons: () => this.startMcLessons(),
       hasHistory: recentHistory.length > 0, noHistory: recentHistory.length === 0, recentHistory,
 
       // — lesson list —
       isLessonList: testMode === 'lessons',
       lessonItems,
-      lessonHeading: kind === 'flashcard' ? 'Flashcard' : 'ជ្រើសរើសពាក្យត្រូវ',
+      lessonHeading: 'ជ្រើសរើសពាក្យត្រូវ',
       lessonUnlockLabel: `បើកសោ ${lessonUnlocked} / ${lessonTotal} លំហាត់ · ត្រូវបាន ${PASS_PCT}% ដើម្បីបន្ត`,
-      isMcLessons: kind !== 'flashcard',
+      isMcLessons: true,
       isKindJp: kind === 'mc_jp', isKindKm: kind === 'mc_km',
       setKindJp: () => this.setTestKind('mc_jp'), setKindKm: () => this.setTestKind('mc_km'),
 
@@ -8279,9 +8230,6 @@ class Component extends DCLogic {
       testProgressLabel: `${Math.min(s.testIdx+1, total)} / ${total}`,
       lessonTitle: `លំហាត់ទី ${s.testLesson}`,
       currentWord,
-
-      flashShowFront: !s.flashFlipped, flashShowBack: s.flashFlipped,
-      flashFlip: () => this.flashFlip(), flashMarkKnown: () => this.flashMarkKnown(), flashMarkUnknown: () => this.flashMarkUnknown(),
 
       mcOptions, mcAnswered: s.mcAnswered, mcNext: () => this.mcNext(),
       mcNextLabel: (s.testIdx + 1 >= total) ? 'មើលលទ្ធផល' : 'បន្ទាប់',
