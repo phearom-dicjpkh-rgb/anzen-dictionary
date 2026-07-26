@@ -845,27 +845,45 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isMC }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px;min-height:660px;display:flex;flex-direction:column;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
             <button class="btn btn-ghost" sc-camel-on-click="{{ backToLessons }}">← {{ lessonTitle }}</button>
-            <span style="font-size:12px;opacity:0.6;">{{ testProgressLabel }}</span>
+            <span style="font-size:12px;font-family:var(--font-heading);color:var(--color-accent-700);">{{ mcScoreLabel }}</span>
           </div>
-          <sc-if value="{{ mcAskJp }}">
-          <div style="text-align:center;margin:16px 0 22px;">
-            <div style="font-size:13px;opacity:0.5;margin-bottom:6px;">{{ currentWord.kana }}</div>
-            <div style="font-family:var(--font-heading);font-weight:600;font-size:34px;">{{ currentWord.jp }}</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <div style="flex:1;height:8px;background:var(--color-neutral-200);border-radius:99px;overflow:hidden;">
+              <div style="height:100%;width:{{ mcProgressPct }};background:linear-gradient(90deg, var(--color-accent-700), var(--color-accent));border-radius:99px;transition:width .3s;"></div>
+            </div>
+            <span style="font-size:12px;opacity:0.6;flex:none;">{{ testProgressLabel }}</span>
           </div>
-          </sc-if>
-          <sc-if value="{{ mcAskKm }}">
-          <div style="text-align:center;margin:16px 0 22px;">
-            <div style="font-size:22px;line-height:1.5;">{{ currentWord.km }}</div>
+
+          <div style="border-radius:18px;background:linear-gradient(135deg, var(--color-accent-700), var(--color-accent));color:#f3f2f2;padding:22px 20px;text-align:center;margin-bottom:20px;box-shadow:var(--shadow-md);">
+            <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;opacity:0.85;margin-bottom:10px;">{{ mcPromptHint }}</div>
+            <sc-if value="{{ mcAskJp }}">
+              <div style="font-size:14px;opacity:0.85;margin-bottom:4px;">{{ currentWord.kana }}</div>
+              <div style="font-family:var(--font-heading);font-weight:600;font-size:36px;line-height:1.1;">{{ currentWord.jp }}</div>
+            </sc-if>
+            <sc-if value="{{ mcAskKm }}">
+              <div style="font-size:22px;line-height:1.5;">{{ currentWord.km }}</div>
+            </sc-if>
           </div>
-          </sc-if>
-          <div style="display:flex;flex-direction:column;gap:10px;">
+
+          <div style="display:flex;flex-direction:column;gap:12px;">
             <sc-for list="{{ mcOptions }}" as="opt" hint-placeholder-count="2">
-              <button class="btn btn-secondary" style="justify-content:flex-start;padding:16px;font-family:var(--font-body);font-weight:400;font-size:15px;{{ opt.style }}" sc-camel-on-click="{{ opt.onSelect }}">{{ opt.text }}</button>
+              <button style="display:flex;align-items:center;gap:13px;width:100%;text-align:left;padding:14px 15px;border-radius:14px;border:1.5px solid;box-shadow:var(--shadow-sm);cursor:pointer;transition:all .15s;{{ opt.boxStyle }}" sc-camel-on-click="{{ opt.onSelect }}">
+                <span style="flex:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:15px;{{ opt.badgeStyle }}">{{ opt.badge }}</span>
+                <span style="flex:1;min-width:0;display:flex;flex-direction:column;{{ opt.colStyle }}">
+                  <sc-if value="{{ opt.hasKana }}"><span style="font-size:11px;opacity:0.6;line-height:1.2;">{{ opt.kana }}</span></sc-if>
+                  <span style="color:var(--color-text);{{ opt.textStyle }}">{{ opt.text }}</span>
+                </span>
+                <sc-if value="{{ opt.mark }}"><span style="flex:none;font-size:19px;font-weight:700;{{ opt.markColor }}">{{ opt.mark }}</span></sc-if>
+              </button>
             </sc-for>
           </div>
-          <sc-if value="{{ mcAnswered }}"><button class="btn btn-primary btn-block" style="margin-top:20px;" sc-camel-on-click="{{ mcNext }}">{{ mcNextLabel }}</button></sc-if>
+
+          <sc-if value="{{ mcAnswered }}">
+            <div style="text-align:center;font-size:14px;font-family:var(--font-heading);margin-top:18px;{{ mcFeedbackStyle }}">{{ mcFeedback }}</div>
+            <button class="btn btn-primary btn-block" style="margin-top:10px;" sc-camel-on-click="{{ mcNext }}">{{ mcNextLabel }}</button>
+          </sc-if>
         </div>
         </sc-if>
 
@@ -7624,8 +7642,10 @@ class Component extends DCLogic {
     const label = w => jpAnswers ? w.jp : w.km;
     const others = this.testPool().filter(w => w.id !== word.id && label(w) !== label(word));
     const other = sample(others, 1)[0];
-    const opts = [{ text: label(word), correct: true }];
-    if (other) opts.push({ text: label(other), correct: false });
+    // carry the reading so Japanese options can show hiragana above the kanji
+    const mk = (w, correct) => ({ text: label(w), kana: jpAnswers ? (w.kana || '') : '', correct });
+    const opts = [mk(word, true)];
+    if (other) opts.push(mk(other, false));
     return shuffle(opts);
   }
 
@@ -7804,15 +7824,34 @@ class Component extends DCLogic {
     const currentWord = s.testWords[s.testIdx] ? decorate(s.testWords[s.testIdx]) : { jp:'', kana:'', pos:'', km:'', ex_jp:'', ex_km:'', tagClass:'tag tag-neutral' };
 
     const jpAnswers = s.testKind === 'mc_km';    // Khmer is asked, Japanese is chosen
-    const mcOptions = s.mcOptions.map(opt => {
-      let style = jpAnswers ? 'font-family:var(--font-heading);font-size:20px;justify-content:center;' : '';
+    const MC_GREEN = '#3a9e5c', MC_RED = '#d0342c', MC_LETTERS = ['ក', 'ខ', 'គ', 'ឃ'];
+    const mcOptions = s.mcOptions.map((opt, i) => {
+      // default: a calm surface card with an accent badge
+      let box = 'background:var(--color-surface);border-color:var(--color-divider);';
+      let badge = 'background:var(--color-accent);color:#f3f2f2;';
+      let mark = '', markColor = '';
       if (s.mcAnswered) {
-        if (opt.correct) style += 'border-color:var(--color-accent);background:var(--color-accent-100);color:var(--color-accent-800);';
-        else if (s.mcSelected === opt) style += 'opacity:0.55;text-decoration:line-through;';
-        else style += 'opacity:0.55;';
+        if (opt.correct) {                       // the right answer always turns green
+          box = 'background:color-mix(in srgb, ' + MC_GREEN + ' 15%, var(--color-surface));border-color:' + MC_GREEN + ';';
+          badge = 'background:' + MC_GREEN + ';color:#fff;'; mark = '✓'; markColor = 'color:' + MC_GREEN + ';';
+        } else if (s.mcSelected === opt) {       // a wrong pick turns red
+          box = 'background:color-mix(in srgb, ' + MC_RED + ' 13%, var(--color-surface));border-color:' + MC_RED + ';';
+          badge = 'background:' + MC_RED + ';color:#fff;'; mark = '✗'; markColor = 'color:' + MC_RED + ';';
+        } else {
+          box = 'background:var(--color-surface);border-color:var(--color-divider);opacity:0.5;';
+        }
       }
-      return { text: opt.text, style, onSelect: () => this.selectMcOption(opt) };
+      return {
+        text: opt.text, kana: opt.kana || '', hasKana: !!opt.kana,
+        badge: MC_LETTERS[i] || '?', boxStyle: box, badgeStyle: badge, mark, markColor,
+        colStyle: jpAnswers ? 'align-items:center;text-align:center;' : 'align-items:flex-start;',
+        textStyle: jpAnswers ? 'font-family:var(--font-heading);font-weight:600;font-size:21px;line-height:1.2;' : 'font-size:15px;',
+        onSelect: () => this.selectMcOption(opt),
+      };
     });
+    const mcRight = s.mcAnswered && s.mcSelected && s.mcSelected.correct;
+    const mcTotal = s.testWords.length;
+    const mcProgressPct = mcTotal ? Math.round(Math.min(s.testIdx + 1, mcTotal) / mcTotal * 100) + '%' : '0%';
 
     // — the lesson ladder —
     const kind = s.testKind;
@@ -8247,6 +8286,10 @@ class Component extends DCLogic {
       mcOptions, mcAnswered: s.mcAnswered, mcNext: () => this.mcNext(),
       mcNextLabel: (s.testIdx + 1 >= total) ? 'មើលលទ្ធផល' : 'បន្ទាប់',
       mcAskJp: s.testKind === 'mc_jp', mcAskKm: s.testKind === 'mc_km',
+      mcPromptHint: s.testKind === 'mc_jp' ? 'ជ្រើសរើសអត្ថន័យត្រឹមត្រូវ' : 'ជ្រើសរើសពាក្យជប៉ុនត្រឹមត្រូវ',
+      mcProgressPct, mcScoreLabel: `${s.testScore} ពិន្ទុ`,
+      mcFeedback: s.mcAnswered ? (mcRight ? 'ត្រូវហើយ! 🎉' : 'មិនទាន់ត្រូវ — ចម្លើយត្រឹមត្រូវមានពណ៌បៃតង') : '',
+      mcFeedbackStyle: mcRight ? 'color:#3a9e5c;' : 'color:#d0342c;',
 
       resultScoreLabel: `${s.testScore} / ${total}`,
       resultPercentLabel: total > 0 ? `${testPct}%` : '',
