@@ -787,6 +787,10 @@ textarea.input { min-height: 90px; resize: vertical; }
             <button class="btn btn-ghost" style="padding-left:0;" sc-camel-on-click="{{ backToHub }}">← ត្រឡប់</button>
           </div>
           <h1 style="font-size:24px;margin:0 0 4px;">{{ lessonHeading }}</h1>
+          <sc-if value="{{ noTestWords }}">
+            <div style="text-align:center;padding:50px 20px;opacity:0.55;font-size:13px;line-height:1.8;">មិនទាន់មានពាក្យសម្រាប់តេស្តទេ<br>(សៀវភៅត្រូវបានចាក់សោ)</div>
+          </sc-if>
+          <sc-if value="{{ hasTestWords }}">
           <div style="font-size:12px;opacity:0.6;margin-bottom:14px;">{{ lessonUnlockLabel }}</div>
           <sc-if value="{{ isMcLessons }}">
           <div class="seg" style="margin-bottom:16px;">
@@ -806,6 +810,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               </div>
             </sc-for>
           </div>
+          </sc-if>
         </div>
         </sc-if>
 
@@ -6795,9 +6800,10 @@ function bookLocked(book){ const v = BOOK_VIS.get(book); return !!(v && v.locked
 // A locked book shows NO words in general search or by-page — for everyone,
 // the admin included (the admin still manages it from បញ្ចូលពាក្យ / កែពាក្យ).
 function bookBrowsable(book){ return !bookLocked(book) && bookVisible(book); }
-// The admin still sees a locked book's name in the picker (with a padlock);
-// other roles don't see it at all.
-function bookInDropdown(book){ return VIEWER.role === 'admin' || bookVisible(book); }
+// A locked book is shown to everyone by name (with a padlock) so they know it
+// is coming, but it stays un-browsable. A book merely limited to other branches
+// is hidden outright.
+function bookInDropdown(book){ return VIEWER.role === 'admin' || bookVisible(book) || bookLocked(book); }
 const pagesOfBook = b => Array.from(new Set(WORDS.filter(w => w.book === b).map(w => w.page))).sort((a,b)=>a-b);
 // The books repeat their key vocabulary on many pages, so the same word can
 // appear dozens of times. Lists show one card per distinct word.
@@ -7854,7 +7860,8 @@ class Component extends DCLogic {
   // Cached: it is read many times per render, and deduping 4900 rows is not free.
   testPool(){
     if (!this._pool || this._poolRev !== this.state.overridesRev) {
-      const base = dedupeWords(WORDS.filter(w => w.cat === 'vocab'));
+      // never test on a locked book's words
+      const base = dedupeWords(WORDS.filter(w => w.cat === 'vocab' && bookBrowsable(w.book)));
       const starred = base.filter(w => w.starred);
       this._pool = starred.length ? starred : base;
       this._poolRev = this.state.overridesRev;
@@ -8614,6 +8621,7 @@ class Component extends DCLogic {
 
       // — lesson list —
       isLessonList: testMode === 'lessons',
+      hasTestWords: this.testPool().length > 0, noTestWords: this.testPool().length === 0,
       lessonItems,
       lessonHeading: 'ជ្រើសរើសពាក្យត្រូវ',
       lessonUnlockLabel: `បើកសោ ${lessonUnlocked} / ${lessonTotal} លំហាត់ · ត្រូវបាន ${PASS_PCT}% ដើម្បីបន្ត`,
