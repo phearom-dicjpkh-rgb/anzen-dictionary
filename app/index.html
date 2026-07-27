@@ -909,12 +909,14 @@ textarea.input { min-height: 90px; resize: vertical; }
             <span style="font-size:12px;opacity:0.6;flex:none;">{{ quizProgressLabel }}</span>
           </div>
 
-          <sc-if value="{{ quizHasImg }}">
-            <img src="{{ quizImg }}" alt="" style="max-width:100%;border-radius:12px;margin-bottom:14px;border:1px solid var(--color-divider);">
-          </sc-if>
-          <div style="font-size:17px;line-height:1.9;margin-bottom:20px;">
+          <div style="font-size:17px;line-height:1.9;margin-bottom:16px;">
             <sc-for list="{{ quizSegments }}" as="sg" hint-placeholder-count="6"><sc-if value="{{ sg.isLink }}"><span style="color:var(--color-accent-700);border-bottom:1px dotted var(--color-accent-400);cursor:pointer;" sc-camel-on-click="{{ sg.onOpen }}">{{ sg.text }}</span></sc-if><sc-if value="{{ sg.isPlain }}"><span>{{ sg.text }}</span></sc-if></sc-for>
           </div>
+          <sc-if value="{{ quizHasImg }}">
+            <div style="display:flex;justify-content:center;margin-bottom:20px;">
+              <img src="{{ quizImg }}" alt="" style="max-width:100%;border-radius:12px;border:1px solid var(--color-divider);">
+            </div>
+          </sc-if>
 
           <sc-if value="{{ quizIsTf }}">
           <div style="display:flex;gap:12px;">
