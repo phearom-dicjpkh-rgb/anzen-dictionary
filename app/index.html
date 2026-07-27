@@ -1141,6 +1141,24 @@ textarea.input { min-height: 90px; resize: vertical; }
         <div style="padding:18px 20px 30px;">
           <h1 style="font-size:26px;margin:0 0 16px;">ម៉ីនុយ</h1>
           <div style="display:flex;flex-direction:column;gap:10px;">
+            <sc-if value="{{ isAdmin }}">
+            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goAddWord }}">
+              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+              <div style="flex:1;min-width:0;">
+                <div class="card-title" style="font-size:15px;">បញ្ចូលពាក្យថ្មី</div>
+                <div class="card-body" style="font-size:11px;">បន្ថែមពាក្យ ឬ វេយ្យាករណ៍ថ្មី</div>
+              </div>
+              <span style="opacity:0.4;">›</span>
+            </div>
+            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goBooks }}">
+              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"></path></svg>
+              <div style="flex:1;min-width:0;">
+                <div class="card-title" style="font-size:15px;">សៀវភៅ</div>
+                <div class="card-body" style="font-size:11px;">ចាក់សោ ឬ បង្ហាញសៀវភៅទៅសាលា</div>
+              </div>
+              <span style="opacity:0.4;">›</span>
+            </div>
+            </sc-if>
             <sc-if value="{{ menuHasAccounts }}">
             <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goAdmin }}">
               <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg>
@@ -1179,6 +1197,108 @@ textarea.input { min-height: 90px; resize: vertical; }
               </div>
               <span style="opacity:0.4;">›</span>
             </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isAddWord }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px 30px;">
+          <button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ goMenu }}">← ម៉ីនុយ</button>
+          <h1 style="font-size:26px;margin:0 0 14px;">បញ្ចូលពាក្យថ្មី</h1>
+
+          <div class="field" style="margin-bottom:10px;"><label>សៀវភៅ</label>
+            <div style="position:relative;">
+              <button class="input" style="width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" sc-camel-on-click="{{ toggleAwBookMenu }}">
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ awBookLabel }}</span>
+                <span style="opacity:0.5;">▾</span>
+              </button>
+              <sc-if value="{{ awBookMenuOpen }}">
+              <div style="position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:15;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-md);box-shadow:var(--shadow-md);overflow:hidden;">
+                <sc-for list="{{ awBookItems }}" as="b" hint-placeholder-count="2">
+                  <div style="padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--color-divider);{{ b.rowStyle }}" sc-camel-on-click="{{ b.onSelect }}">{{ b.name }}</div>
+                </sc-for>
+              </div>
+              </sc-if>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:12px;"><label>ឬ បញ្ចូលឈ្មោះសៀវភៅថ្មី</label>
+            <input class="input" type="text" placeholder="ឧ. SSW-Bus" value="{{ awNewBook }}" sc-camel-on-change="{{ onAwNewBook }}"></div>
+
+          <div class="seg" style="margin-bottom:12px;">
+            <label class="seg-opt"><input type="radio" name="awcat" checked="{{ awIsVocab }}" sc-camel-on-change="{{ onAwCatVocab }}"><span>វាក្យសព្ទ</span></label>
+            <label class="seg-opt"><input type="radio" name="awcat" checked="{{ awIsGrammar }}" sc-camel-on-change="{{ onAwCatGrammar }}"><span>វេយ្យាករណ៍</span></label>
+          </div>
+
+          <div class="field" style="margin-bottom:10px;"><label>ទំព័រ (ស្រេចចិត្ត)</label>
+            <input class="input" type="number" inputmode="numeric" placeholder="ឧ. 12" value="{{ awPage }}" sc-camel-on-change="{{ onAwPage }}"></div>
+          <div class="field" style="margin-bottom:10px;"><label>ពាក្យជប៉ុន</label>
+            <input class="input" type="text" value="{{ awJp }}" sc-camel-on-change="{{ onAwJp }}"></div>
+
+          <sc-if value="{{ hasAwDup }}">
+            <div style="font-size:12px;color:#c0392b;background:color-mix(in srgb, #c0392b 10%, var(--color-surface));border:1px solid #c0392b;border-radius:var(--radius-md);padding:8px 10px;margin-bottom:10px;line-height:1.5;">ពាក្យនេះមានរួចហើយ៖<br>{{ awDupLabel }}</div>
+          </sc-if>
+
+          <div class="field" style="margin-bottom:10px;"><label>របៀបអាន (かな)</label>
+            <input class="input" type="text" value="{{ awKana }}" sc-camel-on-change="{{ onAwKana }}"></div>
+          <div class="field" style="margin-bottom:10px;"><label>ថ្នាក់ពាក្យ (ន. · កិ. · គុណ.)</label>
+            <input class="input" type="text" value="{{ awPos }}" sc-camel-on-change="{{ onAwPos }}"></div>
+          <div class="field" style="margin-bottom:12px;"><label>ន័យខ្មែរ</label>
+            <input class="input" type="text" value="{{ awKm }}" sc-camel-on-change="{{ onAwKm }}"></div>
+
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;cursor:pointer;" sc-camel-on-click="{{ toggleAwStar }}">
+            <span style="font-size:24px;line-height:1;color:{{ awStarColor }};">{{ awStarGlyph }}</span>
+            <span style="font-size:13px;">ពាក្យសំខាន់ (ដាក់ផ្កាយក្រហម — ប្រើក្នុងតេស្ត)</span>
+          </div>
+
+          <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.55;margin-bottom:8px;">ឧទាហរណ៍</div>
+          <sc-for list="{{ awExamples }}" as="ex" hint-placeholder-count="1">
+            <div style="border:1px solid var(--color-divider);border-radius:var(--radius-md);padding:10px;margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span style="font-size:11px;opacity:0.55;">{{ ex.num }}</span>
+                <a href="#" style="font-size:12px;color:#c0392b;" sc-camel-on-click="{{ ex.onRemove }}">លុប</a>
+              </div>
+              <input class="input" type="text" placeholder="ប្រយោគជប៉ុន" value="{{ ex.jp }}" sc-camel-on-change="{{ ex.onJp }}" style="margin-bottom:6px;">
+              <input class="input" type="text" placeholder="ការបកប្រែខ្មែរ" value="{{ ex.km }}" sc-camel-on-change="{{ ex.onKm }}">
+            </div>
+          </sc-for>
+          <button class="btn btn-secondary btn-block" style="margin-bottom:16px;" sc-camel-on-click="{{ addAwExample }}">+ បន្ថែមឧទាហរណ៍</button>
+
+          <sc-if value="{{ hasAwError }}"><div style="font-size:12px;color:#c0392b;margin-bottom:8px;line-height:1.5;">{{ awError }}</div></sc-if>
+          <sc-if value="{{ hasAwMsg }}"><div style="font-size:12px;color:var(--color-accent-700);margin-bottom:8px;line-height:1.5;">{{ awMsg }}</div></sc-if>
+          <button class="btn btn-primary btn-block" sc-camel-on-click="{{ saveAddWord }}">{{ awSaveLabel }}</button>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isBooks }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px 30px;">
+          <button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ goMenu }}">← ម៉ីនុយ</button>
+          <h1 style="font-size:26px;margin:0 0 4px;">សៀវភៅ</h1>
+          <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">ចាក់សោសៀវភៅ ដើម្បីមិនទាន់បង្ហាញទៅសាលា ឬ ជ្រើសរើសសាលាដែលអាចមើលបាន</div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <sc-for list="{{ bookVisItems }}" as="bk" hint-placeholder-count="2">
+              <div class="card elev-sm" style="gap:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;">{{ bk.book }}</div>
+                  <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" sc-camel-on-click="{{ bk.onToggleLock }}">{{ bk.lockLabel }}</button>
+                </div>
+                <div style="font-size:12px;opacity:0.7;">{{ bk.status }}</div>
+                <sc-if value="{{ bk.unlocked }}">
+                  <div class="seg" style="margin-top:2px;">
+                    <label class="seg-opt"><input type="radio" checked="{{ bk.isAll }}" sc-camel-on-change="{{ bk.onAll }}"><span>គ្រប់សាលា</span></label>
+                    <label class="seg-opt"><input type="radio" checked="{{ bk.isPick }}" sc-camel-on-change="{{ bk.onPick }}"><span>ជ្រើសរើសសាលា</span></label>
+                  </div>
+                  <sc-if value="{{ bk.isPick }}">
+                    <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+                      <sc-for list="{{ bk.schools }}" as="sc" hint-placeholder-count="2">
+                        <div style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;" sc-camel-on-click="{{ sc.onToggle }}">
+                          <span style="font-size:16px;">{{ sc.mark }}</span><span>{{ sc.name }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </sc-if>
+              </div>
+            </sc-for>
           </div>
         </div>
         </sc-if>
@@ -6649,7 +6769,28 @@ function shareExamples(){
   }
 }
 
-const BOOKS = Array.from(new Set(WORDS.map(w => w.book)));
+let BOOKS = Array.from(new Set(WORDS.map(w => w.book)));
+
+// — Per-book visibility. An admin sees every book; a branch/teacher/student
+//   sees a book unless the admin has locked it or limited it to other
+//   branches. A book with no rule is visible to all (the synced books). —
+let VIEWER = { role: null, schoolId: null };   // set at sign-in
+let BOOK_VIS = new Map();                       // book -> { locked, allSchools, schools:Set }
+function bookVisible(book){
+  if (VIEWER.role === null || VIEWER.role === 'admin') return true;
+  const v = BOOK_VIS.get(book);
+  if (!v) return true;
+  if (v.locked) return false;
+  if (v.allSchools) return true;
+  return !!VIEWER.schoolId && v.schools.has(VIEWER.schoolId);
+}
+function setBookVis(rows){
+  BOOK_VIS = new Map((rows || []).map(r => [r.book, {
+    locked: !!r.locked,
+    allSchools: r.all_schools !== false,
+    schools: new Set(Array.isArray(r.schools) ? r.schools : []),
+  }]));
+}
 const pagesOfBook = b => Array.from(new Set(WORDS.filter(w => w.book === b).map(w => w.page))).sort((a,b)=>a-b);
 // The books repeat their key vocabulary on many pages, so the same word can
 // appear dozens of times. Lists show one card per distinct word.
@@ -6683,12 +6824,36 @@ let BOOK_UNIQUE = new Map();      // book -> its distinct words, for progress %
 let WORD_KEY = new Map();         // id -> jp|kana, so a repeated word counts once
 function rebuildIndexes(){
   shareExamples();
+  BOOKS = Array.from(new Set(WORDS.map(w => w.book)));
   UNIQUE_WORDS = dedupeWords(WORDS);
   LINKABLE = buildLinkable();
   BOOK_UNIQUE = new Map(BOOKS.map(b => [b, dedupeWords(WORDS.filter(w => w.book === b))]));
   WORD_KEY = new Map(WORDS.map(w => [w.id, w.jp + '|' + w.kana]));
 }
 rebuildIndexes();
+
+// Words an admin typed in (stored in Supabase, never in RAW_WORDS). Merged into
+// WORDS at load and after each add, keyed by a "c-" id so re-applying is safe.
+function applyCustomWords(rows){
+  let changed = false;
+  for (const r of (rows || [])) {
+    const id = 'c-' + r.id;
+    const exJp = toArr(r.examples ? r.examples.map(e => e.jp) : []);
+    const exKm = toArr(r.examples ? r.examples.map(e => e.km) : []);
+    const romaji = kanaToRomaji(r.kana || '');
+    const w = {
+      id, jp: r.jp, kana: r.kana || '', pos: (r.pos || '').trim(), km: r.km || '',
+      romaji, romajiNorm: normRomaji(romaji),
+      examples: (Array.isArray(r.examples) ? r.examples : []).filter(e => e && e.jp).map(e => ({ jp: e.jp, km: e.km || '' })),
+      cat: r.cat || 'vocab', page: r.page || 1, book: r.book || DEFAULT_BOOK,
+      starred: !!r.starred, _custom: true,
+    };
+    const at = WORDS.findIndex(x => x.id === id);
+    if (at >= 0) WORDS[at] = w; else WORDS.push(w);
+    changed = true;
+  }
+  return changed;
+}
 
 // Admin corrections stored in Supabase, laid over the synced words.
 function applyOverrides(rows){
@@ -6874,6 +7039,11 @@ function makeSupabaseBackend(){
       return { error: error ? error.message : null };
     },
     async deleteOverride(id){ const { error } = await client.from('word_overrides').delete().eq('word_id', id); return { error: error ? error.message : null }; },
+    // admin-typed words + per-book visibility
+    async listCustomWords(){ const { data } = await client.from('custom_words').select('*').order('created_at'); return { rows: data || [] }; },
+    async addCustomWord(row){ const { data, error } = await client.from('custom_words').insert(row).select().single(); return { row: data, error: error ? error.message : null }; },
+    async getBookSettings(){ const { data } = await client.from('book_settings').select('book,locked,all_schools,schools'); return { rows: data || [] }; },
+    async saveBookSetting(row){ const { error } = await client.from('book_settings').upsert(row, { onConflict: 'book' }); return { error: error ? error.message : null }; },
     // Asks the Edge Function to start the GitHub sync workflow (the token that
     // lets it do so lives on the server, never in this page).
     async syncWords(){
@@ -6996,6 +7166,19 @@ function makeDemoBackend(){
       localStorage.setItem('dict_demo_overrides', JSON.stringify(rows));
       return { error: null };
     },
+    async listCustomWords(){ try { return { rows: JSON.parse(localStorage.getItem('dict_demo_customwords') || '[]') }; } catch(e){ return { rows: [] }; } },
+    async addCustomWord(row){
+      const rows = (await this.listCustomWords()).rows;
+      const rec = { id: 'cw-' + Date.now(), created_at: new Date().toISOString(), ...row };
+      rows.push(rec); localStorage.setItem('dict_demo_customwords', JSON.stringify(rows));
+      return { row: rec, error: null };
+    },
+    async getBookSettings(){ try { return { rows: JSON.parse(localStorage.getItem('dict_demo_booksettings') || '[]') }; } catch(e){ return { rows: [] }; } },
+    async saveBookSetting(row){
+      const rows = (await this.getBookSettings()).rows.filter(r => r.book !== row.book);
+      rows.push(row); localStorage.setItem('dict_demo_booksettings', JSON.stringify(rows));
+      return { error: null };
+    },
     async createAccount(p){ const us=load(); const email=String(p.email).trim().toLowerCase(); if(us.find(x=>x.email===email)) return { error:'អ៊ីមែលនេះមានរួចហើយ' }; us.push({ id:'u-'+Date.now(), email, password:p.password, full_name:p.full_name||'', role:p.role, teacher_id:p.role==='student'?(p.teacher_id||null):null, school_id:p.role==='school'?null:(p.school_id||null), viewed:[], favorites:[], history:[], settings:{} }); save(us); return { error:null }; },
     async updateAccount(id, patch){ const us=load(); const u=us.find(x=>x.id===id); if(!u) return { error:'not found' }; if(patch.full_name!=null) u.full_name=patch.full_name; if(patch.role!=null) u.role=patch.role; if(patch.teacher_id!==undefined) u.teacher_id=u.role==='student'?(patch.teacher_id||null):null; if(patch.school_id!==undefined) u.school_id=u.role==='school'?null:(patch.school_id||null); if(patch.password) u.password=patch.password; save(us); return { error:null }; },
     async deleteAccount(id){ let us=load(); us=us.filter(x=>x.id!==id); save(us); return { error:null }; },
@@ -7040,6 +7223,10 @@ class Component extends DCLogic {
     editSearch: '', editWordId: null,
     edJp: '', edKana: '', edPos: '', edKm: '', edExamples: [],
     edBusy: false, edMsg: '', edError: '', overridesRev: 0,
+    // admin: add a new word / grammar
+    awBook: '', awBookMenuOpen: false, awNewBook: '', awCat: 'vocab', awPage: '',
+    awJp: '', awKana: '', awPos: '', awKm: '', awStar: false, awExamples: [],
+    awBusy: false, awMsg: '', awError: '',
     screen: 'home', search: '', catFilter: 'all', searchMode: 'general', pageFilter: null, pageInput: '',
     bookFilter: BOOKS[0] || DEFAULT_BOOK,
     pendingHide: [],   // just-ticked words, still shown for a moment
@@ -7219,6 +7406,8 @@ class Component extends DCLogic {
         authError: 'គណនីរបស់អ្នកកំពុងរង់ចាំការអនុម័តពីសាលា/សាខា' });
       return;
     }
+    // which books this viewer may see (a branch is keyed by its own id)
+    VIEWER = { role: p.role, schoolId: p.role === 'school' ? id : (p.school_id || null) };
     const screen = 'home';   // everyone starts on the search screen
     this.setState({
       userId: id, role: p.role, profileName: p.full_name || p.email, mySchoolId: p.school_id || null,
@@ -7231,7 +7420,19 @@ class Component extends DCLogic {
     }, () => {
       if (p.role === 'admin')   this.loadAdminData();
       if (['teacher','school','admin'].includes(p.role)) this.loadStudents();
+      this.loadBooksAndCustom();
     });
+  }
+  // Book visibility rules + admin-typed words. Rebuilds the indexes once both
+  // are in, and nudges the selected book to one this viewer is allowed to see.
+  async loadBooksAndCustom(){
+    const [cw, bs] = await Promise.all([Backend.listCustomWords(), Backend.getBookSettings()]);
+    setBookVis(bs.rows || []);
+    applyCustomWords(cw.rows || []);
+    rebuildIndexes();
+    const vis = BOOKS.filter(bookVisible);
+    this.setState(st => ({ overridesRev: st.overridesRev + 1,
+      bookFilter: vis.includes(st.bookFilter) ? st.bookFilter : (vis[0] || st.bookFilter) }));
   }
 
   persist(){
@@ -7325,6 +7526,7 @@ class Component extends DCLogic {
     if (this._saveT) clearTimeout(this._saveT);
     if (this.state.userId) await Backend.saveProgress(this.state.userId, { viewed:this.state.viewed, favorites:this.state.favorites, history:this.state.history, settings:this.state.settings, usage:this.state.usage });
     await Backend.signOut();
+    VIEWER = { role: null, schoolId: null };   // back to "see all" on the login screen
     this.setState({ authStage:'login', userId:null, role:null, profileName:'', profileEmail:'', screen:'home',
       email:'', password:'', authBusy:false, authError:'', usage:{},
       favorites:[], history:[], viewed:[], selectedStudent:null, selectedStudentName:'', viewingViewed:[],
@@ -7469,6 +7671,64 @@ class Component extends DCLogic {
     this.setState({ edBusy: false, edMsg: 'លុបការកែរួច — សូមបិទបើកកម្មវិធីឡើងវិញដើម្បីឃើញពាក្យដើម' });
   }
 
+  // — Admin: add a new word / grammar —
+  goAddWord(){ this.setState({ screen: 'addword', awMsg: '', awError: '' }); }
+  onAwCatVocab(){ this.setState({ awCat: 'vocab' }); }
+  onAwCatGrammar(){ this.setState({ awCat: 'grammar' }); }
+  onAwPage(e){ this.setState({ awPage: e.target.value }); }
+  onAwJp(e){ this.setState({ awJp: e.target.value }); }
+  onAwKana(e){ this.setState({ awKana: e.target.value }); }
+  onAwPos(e){ this.setState({ awPos: e.target.value }); }
+  onAwKm(e){ this.setState({ awKm: e.target.value }); }
+  onAwNewBook(e){ this.setState({ awNewBook: e.target.value, awBook: '' }); }
+  toggleAwStar(){ this.setState(s => ({ awStar: !s.awStar })); }
+  toggleAwBookMenu(){ this.setState(s => ({ awBookMenuOpen: !s.awBookMenuOpen })); }
+  selectAwBook(b){ this.setState({ awBook: b, awNewBook: '', awBookMenuOpen: false }); }
+  onAwExampleJp(i, e){ const v = e.target.value; this.setState(s => ({ awExamples: s.awExamples.map((x, k) => k === i ? { ...x, jp: v } : x) })); }
+  onAwExampleKm(i, e){ const v = e.target.value; this.setState(s => ({ awExamples: s.awExamples.map((x, k) => k === i ? { ...x, km: v } : x) })); }
+  addAwExample(){ this.setState(s => ({ awExamples: [...s.awExamples, { jp: '', km: '' }] })); }
+  removeAwExample(i){ this.setState(s => ({ awExamples: s.awExamples.filter((_, k) => k !== i) })); }
+  async saveAddWord(){
+    if (this.state.awBusy) return;
+    const s = this.state;
+    const jp = (s.awJp || '').trim(), km = (s.awKm || '').trim();
+    const book = (s.awNewBook || '').trim() || s.awBook;
+    if (!book) { this.setState({ awError: 'សូមជ្រើសរើស ឬ បញ្ចូលឈ្មោះសៀវភៅ', awMsg: '' }); return; }
+    if (!jp || !km) { this.setState({ awError: 'ត្រូវការពាក្យជប៉ុន និងន័យខ្មែរ', awMsg: '' }); return; }
+    this.setState({ awBusy: true, awError: '', awMsg: '' });
+    const examples = s.awExamples.map(x => ({ jp: (x.jp || '').trim(), km: (x.km || '').trim() })).filter(x => x.jp);
+    const page = parseInt(s.awPage, 10);
+    const row = { book, page: isNaN(page) ? null : page, cat: s.awCat, jp,
+      kana: (s.awKana || '').trim(), pos: (s.awPos || '').trim(), km, starred: s.awStar, examples };
+    const { row: saved, error } = await Backend.addCustomWord(row);
+    if (error) { this.setState({ awBusy: false, awError: error }); return; }
+    applyCustomWords([saved || { id: 'c-' + Date.now(), ...row }]);
+    rebuildIndexes();
+    // keep the book, category and page so the admin can add the next word fast
+    this.setState(st => ({ awBusy: false, awMsg: `បន្ថែម «${jp}» រួចរាល់ ✓`, overridesRev: st.overridesRev + 1,
+      awJp: '', awKana: '', awPos: '', awKm: '', awStar: false, awExamples: [] }));
+  }
+
+  // — Admin: per-book visibility —
+  goBooks(){ this.setState({ screen: 'books', awMsg: '' }); }
+  async saveBookVis(book, patch){
+    const cur = BOOK_VIS.get(book) || { locked: false, allSchools: true, schools: new Set() };
+    const next = { locked: patch.locked != null ? patch.locked : cur.locked,
+      allSchools: patch.allSchools != null ? patch.allSchools : cur.allSchools,
+      schools: patch.schools ? new Set(patch.schools) : new Set(cur.schools) };
+    BOOK_VIS.set(book, next);
+    this.setState(st => ({ overridesRev: st.overridesRev + 1 }));   // reflect at once
+    await Backend.saveBookSetting({ book, locked: next.locked, all_schools: next.allSchools, schools: [...next.schools] });
+  }
+  toggleBookLock(book){ const v = BOOK_VIS.get(book) || {}; this.saveBookVis(book, { locked: !v.locked }); }
+  setBookAllSchools(book, all){ this.saveBookVis(book, { allSchools: all }); }
+  toggleBookSchool(book, schoolId){
+    const v = BOOK_VIS.get(book) || { schools: new Set() };
+    const set = new Set(v.schools);
+    if (set.has(schoolId)) set.delete(schoolId); else set.add(schoolId);
+    this.saveBookVis(book, { schools: [...set] });
+  }
+
   async syncWords(){
     if (this.state.syncBusy) return;
     this.setState({ syncBusy: true, syncMsg: '', syncError: '' });
@@ -7580,7 +7840,7 @@ class Component extends DCLogic {
     }, 1400);
   }
 
-  wordsForCat(cat){ return dedupeWords(cat === 'all' ? WORDS : WORDS.filter(w => w.cat === cat)); }
+  wordsForCat(cat){ return dedupeWords(WORDS.filter(w => bookVisible(w.book) && (cat === 'all' || w.cat === cat))); }
 
   // Tests cover vocabulary only — no grammar — and focus on the words an admin
   // starred; with none starred yet, fall back to every word so tests still work.
@@ -7880,7 +8140,7 @@ class Component extends DCLogic {
     const multiBook = BOOKS.length > 1;
     const monitorPageProgress = [];
     let monitorTotal = 0;
-    for (const b of BOOKS) {
+    for (const b of BOOKS.filter(bookVisible)) {
       for (const p of pagesOfBook(b)) {
         // count what the student can actually see on that page (deduped)
         const words = dedupeWords(WORDS.filter(w => w.book === b && w.page === p));
@@ -7898,7 +8158,7 @@ class Component extends DCLogic {
     const viewedIds = new Set(s.viewed);
     const viewedKeys = new Set();
     for (const w of WORDS) if (viewedIds.has(w.id)) viewedKeys.add(w.jp + '|' + w.kana);
-    const bookStats = BOOKS.map(b => {
+    const bookStats = BOOKS.filter(bookVisible).map(b => {
       const uniq = BOOK_UNIQUE.get(b) || [];
       const seen = uniq.filter(w => viewedKeys.has(w.jp + '|' + w.kana)).length;
       const pct = uniq.length ? Math.round(seen / uniq.length * 100) : 0;
@@ -8059,6 +8319,35 @@ class Component extends DCLogic {
       .filter(a => ['teacher','student'].includes(a.role) && !a.school_id)
       .map(a => rowOf(a.id)).filter(Boolean);
 
+    // — add-word screen —
+    const awJpT = (s.awJp || '').trim(), awKaT = (s.awKana || '').trim();
+    const awDupHit = awJpT ? UNIQUE_WORDS.find(w => w.jp === awJpT && (!awKaT || w.kana === awKaT)) : null;
+    const awBookItems = BOOKS.map(b => ({ name: b, onSelect: () => this.selectAwBook(b),
+      rowStyle: b === s.awBook ? 'color:var(--color-accent-700);font-weight:600;' : '' }));
+    const awBookLabel = (s.awNewBook || '').trim() || s.awBook || 'ជ្រើសរើសសៀវភៅ';
+
+    // — books visibility screen — one card per book with its rule + branch picks
+    const schoolAccounts = (s.schools || []);
+    const bookVisItems = BOOKS.map(b => {
+      const v = BOOK_VIS.get(b) || { locked: false, allSchools: true, schools: new Set() };
+      const status = v.locked ? 'ជាប់សោ (លាក់ពីសាលា)' : v.allSchools ? 'បង្ហាញគ្រប់សាលា' : `បង្ហាញ ${v.schools.size} សាលា`;
+      return {
+        book: b, status,
+        locked: v.locked, unlocked: !v.locked,
+        lockLabel: v.locked ? 'ដោះសោ' : 'ចាក់សោ',
+        isAll: !v.locked && v.allSchools, isPick: !v.locked && !v.allSchools,
+        onToggleLock: () => this.toggleBookLock(b),
+        onAll: () => this.setBookAllSchools(b, true),
+        onPick: () => this.setBookAllSchools(b, false),
+        schools: schoolAccounts.map(sc => ({
+          name: sc.full_name || sc.email,
+          on: v.schools.has(sc.id),
+          mark: v.schools.has(sc.id) ? '☑' : '☐',
+          onToggle: () => this.toggleBookSchool(b, sc.id),
+        })),
+      };
+    });
+
     return {
       isHome: s.screen === 'home', isFavorites: s.screen === 'favorites', isSettings: s.screen === 'settings',
       isTestHub: s.screen === 'test' && !testMode,
@@ -8145,6 +8434,34 @@ class Component extends DCLogic {
       edSaveLabel: s.edBusy ? 'កំពុងរក្សាទុក…' : 'រក្សាទុក',
       hasEdMsg: !!s.edMsg, edMsg: s.edMsg,
       hasEdError: !!s.edError, edError: s.edError,
+
+      // — Admin: add a new word —
+      isAddWord: s.screen === 'addword',
+      goAddWord: () => this.goAddWord(),
+      awBookLabel, awBookItems, awBookMenuOpen: s.awBookMenuOpen,
+      toggleAwBookMenu: () => this.toggleAwBookMenu(),
+      awNewBook: s.awNewBook, onAwNewBook: e => this.onAwNewBook(e),
+      awIsVocab: s.awCat === 'vocab', awIsGrammar: s.awCat === 'grammar',
+      onAwCatVocab: () => this.onAwCatVocab(), onAwCatGrammar: () => this.onAwCatGrammar(),
+      awPage: s.awPage, onAwPage: e => this.onAwPage(e),
+      awJp: s.awJp, onAwJp: e => this.onAwJp(e),
+      awKana: s.awKana, onAwKana: e => this.onAwKana(e),
+      awPos: s.awPos, onAwPos: e => this.onAwPos(e),
+      awKm: s.awKm, onAwKm: e => this.onAwKm(e),
+      awStar: s.awStar, toggleAwStar: () => this.toggleAwStar(),
+      awStarGlyph: s.awStar ? '★' : '☆', awStarColor: s.awStar ? '#d0342c' : 'var(--color-text)',
+      awExamples: s.awExamples.map((x, i) => ({ jp: x.jp, km: x.km, num: `ឧទាហរណ៍ ${i + 1}`,
+        onJp: e => this.onAwExampleJp(i, e), onKm: e => this.onAwExampleKm(i, e), onRemove: () => this.removeAwExample(i) })),
+      addAwExample: () => this.addAwExample(),
+      saveAddWord: () => this.saveAddWord(),
+      awSaveLabel: s.awBusy ? 'កំពុងរក្សាទុក…' : 'បន្ថែមពាក្យ',
+      hasAwMsg: !!s.awMsg, awMsg: s.awMsg,
+      hasAwError: !!s.awError, awError: s.awError,
+      hasAwDup: !!awDupHit,
+      awDupLabel: awDupHit ? `${awDupHit.jp}${awDupHit.kana ? ' ('+awDupHit.kana+')' : ''} · ${awDupHit.km} · ${awDupHit.book}` : '',
+
+      // — Admin: book visibility —
+      isBooks: s.screen === 'books', goBooks: () => this.goBooks(), bookVisItems,
 
       // — Admin —
       isAdmin: s.role === 'admin', isAdminScreen: s.screen === 'admin',
@@ -8250,13 +8567,13 @@ class Component extends DCLogic {
       isSearchGeneral: s.searchMode === 'general', isSearchByPage: s.searchMode === 'page',
       searchMode: s.searchMode, onSearchModeChange: e => this.onSearchModeChange(e),
       setSearchGeneral: () => this.setSearchGeneral(), setSearchByPage: () => this.setSearchByPage(),
-      bookOptions: BOOKS.map(b => ({ id: b, name: b,
+      bookOptions: BOOKS.filter(bookVisible).map(b => ({ id: b, name: b,
         onSelect: () => this.selectBook(b),
         rowStyle: b === s.bookFilter ? 'color:var(--color-accent-700);font-weight:600;' : '' })),
       bookFilter: s.bookFilter,
       bookMenuOpen: s.bookMenuOpen, toggleBookMenu: () => this.toggleBookMenu(),
       onBookChange: e => this.onBookChange(e),
-      bookLabel: s.bookFilter, hasManyBooks: BOOKS.length > 1,
+      bookLabel: s.bookFilter, hasManyBooks: BOOKS.filter(bookVisible).length > 1,
       // floating prev / next page arrows
       showPageNav: s.searchMode === 'page' && s.pageFilter != null && bookPages.indexOf(s.pageFilter) >= 0,
       goPrevPage: () => this.goPrevPage(), goNextPage: () => this.goNextPage(),
