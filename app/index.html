@@ -1001,6 +1001,29 @@ textarea.input { min-height: 90px; resize: vertical; }
               </sc-for>
             </div>
 
+            <sc-if value="{{ hasMonitorQuiz }}">
+            <h4 style="font-size:15px;margin:0 0 10px;">លំហាត់</h4>
+            <div class="card elev-sm" style="gap:8px;margin-bottom:22px;">
+              <div style="display:flex;justify-content:flex-end;font-size:12px;opacity:0.65;">{{ monitorQuizSummary.passedLabel }}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                <sc-for list="{{ monitorQuizSummary.chips }}" as="c" hint-placeholder-count="4">
+                  <span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}" sc-camel-on-click="{{ c.onToggle }}">{{ c.text }}</span>
+                </sc-for>
+              </div>
+              <sc-if value="{{ monitorQuizSummary.hasOpen }}">
+                <div style="border-top:1px solid var(--color-divider);padding-top:8px;margin-top:2px;">
+                  <div style="font-size:11px;opacity:0.6;margin-bottom:6px;">{{ monitorQuizSummary.openTitle }}</div>
+                  <sc-for list="{{ monitorQuizSummary.openQuestions }}" as="qq" hint-placeholder-count="10">
+                    <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--color-divider);">
+                      <span style="flex:none;font-size:15px;font-weight:700;{{ qq.markColor }}">{{ qq.mark }}</span>
+                      <span style="flex:1;min-width:0;font-size:13px;line-height:1.6;">{{ qq.q }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+            </sc-if>
+
             <h4 style="font-size:15px;margin:0 0 4px;">រយៈពេលប្រើប្រាស់</h4>
             <div style="font-size:12px;opacity:0.6;margin-bottom:12px;">ថ្ងៃនេះ {{ monitorUsageTodayLabel }} · ៧ ថ្ងៃ {{ monitorUsageWeekLabel }}</div>
             <div class="card elev-sm" style="padding:14px 12px 10px;margin-bottom:22px;">
@@ -7542,7 +7565,7 @@ class Component extends DCLogic {
     schoolMenu: null,   // 'create' | 'edit' | null
     // teacher monitor
     students: [], selectedStudent: null, selectedStudentName: '', viewingViewed: [],
-    viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, monExpandedChip: null,
+    viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, monExpandedChip: null,
     leaderboard: [],   // student standings, name + level only
 
     // self sign-up through a branch invite link
@@ -8150,9 +8173,11 @@ class Component extends DCLogic {
       viewingViewed: Array.isArray(st.viewed) ? st.viewed : [],
       viewingUsage: (st.usage && typeof st.usage === 'object') ? st.usage : {},
       viewingLessons: (st.settings && st.settings.lessons) || {},
-      viewingLessonDetails: (st.settings && st.settings.lessonDetails) || {}, monExpandedChip: null });
+      viewingLessonDetails: (st.settings && st.settings.lessonDetails) || {},
+      viewingQuizzes: (st.settings && st.settings.quizzes) || {},
+      viewingQuizDetails: (st.settings && st.settings.quizDetails) || {}, monExpandedChip: null });
   }
-  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, monExpandedChip: null }); }
+  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, monExpandedChip: null }); }
   toggleMonChip(key){ this.setState(s => ({ monExpandedChip: s.monExpandedChip === key ? null : key })); }
 
   goHome(){ this.setState({ screen: 'home' }); }
@@ -8266,14 +8291,21 @@ class Component extends DCLogic {
     this.setState({ quizIdx: nextIdx, quizAnswered: false, quizPicked: null });
   }
   finishQuiz(){
-    const { quizLesson, quizScore, quizQuestions } = this.state;
+    const { quizLesson, quizScore, quizQuestions, quizResults } = this.state;
     const total = quizQuestions.length;
     const pct = total ? Math.round(quizScore / total * 100) : 0;
     const settings = { ...this.state.settings };
     const quizzes = { ...(settings.quizzes || {}) };
     const prevBest = quizzes[quizLesson] || 0;
+    const isBest = pct >= prevBest;
     quizzes[quizLesson] = Math.max(prevBest, pct);
     settings.quizzes = quizzes;
+    // keep which questions were right/wrong for the best attempt, for the teacher
+    if (isBest) {
+      const details = { ...(settings.quizDetails || {}) };
+      details[quizLesson] = quizQuestions.map((q, i) => ({ q: q.q, ok: !!quizResults[i] }));
+      settings.quizDetails = details;
+    }
     const entry = { mode: 'quiz', lesson: quizLesson, score: quizScore, total, date: new Date().toISOString() };
     this.setState({ settings, history: [...this.state.history, entry], testMode: 'quizresults' }, () => this.persist());
   }
@@ -8698,6 +8730,34 @@ class Component extends DCLogic {
       };
     });
 
+    // the same, for the exercises (លំហាត់) the student has done
+    const qrec = s.viewingQuizzes || {};
+    const qdet = s.viewingQuizDetails || {};
+    const qnums = Object.keys(qrec).map(Number).filter(n => n > 0).sort((a, b) => a - b);
+    const qpassed = qnums.filter(n => qrec[n] >= PASS_PCT).length;
+    let qOpenTitle = '', qOpenQuestions = [];
+    const qchips = qnums.map(n => {
+      const det = qdet[n] || [];
+      const key = 'quiz-' + n;
+      const open = s.monExpandedChip === key;
+      if (open) {
+        qOpenTitle = `លំហាត់ទី ${n}`;
+        qOpenQuestions = det.map(d => ({ q: d.q, mark: d.ok ? '✓' : '✗', markColor: d.ok ? 'color:#3a9e5c;' : 'color:#d0342c;' }));
+      }
+      return {
+        text: `${n}៖ ${qrec[n]}%`,
+        onToggle: det.length ? (() => this.toggleMonChip(key)) : (() => {}),
+        style: (qrec[n] >= PASS_PCT
+          ? 'background:var(--color-accent-100);color:var(--color-accent-800);border-color:var(--color-accent);'
+          : 'opacity:0.65;') + (det.length ? 'cursor:pointer;' : '') + (open ? 'outline:2px solid var(--color-accent-700);' : ''),
+      };
+    });
+    const monitorQuizSummary = {
+      hasAny: qnums.length > 0,
+      passedLabel: qnums.length ? `ជាប់ ${qpassed} / ${qnums.length} លំហាត់` : 'មិនទាន់ធ្វើ',
+      chips: qchips, hasOpen: qOpenQuestions.length > 0, openTitle: qOpenTitle, openQuestions: qOpenQuestions,
+    };
+
     const ROLE_LABEL = { admin: 'អ្នកគ្រប់គ្រង', school: 'សាលា/សាខា', teacher: 'គ្រូ', student: 'សិស្ស' };
     const ROLE_TAG = { admin: 'tag tag-accent', school: 'tag tag-outline', teacher: 'tag tag-accent-2', student: 'tag tag-neutral' };
     // A school only ever works inside its own branch; an admin picks one first,
@@ -8872,6 +8932,7 @@ class Component extends DCLogic {
         return set.includes(s.screen) ? 'var(--color-accent-700)' : 'var(--color-text)';
       })(),
       monitorLessonSummary,
+      monitorQuizSummary, hasMonitorQuiz: monitorQuizSummary.hasAny,
       monitorUsageDays: monitorChart.days,
       monitorUsageTodayLabel: monitorChart.todayLabel,
       monitorUsageWeekLabel: monitorChart.weekLabel,
