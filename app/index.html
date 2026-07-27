@@ -1141,7 +1141,7 @@ textarea.input { min-height: 90px; resize: vertical; }
         <div style="padding:18px 20px 30px;">
           <h1 style="font-size:26px;margin:0 0 16px;">ម៉ីនុយ</h1>
           <div style="display:flex;flex-direction:column;gap:10px;">
-            <sc-if value="{{ isAdmin }}">
+            <sc-if value="{{ menuHasAccounts }}">
             <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goAdmin }}">
               <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg>
               <div style="flex:1;min-width:0;">
@@ -1160,6 +1160,8 @@ textarea.input { min-height: 90px; resize: vertical; }
               </div>
               <span style="opacity:0.4;">›</span>
             </div>
+            </sc-if>
+            <sc-if value="{{ menuHasProfile }}">
             <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goProfile }}">
               <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
               <div style="flex:1;min-width:0;">
@@ -8071,21 +8073,26 @@ class Component extends DCLogic {
       hasSelectedStudent: !!s.selectedStudent, noSelectedStudent: !s.selectedStudent, selectedStudent: s.selectedStudentName,
       backToStudentList: () => this.backToStudentList(),
       canMonitor: ['teacher','school','admin'].includes(s.role),
-      // An admin already fills the bar, so their គណនី and កំណត់ move into ម៉ីនុយ.
+      // Every role now has a ម៉ីនុយ tab; only the search, ranking (and for a
+      // student the test, for an admin word-editing + profile) stay on the bar.
       isMenu: s.screen === 'menu',
-      // an admin's account + settings, or a student's favourites + profile +
-      // settings, all live behind the one ម៉ីនុយ tab
-      hasMenuTab: s.role === 'admin' || s.role === 'student',
-      hasAccountsTab: s.role === 'school',
-      // teacher and branch keep their own settings tab; admin and student reach
-      // settings through the menu instead
-      hasSettingsTab: s.role === 'teacher' || s.role === 'school',
-      // students reach their profile through the menu, everyone else has a tab
-      hasProfileTab: s.role !== 'student',
+      hasMenuTab: true,
+      hasAccountsTab: false,      // គណនី lives in the menu now, for both admin and branch
+      hasSettingsTab: false,      // so does ការកំណត់, for everyone
+      hasProfileTab: s.role === 'admin',   // only an admin keeps a profile tab; the rest reach it via the menu
+      // which cards a role's menu offers
+      menuHasAccounts: s.role === 'admin' || s.role === 'school',
+      menuHasProfile: s.role !== 'admin',
       goMenu: () => this.goMenu(),
       // the menu tab stays lit on any screen it leads to, which differs by role
-      menuColor: (s.role === 'student' ? ['menu','favorites','profile','settings'] : ['menu','admin','settings'])
-                   .includes(s.screen) ? 'var(--color-accent-700)' : 'var(--color-text)',
+      menuColor: (() => {
+        const set = ['menu','settings'];
+        if (s.role === 'student') set.push('favorites','profile');
+        if (s.role === 'teacher') set.push('profile');
+        if (s.role === 'school')  set.push('admin','profile');
+        if (s.role === 'admin')   set.push('admin');
+        return set.includes(s.screen) ? 'var(--color-accent-700)' : 'var(--color-text)';
+      })(),
       monitorLessonSummary,
       monitorUsageDays: monitorChart.days,
       monitorUsageTodayLabel: monitorChart.todayLabel,
