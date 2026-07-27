@@ -885,7 +885,8 @@ textarea.input { min-height: 90px; resize: vertical; }
               <div class="card-title" style="font-size:16px;">{{ monitorOverallViewed }} / {{ overallTotal }} ពាក្យ ({{ monitorOverallPct }}%)</div>
             </div>
 
-            <h4 style="font-size:15px;margin:0 0 10px;">លទ្ធផលតេស្ត</h4>
+            <h4 style="font-size:15px;margin:0 0 2px;">លទ្ធផលតេស្ត</h4>
+            <div style="font-size:11px;opacity:0.55;margin-bottom:10px;">ចុចលើលំហាត់ ដើម្បីមើលពាក្យត្រូវ/ខុស</div>
             <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:22px;">
               <sc-for list="{{ monitorLessonSummary }}" as="t" hint-placeholder-count="3">
                 <div class="card elev-sm" style="gap:8px;">
@@ -896,7 +897,20 @@ textarea.input { min-height: 90px; resize: vertical; }
                   <sc-if value="{{ t.hasAny }}">
                     <div style="display:flex;flex-wrap:wrap;gap:6px;">
                       <sc-for list="{{ t.chips }}" as="c" hint-placeholder-count="4">
-                        <span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}">{{ c.text }}</span>
+                        <span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}" sc-camel-on-click="{{ c.onToggle }}">{{ c.text }}</span>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ t.hasOpen }}">
+                    <div style="border-top:1px solid var(--color-divider);padding-top:8px;margin-top:2px;">
+                      <div style="font-size:11px;opacity:0.6;margin-bottom:6px;">{{ t.openTitle }}</div>
+                      <sc-for list="{{ t.openWords }}" as="wd" hint-placeholder-count="10">
+                        <div style="display:flex;align-items:baseline;gap:8px;padding:4px 0;border-bottom:1px solid var(--color-divider);">
+                          <span style="flex:none;font-size:15px;font-weight:700;{{ wd.markColor }}">{{ wd.mark }}</span>
+                          <span style="flex:none;font-family:var(--font-heading);font-size:15px;">{{ wd.jp }}</span>
+                          <span style="flex:none;font-size:11px;opacity:0.5;">{{ wd.kana }}</span>
+                          <span style="flex:1;min-width:0;font-size:12px;opacity:0.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ wd.km }}</span>
+                        </div>
                       </sc-for>
                     </div>
                   </sc-if>
@@ -7218,7 +7232,7 @@ class Component extends DCLogic {
     schoolMenu: null,   // 'create' | 'edit' | null
     // teacher monitor
     students: [], selectedStudent: null, selectedStudentName: '', viewingViewed: [],
-    viewingUsage: {}, viewingLessons: {},
+    viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, monExpandedChip: null,
     leaderboard: [],   // student standings, name + level only
 
     // self sign-up through a branch invite link
@@ -7249,7 +7263,7 @@ class Component extends DCLogic {
     settings: { fontScale: 1, autoAudio: false },
     syncing: false, lastSync: null, toast: null,
     testMode: null, testKind: 'mc_jp', testLesson: 1,
-    testWords: [], testIdx: 0, testScore: 0,
+    testWords: [], testIdx: 0, testScore: 0, testResults: [],
     mcOptions: [], mcSelected: null, mcAnswered: false,
     pageQuizOpen: false, pageQuizQuestions: [], pageQuizIdx: 0, pageQuizScore: 0, pageQuizSelected: null, pageQuizAnswered: false, pageQuizDone: false,
   };
@@ -7817,9 +7831,11 @@ class Component extends DCLogic {
     this.setState({ selectedStudent: st.id, selectedStudentName: st.full_name || st.email,
       viewingViewed: Array.isArray(st.viewed) ? st.viewed : [],
       viewingUsage: (st.usage && typeof st.usage === 'object') ? st.usage : {},
-      viewingLessons: (st.settings && st.settings.lessons) || {} });
+      viewingLessons: (st.settings && st.settings.lessons) || {},
+      viewingLessonDetails: (st.settings && st.settings.lessonDetails) || {}, monExpandedChip: null });
   }
-  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingLessons: {} }); }
+  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, monExpandedChip: null }); }
+  toggleMonChip(key){ this.setState(s => ({ monExpandedChip: s.monExpandedChip === key ? null : key })); }
 
   goHome(){ this.setState({ screen: 'home' }); }
   goFavorites(){ this.setState({ screen: 'favorites' }); }
@@ -7894,7 +7910,7 @@ class Component extends DCLogic {
     const words = shuffle(this.lessonWords(n));
     if (!words.length) return;
     this.setState({ testMode: 'mc',
-      testLesson: n, testWords: words, testIdx: 0, testScore: 0,
+      testLesson: n, testWords: words, testIdx: 0, testScore: 0, testResults: [],
       mcSelected: null, mcAnswered: false, mcOptions: this.buildMcOptions(words[0]) });
   }
   retryTest(){ this.startLesson(this.state.testLesson); }
@@ -7903,17 +7919,28 @@ class Component extends DCLogic {
   lockedLesson(){ this.showToast(`ត្រូវធ្វើលំហាត់មុនអោយបាន ${PASS_PCT}% សិន`); }
 
   finishTest(){
-    const { testKind, testLesson, testScore, testWords } = this.state;
+    const { testKind, testLesson, testScore, testWords, testResults } = this.state;
     const total = testWords.length;
     const pct = total ? Math.round(testScore / total * 100) : 0;
+    const settings = { ...this.state.settings };
     // keep the best attempt, so a bad retry cannot re-lock what was earned
-    const lessons = { ...(this.state.settings.lessons || {}) };
+    const lessons = { ...(settings.lessons || {}) };
     const forKind = { ...(lessons[testKind] || {}) };
-    forKind[testLesson] = Math.max(forKind[testLesson] || 0, pct);
+    const prevBest = forKind[testLesson] || 0;
+    const isBest = pct >= prevBest;    // refresh the stored word breakdown on a new best
+    forKind[testLesson] = Math.max(prevBest, pct);
     lessons[testKind] = forKind;
+    settings.lessons = lessons;
+    // remember which words this lesson got right/wrong, so a teacher can review it
+    if (isBest) {
+      const details = { ...(settings.lessonDetails || {}) };
+      const dKind = { ...(details[testKind] || {}) };
+      dKind[testLesson] = testWords.map((w, i) => ({ jp: w.jp, kana: w.kana, km: w.km, ok: !!testResults[i] }));
+      details[testKind] = dKind;
+      settings.lessonDetails = details;
+    }
     const entry = { mode: testKind, lesson: testLesson, score: testScore, total, date: new Date().toISOString() };
-    this.setState({ settings: { ...this.state.settings, lessons },
-      history: [...this.state.history, entry], testMode: 'results' }, () => this.persist());
+    this.setState({ settings, history: [...this.state.history, entry], testMode: 'results' }, () => this.persist());
   }
 
   // Two choices only, as asked: the answer and one other word from the pool.
@@ -7931,7 +7958,11 @@ class Component extends DCLogic {
 
   selectMcOption(opt){
     if (this.state.mcAnswered) return;
-    this.setState(s => ({ mcSelected: opt, mcAnswered: true, testScore: s.testScore + (opt.correct ? 1 : 0) }));
+    this.setState(s => {
+      const testResults = s.testResults.slice();
+      testResults[s.testIdx] = !!opt.correct;   // remember right/wrong per word
+      return { mcSelected: opt, mcAnswered: true, testScore: s.testScore + (opt.correct ? 1 : 0), testResults };
+    });
   }
   mcNext(){
     const nextIdx = this.state.testIdx + 1;
@@ -8222,7 +8253,38 @@ class Component extends DCLogic {
 
     // the same two panels again, for whichever student is being followed
     const monitorChart = buildUsageChart(s.viewingUsage);
-    const monitorLessonSummary = buildLessonSummary(s.viewingLessons);
+    // test results a teacher can drill into: each lesson chip is tappable to
+    // reveal which words the student got right (green ✓) or wrong (red ✗)
+    const monitorLessonSummary = Object.keys(MODE_LABEL).map(kind => {
+      const rec = (s.viewingLessons || {})[kind] || {};
+      const detailsForKind = (s.viewingLessonDetails || {})[kind] || {};
+      const nums = Object.keys(rec).map(Number).filter(n => n > 0).sort((a, b) => a - b);
+      const passed = nums.filter(n => rec[n] >= PASS_PCT).length;
+      let openWords = [], openTitle = '';
+      const chips = nums.map(n => {
+        const det = detailsForKind[n] || [];
+        const key = kind + '-' + n;
+        const open = s.monExpandedChip === key;
+        if (open) {
+          openTitle = `លំហាត់ទី ${n}`;
+          openWords = det.map(d => ({ jp: d.jp, kana: d.kana, km: d.km,
+            mark: d.ok ? '✓' : '✗', markColor: d.ok ? 'color:#3a9e5c;' : 'color:#d0342c;' }));
+        }
+        return {
+          text: `${n}៖ ${rec[n]}%`,
+          hasDetails: det.length > 0,
+          onToggle: det.length ? (() => this.toggleMonChip(key)) : (() => {}),
+          style: (rec[n] >= PASS_PCT
+            ? 'background:var(--color-accent-100);color:var(--color-accent-800);border-color:var(--color-accent);'
+            : 'opacity:0.65;') + (det.length ? 'cursor:pointer;' : '') + (open ? 'outline:2px solid var(--color-accent-700);' : ''),
+        };
+      });
+      return {
+        label: MODE_LABEL[kind], hasAny: nums.length > 0,
+        passedLabel: nums.length ? `ជាប់ ${passed} / ${nums.length} លំហាត់` : 'មិនទាន់ធ្វើ',
+        chips, hasOpen: openWords.length > 0, openTitle, openWords,
+      };
+    });
 
     const ROLE_LABEL = { admin: 'អ្នកគ្រប់គ្រង', school: 'សាលា/សាខា', teacher: 'គ្រូ', student: 'សិស្ស' };
     const ROLE_TAG = { admin: 'tag tag-accent', school: 'tag tag-outline', teacher: 'tag tag-accent-2', student: 'tag tag-neutral' };
