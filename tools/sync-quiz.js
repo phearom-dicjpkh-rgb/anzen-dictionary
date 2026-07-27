@@ -67,13 +67,23 @@ function opt(s) {
 }
 const CIRC = 'ⒶⒷⒸⒹ';   // ⒶⒷⒸⒹ
 
+// A Google Drive "share" link (…/file/d/ID/view, …/open?id=ID, …/uc?id=ID) is
+// not an <img> source. Rewrite it to the thumbnail endpoint, which hotlinks
+// reliably. Anything else is left as-is.
+function normalizeImg(url) {
+  if (!url) return '';
+  const m = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#]*&)?id=|thumbnail\?(?:[^#]*&)?id=)([\w-]{20,})/);
+  if (m) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000`;
+  return url;
+}
+
 function toQuestions(rows) {
   const out = [];
   for (const r of rows.slice(1)) {
     const q = stripFuri(r[1] || '');
     const c = (r[2] || '').trim();
     const d = (r[3] || '').trim();
-    const img = (r[4] || '').trim();
+    const img = normalizeImg((r[4] || '').trim());
     if (!q) continue;
     const item = {};
     if (c === '〇' || c === '×' || c === '✖') {          // 〇 / × / ✖
