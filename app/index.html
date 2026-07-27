@@ -759,10 +759,14 @@ textarea.input { min-height: 90px; resize: vertical; }
         <sc-if value="{{ isTestHub }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 20px;">
           <h1 style="font-size:26px;margin:0 0 14px;">តេស្តពាក្យ</h1>
-          <div style="margin-bottom:20px;">
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
             <div class="card elev-sm" style="cursor:pointer;text-align:center;padding:20px;" sc-camel-on-click="{{ startMcLessons }}">
               <div class="card-title" style="font-size:17px;">ជ្រើសរើសពាក្យត្រូវ</div>
               <div class="card-body" style="font-size:12px;">ជ្រើសរើសពីរជម្រើស · ជប៉ុន ↔ ខ្មែរ</div>
+            </div>
+            <div class="card elev-sm" style="cursor:pointer;text-align:center;padding:20px;" sc-camel-on-click="{{ openQuizList }}">
+              <div class="card-title" style="font-size:17px;">លំហាត់ <sc-if value="{{ exercisesLockedForMe }}"><span style="font-size:14px;">🔒</span></sc-if></div>
+              <div class="card-body" style="font-size:12px;">សំណួរ 〇/✖ និង A/B/C</div>
             </div>
           </div>
           <div class="hr"></div>
@@ -868,6 +872,85 @@ textarea.input { min-height: 90px; resize: vertical; }
           <div style="display:flex;gap:10px;width:100%;">
             <button class="btn btn-secondary btn-block" style="margin-top:0;" sc-camel-on-click="{{ backToLessons }}">បញ្ជីលំហាត់</button>
             <button class="btn btn-primary btn-block" style="margin-top:0;" sc-camel-on-click="{{ retryTest }}">ធ្វើម្តងទៀត</button>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isQuizList }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px 30px;">
+          <button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ backToHub }}">← ត្រឡប់</button>
+          <h1 style="font-size:24px;margin:0 0 4px;">លំហាត់</h1>
+          <div style="font-size:12px;opacity:0.6;margin-bottom:14px;">{{ quizUnlockLabel }}</div>
+          <div style="display:flex;flex-direction:column;gap:9px;">
+            <sc-for list="{{ quizItems }}" as="l" hint-placeholder-count="5">
+              <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:12px;{{ l.rowStyle }}" sc-camel-on-click="{{ l.onStart }}">
+                <div style="font-size:19px;width:26px;text-align:center;flex:none;color:{{ l.markColor }};">{{ l.mark }}</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="card-title" style="font-size:15px;">{{ l.title }}</div>
+                  <div class="card-body" style="font-size:11px;">{{ l.countLabel }}</div>
+                </div>
+                <div style="font-size:13px;color:var(--color-accent-700);flex:none;">{{ l.bestLabel }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isQuiz }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px;min-height:660px;display:flex;flex-direction:column;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <button class="btn btn-ghost" sc-camel-on-click="{{ backToQuizList }}">← {{ quizTitle }}</button>
+            <span style="font-size:12px;font-family:var(--font-heading);color:var(--color-accent-700);">{{ quizScoreLabel }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+            <div style="flex:1;height:8px;background:var(--color-neutral-200);border-radius:99px;overflow:hidden;">
+              <div style="height:100%;width:{{ quizProgressPct }};background:linear-gradient(90deg, var(--color-accent-700), var(--color-accent));border-radius:99px;transition:width .3s;"></div>
+            </div>
+            <span style="font-size:12px;opacity:0.6;flex:none;">{{ quizProgressLabel }}</span>
+          </div>
+
+          <sc-if value="{{ quizHasImg }}">
+            <img src="{{ quizImg }}" alt="" style="max-width:100%;border-radius:12px;margin-bottom:14px;border:1px solid var(--color-divider);">
+          </sc-if>
+          <div style="font-size:17px;line-height:1.9;margin-bottom:20px;">
+            <sc-for list="{{ quizSegments }}" as="sg" hint-placeholder-count="6"><sc-if value="{{ sg.isLink }}"><span style="color:var(--color-accent-700);border-bottom:1px dotted var(--color-accent-400);cursor:pointer;" sc-camel-on-click="{{ sg.onOpen }}">{{ sg.text }}</span></sc-if><sc-if value="{{ sg.isPlain }}"><span>{{ sg.text }}</span></sc-if></sc-for>
+          </div>
+
+          <sc-if value="{{ quizIsTf }}">
+          <div style="display:flex;gap:12px;">
+            <sc-for list="{{ quizTf }}" as="o" hint-placeholder-count="2">
+              <button style="flex:1;padding:22px 0;border-radius:16px;border:1.5px solid;box-shadow:var(--shadow-sm);cursor:pointer;font-size:34px;{{ o.boxStyle }}" sc-camel-on-click="{{ o.onSelect }}">{{ o.glyph }}</button>
+            </sc-for>
+          </div>
+          </sc-if>
+          <sc-if value="{{ quizIsMc }}">
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <sc-for list="{{ quizMcOptions }}" as="o" hint-placeholder-count="3">
+              <button style="display:flex;align-items:center;gap:13px;width:100%;text-align:left;padding:14px 15px;border-radius:14px;border:1.5px solid;box-shadow:var(--shadow-sm);cursor:pointer;{{ o.boxStyle }}" sc-camel-on-click="{{ o.onSelect }}">
+                <span style="flex:none;width:28px;height:28px;border-radius:50%;background:var(--color-accent);color:#f3f2f2;display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:14px;">{{ o.badge }}</span>
+                <span style="flex:1;min-width:0;font-size:15px;color:var(--color-text);">{{ o.text }}</span>
+                <sc-if value="{{ o.mark }}"><span style="flex:none;font-size:18px;font-weight:700;{{ o.markColor }}">{{ o.mark }}</span></sc-if>
+              </button>
+            </sc-for>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ quizAnswered }}">
+            <div style="text-align:center;font-size:14px;font-family:var(--font-heading);margin-top:18px;{{ quizFeedbackStyle }}">{{ quizFeedback }}</div>
+            <button class="btn btn-primary btn-block" style="margin-top:10px;" sc-camel-on-click="{{ quizNext }}">{{ quizNextLabel }}</button>
+          </sc-if>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isQuizResults }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:24px;min-height:560px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+          <div style="font-size:12px;opacity:0.55;letter-spacing:0.08em;margin-bottom:8px;">{{ quizTitle }}</div>
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:52px;">{{ quizResultScore }}</div>
+          <div style="font-size:14px;opacity:0.7;margin:6px 0 4px;">{{ quizResultPct }}</div>
+          <div style="font-size:13px;margin-bottom:22px;color:{{ quizResultNoteColor }};">{{ quizResultNote }}</div>
+          <div style="display:flex;gap:10px;width:100%;">
+            <button class="btn btn-secondary btn-block" style="margin-top:0;" sc-camel-on-click="{{ backToQuizList }}">បញ្ជីលំហាត់</button>
+            <button class="btn btn-primary btn-block" style="margin-top:0;" sc-camel-on-click="{{ retryQuiz }}">ធ្វើម្តងទៀត</button>
           </div>
         </div>
         </sc-if>
@@ -1293,6 +1376,13 @@ textarea.input { min-height: 90px; resize: vertical; }
           <button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ goMenu }}">← ម៉ីនុយ</button>
           <h1 style="font-size:26px;margin:0 0 4px;">សៀវភៅ</h1>
           <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">ចាក់សោសៀវភៅ ដើម្បីមិនទាន់បង្ហាញទៅសាលា ឬ ជ្រើសរើសសាលាដែលអាចមើលបាន</div>
+          <div class="card elev-sm" style="gap:8px;margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;">លំហាត់</div>
+              <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" sc-camel-on-click="{{ toggleExercisesLock }}">{{ exLockLabel }}</button>
+            </div>
+            <div style="font-size:12px;opacity:0.7;">{{ exLockStatus }}</div>
+          </div>
           <div style="display:flex;flex-direction:column;gap:12px;">
             <sc-for list="{{ bookVisItems }}" as="bk" hint-placeholder-count="2">
               <div class="card elev-sm" style="gap:10px;">
@@ -6928,6 +7018,224 @@ const PAGES = Array.from(new Set(WORDS.map(w => w.page))).sort((a,b)=>a-b);
 const LESSON_SIZE = 10, LESSON_BLOCK = 5, PASS_PCT = 90;
 const MODE_LABEL = { mc_jp:'ជប៉ុន → ខ្មែរ', mc_km:'ខ្មែរ → ជប៉ុន' };
 
+// — Exercises (លំហាត់): true/false and A/B/C questions from the SSW problem
+//   sheet. Kept here like RAW_WORDS; refreshed by tools/sync-quiz.js. img is an
+//   optional picture URL. Ten questions make one exercise; the ladder unlocks
+//   the same way the word test does.
+const QUIZ_SIZE = 10;
+const RAW_QUIZ = [
+{"t":"tf","q":"日本では、トラックが国内貨物の7割以上を運んでおり、人々の生活や仕事を支えている。","a":false},
+{"t":"tf","q":"トラックの運転手になるには、必ず大型免許が必要である。","a":false},
+{"t":"tf","q":"緑のナンバープレートのトラックで、有償輸送（お金をもらって荷物を運ぶこと）ができる。","a":true},
+{"t":"tf","q":"国土交通大臣から営業を許可されたトラック運送事業者（運送会社）のトラックは「事業用トラック」と呼ばれている。","a":true},
+{"t":"tf","q":"トラックで仕事をしている時に事故を起こすと、トラック運送業界や社会全体にも大きな損失を与える。","a":true},
+{"t":"mc","q":"事業用トラックの運転者が持たなければいけない大切なことはどれか。","o":["一般の人と同じくらいの意識","絶対に事故を起こしてはいけないという強い信念","自分は運転が上手だという過信"],"a":1},
+{"t":"tf","q":"事業用トラックの交通事故のうちおよそ3割が追突事故である。","a":false},
+{"t":"mc","q":"事業用トラックの交通事故のうち、交差点左折時に多い事故の相手はどれか。","o":["自転車","歩行者","普通自動車"],"a":0},
+{"t":"mc","q":"トラックの運転者にとって、大切なことは次のうちどれか。","o":["適当な食事","運動不足","健康診断の受診"],"a":2},
+{"t":"tf","q":"トラックの運転に、高血圧や糖尿病、肥満などの生活習慣病は関係ない。","a":false},
+{"t":"tf","q":"急制動、急発進、燃料消費量など速度や時間に関する走行データを記録する装置をドライブレコーダー（ドラレコ）という。","a":false},
+{"t":"mc","q":"社内で良い人間関係を作るために大切なことはどれか。","o":["相手からあいさつされるのを待つ","小さな声であいさつする","笑顔であいさつする"],"a":2},
+{"t":"tf","q":"お客様がトラック運転者に望むことは荷物を丁寧に扱うことや時間を守ること以外にも、服装やマナーなどがある。","a":true},
+{"t":"tf","q":"トラック運転者の身だしなみが悪くても、本人だけ悪い印象になるだけで、会社に影響はない。","a":false},
+{"t":"tf","q":"運転という仕事は会社の外でおこなう単独の仕事だから、会社にいる時間は少ないので他の人とコミュニケーションをとる必要はない。","a":false},
+{"t":"mc","q":"話をする時に大切なことはどれか。","o":["正しく伝える","早く話す","小さい声"],"a":0},
+{"t":"tf","q":"４Sとは「整理（Seiri）」「整頓（Seiton）」「清掃（Seisou）」「姿勢（Shisei）」の頭文字の「S」を取ったもので、脇見運転の防止や視界を保ち、事故防止につながる。","a":false},
+{"t":"tf","q":"助手席側のドアの安全窓付近には伝票や地図、ヘルメットやダンボール箱などは置かないようにする。","a":true},
+{"t":"tf","q":"書類はダッシュボードに置くと良い。","a":false},
+{"t":"tf","q":"整理・整頓・清掃が行われていれば、プロ運転者としての意識や走る広告塔としての意識が強まるので、マナーの良い安全な運転につながる。","a":true},
+{"t":"mc","q":"運転という仕事の特徴はどれですか。","o":["たくさんの人数で一緒に行わなければならない","いつも短い時間で終わる","冷静で適切な判断をすることが必要になる"],"a":2},
+{"t":"mc","q":"日常生活で心がけることはどれですか。","o":["睡眠は短めでよい","バランスの良い食事をとる","翌日に疲れが残るくらいの運動をする"],"a":1},
+{"t":"tf","q":"飲酒運転はどんな場合でも絶対にしてはならない。","a":true},
+{"t":"tf","q":"法定速度とは標識や標示によって速度が指定されていない場合の法令で定められた最高速度であり、一般道路の場合、トラックは時速60キロである。","a":true},
+{"t":"tf","q":"進路変更、転回、後退などをしようとするときは、あらかじめ合図を出してからバックミラーなどで安全を確かめなければならない。","a":false},
+{"t":"tf","q":"右折や左折の合図は、交差点から50メートル手前の地点までにしなければならない。","a":false},
+{"t":"tf","q":"交差点では、右折する車よりも直進する車や左折する車のほうが優先されるため、たとえ自分が先に交差点に入っても、直進車や左折車の進行を妨げてはいけない。","a":true},
+{"t":"tf","q":"道幅が同じような道路の信号機のない交差点では、左方からくる車のほうが優先されるので左方から車が接近してきているときはその通行を妨げないようにする。","a":true},
+{"t":"tf","q":"トラック事故の特徴は追突事故が多いということであり、防止するためには車間距離を短くすることがポイントである。","a":false},
+{"t":"mc","q":"スマートフォンや携帯電話の使用をするときの正しい行動はどれですか。","o":["走行中は操作したり、画面を注視するとよい","道路上の好きな場所に止めて使用する","走行中は電源を切っておくか、マナーモードやドライブモードに設定しておく"],"a":2},
+{"t":"tf","q":"歩行者や自転車の側方を通る時は安全な間隔をあけるか、それができない場合は徐行する。","a":true},
+{"t":"mc","q":"信号機のない横断歩道に接近する場合、横断する歩行者や自転車がいないことが明らかなときの行動はどれか。","o":["そのまま進むことができる","停止できる速度に落として進行する","一時停止する"],"a":0},
+{"t":"tf","q":"信号機のない横断歩道に接近する場合、歩行者や自転車が横断していたり、横断しようとしているときは停止できる速度に落として歩行者や自転車の通行を妨げないようにする。","a":false},
+{"t":"tf","q":"お客様の構内や営業所などに出入りするために、歩道や路側帯を横切るとき、歩行者がいないときは一時停止しなくてもよい。","a":false},
+{"t":"mc","q":"路線バスが停留所から発進するため合図を出したときどうすればよいか。","o":["急ブレーキをかけて停止する","バスに進路を譲る","バスの発進を妨げるようにする"],"a":1},
+{"t":"tf","q":"緊急自動車が接近したとき、交差点やその付近では道路の左側に寄って譲ればよい。","a":false},
+{"t":"tf","q":"踏切に接近したときは減速し、停止線があるときは停止線の直前で一時停止するが、停止線がない場合はそのまま通過する。","a":false},
+{"t":"tf","q":"前車に続いて踏切を通過する場合でも、一時停止して安全確認をする。","a":true},
+{"t":"tf","q":"警報機が鳴り始めたときや、遮断機が降り始めたり降りているときは、踏切に進入してはいけない。","a":true},
+{"t":"tf","q":"トラックで踏切に進入する前に踏切の先の状況を確認し、少し踏切にはみ出す程度だと判断できれば進入してもよい。","a":false},
+{"t":"mc","q":"踏切内で動きが取れなくなってしまった場合にすることはどれですか。","o":["警報機の柱のなどに取り付けてある非常を知らせるボタンを押す。","非常を知らせるボタンがない場合は逃げる","発炎筒を投げる"],"a":0},
+{"t":"mc","q":"高速道路を通行する場合は停止することのないように点検するとき正しいものはどれですか。","o":["燃料の量が十分であるか","冷却水の量が規定の範囲以上である","タイヤの空気圧が適当で、溝が浅いかどうか。"],"a":0},
+{"t":"tf","q":"ラジエータキャップは緩く締まっているのが適切である。","a":false},
+{"t":"tf","q":"高速道路を通行するときは、前もって荷物が落ちたり飛んだりしないように点検し、荷物を積み直すなど必要な措置を取らなければいけない。","a":true},
+{"t":"tf","q":"一番右側の通行帯（追越車線）は追越しのために空けておき走行車線のやや右側を走行する。","a":false},
+{"t":"tf","q":"坂道で道が狭いときは、上りの車が道を譲る。","a":false},
+{"t":"tf","q":"長い下り坂(くだ ざか)ではフットブレーキを使い過ぎるとフェーン現象が発生し、危険である。","a":false},
+{"t":"tf","q":"長い下り坂を走行するときは、高速ギアによるエンジンブレーキや排気ブレーキなどを活用し、フットブレーキの使用は少なくする。","a":false},
+{"t":"tf","q":"カーブの速度を出し過ぎると、スリップしてカーブを曲がり切れずに道路外に飛び出したり、横転する危険があるので、カーブ手前で十分に減速しておく。","a":true},
+{"t":"tf","q":"トンネルの入り口では視力が低下するのであらかじめ手前で速度を落としておき、出口では天候の変化に注意する。","a":true},
+{"t":"tf","q":"黄信号の意味は、急停止になって後続車に追突されるおそれがある場合を除き、交差点の手前で停止することである。","a":true},
+{"t":"tf","q":"赤の点滅信号の場合、車は交差点の手前で安全の確認をし、他の交通がいなければそのまま進行することができる。","a":false},
+{"t":"tf","q":"黄の点滅信号では、車は停止位置で一時停止しなければならない。","a":false},
+{"t":"tf","q":"自動車は対面する信号が赤でも、その下に黄色の灯火の右折矢印信号が表示されたときは右折や転回をすることができる。","a":false},
+{"t":"tf","q":"路面電車は対面する信号が赤でも、その下に青色の灯火の右折矢印信号が表示されたときは右折や転回をすることができる。","a":false},
+{"t":"tf","q":"一般道路における自動車の法定速度は時速60キロである。","a":true},
+{"t":"mc","q":"この標示が表すものは何か。","o":["横断歩道・自転車横断帯あり","交差点あり","優先道路あり"],"a":0},
+{"t":"tf","q":"この標識は荷台からの高さが標示板に示されている高さを超える車は通行できないことを表している。","a":false},
+{"t":"tf","q":"この標識はタイヤチェーンを取り付けていない車は通行できないことを示しているが、冬用タイヤをつけている場合は通行できる。","a":false},
+{"t":"tf","q":"この標識のある交差点では、安全であれば一時停止をしなくてもよい。","a":false},
+{"t":"tf","q":"停車とは車がしばらくの間停止することや運転者が車から離れていてすぐに運転できない状況のことで、駐車とは短い時間の停止をいう。","a":false},
+{"t":"tf","q":"高速道路では危険防止のためや故障のなどの場合を除いて駐停車が禁止されている。","a":true},
+{"t":"tf","q":"路面が平に見える場所では、駐車ブレーキを確実に掛けておけば「輪止め」をする必要はない。","a":false},
+{"t":"tf","q":"夜間の運転では暗いので室内灯（車の中を明るくするためのライト）をつける。","a":false},
+{"t":"tf","q":"事業用トラックを運転している運転者は他の車のお手本となるようなテクニックは必要だが、安全でマナーの良い運転を心がけなくてもい。","a":false},
+{"t":"tf","q":"車体の大きいトラックは、「幅寄せ」（並んで走行している車に接近する）や「あおり運転」（他の車の通行を妨害する危険な運転）をしてはならない。","a":true},
+{"t":"tf","q":"トラックには会社の名前やトレードマークが書かれているので、会社のイメージ、自分のイメージ、トラック運送業界のイメージの3つを背負って走っている。","a":false},
+{"t":"tf","q":"道路は多くの人が通行する公共の場所なので、安全で円滑に利用するために最小限の決まりである「交通ルール」を定めている","a":true},
+{"t":"tf","q":"道路を仕事の場所としているトラック運転者は、いつも「相手に譲る」という姿勢で運転する。","a":true},
+{"t":"tf","q":"トラックは他者よりも大きく高い運転席から他の車や歩行者を見下ろすかたちになるので、トラック運転者は他の人よりも自分のほうが強いという意識を持ちやすい。","a":true},
+{"t":"tf","q":"狭い道路ですれ違うときは、強引に進行すると対向車と接触する恐れがあるため、大きいトラックが停止して相手に進路を譲る。","a":true},
+{"t":"tf","q":"狭い道路で左に寄って停止するとき、大きなトラックは歩行者や自転車道路脇の看板や工作物に接触しても良い。","a":false},
+{"t":"tf","q":"日本にはみんなで道路のごみを拾う文化があるので、ポイ捨てはしても良い。","a":false},
+{"t":"tf","q":"トラックの窓から紙くずやペットボトル、空缶を投げ捨てるポイ捨ては、走行中は法令で禁止されているが停車中や駐車中はしてもよい。","a":false},
+{"t":"tf","q":"エコドライブは、環境保全や事故防止、経費減少の効果がある。","a":true},
+{"t":"tf","q":"エコドライブとは、燃料消費量やCO2(二酸化炭素)の排出量を減らし、地球温暖化の防止につなげる運転技術や心がけをいう。","a":true},
+{"t":"mc","q":"エコドライブの中で正しいものはどれか。","o":["急発進と急加速","早めのシフトアップ","空ぶかしやアイドリング"],"a":1},
+{"t":"tf","q":"低速ギアのままスピードを上げていくと、エンジンの回転数が低くなり燃費も悪くなる。","a":false},
+{"t":"tf","q":"燃費の良い定速運転を心がけるためには、先をよく見通して加速・減速を繰り返さないですむように安全な車間距離を保つことが大切である。","a":true},
+{"t":"tf","q":"荷物の積卸し、荷待ち、休憩、長い踏切待ちなどでしばらく停止するときは、エンジンを切ってアイドリングをストップさせる。","a":true},
+{"t":"tf","q":"車から離れるときは、エンジンを止めることを忘れないように、車のキーを腰ヒモに結び付けた「キー抜きロープ」を使う方法もある。","a":true},
+{"t":"tf","q":"トラックの運行ルートは到着時間や気象条件を考慮してを決めるが、これは運行管理者の仕事である。","a":true},
+{"t":"tf","q":"運転者は決められた運行経路に従って走行しなければならず、自分の判断で運行経路を変更できない。","a":true},
+{"t":"tf","q":"運行経路におけるヒヤリ・ハット（走行中に危険な場面に会い、ヒヤリとしたり、ハッとすること）の多い場所や事故の多く起こっている場所は知っていても意味がない。","a":false},
+{"t":"tf","q":"大雨の場合でも大型トラックは背が高いので、冠水（路面が水で覆われている状態）しやすい道路や洪水のおそれのある川沿いの道路を避けなくてもよい。","a":false},
+{"t":"tf","q":"出勤する時は決められた時間に間にあうよう余裕を持って出勤し、元気にあいさつをする。","a":true},
+{"t":"tf","q":"日常点検表は整備管理者（車の整備や点検を管理する人）に渡し、確認してもらう。","a":true},
+{"t":"mc","q":"トラック運転者として大切なことはどれですか。","o":["すぐれた運転技術だけがあれば良い","交通安全に対する意識は重要ではない","歩行者や自転車、他の車両の安全を守る運転"],"a":2},
+{"t":"mc","q":"運転者が守らなければいけない項目はどれか。","o":["酒気を帯びていない運転","過積載の運転","日常点検をしないままの運転"],"a":0},
+{"t":"tf","q":"踏切を通過するときは、変速装置（ギア）を操作する。","a":false},
+{"t":"mc","q":"日常点検で注意することはどれですか。","o":["エンジンをかけたまま点検する","走行を終えてからの点検はすぐに行う","パーキング・ブレーキを確実に効かせ、ギアをニュートラルに入れる"],"a":2},
+{"t":"tf","q":"運転者は、運行管理者などがおこなう業務前点呼、業務途中点呼（中間点呼）業務後点呼を受けて、報告をしなければならない。","a":true},
+{"t":"mc","q":"点呼を受けるにあたっての心構えで正しいものはどれですか。","o":["身だしなみは整えなくてよい","点呼の目的をよく考えて受ける","指示や注意の要点は理解できなくてもよいので、聞いておく"],"a":1},
+{"t":"tf","q":"業務前点呼には時間に遅れないようにし、安全運行に関する確認する項目を整理しておき、要点は復唱する。","a":true},
+{"t":"tf","q":"業務前点呼では、名前や日常点検の状況を報告するが、酒気帯びの有無や疾病や睡眠不足については報告しなくてよい。","a":false},
+{"t":"tf","q":"運行管理とは過労運転や過積載の防止を目的としていて、法令（貨物自動車運送事業輸送安全規則）で決められている。","a":true},
+{"t":"tf","q":"交通事故が発生し、負傷者がいる場合は負傷者を救護し救急車を呼ぶ。","a":true},
+{"t":"tf","q":"事故を起こした車は、安全な場所へ移動し、発炎筒や停止表示器材で後続車に注意を呼びかける。","a":false},
+{"t":"tf","q":"軽い事故の場合、事故現場で示談（話し合いで解決すること）を持ちかけられたら受け入れて自分で対応する。","a":false},
+{"t":"tf","q":"事故が起きて目撃者がいる場合は、その人の連絡先を記録しておくとよい。","a":true},
+{"t":"tf","q":"走行中に車が故障したときは、ハザードランプを点滅させて減速し道の真ん中でも良いのでその場に車を止める。","a":false},
+{"t":"tf","q":"高速道路を走行中に車が故障したときは、急ブレーキをかけて車を止め、非常電話などで通報する。","a":false},
+{"t":"tf","q":"車の故障に気づいたら、会社に報告する前に自分で修理する。","a":false},
+{"t":"tf","q":"到着が遅れる理由が交通事故や体調の悪さであれば会社に報告するが、交通規制や渋滞の場合は報告しなくてもよい。","a":false},
+{"t":"tf","q":"到着時間が遅れそうな時は、まずお客様に連絡し、速度を上げて間に合わせる","a":false},
+{"t":"mc","q":"到着時間が遅れる恐れがある場合、運行管理者に報告する内容はどれか。","o":["遅れの理由","自分の生まれたところ","他の運転者のこと"],"a":0},
+{"t":"tf","q":"消火器は安全ピンを引き抜き、ホースの先端を持って火元に向け、レバーを強く握って発射する。","a":true},
+{"t":"tf","q":"異常気象時は運行管理者の指示に従うことが重要である。","a":true},
+{"t":"tf","q":"集中豪雨（短い時間に大量の雨が降ること）のときは、安全な場所に車を止めて雨が止むのを待つ。","a":true},
+{"t":"tf","q":"アンダーパス（立体交差で掘り下げ式になっている下の道路）や地下トンネルなどでは、車が水につかるおそれがあるので通行してはいけないが、トラックは背が高いので通っても問題ない。","a":false},
+{"t":"mc","q":"運転中に地震の警戒宣言が出されたときの運転者の対応として正しいものはどれですか。","o":["道路の左側に寄せて駐車し、エンジンをかけておく。","道路の左側に寄せて駐車し窓を開けておく","道路の左側に寄せて駐車しエンジンキーは自分で持っておく"],"a":1},
+{"t":"tf","q":"運転中大地震が発生したときは、急ハンドルや急ブレーキで急いで止まる。","a":false},
+{"t":"tf","q":"トラックは運転席が高いので、道路を見下ろすために路面がよく見えるので、車間距離を短くしてしまうことがある。","a":true},
+{"t":"tf","q":"トラックは重たいので交差点を右折したり左折するときに横転することがあるから、速度を落としたりハンドルやブレーキの操作を慎重に行う。","a":true},
+{"t":"tf","q":"高架下（鉄道や道路の下にある短いトンネルのような形をした道路）を通過するときのために、自分が運転するトラックの高さを正しく知っておく。","a":true},
+{"t":"tf","q":"狭い道路で対向車とすれ違うときに左に寄り過ぎると看板やひさしなどにぶつかることがあるが、トラックは車体が大きいので仕方がない。","a":false},
+{"t":"tf","q":"車が長いトラックは、内輪差（曲がるとき、後ろのタイヤが前のタイヤの内側を通ること）が小さい。","a":false},
+{"t":"tf","q":"車が長いトラックは、左折するときなどに左側の二輪車や自転車、歩行者を巻き込むことはないのでよく確認するも必要はない。","a":false},
+{"t":"tf","q":"トラックは、リヤ・オーバーハングが大きいため、右折するときや左折するときは後続車や対向車とぶつかることがあるのでよく確認する。","a":true},
+{"t":"tf","q":"トラックを運転中、狭い道路で対向車があるときは、トラックは車の幅が広いため自分が必ず先に行く。","a":false},
+{"t":"tf","q":"トラックには死角があるので、左側のミラーや安全窓（運転台の左側の窓ガラスの下にある窓ガラス）を見て、左側に歩行者や自転車などがいないかどうか確認する。","a":true},
+{"t":"tf","q":"バン型トラックで後退をする場合、後方が死角になるので一度車から降りて後ろの安全を確認した方がよい。","a":true},
+{"t":"tf","q":"バックアイカメラ（車の後ろの状況を撮影するカメラ）がついている場合は自分の目で確認する必要はない。","a":false},
+{"t":"tf","q":"運転者が危険を感じてからブレークを踏み、実際にききはじめるまでに進む距離を「停止距離」という。","a":false},
+{"t":"tf","q":"車がぶつかったときに生じる衝撃力は、速度に比例して大きくなる。","a":false},
+{"t":"tf","q":"カーブで急ハンドルを切ったときなどに、車両を外側に引っ張る「遠心力」が働く。","a":true},
+{"t":"tf","q":"業務途中に点呼の時間が来たら、運転中であってもスマートフォンを使って走行しながら点呼を受けなければならない。","a":false},
+{"t":"tf","q":"決められた最高速度を守っていれば安全なので気象状況や道路状況に応じた走行をする必要はない。","a":false},
+{"t":"tf","q":"下り坂では速度が出やすくなるので、長い下り坂ではフットブレーキをたくさん使うこと。","a":false},
+{"t":"tf","q":"上り坂では速度が遅くなりやすいので登坂車線を走行する。","a":true},
+{"t":"mc","q":"業務後点呼を円滑に受けるための要点で正しいものはどれか。","o":["業務終了後、ゆっくり休憩をとってから点呼をする","業務記録や運行記録計の記録紙などに必要事項を書く","車の状況は報告するが、道路状況は報告しなくてよい"],"a":1},
+{"t":"mc","q":"運転室内の整理・整頓で気をつけることはどれか。","o":["安全窓はふさぐ","書類などはフロントガラスの前（フロントパネル）に置く","飲み終わった容器などは床にころがさないようにする"],"a":2},
+{"t":"tf","q":"業務開始前に運行管理者による点呼を受けていれば、業務後に点呼を受ける必要はない。","a":false},
+{"t":"tf","q":"荷役業務とは、荷物を積んだり卸したりする仕事のことである。","a":true},
+{"t":"tf","q":"トラックの運転者の大切な仕事は、お客様から頼まれた荷物を早く運ぶことなので丁寧に運ばなくてもよい。","a":false},
+{"t":"tf","q":"トラックの運転者は、荷物を運ぶことが仕事なので荷物の積み方について十分な知識や技術を身につける必要はない。","a":false},
+{"t":"tf","q":"トラックに荷物を積むときは、荷物の形や大きさ、数量に合わせた積み方を考えることや、荷物が動かないように固定したり、落ちないように固縛（荷物が動かないようにロープなどでしっかりくくりつけること）することが大切である。","a":true},
+{"t":"tf","q":"荷物は、さまざまな資材（物を守るための箱など）で梱包（荷物を守るために包むこと）されていたり容器に入れられていることが多く、代表的なものに袋物、ダンボール、缶類がある。","a":true},
+{"t":"mc","q":"この梱包資材の名前はどれか。","o":["フレコンバック","エコバック","ボストンバック"],"a":0},
+{"t":"tf","q":"ダンボールは、物を包むためのもので、価格も安く、使い終わった後は再生紙になったり焼却できるので、処理も簡単である。","a":true},
+{"t":"tf","q":"ダンボールは、荷物を運ぶもので運んでいる途中や積み卸しのときに起こる振動（揺れ）や衝撃から荷物を守るためのものだが、お客様によっては傷がついたり印刷されている文字がかすれていても荷物事故（荷物が壊れていたり傷がついたりする事故）と判断する人もいる。","a":true},
+{"t":"tf","q":"缶類は金属でできていて丈夫なので、ロープやワイヤー、ラッシングベルトなどで荷物を固定したり、発泡スチロールや集合材などでしっかり固定しなくてもよい。","a":false},
+{"t":"mc","q":"この缶類の名称は何か。","o":["ドラム缶","18リットル缶（1斗缶）","ペール缶"],"a":1},
+{"t":"mc","q":"ペール缶はどれか。","o":["","",""],"a":0},
+{"t":"tf","q":"バラ積み荷物は、重さがわかりにくいため、荷物を積み過ぎてしまうことがある。","a":true},
+{"t":"tf","q":"走行中に荷物が飛び散ったり落ちたりしないようにシートをかければ、荷物が途中で崩れないように積む必要はない。","a":false},
+{"t":"tf","q":"袋やダンボールには、荷物の取り扱い方法や注意事項が文字や記号で表示されていることがあり、「荷扱い指示マーク」や「ケアマーク」と呼ばれるが、運転者や荷物を扱う人はこの指示にしたがわなくてはならない。","a":true},
+{"t":"tf","q":"荷物には荷扱い指示マークの他にバーコードが表示されていることがあるが、これは荷物の種類や名前、ダンボールの中に入っている数などを次に作業する人へ伝えるために重要なものである。","a":true},
+{"t":"mc","q":"このマークの意味はどれか。","o":["水濡れ防止","上積み禁止","取扱注意"],"a":0},
+{"t":"mc","q":"上積み禁止マークはどれか。","o":["","",""],"a":0},
+{"t":"tf","q":"パレットとは、袋やダンボールをまとめて運んだり保管するためのものである。","a":true},
+{"t":"tf","q":"パレットに積めば、積み方が悪くても効率的に荷物を運ぶことができる。","a":false},
+{"t":"tf","q":"パレットへの積み付け方法の基本パターンは棒積み、交互（列）積み、煉瓦積み、ピンホイール積みがある。","a":true},
+{"t":"tf","q":"この積み付け方法は「煉瓦積み」と呼ばれている。","a":false},
+{"t":"tf","q":"パレット積み荷物は正しく積み付けてあれば、走行中に起こる振動や衝撃によって荷崩れを起こすことはない。","a":false},
+{"t":"tf","q":"「急発進」や「急加速」など「急」が付くような運転は、荷物事故だけではなく交通事故にもつながる危険な運転である。","a":true},
+{"t":"tf","q":"トラックが発進するときは、荷物は前向きの力を受け、道路の段差や橋のつなぎ目マンホールのふたの上などでは力を受けない。","a":false},
+{"t":"tf","q":"荷崩れを防ぐためには、予想される一番小さい力に対して対策を考える必要がある。","a":false},
+{"t":"tf","q":"これは「水平バンド掛け方式」と呼ばれている。","a":false},
+{"t":"tf","q":"荷崩れ防止の3要素は①荷物の積み付け（荷物の積み方）、②荷物の固縛、③点呼方法である。","a":false},
+{"t":"tf","q":"荷崩れ防止のためには運転方法はとても重要である。","a":true},
+{"t":"tf","q":"荷物をしっかり固縛する方法として、ラッシングベルトで固定する方法がある。","a":true},
+{"t":"mc","q":"ダンボールなどの箱型の荷物を積み付けるときの注意点で正しいものはどれか。","o":["前後左右の隙間をできるだけ大きくなるように、後ろから積み付ける。","荷物が少し移動できるよう、余裕を作って積む。","荷扱い指示マークに従って積み付け、荷物に合った荷扱い器具を使う。"],"a":2},
+{"t":"tf","q":"上に積む荷物の重さで、下の荷物が変形することがある場合は、荷物の間にベニヤ板などを挟んで重さを分散させる。","a":true},
+{"t":"tf","q":"同じ大きさの段ボールや木箱を積む場合は積む段ごとに配列パターンを変えると荷崩れしやすくなる。","a":false},
+{"t":"mc","q":"荷物を混載（いろいろな荷物を一緒に積むこと）する場合の注意点はどれか。","o":["軽い荷物の上に重い荷物を積み重ねない","大きい荷物の上に小さい荷物を積み重ねない","鋭い角や突き出た部分のある荷物は他の荷物を傷つけても仕方ない"],"a":0},
+{"t":"mc","q":"重い荷物を積み付ける時の注意点。","o":["重い荷物は集中荷重や偏心荷重（荷台の中心からずれたところに荷物の重さがかかっている状態）にはなりにくい","荷物全体の重心をトラックの荷台の中心に近づける","円形の荷物を積む場合、転がるようにしておくと余裕があってよい"],"a":1},
+{"t":"tf","q":"荷物どうしがぶつかることを防止するための資材や機材に、ダンボールや合板、パレットやプラスチックの板がある。","a":true},
+{"t":"tf","q":"荷物と固定用の資材や機材がぶつかるなどを緩和するための資材や機材に角あてや当て布がある。","a":true},
+{"t":"tf","q":"資材や機材に繰り返し使うものはないので、使い終わったらすぐに捨てるなど処分する。","a":false},
+{"t":"tf","q":"これは「エアバック」と呼ばれている","a":true},
+{"t":"mc","q":"この名前はどれか。","o":["巻ダン","角あて","トラックボード"],"a":2},
+{"t":"mc","q":"ラッシングベルトはどれか。","o":["","",""],"a":0},
+{"t":"mc","q":"パレット上の荷物の荷崩れを防止するために使うものはどれか？","o":["ストレッチフィルム","巻ダン","角あて"],"a":0},
+{"t":"tf","q":"荷物が移動したり崩れたりするのを防ぐために、荷物の特徴を理解し正しく積み込み、適切な資材や機材を使ってしっかり固定すれば、運行中に積荷の状況を点検する必要なない。","a":false},
+{"t":"tf","q":"高い場所（地面からの高さが2ｍ以上）で作業するときは、はしごや踏み台を使って安全な位置で作業する。","a":true},
+{"t":"tf","q":"雨水に濡れないようにシートをかけ、雨水が入らないように注意したり、そのシートが走行中に膨らんだりはがれないようにしっかり固縛する。","a":true},
+{"t":"tf","q":"走行中にロープやあて布がゆるんで荷物事故が起こることがあるので、一般道路では2時間ごと、高速道路では4時間ごとに安全な場所に止めて点検をする。","a":false},
+{"t":"tf","q":"安定的に走行するには、重心位置がトラックの中心にあることが大切であり、重心位置が左右へずれると、真っ直ぐ走らないことがある。","a":true},
+{"t":"tf","q":"適切な資材や機材を使ってしっかり固定すれば、積み方が偏っていても荷物が移動することはない。","a":false},
+{"t":"tf","q":"荷物の形状が複雑で重心がわかりにくい場合や、運行管理者やお客様に相談せず自分で判断する。","a":false},
+{"t":"mc","q":"積載制限を超えた荷物を積むためには許可が必要で、トラックからはみ出ている前後に昼間取り付ける布の色はどれか。","o":["黒色","黄色","赤色"],"a":2},
+{"t":"tf","q":"積載制限を超えた荷物を積むためには許可が必要で、トラックからはみ出ている前後に夜間は赤色の灯火又は赤色の反射器を取り付ける。","a":true},
+{"t":"tf","q":"重心が高くなると、走っている途中で道路の凸凹や段差などで左右に揺れやすくなりバランスを崩して横転する事故が起きやすくなる。","a":true},
+{"t":"tf","q":"過積載は違反になるだけではなく、制動距離が長くなったり、バランスが悪くなったり、排出ガスで空気が悪くなったり、車や道路に悪い影響を与えることがある。","a":true},
+{"t":"tf","q":"過積載はお客様の責任であり、運転者には責任がない。","a":false},
+{"t":"tf","q":"運行記録計や業務記録を使うと、1日あたりの運転時間が9時間を超えていないか、4時間を超える連続した運転をしていないかなどがわかる。","a":true},
+{"t":"tf","q":"ドライブレコーダーは事故の時にだけ役立ち、運転者を監視するものである。","a":false},
+{"t":"mc","q":"過積載が車に与える影響で正しいものはどれですか。","o":["制動距離が短くなる短くなる","衝撃力が大きくなる","車のバランスが安定する"],"a":1},
+{"t":"tf","q":"過積載のときはブレーキがききやすくなるので、追突事故が起こりにくい。","a":false},
+{"t":"tf","q":"時速60キロで固い壁にぶつかった時の衝撃力は、14メートルの高さから落ちた時と同じ衝撃力である。","a":true},
+{"t":"mc","q":"遠心力の特徴はどれですか。","o":["速度が速いほど遠心力は小さくなる","カーブの曲がり具合が急なほど遠心力は大きくなる","車の重さが軽いほど遠心力は大きくなる"],"a":1},
+{"t":"tf","q":"重心が高くなると、走っている途中で道路の凸凹や段差などで左右に揺れやすくなりバランスを崩して横転する事故が起きやすくなる。","a":true},
+{"t":"tf","q":"重さが大きいほど慣性力も大きくなる。","a":true},
+{"t":"tf","q":"セミトレーラーを運転しているときに急ブレーキを踏んだり急ハンドルを切ったりすると、トラクタとトレーラーが「く」の字に曲がってしまうことがあるが、これをジャックナイフ現象という。","a":true},
+{"t":"tf","q":"過積載はトラックに負担がかかるが、道路にくぼみができたり橋が壊れたり損傷を与えることはない。","a":false},
+{"t":"tf","q":"運転者が自分で過積載をすることはやむを得ないが、お客様からたのまれたときははっきりとことわること。","a":false},
+{"t":"tf","q":"積卸し作業をするときの注意点として、不安定な荷物の上ではできるだけ移動しないようにする","a":true},
+{"t":"tf","q":"荷物や荷台の上で作業をするときは、背中を荷台の外側に向けず、後ろに下がらないようにする。","a":true},
+{"t":"tf","q":"この部分を「あおり」といい、立てる場合は必ず固定しないで使用する。","a":false},
+{"t":"mc","q":"保護帽を着用するときの注意点で正しいものはどれですか。","o":["保護帽を傾けて頭全体を覆えればよい","保護帽がずれないように、あご紐をしっかり確実に締める","ヘルメットには耐用年数（使用期限）はないので、長く大切に使う"],"a":1},
+{"t":"tf","q":"昇降用のステップは、3点支持などにより安全に昇降できる形式のものであること。","a":true},
+{"t":"mc","q":"ロープを掛ける作業で正しいものはどれですか。","o":["濡れたロープを使う","荷物の上では姿勢を低くして荷台の前方では運転席に背を向け、後方では運転席に向ける。","ロープが当たる荷物の角には当て物をする"],"a":2},
+{"t":"mc","q":"シートを掛ける作業で正しいものはどれですか。","o":["シートを荷台の片側に合わせ、後ろまで広げる","荷台の側面に向いて片方の膝をつき、体を前に倒して車の側面にシートを広げる","シートのすそは止めずにそのままにした方が良い"],"a":1},
+{"t":"tf","q":"バンボデー車に荷物を積むときは少しすき間を作って積み、ラッシングベルトで固定する。","a":false},
+{"t":"tf","q":"これはロールボックスパレットといい、ひとりで扱う場合は約300キログラムまでとする。","a":true},
+{"t":"tf","q":"ロールボックスパレットはできるだけ後ろ向きに引きながら移動する。","a":false},
+{"t":"mc","q":"テールゲートリフターの作業で正しいものはどれですか。","o":["リフターは載せられるだけ載せる","リフターの下に入り支える","水平な場所で作業する"],"a":2},
+{"t":"tf","q":"フォークリフトは会社で練習すれば誰でも運転できる。","a":false},
+{"t":"tf","q":"荷物を支えるためなら、フォークリフトのフォークやパレットの上に人を乗せてもよい。","a":false}
+];
+
 // The last seven days of time in the app. Shared by a learner's own profile
 // and by the teacher's view of them, so both read the same shape.
 function buildUsageChart(usage){
@@ -7044,8 +7352,9 @@ function makeSupabaseBackend(){
     },
     async setApproved(id, approved){ const { error } = await client.from('profiles').update({ approved }).eq('id', id); return { error: error ? error.message : null }; },
     async listAccounts(){ const { data } = await client.from('profiles').select('id,email,full_name,role,teacher_id,school_id,approved').order('role'); return { rows:data||[] }; },
-    async getAppSettings(){ const { data } = await client.from('app_settings').select('app_name,logo').eq('id',1).single(); return { app_name:(data&&data.app_name)||DEFAULT_APP_NAME, logo:(data&&data.logo)||'' }; },
+    async getAppSettings(){ const { data } = await client.from('app_settings').select('app_name,logo,exercises_locked').eq('id',1).single(); return { app_name:(data&&data.app_name)||DEFAULT_APP_NAME, logo:(data&&data.logo)||'', exercises_locked:!!(data&&data.exercises_locked) }; },
     async saveAppSettings(patch){ const { error } = await client.from('app_settings').update({ app_name:patch.app_name, logo:patch.logo, updated_at:new Date().toISOString() }).eq('id',1); return { error: error ? error.message : null }; },
+    async setExercisesLock(locked){ const { error } = await client.from('app_settings').update({ exercises_locked:locked, updated_at:new Date().toISOString() }).eq('id',1); return { error: error ? error.message : null }; },
     // Logo file goes to Storage (bucket "logos"); only its URL is kept in the DB.
     async uploadLogo(blob){
       const { error } = await client.storage.from('logos').upload('logo.png', blob, { upsert:true, contentType:'image/png', cacheControl:'3600' });
@@ -7169,8 +7478,9 @@ function makeDemoBackend(){
         : all.filter(u=>u.id===me.id);
       return { rows: visible.map(({id,email,full_name,role,teacher_id,school_id,approved})=>({id,email,full_name,role,teacher_id,school_id,approved})) };
     },
-    async getAppSettings(){ try { const s=JSON.parse(localStorage.getItem('dict_app_settings')||'null'); if(s) return { app_name:s.app_name||DEFAULT_APP_NAME, logo:s.logo||'' }; } catch(e){} return { app_name:DEFAULT_APP_NAME, logo:'' }; },
-    async saveAppSettings(patch){ localStorage.setItem('dict_app_settings', JSON.stringify({ app_name:patch.app_name, logo:patch.logo })); return { error:null }; },
+    async getAppSettings(){ try { const s=JSON.parse(localStorage.getItem('dict_app_settings')||'null'); if(s) return { app_name:s.app_name||DEFAULT_APP_NAME, logo:s.logo||'', exercises_locked:!!s.exercises_locked }; } catch(e){} return { app_name:DEFAULT_APP_NAME, logo:'', exercises_locked:false }; },
+    async saveAppSettings(patch){ const cur=(await this.getAppSettings()); localStorage.setItem('dict_app_settings', JSON.stringify({ app_name:patch.app_name, logo:patch.logo, exercises_locked:cur.exercises_locked })); return { error:null }; },
+    async setExercisesLock(locked){ const cur=(await this.getAppSettings()); localStorage.setItem('dict_app_settings', JSON.stringify({ app_name:cur.app_name, logo:cur.logo, exercises_locked:locked })); return { error:null }; },
     // No Storage in demo mode — keep the image inline as a data URI.
     async uploadLogo(blob){ const url = await new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); }); return { url }; },
     async deleteLogo(){ return { error:null }; },
@@ -7264,6 +7574,9 @@ class Component extends DCLogic {
     syncing: false, lastSync: null, toast: null,
     testMode: null, testKind: 'mc_jp', testLesson: 1,
     testWords: [], testIdx: 0, testScore: 0, testResults: [],
+    // exercises (លំហាត់)
+    quizLesson: 1, quizQuestions: [], quizIdx: 0, quizScore: 0, quizResults: [], quizAnswered: false, quizPicked: null,
+    exercisesLocked: false,
     mcOptions: [], mcSelected: null, mcAnswered: false,
     pageQuizOpen: false, pageQuizQuestions: [], pageQuizIdx: 0, pageQuizScore: 0, pageQuizSelected: null, pageQuizAnswered: false, pageQuizDone: false,
   };
@@ -7598,8 +7911,13 @@ class Component extends DCLogic {
   async loadAppSettings(){
     try {
       const s = await Backend.getAppSettings();
-      this.setState({ appName: s.app_name || DEFAULT_APP_NAME, appLogo: s.logo || '' });
+      this.setState({ appName: s.app_name || DEFAULT_APP_NAME, appLogo: s.logo || '', exercisesLocked: !!s.exercises_locked });
     } catch(e) {}
+  }
+  async toggleExercisesLock(){
+    const next = !this.state.exercisesLocked;
+    this.setState({ exercisesLocked: next });
+    await Backend.setExercisesLock(next);
   }
   onSettingsName(e){ this.setState({ settingsName: e.target.value }); }
   onSettingsLogoFile(e){
@@ -7918,6 +8236,50 @@ class Component extends DCLogic {
   backToHub(){ this.setState({ testMode: null }); }
   lockedLesson(){ this.showToast(`ត្រូវធ្វើលំហាត់មុនអោយបាន ${PASS_PCT}% សិន`); }
 
+  // — Exercises (លំហាត់): the same ladder, but questions come from RAW_QUIZ —
+  quizTotal(){ return Math.max(1, Math.ceil(RAW_QUIZ.length / QUIZ_SIZE)); }
+  quizSlice(n){ return RAW_QUIZ.slice((n - 1) * QUIZ_SIZE, n * QUIZ_SIZE); }
+  quizBest(n){ return (this.state.settings.quizzes || {})[n] || 0; }
+  quizUnlocked(){ const cap = this.quizTotal(); let n = 1; while (n < cap && this.quizBest(n) >= PASS_PCT) n++; return n; }
+  quizVisible(){ const u = this.quizUnlocked(); return Math.min(this.quizTotal(), LESSON_BLOCK * (Math.floor((u + 1) / LESSON_BLOCK) + 1)); }
+  openQuizList(){ if (this.state.exercisesLocked && this.state.role !== 'admin') { this.showToast('លំហាត់ត្រូវបានចាក់សោ'); return; } this.setState({ testMode: 'quizlist' }); }
+  startQuiz(n){
+    const qs = this.quizSlice(n);
+    if (!qs.length) return;
+    this.setState({ testMode: 'quiz', quizLesson: n, quizQuestions: qs,
+      quizIdx: 0, quizScore: 0, quizResults: [], quizAnswered: false, quizPicked: null });
+  }
+  lockedQuiz(){ this.showToast(`ត្រូវធ្វើលំហាត់មុនអោយបាន ${PASS_PCT}% សិន`); }
+  answerQuiz(choice){
+    if (this.state.quizAnswered) return;
+    const q = this.state.quizQuestions[this.state.quizIdx];
+    const correct = q.t === 'tf' ? (choice === q.a) : (choice === q.a);
+    this.setState(s => {
+      const quizResults = s.quizResults.slice();
+      quizResults[s.quizIdx] = correct;
+      return { quizPicked: choice, quizAnswered: true, quizScore: s.quizScore + (correct ? 1 : 0), quizResults };
+    });
+  }
+  quizNext(){
+    const nextIdx = this.state.quizIdx + 1;
+    if (nextIdx >= this.state.quizQuestions.length) { this.finishQuiz(); return; }
+    this.setState({ quizIdx: nextIdx, quizAnswered: false, quizPicked: null });
+  }
+  finishQuiz(){
+    const { quizLesson, quizScore, quizQuestions } = this.state;
+    const total = quizQuestions.length;
+    const pct = total ? Math.round(quizScore / total * 100) : 0;
+    const settings = { ...this.state.settings };
+    const quizzes = { ...(settings.quizzes || {}) };
+    const prevBest = quizzes[quizLesson] || 0;
+    quizzes[quizLesson] = Math.max(prevBest, pct);
+    settings.quizzes = quizzes;
+    const entry = { mode: 'quiz', lesson: quizLesson, score: quizScore, total, date: new Date().toISOString() };
+    this.setState({ settings, history: [...this.state.history, entry], testMode: 'quizresults' }, () => this.persist());
+  }
+  retryQuiz(){ this.startQuiz(this.state.quizLesson); }
+  backToQuizList(){ this.setState({ testMode: 'quizlist' }); }
+
   finishTest(){
     const { testKind, testLesson, testScore, testWords, testResults } = this.state;
     const total = testWords.length;
@@ -8181,6 +8543,56 @@ class Component extends DCLogic {
 
     const total = s.testWords.length;
     const testPct = total ? Math.round(s.testScore / total * 100) : 0;
+
+    // — the exercise ladder + player —
+    const quizTotal = this.quizTotal();
+    const quizUnlocked = this.quizUnlocked();
+    const quizItems = [];
+    for (let n = 1; n <= this.quizVisible(); n++) {
+      const locked = n > quizUnlocked;
+      const best = this.quizBest(n);
+      const passed = best >= PASS_PCT;
+      quizItems.push({
+        title: `លំហាត់ទី ${n}`,
+        countLabel: `${this.quizSlice(n).length} សំណួរ`,
+        bestLabel: best ? `${best}%` : '',
+        mark: passed ? '✓' : (locked ? '🔒' : '▸'),
+        markColor: passed ? 'var(--color-accent-700)' : 'var(--color-accent-700)',
+        rowStyle: locked ? 'opacity:0.45;' : 'cursor:pointer;',
+        onStart: locked ? (() => this.lockedQuiz()) : (() => this.startQuiz(n)),
+      });
+    }
+    const quizQ = s.quizQuestions[s.quizIdx] || null;
+    const quizTotalQ = s.quizQuestions.length;
+    const quizPct = quizTotalQ ? Math.round(s.quizScore / quizTotalQ * 100) : 0;
+    const QG = '#3a9e5c', QR = '#d0342c';
+    // one option row style depending on answered state
+    const optState = (isCorrect, isPicked) => {
+      if (!s.quizAnswered) return 'background:var(--color-surface);border-color:var(--color-divider);';
+      if (isCorrect) return 'background:color-mix(in srgb, ' + QG + ' 15%, var(--color-surface));border-color:' + QG + ';';
+      if (isPicked)  return 'background:color-mix(in srgb, ' + QR + ' 13%, var(--color-surface));border-color:' + QR + ';';
+      return 'background:var(--color-surface);border-color:var(--color-divider);opacity:0.5;';
+    };
+    const quizSegments = quizQ ? linkSegments(quizQ.q).map(sg => ({
+      text: sg.text, isLink: !!sg.isLink, isPlain: !sg.isLink,
+      onOpen: sg.isLink ? (() => this.openDetail(sg.id)) : (() => {}),
+    })) : [];
+    const quizIsTf = !!(quizQ && quizQ.t === 'tf');
+    const quizIsMc = !!(quizQ && quizQ.t === 'mc');
+    const QUIZ_LETTERS = ['A', 'B', 'C', 'D'];
+    const quizMcOptions = quizIsMc ? quizQ.o.map((text, i) => ({
+      text, badge: QUIZ_LETTERS[i] || '?',
+      boxStyle: optState(i === quizQ.a, s.quizPicked === i),
+      onSelect: () => this.answerQuiz(i),
+      mark: s.quizAnswered ? (i === quizQ.a ? '✓' : (s.quizPicked === i ? '✗' : '')) : '',
+      markColor: (i === quizQ.a) ? 'color:' + QG + ';' : 'color:' + QR + ';',
+    })) : [];
+    const quizTfCorrect = quizQ ? quizQ.a : false;   // true → 〇 is the answer
+    const quizTf = quizIsTf ? [
+      { val: true,  glyph: '〇', boxStyle: optState(quizTfCorrect === true,  s.quizPicked === true),  onSelect: () => this.answerQuiz(true) },
+      { val: false, glyph: '✖', boxStyle: optState(quizTfCorrect === false, s.quizPicked === false), onSelect: () => this.answerQuiz(false) },
+    ] : [];
+    const quizRight = s.quizAnswered && quizQ && (quizQ.t === 'tf' ? (s.quizPicked === quizQ.a) : (s.quizPicked === quizQ.a));
 
     const viewingSet = s.viewingViewed;
     const multiBook = BOOKS.length > 1;
@@ -8631,7 +9043,7 @@ class Component extends DCLogic {
       hasEditError: !!s.editError, editError: s.editError,
       isMC: testMode === 'mc',
       isResults: testMode === 'results',
-      showTabBar: !(s.screen === 'test' && testMode === 'mc'),
+      showTabBar: !(s.screen === 'test' && (testMode === 'mc' || testMode === 'quiz')),
 
       totalWordsLabel: `${UNIQUE_WORDS.length} ពាក្យ`,
       search: s.search, onSearchChange: e => this.onSearchChange(e),
@@ -8710,6 +9122,31 @@ class Component extends DCLogic {
       resultNote: testPct >= PASS_PCT ? 'ជាប់ ✓ លំហាត់បន្ទាប់បើកសោហើយ' : `មិនទាន់ជាប់ — ត្រូវបាន ${PASS_PCT}% ឡើងទៅ`,
       resultNoteColor: testPct >= PASS_PCT ? 'var(--color-accent-700)' : 'var(--color-text)',
       retryTest: () => this.retryTest(),
+
+      // — exercises (លំហាត់) —
+      openQuizList: () => this.openQuizList(),
+      exercisesLocked: s.exercisesLocked, exercisesLockedForMe: s.exercisesLocked && s.role !== 'admin',
+      isQuizList: testMode === 'quizlist', isQuiz: testMode === 'quiz', isQuizResults: testMode === 'quizresults',
+      quizItems, quizUnlockLabel: `បើកសោ ${quizUnlocked} / ${quizTotal} លំហាត់ · ត្រូវបាន ${PASS_PCT}% ដើម្បីបន្ត`,
+      backToQuizList: () => this.backToQuizList(),
+      quizTitle: `លំហាត់ទី ${s.quizLesson}`,
+      quizProgressLabel: `${Math.min(s.quizIdx + 1, quizTotalQ)} / ${quizTotalQ}`,
+      quizProgressPct: quizTotalQ ? Math.round(Math.min(s.quizIdx + 1, quizTotalQ) / quizTotalQ * 100) + '%' : '0%',
+      quizScoreLabel: `${s.quizScore} ពិន្ទុ`,
+      quizSegments, quizHasImg: !!(quizQ && quizQ.img), quizImg: (quizQ && quizQ.img) || '',
+      quizIsTf, quizIsMc, quizTf, quizMcOptions,
+      quizAnswered: s.quizAnswered, quizNext: () => this.quizNext(),
+      quizNextLabel: (s.quizIdx + 1 >= quizTotalQ) ? 'មើលលទ្ធផល' : 'បន្ទាប់',
+      quizFeedback: s.quizAnswered ? (quizRight ? 'ត្រូវហើយ! 🎉' : 'មិនទាន់ត្រូវ') : '',
+      quizFeedbackStyle: quizRight ? 'color:#3a9e5c;' : 'color:#d0342c;',
+      quizResultScore: `${s.quizScore} / ${quizTotalQ}`,
+      quizResultPct: quizTotalQ > 0 ? `${quizPct}%` : '',
+      quizResultNote: quizPct >= PASS_PCT ? 'ជាប់ ✓ លំហាត់បន្ទាប់បើកសោហើយ' : `មិនទាន់ជាប់ — ត្រូវបាន ${PASS_PCT}% ឡើងទៅ`,
+      quizResultNoteColor: quizPct >= PASS_PCT ? 'var(--color-accent-700)' : 'var(--color-text)',
+      retryQuiz: () => this.retryQuiz(),
+      toggleExercisesLock: () => this.toggleExercisesLock(),
+      exLockLabel: s.exercisesLocked ? 'ដោះសោលំហាត់' : 'ចាក់សោលំហាត់',
+      exLockStatus: s.exercisesLocked ? 'លំហាត់ត្រូវបានចាក់សោ (សិស្សធ្វើមិនបាន)' : 'លំហាត់បើកសម្រាប់សិស្ស',
 
       syncStatusLabel: s.syncing ? 'កំពុងទាញទិន្នន័យ…' : (s.lastSync ? `សមកាលកម្មចុងក្រោយ: ${new Date(s.lastSync).toLocaleString()}` : 'មិនទាន់ធ្វើសមកាលកម្មទេ'),
       syncButtonLabel: s.syncing ? 'កំពុងទាញ…' : 'ធ្វើសមកាលកម្មឥឡូវនេះ',
