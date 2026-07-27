@@ -1278,7 +1278,7 @@ textarea.input { min-height: 90px; resize: vertical; }
             <sc-for list="{{ bookVisItems }}" as="bk" hint-placeholder-count="2">
               <div class="card elev-sm" style="gap:10px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;">{{ bk.book }}</div>
+                  <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;">{{ bk.book }}{{ bk.lockGlyph }}</div>
                   <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" sc-camel-on-click="{{ bk.onToggleLock }}">{{ bk.lockLabel }}</button>
                 </div>
                 <div style="font-size:12px;opacity:0.7;">{{ bk.status }}</div>
@@ -6791,6 +6791,13 @@ function setBookVis(rows){
     schools: new Set(Array.isArray(r.schools) ? r.schools : []),
   }]));
 }
+function bookLocked(book){ const v = BOOK_VIS.get(book); return !!(v && v.locked); }
+// A locked book shows NO words in general search or by-page — for everyone,
+// the admin included (the admin still manages it from បញ្ចូលពាក្យ / កែពាក្យ).
+function bookBrowsable(book){ return !bookLocked(book) && bookVisible(book); }
+// The admin still sees a locked book's name in the picker (with a padlock);
+// other roles don't see it at all.
+function bookInDropdown(book){ return VIEWER.role === 'admin' || bookVisible(book); }
 const pagesOfBook = b => Array.from(new Set(WORDS.filter(w => w.book === b).map(w => w.page))).sort((a,b)=>a-b);
 // The books repeat their key vocabulary on many pages, so the same word can
 // appear dozens of times. Lists show one card per distinct word.
@@ -7430,7 +7437,7 @@ class Component extends DCLogic {
     setBookVis(bs.rows || []);
     applyCustomWords(cw.rows || []);
     rebuildIndexes();
-    const vis = BOOKS.filter(bookVisible);
+    const vis = BOOKS.filter(bookBrowsable);
     this.setState(st => ({ overridesRev: st.overridesRev + 1,
       bookFilter: vis.includes(st.bookFilter) ? st.bookFilter : (vis[0] || st.bookFilter) }));
   }
@@ -7840,7 +7847,7 @@ class Component extends DCLogic {
     }, 1400);
   }
 
-  wordsForCat(cat){ return dedupeWords(WORDS.filter(w => bookVisible(w.book) && (cat === 'all' || w.cat === cat))); }
+  wordsForCat(cat){ return dedupeWords(WORDS.filter(w => bookBrowsable(w.book) && (cat === 'all' || w.cat === cat))); }
 
   // Tests cover vocabulary only — no grammar — and focus on the words an admin
   // starred; with none starred yet, fall back to every word so tests still work.
@@ -8035,9 +8042,10 @@ class Component extends DCLogic {
         onToggleStar: e => { if (e) e.stopPropagation(); this.toggleStar(w.id); },
         onPick: () => this.pickEditWord(w.id) }));
 
-    const bookPages = pagesOfBook(s.bookFilter);
+    // a locked book has no pages and no words to browse here
+    const bookPages = bookBrowsable(s.bookFilter) ? pagesOfBook(s.bookFilter) : [];
     const pages = bookPages.map(p => ({ num: p, label: `ទំព័រ ${p}`, btnClass: s.pageFilter === p ? 'btn-primary' : 'btn-secondary', onSelect: () => this.selectPage(p) }));
-    const pageWordsList = s.pageFilter != null ? dedupeWords(WORDS.filter(w => w.page === s.pageFilter && w.book === s.bookFilter)).map(decorate) : [];
+    const pageWordsList = (s.pageFilter != null && bookBrowsable(s.bookFilter)) ? dedupeWords(WORDS.filter(w => w.page === s.pageFilter && w.book === s.bookFilter)).map(decorate) : [];
     // jp is kept apart from the rest so the star can sit right after the word
     const pageVocabList = pageWordsList.filter(w => w.cat === 'vocab').map(w => ({ ...w, line: `${w.jp}（${w.kana}）：${w.km}`, rest: `（${w.kana}）：${w.km}` }));
     const pageGrammarList = pageWordsList.filter(w => w.cat === 'grammar').map(w => ({ ...w, line: `${w.jp}：${w.km}`, rest: `：${w.km}` }));
@@ -8140,7 +8148,7 @@ class Component extends DCLogic {
     const multiBook = BOOKS.length > 1;
     const monitorPageProgress = [];
     let monitorTotal = 0;
-    for (const b of BOOKS.filter(bookVisible)) {
+    for (const b of BOOKS.filter(bookBrowsable)) {
       for (const p of pagesOfBook(b)) {
         // count what the student can actually see on that page (deduped)
         const words = dedupeWords(WORDS.filter(w => w.book === b && w.page === p));
@@ -8158,7 +8166,7 @@ class Component extends DCLogic {
     const viewedIds = new Set(s.viewed);
     const viewedKeys = new Set();
     for (const w of WORDS) if (viewedIds.has(w.id)) viewedKeys.add(w.jp + '|' + w.kana);
-    const bookStats = BOOKS.filter(bookVisible).map(b => {
+    const bookStats = BOOKS.filter(bookBrowsable).map(b => {
       const uniq = BOOK_UNIQUE.get(b) || [];
       const seen = uniq.filter(w => viewedKeys.has(w.jp + '|' + w.kana)).length;
       const pct = uniq.length ? Math.round(seen / uniq.length * 100) : 0;
@@ -8332,7 +8340,7 @@ class Component extends DCLogic {
       const v = BOOK_VIS.get(b) || { locked: false, allSchools: true, schools: new Set() };
       const status = v.locked ? 'ជាប់សោ (លាក់ពីសាលា)' : v.allSchools ? 'បង្ហាញគ្រប់សាលា' : `បង្ហាញ ${v.schools.size} សាលា`;
       return {
-        book: b, status,
+        book: b, status, lockGlyph: v.locked ? ' 🔒' : '',
         locked: v.locked, unlocked: !v.locked,
         lockLabel: v.locked ? 'ដោះសោ' : 'ចាក់សោ',
         isAll: !v.locked && v.allSchools, isPick: !v.locked && !v.allSchools,
@@ -8567,13 +8575,14 @@ class Component extends DCLogic {
       isSearchGeneral: s.searchMode === 'general', isSearchByPage: s.searchMode === 'page',
       searchMode: s.searchMode, onSearchModeChange: e => this.onSearchModeChange(e),
       setSearchGeneral: () => this.setSearchGeneral(), setSearchByPage: () => this.setSearchByPage(),
-      bookOptions: BOOKS.filter(bookVisible).map(b => ({ id: b, name: b,
+      bookOptions: BOOKS.filter(bookInDropdown).map(b => ({ id: b, name: b + (bookLocked(b) ? ' 🔒' : ''),
         onSelect: () => this.selectBook(b),
         rowStyle: b === s.bookFilter ? 'color:var(--color-accent-700);font-weight:600;' : '' })),
       bookFilter: s.bookFilter,
       bookMenuOpen: s.bookMenuOpen, toggleBookMenu: () => this.toggleBookMenu(),
       onBookChange: e => this.onBookChange(e),
-      bookLabel: s.bookFilter, hasManyBooks: BOOKS.filter(bookVisible).length > 1,
+      bookLabel: s.bookFilter + (bookLocked(s.bookFilter) ? ' 🔒' : ''),
+      hasManyBooks: BOOKS.filter(bookInDropdown).length > 1,
       // floating prev / next page arrows
       showPageNav: s.searchMode === 'page' && s.pageFilter != null && bookPages.indexOf(s.pageFilter) >= 0,
       goPrevPage: () => this.goPrevPage(), goNextPage: () => this.goNextPage(),
