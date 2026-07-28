@@ -1828,6 +1828,11 @@ textarea.input { min-height: 90px; resize: vertical; }
           </sc-if>
         </div>
         <div class="hr"></div>
+        <sc-if value="{{ detailWord.hasImg }}">
+          <div style="display:flex;justify-content:center;margin:16px 0;">
+            <img src="{{ detailWord.img }}" alt="" style="max-width:100%;border-radius:12px;border:1px solid var(--color-divider);">
+          </div>
+        </sc-if>
         <div style="margin:16px 0;">
           <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.55;margin-bottom:4px;">និយមន័យ</div>
           <div style="font-size:17px;">{{ detailWord.km }}</div>
@@ -6903,7 +6908,7 @@ const WORDS = RAW_WORDS.map(r => {
   return { id:r[0], jp:r[1], kana:r[2], pos:r[3].trim(), km:r[4],
     romaji, romajiNorm: normRomaji(romaji),
     examples: exJp.map((jp, i) => ({ jp, km: exKm[i] || '' })),
-    cat:r[7], page:r[8] || 2, book:r[9] || DEFAULT_BOOK };
+    cat:r[7], page:r[8] || 2, book:r[9] || DEFAULT_BOOK, img: r[10] || '' };
 });
 // A word is relisted on many pages but its examples are written on one of
 // those rows. Share them across every occurrence, so whichever row a list
@@ -8546,8 +8551,9 @@ class Component extends DCLogic {
               text: sg.text, isLink: sg.isLink, isPlain: !sg.isLink,
               onOpen: sg.isLink ? (e => { if (e) e.stopPropagation(); this.openDetail(sg.id); }) : null
             })) })),
-          hasExamples: detailW.examples.length > 0, noExamples: detailW.examples.length === 0 }
-      : { jp:'', kana:'', pos:'', km:'', examples:[], hasExamples:false, noExamples:true, tagClass:'tag tag-neutral', favFill:'transparent', sourceLabel:'', starGlyph:'☆', starColor:'var(--color-neutral-400)', showStarBadge:false };
+          hasExamples: detailW.examples.length > 0, noExamples: detailW.examples.length === 0,
+          img: detailW.img || '', hasImg: !!detailW.img }
+      : { jp:'', kana:'', pos:'', km:'', examples:[], hasExamples:false, noExamples:true, tagClass:'tag tag-neutral', favFill:'transparent', sourceLabel:'', starGlyph:'☆', starColor:'var(--color-neutral-400)', showStarBadge:false, img:'', hasImg:false };
 
     const recentHistory = s.history.slice(-6).reverse().map(h => {
       const d = new Date(h.date);
