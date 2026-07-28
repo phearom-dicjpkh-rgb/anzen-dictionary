@@ -1214,6 +1214,18 @@ textarea.input { min-height: 90px; resize: vertical; }
             </sc-for>
           </div>
 
+          <sc-if value="{{ hasMyQuiz }}">
+          <h4 style="font-size:15px;margin:0 0 10px;">លំហាត់</h4>
+          <div class="card elev-sm" style="gap:8px;margin-bottom:22px;">
+            <div style="display:flex;justify-content:flex-end;font-size:12px;opacity:0.65;">{{ myQuizSummary.passedLabel }}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              <sc-for list="{{ myQuizSummary.chips }}" as="c" hint-placeholder-count="4">
+                <span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}">{{ c.text }}</span>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
           <h4 style="font-size:15px;margin:0 0 4px;">រយៈពេលប្រើប្រាស់</h4>
           <div style="font-size:12px;opacity:0.6;margin-bottom:12px;">ថ្ងៃនេះ {{ usageTodayLabel }} · ៧ ថ្ងៃ {{ usageWeekLabel }}</div>
           <div class="card elev-sm" style="padding:14px 12px 10px;">
@@ -7059,7 +7071,7 @@ const MODE_LABEL = { mc_jp:'ជប៉ុន → ខ្មែរ', mc_km:'ខ្�
 //   the same way the word test does.
 const QUIZ_SIZE = 10;
 const RAW_QUIZ = [
-{"t":"tf","q":"日本では、トラックが国内貨物の7割以上を運んでおり、人々の生活や仕事を支えている。","a":false,"img":"https://drive.google.com/thumbnail?id=1VblpBBRM_aG41ytvRkimWfjCJMnd4ESl&sz=w1000"},
+{"t":"tf","q":"日本では、トラックが国内貨物の7割以上を運んでおり、人々の生活や仕事を支えている。","a":false},
 {"t":"tf","q":"トラックの運転手になるには、必ず大型免許が必要である。","a":false},
 {"t":"tf","q":"緑のナンバープレートのトラックで、有償輸送（お金をもらって荷物を運ぶこと）ができる。","a":true},
 {"t":"tf","q":"国土交通大臣から営業を許可されたトラック運送事業者（運送会社）のトラックは「事業用トラック」と呼ばれている。","a":true},
@@ -7115,10 +7127,10 @@ const RAW_QUIZ = [
 {"t":"tf","q":"自動車は対面する信号が赤でも、その下に黄色の灯火の右折矢印信号が表示されたときは右折や転回をすることができる。","a":false},
 {"t":"tf","q":"路面電車は対面する信号が赤でも、その下に青色の灯火の右折矢印信号が表示されたときは右折や転回をすることができる。","a":false},
 {"t":"tf","q":"一般道路における自動車の法定速度は時速60キロである。","a":true},
-{"t":"mc","q":"この標示が表すものは何か。","o":["横断歩道・自転車横断帯あり","交差点あり","優先道路あり"],"a":0},
-{"t":"tf","q":"この標識は荷台からの高さが標示板に示されている高さを超える車は通行できないことを表している。","a":false},
-{"t":"tf","q":"この標識はタイヤチェーンを取り付けていない車は通行できないことを示しているが、冬用タイヤをつけている場合は通行できる。","a":false},
-{"t":"tf","q":"この標識のある交差点では、安全であれば一時停止をしなくてもよい。","a":false},
+{"t":"mc","q":"この標示が表すものは何か。","o":["横断歩道・自転車横断帯あり","交差点あり","優先道路あり"],"a":0,"img":"https://www.honda.co.jp/safetyinfo/think_safety/vol13/rhombus/images/og.jpg"},
+{"t":"tf","q":"この標識は荷台からの高さが標示板に示されている高さを超える車は通行できないことを表している。","a":false,"img":"https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Japan_road_sign_321.svg/960px-Japan_road_sign_321.svg.png"},
+{"t":"tf","q":"この標識はタイヤチェーンを取り付けていない車は通行できないことを示しているが、冬用タイヤをつけている場合は通行できる。","a":false,"img":"https://cdn-ak.f.st-hatena.com/images/fotolife/d/drivinghigh/20211020/20211020145301.png"},
+{"t":"tf","q":"この標識のある交差点では、安全であれば一時停止をしなくてもよい。","a":false,"img":"https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Japan_road_sign_330-A.svg/960px-Japan_road_sign_330-A.svg.png"},
 {"t":"tf","q":"停車とは車がしばらくの間停止することや運転者が車から離れていてすぐに運転できない状況のことで、駐車とは短い時間の停止をいう。","a":false},
 {"t":"tf","q":"高速道路では危険防止のためや故障のなどの場合を除いて駐停車が禁止されている。","a":true},
 {"t":"tf","q":"路面が平に見える場所では、駐車ブレーキを確実に掛けておけば「輪止め」をする必要はない。","a":false},
@@ -7197,27 +7209,27 @@ const RAW_QUIZ = [
 {"t":"tf","q":"トラックの運転者は、荷物を運ぶことが仕事なので荷物の積み方について十分な知識や技術を身につける必要はない。","a":false},
 {"t":"tf","q":"トラックに荷物を積むときは、荷物の形や大きさ、数量に合わせた積み方を考えることや、荷物が動かないように固定したり、落ちないように固縛（荷物が動かないようにロープなどでしっかりくくりつけること）することが大切である。","a":true},
 {"t":"tf","q":"荷物は、さまざまな資材（物を守るための箱など）で梱包（荷物を守るために包むこと）されていたり容器に入れられていることが多く、代表的なものに袋物、ダンボール、缶類がある。","a":true},
-{"t":"mc","q":"この梱包資材の名前はどれか。","o":["フレコンバック","エコバック","ボストンバック"],"a":0},
+{"t":"mc","q":"この梱包資材の名前はどれか。","o":["フレコンバック","エコバック","ボストンバック"],"a":0,"img":"https://th.bing.com/th/id/R.73463df5e83de9596075bd3e454a2153?rik=2%2fm4h68x1Df%2fNw&pid=ImgRaw&r=0"},
 {"t":"tf","q":"ダンボールは、物を包むためのもので、価格も安く、使い終わった後は再生紙になったり焼却できるので、処理も簡単である。","a":true},
 {"t":"tf","q":"ダンボールは、荷物を運ぶもので運んでいる途中や積み卸しのときに起こる振動（揺れ）や衝撃から荷物を守るためのものだが、お客様によっては傷がついたり印刷されている文字がかすれていても荷物事故（荷物が壊れていたり傷がついたりする事故）と判断する人もいる。","a":true},
 {"t":"tf","q":"缶類は金属でできていて丈夫なので、ロープやワイヤー、ラッシングベルトなどで荷物を固定したり、発泡スチロールや集合材などでしっかり固定しなくてもよい。","a":false},
-{"t":"mc","q":"この缶類の名称は何か。","o":["ドラム缶","18リットル缶（1斗缶）","ペール缶"],"a":1},
-{"t":"mc","q":"ペール缶はどれか。","o":["","",""],"a":0},
+{"t":"mc","q":"この缶類の名称は何か。","o":["ドラム缶","18リットル缶（1斗缶）","ペール缶"],"a":1,"img":"https://drive.google.com/thumbnail?id=1w40DgAlurO3lvKOzkpEarPUIgH1-5Dz4&sz=w1000"},
+{"t":"mc","q":"ペール缶はどれか。","o":["","",""],"a":0,"img":"https://drive.google.com/thumbnail?id=1Wz02Uqz8Dv0_jjpLgYZL9ie_m7ol9GQf&sz=w1000"},
 {"t":"tf","q":"バラ積み荷物は、重さがわかりにくいため、荷物を積み過ぎてしまうことがある。","a":true},
 {"t":"tf","q":"走行中に荷物が飛び散ったり落ちたりしないようにシートをかければ、荷物が途中で崩れないように積む必要はない。","a":false},
 {"t":"tf","q":"袋やダンボールには、荷物の取り扱い方法や注意事項が文字や記号で表示されていることがあり、「荷扱い指示マーク」や「ケアマーク」と呼ばれるが、運転者や荷物を扱う人はこの指示にしたがわなくてはならない。","a":true},
 {"t":"tf","q":"荷物には荷扱い指示マークの他にバーコードが表示されていることがあるが、これは荷物の種類や名前、ダンボールの中に入っている数などを次に作業する人へ伝えるために重要なものである。","a":true},
-{"t":"mc","q":"このマークの意味はどれか。","o":["水濡れ防止","上積み禁止","取扱注意"],"a":0},
-{"t":"mc","q":"上積み禁止マークはどれか。","o":["","",""],"a":0},
+{"t":"mc","q":"このマークの意味はどれか。","o":["水濡れ防止","上積み禁止","取扱注意"],"a":0,"img":"https://drive.google.com/thumbnail?id=1N49WK0Uq2Z9937yiGe6vqWVDf1hwvw2F&sz=w1000"},
+{"t":"mc","q":"上積み禁止マークはどれか。","o":["","",""],"a":0,"img":"https://drive.google.com/thumbnail?id=1WGNzUKh8FSx3YvlhxD7DUXit8wN9gxEp&sz=w1000"},
 {"t":"tf","q":"パレットとは、袋やダンボールをまとめて運んだり保管するためのものである。","a":true},
 {"t":"tf","q":"パレットに積めば、積み方が悪くても効率的に荷物を運ぶことができる。","a":false},
 {"t":"tf","q":"パレットへの積み付け方法の基本パターンは棒積み、交互（列）積み、煉瓦積み、ピンホイール積みがある。","a":true},
-{"t":"tf","q":"この積み付け方法は「煉瓦積み」と呼ばれている。","a":false},
+{"t":"tf","q":"この積み付け方法は「煉瓦積み」と呼ばれている。","a":false,"img":"https://drive.google.com/thumbnail?id=1Emds2AsHuvNtxdpH2fTxbp0pkeVZjI2I&sz=w1000"},
 {"t":"tf","q":"パレット積み荷物は正しく積み付けてあれば、走行中に起こる振動や衝撃によって荷崩れを起こすことはない。","a":false},
 {"t":"tf","q":"「急発進」や「急加速」など「急」が付くような運転は、荷物事故だけではなく交通事故にもつながる危険な運転である。","a":true},
 {"t":"tf","q":"トラックが発進するときは、荷物は前向きの力を受け、道路の段差や橋のつなぎ目マンホールのふたの上などでは力を受けない。","a":false},
 {"t":"tf","q":"荷崩れを防ぐためには、予想される一番小さい力に対して対策を考える必要がある。","a":false},
-{"t":"tf","q":"これは「水平バンド掛け方式」と呼ばれている。","a":false},
+{"t":"tf","q":"これは「水平バンド掛け方式」と呼ばれている。","a":false,"img":"https://drive.google.com/thumbnail?id=1g74be4lU_gaxZlxvF1OCUnCezO4fRO6S&sz=w1000"},
 {"t":"tf","q":"荷崩れ防止の3要素は①荷物の積み付け（荷物の積み方）、②荷物の固縛、③点呼方法である。","a":false},
 {"t":"tf","q":"荷崩れ防止のためには運転方法はとても重要である。","a":true},
 {"t":"tf","q":"荷物をしっかり固縛する方法として、ラッシングベルトで固定する方法がある。","a":true},
@@ -7229,9 +7241,9 @@ const RAW_QUIZ = [
 {"t":"tf","q":"荷物どうしがぶつかることを防止するための資材や機材に、ダンボールや合板、パレットやプラスチックの板がある。","a":true},
 {"t":"tf","q":"荷物と固定用の資材や機材がぶつかるなどを緩和するための資材や機材に角あてや当て布がある。","a":true},
 {"t":"tf","q":"資材や機材に繰り返し使うものはないので、使い終わったらすぐに捨てるなど処分する。","a":false},
-{"t":"tf","q":"これは「エアバック」と呼ばれている","a":true},
-{"t":"mc","q":"この名前はどれか。","o":["巻ダン","角あて","トラックボード"],"a":2},
-{"t":"mc","q":"ラッシングベルトはどれか。","o":["","",""],"a":0},
+{"t":"tf","q":"これは「エアバック」と呼ばれている","a":true,"img":"https://drive.google.com/thumbnail?id=1IKnyPQiWR1Z61aILhC1AZqpzFevpAujt&sz=w1000"},
+{"t":"mc","q":"この名前はどれか。","o":["巻ダン","角あて","トラックボード"],"a":2,"img":"https://drive.google.com/thumbnail?id=1XzaDi_f3fwOCHfOFbCbrmhchT9KBiPEy&sz=w1000"},
+{"t":"mc","q":"ラッシングベルトはどれか。","o":["","",""],"a":0,"img":"https://drive.google.com/thumbnail?id=1prwVCLI9RIsSRHf1e7hJq5uIG1lt6mde&sz=w1000"},
 {"t":"mc","q":"パレット上の荷物の荷崩れを防止するために使うものはどれか？","o":["ストレッチフィルム","巻ダン","角あて"],"a":0},
 {"t":"tf","q":"荷物が移動したり崩れたりするのを防ぐために、荷物の特徴を理解し正しく積み込み、適切な資材や機材を使ってしっかり固定すれば、運行中に積荷の状況を点検する必要なない。","a":false},
 {"t":"tf","q":"高い場所（地面からの高さが2ｍ以上）で作業するときは、はしごや踏み台を使って安全な位置で作業する。","a":true},
@@ -7258,13 +7270,13 @@ const RAW_QUIZ = [
 {"t":"tf","q":"運転者が自分で過積載をすることはやむを得ないが、お客様からたのまれたときははっきりとことわること。","a":false},
 {"t":"tf","q":"積卸し作業をするときの注意点として、不安定な荷物の上ではできるだけ移動しないようにする","a":true},
 {"t":"tf","q":"荷物や荷台の上で作業をするときは、背中を荷台の外側に向けず、後ろに下がらないようにする。","a":true},
-{"t":"tf","q":"この部分を「あおり」といい、立てる場合は必ず固定しないで使用する。","a":false},
+{"t":"tf","q":"この部分を「あおり」といい、立てる場合は必ず固定しないで使用する。","a":false,"img":"https://drive.google.com/thumbnail?id=1xnd7rDenzEgJ1_VC9cm0l4z8395tWgD3&sz=w1000"},
 {"t":"mc","q":"保護帽を着用するときの注意点で正しいものはどれですか。","o":["保護帽を傾けて頭全体を覆えればよい","保護帽がずれないように、あご紐をしっかり確実に締める","ヘルメットには耐用年数（使用期限）はないので、長く大切に使う"],"a":1},
 {"t":"tf","q":"昇降用のステップは、3点支持などにより安全に昇降できる形式のものであること。","a":true},
 {"t":"mc","q":"ロープを掛ける作業で正しいものはどれですか。","o":["濡れたロープを使う","荷物の上では姿勢を低くして荷台の前方では運転席に背を向け、後方では運転席に向ける。","ロープが当たる荷物の角には当て物をする"],"a":2},
 {"t":"mc","q":"シートを掛ける作業で正しいものはどれですか。","o":["シートを荷台の片側に合わせ、後ろまで広げる","荷台の側面に向いて片方の膝をつき、体を前に倒して車の側面にシートを広げる","シートのすそは止めずにそのままにした方が良い"],"a":1},
 {"t":"tf","q":"バンボデー車に荷物を積むときは少しすき間を作って積み、ラッシングベルトで固定する。","a":false},
-{"t":"tf","q":"これはロールボックスパレットといい、ひとりで扱う場合は約300キログラムまでとする。","a":true},
+{"t":"tf","q":"これはロールボックスパレットといい、ひとりで扱う場合は約300キログラムまでとする。","a":true,"img":"https://drive.google.com/thumbnail?id=18arCWM03pzLIb8sdBG22n24xdZXY_wUH&sz=w1000"},
 {"t":"tf","q":"ロールボックスパレットはできるだけ後ろ向きに引きながら移動する。","a":false},
 {"t":"mc","q":"テールゲートリフターの作業で正しいものはどれですか。","o":["リフターは載せられるだけ載せる","リフターの下に入り支える","水平な場所で作業する"],"a":2},
 {"t":"tf","q":"フォークリフトは会社で練習すれば誰でも運転できる。","a":false},
@@ -8687,6 +8699,15 @@ class Component extends DCLogic {
     const usageTodayLabel = myChart.todayLabel;
     const usageWeekLabel = myChart.weekLabel;
     const myLessonSummary = buildLessonSummary(s.settings.lessons);
+    // the learner's own exercise scores, for their profile
+    const myQuizzes = s.settings.quizzes || {};
+    const myqnums = Object.keys(myQuizzes).map(Number).filter(n => n > 0).sort((a, b) => a - b);
+    const myQuizSummary = {
+      hasAny: myqnums.length > 0,
+      passedLabel: myqnums.length ? `ជាប់ ${myqnums.filter(n => myQuizzes[n] >= PASS_PCT).length} / ${myqnums.length} លំហាត់` : 'មិនទាន់ធ្វើ',
+      chips: myqnums.map(n => ({ text: `${n}៖ ${myQuizzes[n]}%`,
+        style: myQuizzes[n] >= PASS_PCT ? 'background:var(--color-accent-100);color:var(--color-accent-800);border-color:var(--color-accent);' : 'opacity:0.65;' })),
+    };
     const myLevel = lessonsPassed(s.settings.lessons);
 
     // — the student leaderboard —
@@ -8973,6 +8994,7 @@ class Component extends DCLogic {
       profileBranch: schoolName(s.mySchoolId),
       hasBranch: !!(s.mySchoolId && schoolName(s.mySchoolId)),
       bookStats, usageDays, usageTodayLabel, usageWeekLabel, myLessonSummary,
+      myQuizSummary, hasMyQuiz: myQuizSummary.hasAny,
       profileInitial: (s.profileName || '?').trim().charAt(0),
       // — leaderboard (its own screen, students only) —
       isRanking: s.screen === 'ranking',
