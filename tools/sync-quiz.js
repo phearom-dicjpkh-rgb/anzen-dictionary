@@ -115,10 +115,16 @@ function toQuestions(rows) {
   if (quiz.length < current.length * 0.8) throw new Error(`Refusing: question count would drop ${current.length} → ${quiz.length}.`);
 
   const body = quiz.map(x => JSON.stringify(x)).join(',\n');
+  const changed = body !== m[2];
+  // tell a GitHub Action whether anything moved, so it commits only when needed
+  if (process.env.GITHUB_OUTPUT) {
+    fs.appendFileSync(process.env.GITHUB_OUTPUT, `changed=${changed}\ncount=${quiz.length}\n`);
+  }
   if (process.argv.includes('--check')) {
-    console.log(body === m[2] ? 'no change' : 'WOULD CHANGE');
+    console.log(changed ? 'WOULD CHANGE' : 'no change');
     return;
   }
+  if (!changed) { console.log('no change — sheet matches the app'); return; }
   fs.writeFileSync(APP, html.slice(0, m.index) + m[1] + body + m[3] + html.slice(m.index + m[0].length), 'utf8');
   console.log('wrote RAW_QUIZ to app/index.html');
 })().catch(e => { console.error(e.message); process.exit(1); });

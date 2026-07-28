@@ -1,0 +1,57 @@
+name: Sync exercises from Google Sheets
+
+# Runs by itself every hour (at :30, so it never races the word sync at :00),
+# so editing the exercise sheet is enough — nothing to press. Also available
+# manually from the Actions tab. It commits only when the sheet actually
+# differs, so idle runs cost nothing.
+on:
+  schedule:
+    - cron: '30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write      # commit the refreshed exercise data
+  actions: write       # kick off the Pages deploy afterwards
+
+concurrency:
+  group: sync-quiz
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Fetch the sheet and rebuild exercise data
+        id: sync
+        env:
+          # optional: a repo variable to point at a different / multi-tab sheet
+          QUIZ_CSV_URL: ${{ vars.QUIZ_CSV_URL }}
+        run: node tools/sync-quiz.js
+
+      - name: Commit changes
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/index.html
+          git commit -m "Sync exercises from Google Sheets (${{ steps.sync.outputs.count }} questions)"
+          git pull --rebase origin main
+          git push
+
+      - name: Deploy the updated site
+        if: steps.sync.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml
+
+      - name: Nothing to do
+        if: steps.sync.outputs.changed != 'true'
+        run: echo "The sheet matches what is already published — no deploy needed."
