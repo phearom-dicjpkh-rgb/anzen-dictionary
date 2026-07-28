@@ -1,11 +1,13 @@
-name: Sync words from Google Docs
+name: Sync words from Google Sheets
 
-# Runs by itself every hour, so editing the Google Doc is enough — nothing to
-# press. Still available manually from the Actions tab when you want it now.
-# It only commits when the docs actually differ, so idle runs cost nothing.
+# Runs by itself every hour (at :15, so it never races the exercise sync at :30),
+# so editing the words Sheet is enough — nothing to press. The Sheet is the
+# master source now and can carry an image link per word. Still available
+# manually from the Actions tab. It only commits when the sheet actually
+# differs, so idle runs cost nothing.
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '15 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -28,9 +30,12 @@ jobs:
         with:
           node-version: 22
 
-      - name: Fetch docs and rebuild word data
+      - name: Fetch the sheet and rebuild word data
         id: sync
-        run: node tools/sync-words.js
+        env:
+          # optional: a repo variable to point at a different sheet document
+          WORDS_CSV_URL: ${{ vars.WORDS_CSV_URL }}
+        run: node tools/sync-words-sheet.js
 
       - name: Commit changes
         if: steps.sync.outputs.changed == 'true'
@@ -38,7 +43,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add app/index.html data/words.csv
-          git commit -m "Sync words from Google Docs (${{ steps.sync.outputs.count }} entries)"
+          git commit -m "Sync words from Google Sheets (${{ steps.sync.outputs.count }} entries)"
+          git pull --rebase origin main
           git push
 
       - name: Deploy the updated site
@@ -49,4 +55,4 @@ jobs:
 
       - name: Nothing to do
         if: steps.sync.outputs.changed != 'true'
-        run: echo "The docs match what is already published — no deploy needed."
+        run: echo "The sheet matches what is already published — no deploy needed."

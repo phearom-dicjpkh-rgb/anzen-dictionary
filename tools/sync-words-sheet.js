@@ -18,7 +18,10 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 
-const URL = process.env.WORDS_CSV_URL || '';
+// The published WORDS sheet (File ▸ Share ▸ Publish to web ▸ CSV). Override with
+// WORDS_CSV_URL if the sheet is ever moved to a new document.
+const DEFAULT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSzYCoMOsqSUqacmNUiS--H7acExSOkxTk7iBPJ816fgXRl93Iwv0GG0iaAjbuZmVjSVtAJqVmighWa/pub?gid=1280678563&single=true&output=csv';
+const URL = process.env.WORDS_CSV_URL || DEFAULT_URL;
 const DEFAULT_BOOK = 'SSW-Truck';
 const ROOT = path.join(__dirname, '..');
 const APP = path.join(ROOT, 'app', 'index.html');
@@ -60,6 +63,13 @@ function parseCSV(s) {
 
 const esc = v => { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
 const splitEx = v => String(v || '').split('|').map(x => x.trim()).filter(Boolean);
+// A Google Drive "share" link is not an <img> source; rewrite it to the
+// thumbnail endpoint, which hotlinks reliably. Anything else is left as-is.
+function normalizeImg(url) {
+  if (!url) return '';
+  const m = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#]*&)?id=|thumbnail\?(?:[^#]*&)?id=)([\w-]{20,})/);
+  return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000` : url;
+}
 
 (async () => {
   if (!URL) throw new Error('Set WORDS_CSV_URL to the published sheet CSV.');
@@ -83,7 +93,7 @@ const splitEx = v => String(v || '').split('|').map(x => x.trim()).filter(Boolea
     const book = g(r, 'book') || DEFAULT_BOOK;
     const page = parseInt(g(r, 'page'), 10) || 2;
     const exj = splitEx(g(r, 'exj')), exk = splitEx(g(r, 'exk'));
-    const img = g(r, 'img');
+    const img = normalizeImg(g(r, 'img'));
     // keep rows as small as the old ones: 9 cols by default, +book, +image
     const base = [id, jp, kana, pos, km, exj, exk, cat, page];
     if (img) base.push(book, img);
