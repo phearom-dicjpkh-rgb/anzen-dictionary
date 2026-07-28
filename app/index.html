@@ -1404,9 +1404,19 @@ textarea.input { min-height: 90px; resize: vertical; }
           <div class="card elev-sm" style="gap:8px;margin-bottom:16px;">
             <div style="display:flex;justify-content:space-between;align-items:center;">
               <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;">លំហាត់</div>
-              <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" sc-camel-on-click="{{ toggleExercisesLock }}">{{ exLockLabel }}</button>
+              <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" sc-camel-on-click="{{ toggleExercisesLockAll }}">{{ exLockAllLabel }}</button>
             </div>
             <div style="font-size:12px;opacity:0.7;">{{ exLockStatus }}</div>
+            <sc-if value="{{ exLockPerSchool }}">
+              <div style="font-size:11px;opacity:0.55;margin-top:2px;">ឬ ជ្រើសរើសសាលាដែលចង់ចាក់សោ៖</div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <sc-for list="{{ exLockSchools }}" as="sc" hint-placeholder-count="2">
+                  <div style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;" sc-camel-on-click="{{ sc.onToggle }}">
+                    <span style="font-size:16px;">{{ sc.mark }}</span><span>{{ sc.name }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
           </div>
           <div style="display:flex;flex-direction:column;gap:12px;">
             <sc-for list="{{ bookVisItems }}" as="bk" hint-placeholder-count="2">
@@ -7377,9 +7387,9 @@ function makeSupabaseBackend(){
     },
     async setApproved(id, approved){ const { error } = await client.from('profiles').update({ approved }).eq('id', id); return { error: error ? error.message : null }; },
     async listAccounts(){ const { data } = await client.from('profiles').select('id,email,full_name,role,teacher_id,school_id,approved').order('role'); return { rows:data||[] }; },
-    async getAppSettings(){ const { data } = await client.from('app_settings').select('app_name,logo,exercises_locked').eq('id',1).single(); return { app_name:(data&&data.app_name)||DEFAULT_APP_NAME, logo:(data&&data.logo)||'', exercises_locked:!!(data&&data.exercises_locked) }; },
+    async getAppSettings(){ const { data } = await client.from('app_settings').select('app_name,logo,exercises_locked,exercises_locked_schools').eq('id',1).single(); return { app_name:(data&&data.app_name)||DEFAULT_APP_NAME, logo:(data&&data.logo)||'', exercises_locked:!!(data&&data.exercises_locked), exercises_locked_schools:(data&&data.exercises_locked_schools)||[] }; },
     async saveAppSettings(patch){ const { error } = await client.from('app_settings').update({ app_name:patch.app_name, logo:patch.logo, updated_at:new Date().toISOString() }).eq('id',1); return { error: error ? error.message : null }; },
-    async setExercisesLock(locked){ const { error } = await client.from('app_settings').update({ exercises_locked:locked, updated_at:new Date().toISOString() }).eq('id',1); return { error: error ? error.message : null }; },
+    async saveExerciseLock(patch){ const { error } = await client.from('app_settings').update({ exercises_locked:!!patch.locked, exercises_locked_schools:patch.schools||[], updated_at:new Date().toISOString() }).eq('id',1); return { error: error ? error.message : null }; },
     // Logo file goes to Storage (bucket "logos"); only its URL is kept in the DB.
     async uploadLogo(blob){
       const { error } = await client.storage.from('logos').upload('logo.png', blob, { upsert:true, contentType:'image/png', cacheControl:'3600' });
@@ -7503,9 +7513,9 @@ function makeDemoBackend(){
         : all.filter(u=>u.id===me.id);
       return { rows: visible.map(({id,email,full_name,role,teacher_id,school_id,approved})=>({id,email,full_name,role,teacher_id,school_id,approved})) };
     },
-    async getAppSettings(){ try { const s=JSON.parse(localStorage.getItem('dict_app_settings')||'null'); if(s) return { app_name:s.app_name||DEFAULT_APP_NAME, logo:s.logo||'', exercises_locked:!!s.exercises_locked }; } catch(e){} return { app_name:DEFAULT_APP_NAME, logo:'', exercises_locked:false }; },
-    async saveAppSettings(patch){ const cur=(await this.getAppSettings()); localStorage.setItem('dict_app_settings', JSON.stringify({ app_name:patch.app_name, logo:patch.logo, exercises_locked:cur.exercises_locked })); return { error:null }; },
-    async setExercisesLock(locked){ const cur=(await this.getAppSettings()); localStorage.setItem('dict_app_settings', JSON.stringify({ app_name:cur.app_name, logo:cur.logo, exercises_locked:locked })); return { error:null }; },
+    async getAppSettings(){ try { const s=JSON.parse(localStorage.getItem('dict_app_settings')||'null'); if(s) return { app_name:s.app_name||DEFAULT_APP_NAME, logo:s.logo||'', exercises_locked:!!s.exercises_locked, exercises_locked_schools:s.exercises_locked_schools||[] }; } catch(e){} return { app_name:DEFAULT_APP_NAME, logo:'', exercises_locked:false, exercises_locked_schools:[] }; },
+    async saveAppSettings(patch){ const cur=(await this.getAppSettings()); localStorage.setItem('dict_app_settings', JSON.stringify({ app_name:patch.app_name, logo:patch.logo, exercises_locked:cur.exercises_locked, exercises_locked_schools:cur.exercises_locked_schools })); return { error:null }; },
+    async saveExerciseLock(patch){ const cur=(await this.getAppSettings()); localStorage.setItem('dict_app_settings', JSON.stringify({ app_name:cur.app_name, logo:cur.logo, exercises_locked:!!patch.locked, exercises_locked_schools:patch.schools||[] })); return { error:null }; },
     // No Storage in demo mode — keep the image inline as a data URI.
     async uploadLogo(blob){ const url = await new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); }); return { url }; },
     async deleteLogo(){ return { error:null }; },
@@ -7601,7 +7611,7 @@ class Component extends DCLogic {
     testWords: [], testIdx: 0, testScore: 0, testResults: [],
     // exercises (លំហាត់)
     quizLesson: 1, quizQuestions: [], quizIdx: 0, quizScore: 0, quizResults: [], quizAnswered: false, quizPicked: null,
-    exercisesLocked: false,
+    exercisesLocked: false, exercisesLockedSchools: [],
     mcOptions: [], mcSelected: null, mcAnswered: false,
     pageQuizOpen: false, pageQuizQuestions: [], pageQuizIdx: 0, pageQuizScore: 0, pageQuizSelected: null, pageQuizAnswered: false, pageQuizDone: false,
   };
@@ -7936,13 +7946,27 @@ class Component extends DCLogic {
   async loadAppSettings(){
     try {
       const s = await Backend.getAppSettings();
-      this.setState({ appName: s.app_name || DEFAULT_APP_NAME, appLogo: s.logo || '', exercisesLocked: !!s.exercises_locked });
+      this.setState({ appName: s.app_name || DEFAULT_APP_NAME, appLogo: s.logo || '', exercisesLocked: !!s.exercises_locked, exercisesLockedSchools: Array.isArray(s.exercises_locked_schools) ? s.exercises_locked_schools : [] });
     } catch(e) {}
   }
-  async toggleExercisesLock(){
+  // Is this viewer barred from the exercises? Admin never is; everyone else is
+  // if exercises are locked for all, or their branch is in the locked list.
+  exercisesLockedForMe(){
+    if (this.state.role === 'admin') return false;
+    if (this.state.exercisesLocked) return true;
+    const myKey = this.state.role === 'school' ? this.state.userId : this.state.mySchoolId;
+    return !!myKey && (this.state.exercisesLockedSchools || []).includes(myKey);
+  }
+  async toggleExercisesLockAll(){
     const next = !this.state.exercisesLocked;
     this.setState({ exercisesLocked: next });
-    await Backend.setExercisesLock(next);
+    await Backend.saveExerciseLock({ locked: next, schools: this.state.exercisesLockedSchools });
+  }
+  async toggleExerciseSchool(id){
+    const cur = this.state.exercisesLockedSchools || [];
+    const schools = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id];
+    this.setState({ exercisesLockedSchools: schools });
+    await Backend.saveExerciseLock({ locked: this.state.exercisesLocked, schools });
   }
   onSettingsName(e){ this.setState({ settingsName: e.target.value }); }
   onSettingsLogoFile(e){
@@ -8269,7 +8293,7 @@ class Component extends DCLogic {
   quizBest(n){ return (this.state.settings.quizzes || {})[n] || 0; }
   quizUnlocked(){ const cap = this.quizTotal(); let n = 1; while (n < cap && this.quizBest(n) >= PASS_PCT) n++; return n; }
   quizVisible(){ const u = this.quizUnlocked(); return Math.min(this.quizTotal(), LESSON_BLOCK * (Math.floor((u + 1) / LESSON_BLOCK) + 1)); }
-  openQuizList(){ if (this.state.exercisesLocked && this.state.role !== 'admin') { this.showToast('លំហាត់ត្រូវបានចាក់សោ'); return; } this.setState({ testMode: 'quizlist' }); }
+  openQuizList(){ if (this.exercisesLockedForMe()) { this.showToast('លំហាត់ត្រូវបានចាក់សោ'); return; } this.setState({ testMode: 'quizlist' }); }
   startQuiz(n){
     const qs = this.quizSlice(n);
     if (!qs.length) return;
@@ -9188,7 +9212,7 @@ class Component extends DCLogic {
 
       // — exercises (លំហាត់) —
       openQuizList: () => this.openQuizList(),
-      exercisesLocked: s.exercisesLocked, exercisesLockedForMe: s.exercisesLocked && s.role !== 'admin',
+      exercisesLocked: s.exercisesLocked, exercisesLockedForMe: this.exercisesLockedForMe(),
       isQuizList: testMode === 'quizlist', isQuiz: testMode === 'quiz', isQuizResults: testMode === 'quizresults',
       quizItems, quizUnlockLabel: `បើកសោ ${quizUnlocked} / ${quizTotal} លំហាត់ · ត្រូវបាន ${PASS_PCT}% ដើម្បីបន្ត`,
       backToQuizList: () => this.backToQuizList(),
@@ -9207,9 +9231,16 @@ class Component extends DCLogic {
       quizResultNote: quizPct >= PASS_PCT ? 'ជាប់ ✓ លំហាត់បន្ទាប់បើកសោហើយ' : `មិនទាន់ជាប់ — ត្រូវបាន ${PASS_PCT}% ឡើងទៅ`,
       quizResultNoteColor: quizPct >= PASS_PCT ? 'var(--color-accent-700)' : 'var(--color-text)',
       retryQuiz: () => this.retryQuiz(),
-      toggleExercisesLock: () => this.toggleExercisesLock(),
-      exLockLabel: s.exercisesLocked ? 'ដោះសោលំហាត់' : 'ចាក់សោលំហាត់',
-      exLockStatus: s.exercisesLocked ? 'លំហាត់ត្រូវបានចាក់សោ (សិស្សធ្វើមិនបាន)' : 'លំហាត់បើកសម្រាប់សិស្ស',
+      toggleExercisesLockAll: () => this.toggleExercisesLockAll(),
+      exLockAllLabel: s.exercisesLocked ? 'ដោះសោ' : 'ចាក់សោគ្រប់សាលា',
+      exLockAll: s.exercisesLocked, exLockPerSchool: !s.exercisesLocked,
+      exLockStatus: s.exercisesLocked
+        ? 'ចាក់សោគ្រប់សាលា (គ្មានសិស្សណាធ្វើបាន)'
+        : ((s.exercisesLockedSchools || []).length ? `ចាក់សោ ${s.exercisesLockedSchools.length} សាលា` : 'បើកគ្រប់សាលា'),
+      exLockSchools: (s.schools || []).map(sc => {
+        const on = (s.exercisesLockedSchools || []).includes(sc.id);
+        return { name: sc.full_name || sc.email, mark: on ? '☑' : '☐', onToggle: () => this.toggleExerciseSchool(sc.id) };
+      }),
 
       syncStatusLabel: s.syncing ? 'កំពុងទាញទិន្នន័យ…' : (s.lastSync ? `សមកាលកម្មចុងក្រោយ: ${new Date(s.lastSync).toLocaleString()}` : 'មិនទាន់ធ្វើសមកាលកម្មទេ'),
       syncButtonLabel: s.syncing ? 'កំពុងទាញ…' : 'ធ្វើសមកាលកម្មឥឡូវនេះ',
