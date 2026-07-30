@@ -1,28 +1,40 @@
 #!/usr/bin/env node
 /*
- * Pull the SSW exercise sheet (published Google Sheet) and rewrite the RAW_QUIZ
- * block in app/index.html — the same idea as tools/sync-words.js, for the
- * លំហាត់ questions.
+ * Pull the SSW exercise workbook (one published Google Sheet, several tabs) and
+ * rewrite the baked question blocks in app/index.html. Same idea as
+ * tools/sync-words-sheet.js, for the លំហាត់ / ប្រឡង content.
  *
  *   node tools/sync-quiz.js          # fetch + write
  *   node tools/sync-quiz.js --check  # report only, change nothing
  *
- * Sheet column layout (per row):
- *   A = number   B = 問題 (question)   C = correct answer   D = wrong answers
- *   · true/false: C is 〇 or ×, D empty.
- *   · A/B/C     : C is the correct option (Ⓐ/Ⓑ/Ⓒ + text), D the other options
- *                 one per line, each prefixed with its circled letter.
- * An optional 5th column (E) is read as an image URL when present.
+ * Three tabs, each its own gid, each baked into its own array:
+ *   gid 0          -> RAW_QUIZ     លំហាត់ (10 per exercise)      furigana stripped
+ *   gid 1823744360 -> RAW_IMGQUIZ  លំហាត់រូបភាព (5 per exercise) furigana stripped
+ *   gid 320587093  -> RAW_EXAM     ប្រឡងសាកល្បង (50 per exam)    furigana KEPT
  *
- * Set the sheet with QUIZ_CSV_URL (…/pub?gid=0&single=true&output=csv). Multiple
- * tabs can be given comma-separated; their questions are concatenated in order.
+ * Column layout is the same on every tab (per row):
+ *   A = number   B = 問題 (question)   C = correct answer   D = wrong answers
+ *   · true/false: C is 〇 or ×/✖, D empty.
+ *   · A/B/C     : C is the correct option (Ⓐ/Ⓑ/Ⓒ + text), D the other options,
+ *                 one per line, each prefixed with its circled letter.
+ * An optional 5th column (E) is an image URL (Drive share links are rewritten).
+ *
+ * The exam keeps its 漢字(かな) readings on purpose (it forbids the dictionary),
+ * so its questions and options are NOT furigana-stripped.
+ *
+ * Override the workbook with QUIZ_SHEET (the …/pub base, no gid/query).
  */
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const DEFAULT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTgpLQfgY7O_dhxRC0MOxYzyeeM_BuHalpjng0AkJqjneCgImBFRVy6CjJCq2mlLCU3wNg0KxXNRSYg/pub?gid=0&single=true&output=csv';
-const URLS = (process.env.QUIZ_CSV_URL || DEFAULT_URL).split(',').map(s => s.trim()).filter(Boolean);
+const SHEET = (process.env.QUIZ_SHEET || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTgpLQfgY7O_dhxRC0MOxYzyeeM_BuHalpjng0AkJqjneCgImBFRVy6CjJCq2mlLCU3wNg0KxXNRSYg/pub').replace(/\?.*$/, '');
+const SOURCES = [
+  { gid: '0',          block: 'RAW_QUIZ',    size: 10, keepFuri: false },
+  { gid: '1823744360', block: 'RAW_IMGQUIZ', size: 5,  keepFuri: false },
+  { gid: '320587093',  block: 'RAW_EXAM',    size: 50, keepFuri: true },
+];
+const csvUrl = gid => `${SHEET}?gid=${gid}&single=true&output=csv`;
 const APP = path.join(__dirname, '..', 'app', 'index.html');
 
 function get(url, depth = 0) {
@@ -41,6 +53,7 @@ function get(url, depth = 0) {
 }
 
 function parseCSV(s) {
+  if (s.charCodeAt(0) === 0xFEFF) s = s.slice(1);
   const rows = []; let i = 0, cur = [''], inq = false;
   while (i < s.length) {
     const c = s[i];
@@ -59,13 +72,35 @@ function parseCSV(s) {
   return rows;
 }
 
+// strip 漢字(かな)-style furigana: half-width parens holding only kana
 const stripFuri = t => (t || '').replace(/\(([぀-ゟ゠-ヿー・]+)\)/g, '').trim();
-function opt(s) {
-  s = (s || '').trim();
-  const m = s.match(/^([Ⓐ-Ⓩ])\s*([\s\S]*)$/);   // Ⓐ..Ⓩ
-  return m ? { letter: m[1], text: stripFuri(m[2]) } : { letter: '', text: stripFuri(s) };
+const OPT_LETTER = /[Ⓐ-Ⓩ]|[Ａ-Ｚ]|[A-Za-z]/;   // circled, full-width, or ascii
+// 0-based index of an option letter (A=0…), whatever its style
+function letterIdx(ch) {
+  if (ch >= 'Ⓐ' && ch <= 'Ⓩ') return ch.codePointAt(0) - 0x24B6;
+  if (ch >= 'Ａ' && ch <= 'Ｚ') return ch.codePointAt(0) - 0xFF21;
+  return ch.toUpperCase().charCodeAt(0) - 65;
 }
-const CIRC = 'ⒶⒷⒸⒹ';   // ⒶⒷⒸⒹ
+// parse "Ⓐ text" / "A　text" / "Ⓒ" into { idx, text }; idx<0 if no leading letter
+function opt(s, keepFuri) {
+  s = (s || '').trim();
+  const clean = x => (keepFuri ? x.trim() : stripFuri(x));
+  const m = s.match(new RegExp('^(' + OPT_LETTER.source + ')[\\s.、．)）:：]*([\\s\\S]*)$'));
+  return m ? { idx: letterIdx(m[1]), text: clean(m[2].trim()) } : { idx: -1, text: clean(s) };
+}
+// some exam MCs carry their choices inline in the question, marked by Ⓐ/Ⓑ/Ⓒ;
+// split the stem from those choices. Returns null when there are no inline marks.
+function splitInline(q, keepFuri) {
+  const marks = [...q.matchAll(/[Ⓐ-Ⓩ]/g)];
+  if (marks.length < 2) return null;
+  const clean = x => (keepFuri ? x.trim() : stripFuri(x));
+  const stem = clean(q.slice(0, marks[0].index).trim());
+  const options = marks.map((mk, k) => {
+    const end = k + 1 < marks.length ? marks[k + 1].index : q.length;
+    return { idx: letterIdx(q[mk.index]), text: clean(q.slice(mk.index + 1, end).trim()) };
+  });
+  return { stem, options };
+}
 
 // A Google Drive "share" link (…/file/d/ID/view, …/open?id=ID, …/uc?id=ID) is
 // not an <img> source. Rewrite it to the thumbnail endpoint, which hotlinks
@@ -77,23 +112,40 @@ function normalizeImg(url) {
   return url;
 }
 
-function toQuestions(rows) {
+const LABELS = ['A', 'B', 'C', 'D', 'E'];
+function toQuestions(rows, keepFuri) {
   const out = [];
   for (const r of rows.slice(1)) {
-    const q = stripFuri(r[1] || '');
+    const rawQ = keepFuri ? (r[1] || '').trim() : stripFuri(r[1] || '');
     const c = (r[2] || '').trim();
     const d = (r[3] || '').trim();
     const img = normalizeImg((r[4] || '').trim());
-    if (!q) continue;
-    const item = {};
+    if (!rawQ) continue;
+    const item = { q: rawQ };
     if (c === '〇' || c === '×' || c === '✖') {          // 〇 / × / ✖
-      item.t = 'tf'; item.q = q; item.a = (c === '〇');
-    } else if (/^[Ⓐ-Ⓩ]/.test(c)) {
-      const co = opt(c);
-      const others = d.split(/\n+/).map(x => x.trim()).filter(Boolean).map(opt);
-      const all = [co, ...others].sort((a, b) => CIRC.indexOf(a.letter) - CIRC.indexOf(b.letter));
-      item.t = 'mc'; item.q = q; item.o = all.map(o => o.text);
-      item.a = all.findIndex(o => o.text === co.text);
+      item.t = 'tf'; item.a = (c === '〇');
+    } else if (OPT_LETTER.test(c[0] || '')) {
+      const co = opt(c, keepFuri);
+      let all, correctIdx;
+      if (co.text) {
+        // format 1 — the option text lives in C (correct) and D (the rest)
+        const others = d.split(/\n+/).map(x => x.trim()).filter(Boolean).map(x => opt(x, keepFuri));
+        all = [co, ...others].sort((a, b) => a.idx - b.idx);
+        correctIdx = all.indexOf(co);
+      } else {
+        // C is a bare letter — the choices are inline in the question, or the
+        // question is an image and the letters point at parts of the picture
+        const inline = splitInline(rawQ, keepFuri);
+        if (inline && inline.options.length >= 2) {
+          item.q = inline.stem;
+          all = inline.options.sort((a, b) => a.idx - b.idx);
+        } else {
+          const letters = [co, ...d.split(/\n+/).map(x => x.trim()).filter(Boolean).map(x => opt(x, keepFuri))];
+          all = letters.sort((a, b) => a.idx - b.idx).map(o => ({ idx: o.idx, text: LABELS[o.idx] || '?' }));
+        }
+        correctIdx = all.findIndex(o => o.idx === co.idx);
+      }
+      item.t = 'mc'; item.o = all.map(o => o.text); item.a = correctIdx;
     } else continue;
     if (img) item.img = img;
     out.push(item);
@@ -102,29 +154,37 @@ function toQuestions(rows) {
 }
 
 (async () => {
-  let quiz = [];
-  for (const url of URLS) quiz = quiz.concat(toQuestions(parseCSV(await get(url))));
-  const tf = quiz.filter(x => x.t === 'tf').length, mc = quiz.filter(x => x.t === 'mc').length;
-  console.log(`fetched ${quiz.length} questions · tf ${tf} · mc ${mc} · exercises ${Math.ceil(quiz.length / 10)}`);
-  if (!quiz.length) throw new Error('Refusing to write: sheet returned 0 questions.');
+  let html = fs.readFileSync(APP, 'utf8');
+  let anyChanged = false, total = 0;
+  const check = process.argv.includes('--check');
 
-  const html = fs.readFileSync(APP, 'utf8');
-  const m = html.match(/(const RAW_QUIZ = \[\r?\n)([\s\S]*?)(\r?\n\];)/);
-  if (!m) throw new Error('RAW_QUIZ block not found in app/index.html');
-  const current = JSON.parse('[' + m[2] + ']');
-  if (quiz.length < current.length * 0.8) throw new Error(`Refusing: question count would drop ${current.length} → ${quiz.length}.`);
+  for (const src of SOURCES) {
+    const questions = toQuestions(parseCSV(await get(csvUrl(src.gid))), src.keepFuri);
+    const tf = questions.filter(x => x.t === 'tf').length, mc = questions.filter(x => x.t === 'mc').length;
+    total += questions.length;
+    console.log(`${src.block}: ${questions.length} questions · tf ${tf} · mc ${mc} · sets ${Math.ceil(questions.length / src.size)}`);
+    if (!questions.length) throw new Error(`Refusing: ${src.block} tab (gid ${src.gid}) returned 0 questions.`);
 
-  const body = quiz.map(x => JSON.stringify(x)).join(',\n');
-  const changed = body !== m[2];
+    const re = new RegExp('(const ' + src.block + ' = \\[\\r?\\n?)([\\s\\S]*?)(\\r?\\n?\\];)');
+    const m = html.match(re);
+    if (!m) throw new Error(`${src.block} block not found in app/index.html`);
+    const current = m[2].trim() ? JSON.parse('[' + m[2] + ']') : [];
+    if (current.length && questions.length < current.length * 0.8) {
+      throw new Error(`Refusing: ${src.block} count would drop ${current.length} → ${questions.length}.`);
+    }
+    const body = questions.map(x => JSON.stringify(x)).join(',\n');
+    if (body !== m[2]) {
+      anyChanged = true;
+      if (!check) html = html.slice(0, m.index) + m[1] + body + m[3] + html.slice(m.index + m[0].length);
+    }
+  }
+
   // tell a GitHub Action whether anything moved, so it commits only when needed
   if (process.env.GITHUB_OUTPUT) {
-    fs.appendFileSync(process.env.GITHUB_OUTPUT, `changed=${changed}\ncount=${quiz.length}\n`);
+    fs.appendFileSync(process.env.GITHUB_OUTPUT, `changed=${anyChanged}\ncount=${total}\n`);
   }
-  if (process.argv.includes('--check')) {
-    console.log(changed ? 'WOULD CHANGE' : 'no change');
-    return;
-  }
-  if (!changed) { console.log('no change — sheet matches the app'); return; }
-  fs.writeFileSync(APP, html.slice(0, m.index) + m[1] + body + m[3] + html.slice(m.index + m[0].length), 'utf8');
-  console.log('wrote RAW_QUIZ to app/index.html');
+  if (check) { console.log(anyChanged ? 'WOULD CHANGE' : 'no change'); return; }
+  if (!anyChanged) { console.log('no change — every tab matches the app'); return; }
+  fs.writeFileSync(APP, html, 'utf8');
+  console.log('wrote RAW_QUIZ / RAW_IMGQUIZ / RAW_EXAM to app/index.html');
 })().catch(e => { console.error(e.message); process.exit(1); });

@@ -32,8 +32,9 @@ jobs:
       - name: Fetch the sheet and rebuild exercise data
         id: sync
         env:
-          # optional: a repo variable to point at a different / multi-tab sheet
-          QUIZ_CSV_URL: ${{ vars.QUIZ_CSV_URL }}
+          # optional: a repo variable to point at a different workbook (the …/pub
+          # base, no gid). The three tabs are read by their gids inside the script.
+          QUIZ_SHEET: ${{ vars.QUIZ_SHEET }}
         run: node tools/sync-quiz.js
 
       - name: Commit changes
