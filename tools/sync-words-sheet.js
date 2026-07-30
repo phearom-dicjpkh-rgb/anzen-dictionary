@@ -85,10 +85,13 @@ function normalizeImg(url) {
 
   const rows = [];   // RAW_WORDS array-of-arrays
   const csv = [['id', 'book', 'page', 'category', 'jp', 'kana', 'pos', 'km', 'example_jp', 'example_km', 'image'].join(',')];
+  const seenId = new Map();   // id -> jp, to catch a reused id (would conflate two words' progress/stars)
+  const dups = [];
   const g = (r, k) => (ci[k] >= 0 ? (r[ci[k]] || '') : '').trim();
   for (const r of table.slice(1)) {
     const id = g(r, 'id'), jp = g(r, 'jp'), km = g(r, 'km');
     if (!id || !jp) continue;
+    if (seenId.has(id)) dups.push(`${id} (${seenId.get(id)} / ${jp})`); else seenId.set(id, jp);
     const kana = g(r, 'kana'), pos = g(r, 'pos'), cat = g(r, 'cat') || 'vocab';
     const book = g(r, 'book') || DEFAULT_BOOK;
     const page = parseInt(g(r, 'page'), 10) || 2;
@@ -103,6 +106,7 @@ function normalizeImg(url) {
   }
   console.log(`parsed ${rows.length} words · with image ${rows.filter(r => r.length === 11).length}`);
   if (!rows.length) throw new Error('Refusing: 0 words parsed.');
+  if (dups.length) throw new Error(`Refusing: duplicate id(s) in the sheet — give each row a unique id:\n  ${dups.join('\n  ')}`);
 
   const html = fs.readFileSync(APP, 'utf8');
   const m = html.match(/(const RAW_WORDS = \[\r?\n)([\s\S]*?)(\r?\n\];)/);
