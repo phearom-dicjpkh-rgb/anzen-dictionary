@@ -1014,8 +1014,8 @@ textarea.input { min-height: 90px; resize: vertical; }
           <div style="position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--color-bg);border-top:1px solid var(--color-divider);">
             <div style="max-width:900px;margin:0 auto;display:flex;gap:10px;padding:12px 20px calc(12px + env(safe-area-inset-bottom));">
               <button class="btn btn-secondary" style="margin-top:0;flex:none;{{ examPrevStyle }}" sc-camel-on-click="{{ examPrev }}">← ថយក្រោយ</button>
-              <sc-if value="{{ examNotLast }}"><button class="btn btn-primary btn-block" style="margin-top:0;" sc-camel-on-click="{{ examNext }}">បន្ទាប់ →</button></sc-if>
-              <sc-if value="{{ examLast }}"><button class="btn btn-primary btn-block" style="margin-top:0;" sc-camel-on-click="{{ submitExam }}">ដាក់ស្នើ · {{ examAnsweredCount }}/{{ examCount }}</button></sc-if>
+              <sc-if value="{{ examNotLast }}"><button class="btn btn-primary btn-block" style="margin-top:0;{{ examNextStyle }}" sc-camel-on-click="{{ examNext }}">បន្ទាប់ →</button></sc-if>
+              <sc-if value="{{ examLast }}"><button class="btn btn-primary btn-block" style="margin-top:0;{{ examNextStyle }}" sc-camel-on-click="{{ submitExam }}">ដាក់ស្នើ · {{ examAnsweredCount }}/{{ examCount }}</button></sc-if>
             </div>
           </div>
         </div>
@@ -8801,7 +8801,9 @@ class Component extends DCLogic {
   }
   pickExam(choice){ this.setState(s => { const a = s.examAnswers.slice(); a[s.examIdx] = choice; return { examAnswers: a }; }); }
   examGo(i){ const n = this.state.examQuestions.length; this.setState({ examIdx: Math.max(0, Math.min(n - 1, i)) }); }
-  examNext(){ this.examGo(this.state.examIdx + 1); }
+  examPicked(){ const v = this.state.examAnswers[this.state.examIdx]; return v !== undefined && v !== null; }
+  examNext(){ if (!this.examPicked()) { this.showToast('សូមជ្រើសរើសចម្លើយសិន'); return; } this.examGo(this.state.examIdx + 1); }
+  trySubmitExam(){ if (!this.examPicked()) { this.showToast('សូមជ្រើសរើសចម្លើយសិន'); return; } this.finishExam(false); }
   examPrev(){ this.examGo(this.state.examIdx - 1); }
   finishExam(timeUp){
     clearInterval(this._examTimer);
@@ -9836,8 +9838,10 @@ class Component extends DCLogic {
       examQuestionText: examQ ? examQ.q : '',
       examHasImg: !!(examQ && examQ.img), examImg: (examQ && examQ.img) || '',
       examIsTf: !!(examQ && examQ.t === 'tf'), examIsMc: !!(examQ && examQ.t === 'mc'), examTf, examMc,
-      examPrev: () => this.examPrev(), examNext: () => this.examNext(), submitExam: () => this.finishExam(false),
+      examPrev: () => this.examPrev(), examNext: () => this.examNext(), submitExam: () => this.trySubmitExam(),
       examPrevStyle: s.examIdx <= 0 ? 'opacity:0.4;pointer-events:none;' : '',
+      // can't move on until the current question is answered
+      examNextStyle: (examPicked === undefined || examPicked === null) ? 'opacity:0.45;' : '',
       examNotLast: s.examIdx < examCount - 1, examLast: s.examIdx >= examCount - 1, examAnsweredCount,
       backFromExam: () => this.backFromExam(),
       examReviewTitle: `ប្រឡងសាកល្បង · ឈុតទី ${s.examBlock}`,
