@@ -31,10 +31,13 @@ const path = require('path');
 const https = require('https');
 
 const SHEET = (process.env.QUIZ_SHEET || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTgpLQfgY7O_dhxRC0MOxYzyeeM_BuHalpjng0AkJqjneCgImBFRVy6CjJCq2mlLCU3wNg0KxXNRSYg/pub').replace(/\?.*$/, '');
+// furiQ / furiOpt = keep 漢字(かな) readings in the question / in the options.
+// The exercises keep readings on the answer options (so learners can read the
+// vocabulary) but not the question; the exam keeps them everywhere.
 const SOURCES = [
-  { gid: '0',          block: 'RAW_QUIZ',    size: 10, keepFuri: false },
-  { gid: '1823744360', block: 'RAW_IMGQUIZ', size: 5,  keepFuri: false },
-  { gid: '320587093',  block: 'RAW_EXAM',    size: 50, keepFuri: true },
+  { gid: '0',          block: 'RAW_QUIZ',    size: 10, furiQ: false, furiOpt: true },
+  { gid: '1823744360', block: 'RAW_IMGQUIZ', size: 5,  furiQ: false, furiOpt: true },
+  { gid: '320587093',  block: 'RAW_EXAM',    size: 50, furiQ: true,  furiOpt: true },
 ];
 const csvUrl = gid => `${SHEET}?gid=${gid}&single=true&output=csv`;
 const APP = path.join(__dirname, '..', 'app', 'index.html');
@@ -115,10 +118,10 @@ function normalizeImg(url) {
 }
 
 const LABELS = ['A', 'B', 'C', 'D', 'E'];
-function toQuestions(rows, keepFuri) {
+function toQuestions(rows, furiQ, furiOpt) {
   const out = [];
   for (const r of rows.slice(1)) {
-    const rawQ = keepFuri ? (r[1] || '').trim() : stripFuri(r[1] || '');
+    const rawQ = furiQ ? (r[1] || '').trim() : stripFuri(r[1] || '');
     const c = (r[2] || '').trim();
     const d = (r[3] || '').trim();
     const img = normalizeImg((r[4] || '').trim());
@@ -130,7 +133,7 @@ function toQuestions(rows, keepFuri) {
     if (c === '〇' || c === '×' || c === '✖') {          // 〇 / × / ✖
       item.t = 'tf'; item.a = (c === '〇');
     } else if (OPT_LETTER.test(c[0] || '')) {
-      const co = opt(c, keepFuri);
+      const co = opt(c, furiOpt);
       let all, correctIdx;
       if (co.text) {
         // format 1 — the option text lives in C (correct) and D (the rest). A
@@ -138,7 +141,7 @@ function toQuestions(rows, keepFuri) {
         // option above it, so glue it back on instead of making a phantom option.
         const others = [];
         for (const part of d.split(/\n+/).map(x => x.trim()).filter(Boolean)) {
-          const o = opt(part, keepFuri);
+          const o = opt(part, furiOpt);
           if (o.idx < 0 && others.length) others[others.length - 1].text += ' ' + o.text;
           else others.push(o);
         }
@@ -147,12 +150,12 @@ function toQuestions(rows, keepFuri) {
       } else {
         // C is a bare letter — the choices are inline in the question, or the
         // question is an image and the letters point at parts of the picture
-        const inline = splitInline(rawQ, keepFuri);
+        const inline = splitInline(rawQ, furiOpt);
         if (inline && inline.options.length >= 2) {
           item.q = inline.stem;
           all = inline.options.sort((a, b) => a.idx - b.idx);
         } else {
-          const letters = [co, ...d.split(/\n+/).map(x => x.trim()).filter(Boolean).map(x => opt(x, keepFuri))];
+          const letters = [co, ...d.split(/\n+/).map(x => x.trim()).filter(Boolean).map(x => opt(x, furiOpt))];
           all = letters.sort((a, b) => a.idx - b.idx).map(o => ({ idx: o.idx, text: LABELS[o.idx] || '?' }));
         }
         correctIdx = all.findIndex(o => o.idx === co.idx);
@@ -172,7 +175,7 @@ function toQuestions(rows, keepFuri) {
   const check = process.argv.includes('--check');
 
   for (const src of SOURCES) {
-    const questions = toQuestions(parseCSV(await get(csvUrl(src.gid))), src.keepFuri);
+    const questions = toQuestions(parseCSV(await get(csvUrl(src.gid))), src.furiQ, src.furiOpt);
     const tf = questions.filter(x => x.t === 'tf').length, mc = questions.filter(x => x.t === 'mc').length;
     total += questions.length;
     console.log(`${src.block}: ${questions.length} questions · tf ${tf} · mc ${mc} · sets ${Math.ceil(questions.length / src.size)}`);
