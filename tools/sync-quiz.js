@@ -120,7 +120,9 @@ function toQuestions(rows, keepFuri) {
     const c = (r[2] || '').trim();
     const d = (r[3] || '').trim();
     const img = normalizeImg((r[4] || '').trim());
-    if (!rawQ) continue;
+    // skip only a truly blank row; a question may be an image with no text (the
+    // picture is the question) as long as it still carries an answer in C
+    if (!rawQ && !c) continue;
     const item = { q: rawQ };
     if (c === '〇' || c === '×' || c === '✖') {          // 〇 / × / ✖
       item.t = 'tf'; item.a = (c === '〇');

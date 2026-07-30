@@ -1113,6 +1113,41 @@ textarea.input { min-height: 90px; resize: vertical; }
             </div>
             </sc-if>
 
+            <sc-if value="{{ hasMonitorImgQuiz }}">
+            <h4 style="font-size:15px;margin:0 0 10px;">លំហាត់រូបភាព</h4>
+            <div class="card elev-sm" style="gap:8px;margin-bottom:22px;">
+              <div style="display:flex;justify-content:flex-end;font-size:12px;opacity:0.65;">{{ monitorImgQuizSummary.passedLabel }}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                <sc-for list="{{ monitorImgQuizSummary.chips }}" as="c" hint-placeholder-count="4">
+                  <span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}" sc-camel-on-click="{{ c.onToggle }}">{{ c.text }}</span>
+                </sc-for>
+              </div>
+              <sc-if value="{{ monitorImgQuizSummary.hasOpen }}">
+                <div style="border-top:1px solid var(--color-divider);padding-top:8px;margin-top:2px;">
+                  <div style="font-size:11px;opacity:0.6;margin-bottom:6px;">{{ monitorImgQuizSummary.openTitle }}</div>
+                  <sc-for list="{{ monitorImgQuizSummary.openQuestions }}" as="qq" hint-placeholder-count="5">
+                    <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--color-divider);">
+                      <span style="flex:none;font-size:15px;font-weight:700;{{ qq.markColor }}">{{ qq.mark }}</span>
+                      <span style="flex:1;min-width:0;font-size:13px;line-height:1.6;">{{ qq.q }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+            </sc-if>
+
+            <sc-if value="{{ hasMonitorExam }}">
+            <h4 style="font-size:15px;margin:0 0 10px;">ប្រឡងសាកល្បង</h4>
+            <div class="card elev-sm" style="gap:6px;margin-bottom:22px;">
+              <sc-for list="{{ monitorExamLog }}" as="a" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--color-divider);font-size:13px;">
+                  <span>{{ a.label }}</span>
+                  <span style="display:flex;gap:10px;align-items:center;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+                </div>
+              </sc-for>
+            </div>
+            </sc-if>
+
             <h4 style="font-size:15px;margin:0 0 4px;">រយៈពេលប្រើប្រាស់</h4>
             <div style="font-size:12px;opacity:0.6;margin-bottom:12px;">ថ្ងៃនេះ {{ monitorUsageTodayLabel }} · ៧ ថ្ងៃ {{ monitorUsageWeekLabel }}</div>
             <div class="card elev-sm" style="padding:14px 12px 10px;margin-bottom:22px;">
@@ -1310,6 +1345,30 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}">{{ c.text }}</span>
               </sc-for>
             </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ hasMyImgQuiz }}">
+          <h4 style="font-size:15px;margin:0 0 10px;">លំហាត់រូបភាព</h4>
+          <div class="card elev-sm" style="gap:8px;margin-bottom:22px;">
+            <div style="display:flex;justify-content:flex-end;font-size:12px;opacity:0.65;">{{ myImgQuizSummary.passedLabel }}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              <sc-for list="{{ myImgQuizSummary.chips }}" as="c" hint-placeholder-count="4">
+                <span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}">{{ c.text }}</span>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ hasMyExam }}">
+          <h4 style="font-size:15px;margin:0 0 10px;">ប្រឡងសាកល្បង</h4>
+          <div class="card elev-sm" style="gap:6px;margin-bottom:22px;">
+            <sc-for list="{{ myExamLog }}" as="a" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--color-divider);font-size:13px;">
+                <span>{{ a.label }}</span>
+                <span style="display:flex;gap:10px;align-items:center;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+              </div>
+            </sc-for>
           </div>
           </sc-if>
 
@@ -7498,11 +7557,11 @@ const RAW_EXAM = [
 {"q":"たくさん貨(か)物(もつ)を積(つ)むことができ、雨(あめ)にぬれにくいものはどれですか。","t":"mc","o":["バン型トラック","平ボディートラック","タンクローリー"],"a":0,"img":"https://drive.google.com/thumbnail?id=18ZC2TFhwKsf9XeuR2BMbrw1qrIqhuEot&sz=w1000"},
 {"q":"ロープを掛(か)ける作業(さぎょう)で正(ただ)しいものはどれですか。","t":"mc","o":["濡(ぬ)れたロープを使(つか)う","荷物(にもつ)の上(うえ)では姿勢(しせい)を低(ひく)くして荷台(にだい)の前方(ぜんぽう)では運転席(うんてんせき)に背(せ)を向(む)け、後方(こうほう)では運転席(うんてんせき)に向(む)ける。","ロープが当(あ)たる荷(に)物(もつ)の角(かど)には当(あ)て物(もの)をする"],"a":2},
 {"q":"フォークリフトは会(かい)社(しゃ)で練(れん)習(しゅう)すれば誰でも運(うん)転(てん)できる。","t":"tf","a":false},
-{"q":"信(しん)号(ごう)が黄(き)色(いろ)に変(か)わった交(こう)差(さ)点(てん)に接(せっ)近(きん)しています。交(こう)差(さ)点(てん)の向(む)こうの歩(ほ)道(どう)には子(こ)どもたちが\n います。対(たい)向(こう)車(しゃ)線(せん)の車(くるま)は右(う)折(せつ)の合(あい)図(ず)を出(だ)しています。\n この場面(ばめん)ではどのような運転(うんてん)をすればよいのでしょうか。","t":"mc","o":["加速(かそく)する。","そのまま通行(つうこう)する。","前(まえ)の車(くるま)は黄信号(きしんごう)で止(と)まると思(おも)うので、自(じ)分(ぶん)もブレーキをかける。","前(まえ)の車(くるま)に続(つづ)いて自(じ)分(ぶん)も交差点(こうさてん)に進入(しんにゅう)し、対向車(たいこうしゃ)は右折(うせつ)なので自分(じぶん)が先(さき)に通(つう)行(こう)するように","前(まえ)の車(くるま)に続(つづ)いて自分(じぶん)も交差点(こうさてん)を通過(つうか)しても子(こ)どもたちが道路(どうろ)を渡(わた)り始(はじ)めることはないので"],"a":2,"img":"https://drive.google.com/thumbnail?id=11HTLtnoJwVa_TVojHuwXibLNoJxqJp6N&sz=w1000"},
+{"q":"信(しん)号(ごう)が黄(き)色(いろ)に変(か)わった交(こう)差(さ)点(てん)に接(せっ)近(きん)しています。交(こう)差(さ)点(てん)の向(む)こうの歩(ほ)道(どう)には子(こ)どもたちがいます。対(たい)向(こう)車(しゃ)線(せん)の車(くるま)は右(う)折(せつ)の合(あい)図(ず)を出(だ)しています。 この場面(ばめん)ではどのような運転(うんてん)をすればよいのでしょうか。","t":"mc","o":["加速(かそく)する。","そのまま通行(つうこう)する。","前(まえ)の車(くるま)は黄信号(きしんごう)で止(と)まると思(おも)うので、自(じ)分(ぶん)もブレーキをかける。","前(まえ)の車(くるま)に続(つづ)いて自(じ)分(ぶん)も交差点(こうさてん)に進入(しんにゅう)し、対向車(たいこうしゃ)は右折(うせつ)なので自分(じぶん)が先(さき)に通(つう)行(こう)するように","前(まえ)の車(くるま)に続(つづ)いて自分(じぶん)も交差点(こうさてん)を通過(つうか)しても子(こ)どもたちが道路(どうろ)を渡(わた)り始(はじ)めることはないので"],"a":2,"img":"https://drive.google.com/thumbnail?id=11HTLtnoJwVa_TVojHuwXibLNoJxqJp6N&sz=w1000"},
 {"q":"住(じゅう)宅(たく)街(がい)の見(み)通(とお)しの悪(わる)い交(こう)差(さ)点(てん)に接(せっ)近(きん)しています。この場(ば)面(めん)ではどのような運(うん)転(てん)をすればよいのでしょうか。","t":"mc","o":["進行(しんこう)できる。","見(み)通(とお)しの悪(わる)い交(こう)差(さ)点(てん)でも標識(ひょうしき)がないので徐行(じょこう)せずに通行(つうこう)する。","交差(こうさ)する道路(どうろ)の左側(ひだりがわ)には誰(だれ)もいないが、見(み)通(とお)しが悪(わる)いので安心(あんしん)せず徐行(じょこう)で通行(つうこう)する。","対向車(たいこうしゃ)のかげから進行(しんこう)してくる車(くるま)や歩(ほ)行者(こうしゃ)は相手(あいて)が気(き)を付(つ)けるので自分(じぶん)はそのまま"],"a":2,"img":"https://drive.google.com/thumbnail?id=10dfKvztkvVEQlGnV42WAbNgSNgHuu6jL&sz=w1000"},
-{"q":"長い(なが )下り坂(くだ ざか)のカーブを走行(そうこう)しています。道路(どうろ)には 急(きゅう)な下(くだ)り坂(ざか)を示す(しめ ) 標識(ひょうしき)が設置(せっち)して\n あります。危険(きけん)を避ける(さ )ためにはどのような運転(うんてん)をすればよいでしょうか。","t":"mc","o":["コントロールし、前(まえ)の車(くるま)との車間距離(しゃかんきょり)も十(じゅう)分(ぶん)とっておく。","急(きゅう)な下り坂(くだ ざか)は速度(そくど)が出やすい(で)ので、フットブレーキをたくさん使って(つか )速度(そくど)を","トラックは横転(おうてん)しやすいのでＳ字(じ)カーブでは、ハンドルやブレーキ操作(そうさ)は慎重(しんちょう)に行う(おこな )。","前(まえ)の車(くるま)において行(い)かれないようにできるだけ接(せっ)近(きん)して走(そう)行(こう)する。"],"a":2,"img":"https://drive.google.com/thumbnail?id=1yVczCh_sL2OxCssW-9196GCvvB4hoacK&sz=w1000"},
+{"q":"長い(なが )下り坂(くだ ざか)のカーブを走行(そうこう)しています。道路(どうろ)には 急(きゅう)な下(くだ)り坂(ざか)を示す(しめ ) 標識(ひょうしき)が設置(せっち)してあります。危険(きけん)を避ける(さ )ためにはどのような運転(うんてん)をすればよいでしょうか。","t":"mc","o":["コントロールし、前(まえ)の車(くるま)との車間距離(しゃかんきょり)も十(じゅう)分(ぶん)とっておく。","急(きゅう)な下り坂(くだ ざか)は速度(そくど)が出やすい(で)ので、フットブレーキをたくさん使って(つか )速度(そくど)を","トラックは横転(おうてん)しやすいのでＳ字(じ)カーブでは、ハンドルやブレーキ操作(そうさ)は慎重(しんちょう)に行う(おこな )。","前(まえ)の車(くるま)において行(い)かれないようにできるだけ接(せっ)近(きん)して走(そう)行(こう)する。"],"a":2,"img":"https://drive.google.com/thumbnail?id=1yVczCh_sL2OxCssW-9196GCvvB4hoacK&sz=w1000"},
 {"q":"片側(かたがわ)１車線(しゃせん)の道路(どうろ)を走行(そうこう)しています。危険(きけん)を避ける(さ )にはどのような運転(うんてん)をすればよいでしょうか。","t":"mc","o":["そのまま通行(つうこう)する。","先(さき)に通(つう)過(か)する","自転車(じてんしゃ)が歩(ほ)行者(こうしゃ)などにより通行(つうこう)できなくなった場合(ばあい)、自転車(じてんしゃ)は一(いち)度(ど)止(と)まるはずなので","歩(ほ)行者(こうしゃ)が横断(おうだん)歩道(ほどう)を横断(おうだん)しようとしているが、車(くるま)が優(ゆう)先(せん)なので速(そく)度(ど)を上(あ)げて走(そう)行(こう)し","対向車(たいこうしゃ)が横断(おうだん)歩道(ほどう)を通過(つうか)したら右側(みぎがわ)の歩(ほ)行者(こうしゃ)は横(おう)断(だん)歩(ほ)道(どう)を渡(わた)り始(はじ)めるかもしれないので、特(とく)に注(ちゅう)意(い)し、先(さき)に渡(わた)らせる。"],"a":4,"img":"https://drive.google.com/thumbnail?id=18mr2VwGdYsAZIFdCka63DjlKJzkpW1eF&sz=w1000"},
-{"q":"踏切(ふみきり)に接近(せっきん)しています。 左(ひだり)前方(ぜんぽう)には自転車(じてんしゃ)が通行(つうこう)しており、踏切(ふみきり)の前方(ぜんぽう)には信号機(しんごうき)の\n ある交差(こうさ)点(てん)があり、信号(しんごう)は赤(あか)です。危険(きけん)を避ける(さ )ためにはどのような運転(うんてん)をすれば\n よいでしょうか。","t":"mc","o":["程度(ていど)であれば早(はや)く進(すす)んだ方(ほう)が良(よ)い。","電(でん)車(しゃ)が来(き)ていないので、一時(いちじ)停止(ていし)せず急(いそ)いで通(つう)過(か)する。","踏切(ふみきり)の先(さき)に自分(じぶん)の車(くるま)が入れる(はい )スペースがあるかどうかを確認(かくにん)するが、後(こう)部(ぶ)が少(すこ)しはみ出(で)る","踏切(ふみきり)に進(しん)入(にゅう)するときは、踏切(ふみきり)を通行(つうこう)する歩(ほ)行者(こうしゃ)や自転車(じてんしゃ)、対向車(たいこうしゃ)に注意(ちゅうい)しながら、中央(ちゅうおう)寄(よ)りを通行(つうこう)する。"],"a":3,"img":"https://drive.google.com/thumbnail?id=1Wv8DRQfdBR7a52jy0fUZQX3jG6OBcrC6&sz=w1000"},
+{"q":"踏切(ふみきり)に接近(せっきん)しています。 左(ひだり)前方(ぜんぽう)には自転車(じてんしゃ)が通行(つうこう)しており、踏切(ふみきり)の前方(ぜんぽう)には信号機(しんごうき)のある交差(こうさ)点(てん)があり、信号(しんごう)は赤(あか)です。危険(きけん)を避ける(さ )ためにはどのような運転(うんてん)をすればよいでしょうか。","t":"mc","o":["程度(ていど)であれば早(はや)く進(すす)んだ方(ほう)が良(よ)い。","電(でん)車(しゃ)が来(き)ていないので、一時(いちじ)停止(ていし)せず急(いそ)いで通(つう)過(か)する。","踏切(ふみきり)の先(さき)に自分(じぶん)の車(くるま)が入れる(はい )スペースがあるかどうかを確認(かくにん)するが、後(こう)部(ぶ)が少(すこ)しはみ出(で)る","踏切(ふみきり)に進(しん)入(にゅう)するときは、踏切(ふみきり)を通行(つうこう)する歩(ほ)行者(こうしゃ)や自転車(じてんしゃ)、対向車(たいこうしゃ)に注意(ちゅうい)しながら、中央(ちゅうおう)寄(よ)りを通行(つうこう)する。"],"a":3,"img":"https://drive.google.com/thumbnail?id=1Wv8DRQfdBR7a52jy0fUZQX3jG6OBcrC6&sz=w1000"},
 {"q":"トラック運送(うんそう)事業(じぎょう)は経済(けいざい)活動(かつどう)や生活(せいかつ)のためにとても大切(たいせつ)である。","t":"tf","a":true},
 {"q":"国土(こくど)交通(こうつう)大臣(だいじん)の営業(えいぎょう)許可(きょか)がなくてもトラックにより有償(ゆうしょう)でお客(きゃく)様(さま)の荷物(にもつ)を運(はこ)ぶことができる。","t":"tf","a":false},
 {"q":"白(しろ)いナンバープレートのトラック(とらっく)で、有償(ゆうしょう)輸送(ゆそう)（お金(かね)をもらって荷物(にもつ)を運ぶ(はこ)こと）ができる。","t":"tf","a":false},
@@ -7540,8 +7599,10 @@ const RAW_EXAM = [
 {"q":"運(うん)転(てん)者(しゃ)としての義(ぎ)務(む)で正(ただ)しいものはどれですか。","t":"mc","o":["酒(しゅ)気(き)帯(お)び運(うん)転(てん)をしない","酒(しゅ)気(き)帯(お)び運(うん)転(てん)をしない","過(か)積載(せきさい)での運転(うんてん) Ⓒ日(にち)常(じょう)点(てん)検(けん)を月(つき)に１回(かい)実(じっ)施(し)する"],"a":0},
 {"q":"この積(つ)み方(かた)はどれですか。","t":"mc","o":["交(こう)互(ご)（列(れつ)）積(づ)み","棒積(ぼうづ)み","ピンホイール積(づ)み"],"a":1,"img":"https://drive.google.com/thumbnail?id=1Emds2AsHuvNtxdpH2fTxbp0pkeVZjI2I&sz=w1000"},
 {"q":"煉瓦積(づ)みはどれですか。","t":"mc","o":["A","B","C"],"a":0,"img":"https://drive.google.com/thumbnail?id=1xnaVTxIcuLUVz9pvb_ICLOMgM7KQbk49&sz=w1000"},
+{"q":"","t":"mc","o":["周縁(しゅうへん)アップ方式(ほうしき)","シュリンク方式(ほうしき)","ボックス枠(わく)方式(ほうしき)"],"a":0,"img":"https://drive.google.com/thumbnail?id=1BkJ_WrSKQAEeEHMC6eDdTMS0hrhA4ULF&sz=w1000"},
 {"q":"荷(に)崩(くず)れ防(ぼう)止(し)の3要(よう)素(そ)で間(ま)違(ちが)っているものはどれですか。","t":"mc","o":["荷(に)物(もつ)の積(つ)み付(つ)け（荷(に)物(もつ)の積(つ)み方(かた)","荷物(にもつ)の固縛(こばく)方法(ほうほう)","天気(てんき)"],"a":2},
 {"q":"積(つみ)卸(おろ)し作(さ)業(ぎょう)での正(ただ)しい行(こう)動(どう)はどれですか。","t":"mc","o":["不安定(ふあんてい)な荷物(にもつ)の上(うえ)で作業(さぎょう)する","荷(に)物(もつ)の中(なか)抜(ぬ)きをする","保護帽(ほごぼう)をかぶる"],"a":2},
+{"q":"","t":"mc","o":["シュリンク方式","垂直バンド掛け方式","水平バンド掛け方式"],"a":2,"img":"https://drive.google.com/thumbnail?id=1g74be4lU_gaxZlxvF1OCUnCezO4fRO6S&sz=w1000"},
 {"q":"トレーラーを運(うん)転(てん)している時(とき)に急(きゅう)ブレーキや急(きゅう)ハンドルをすると、起きやすい現象はどれですか。","t":"mc","o":["フェード現象(げんしょう)","ジャックナイフ現象(げんしょう)","ハイドロプレーニング現象(げんしょう)"],"a":1},
 {"q":"このマークの意味(いみ)はどれですか。","t":"mc","o":["必(かなら)ず手(て)で持(も)つ","投(な)げてもよい","取扱注意(とりあつかいちゅうい)"],"a":2,"img":"https://drive.google.com/thumbnail?id=1OxVGNlXPc4tmy8XV0R80an9Oa0rltDua&sz=w1000"},
 {"q":"運転(うんてん)という仕事(しごと)の特徴(とくちょう)はどれですか。","t":"mc","o":["冷(れい)静(せい)で適(てき)切(せつ)な判(はん)断(だん)をすることが必(ひつ)要(よう)になる","いつも短(みじか)い時(じ)間(かん)で終(お)わる","たくさんの人(にん)数(ずう)で一(いっ)緒(しょ)に行(おこな)わなければならない"],"a":0},
@@ -7596,10 +7657,10 @@ const RAW_EXAM = [
 {"q":"この積(つ)み付(つ)け方(ほう)法(ほう)の名前はどれですか。","t":"mc","o":["棒積(ぼうづ)み","レンガ積(づ)み","ピンホイール積(づ)み"],"a":1,"img":"https://drive.google.com/thumbnail?id=1jn-bfBAwY80U8eEnUtv45OYKlARQ4BEl&sz=w1000"},
 {"q":"シートを掛(か)ける作業(さぎょう)で正(ただ)しいものはどれですか。","t":"mc","o":["シートを荷台(にだい)の片側(かたがわ)に合わせ、後(うし)ろまで広(ひろ)げる","荷台(にだい)の側面(そくめん)に向(む)いて片(かた)方(ほう)の膝(ひざ)をつき、体(からだ)を前(まえ)に倒(た)して車(くるま)の側(そく)面(めん)にシートを広(ひろ)げる","シートのすそは止(と)めずにそのままにする"],"a":1},
 {"q":"荷(に)崩(くず)れを防(ぼう)止(し)するために大切(たいせつ)な行動(こうどう)はどれですか。","t":"mc","o":["急(きゅう)のつく運転(うんてん)をしない","トラックと荷物(にもつ)の間(あいだ)には隙間(すきま)を作(つく)る","ラッシングベルトはできるだけ使(つか)わない"],"a":0},
-{"q":"雨(あめ)の高速(こうそく)道路(どうろ)を走行(そうこう)しています。 前(まえ)の車(くるま)の速度(そくど)を遅く(おそ )感じた(かん )あなたは追越(おいこし)車線(しゃせん)に進路を\n 変えよう(か )としています。この場面(ばめん)では危険(きけん)を避ける(さ)ためには どのような運転(うんてん)をすれば\n よいでしょうか。","t":"mc","o":["(90km/h)で走行(そうこう)できる。","もよい","速度(そくど)の規制(きせい)(60km/(・)h)が出されて(だ )いるが、追越し(おいこ )のときは規制(きせい)速度(そくど)を超えて(こ )法定(ほうてい)速度(そくど)","雨天(うてん)時(じ)はミラーの後続車(こうぞくしゃ)が見えにくい(み )ことや、路面(ろめん)が濡れて(ぬ )いてスリップしやすい\n ので慎重(しんちょう)に進路(しんろ)を変(か)える。","右(みぎ)側(がわ)部(ぶ)分(ぶん)に後(こう)続(ぞく)車(しゃ)がいるが相手(あいて)も状況(じょうきょう)がわかっているはずなので進路(しんろ)を変更(へんこう)して"],"a":3,"img":"https://drive.google.com/thumbnail?id=1eYo242oaVqTV6401Qxv0HhDtl88SH4f3&sz=w1000"},
-{"q":"高(こう)速(そく)道(どう)路(ろ)を走(そう)行(こう)しています。前(ぜん)方(ぽう)は渋(じゅう)滞(たい)して車(くるま)が停(てい)止(し)しています。\n この場面(ばめん)ではどのような運転(うんてん)をすればよいでしょうか。","t":"mc","o":["右(みぎ)の車線(しゃせん)の方(ほう)が少(すこ)し空(す)いているので移動(いどう)して前(まえ)へ行(い)けるようにする。","前(まえ)の車(くるま)はすぐに進(すす)み始(はじ)めそうなので、そのまま進(しん)行(こう)しても問題(もんだい)ない。","早(はや)めに減速(げんそく)を開始(かいし)し、追突(ついとつ)事故(じこ)を防止(ぼうし)する。"],"a":2,"img":"https://drive.google.com/thumbnail?id=1VL1svN2DNHwLyFzz1BKolIVscgO74GWP&sz=w1000"},
-{"q":"雪(ゆき)の降(ふ)る片(かた)側(がわ)1車(しゃ)線(せん)の道(どう)路(ろ)を走(そう)行(こう)しています。道(どう)路(ろ)には雪(ゆき)が積(つ)もり始(はじ)めています。\n この場面(ばめん)ではどのような運転(うんてん)をすればよいでしょうか。","t":"mc","o":["雪(ゆき)道(みち)は強(つよ)くブレーキがかかりですぐに停止(ていし)できるので特(とく)に注(ちゅう)意(い)する必要(ひつよう)はない。","自分(じぶん)が優先(ゆうせん)道路(どうろ)のはずなので左(ひだり)の車(くるま)や歩(ほ)行者(こうしゃ)は気(き)にせず通行(つうこう)すればよい","雪(ゆき)が積(つ)もり標(ひょう)識(しき)や標(ひょう)示(じ)が見(み)えなくなっているので、周(まわ)りの動(うご)きを良(よ)く見(み)て\n 運(うん)転(てん)する。"],"a":2,"img":"https://drive.google.com/thumbnail?id=1xrorWG0GnQe4meSFKw0cYjfJADlvyFbP&sz=w1000"},
-{"q":"貨物(かもつ)専用(せんよう)路上(ろじょう)駐車帯(ちゅうしゃたい)（荷物(にもつ)を集(あつ)めたり配(くば)ったりするトラックだけの駐車帯(ちゅうしゃたい)）から\n 発進(はっしん)しようとしています。車道(しゃどう)と歩道(ほどう)の間(あいだ)にガードレールがあります。\n 前方(ぜんぽう)には駐車(ちゅうしゃ)している車(くるま)があり、後方(こうほう)からは車(くるま)が接近(せっきん)しています。\n この場面(ばめん)ではどのような運転(うんてん)をすればよいでしょうか。","t":"mc","o":["トラックはリアオーバーハングが大きいので、左(ひだり)後(こう)部(ぶ)がガードレールに\n ぶつからないか良(よ)く確(かく)認(にん)する。","後(こう)方(ほう)から来(く)る車(くるま)はまだ遠(とお)いので、自(じ)分(ぶん)が先(さき)に発(はっ)進(しん)する。","前(ぜん)方(ぽう)の駐(ちゅう)車(しゃ)車(しゃ)両(りょう)が発(はっ)進(しん)するタイミングまで、気(き)を付(つ)ける必要(ひつよう)はない。"],"a":0,"img":"https://drive.google.com/thumbnail?id=1s3oXRfMkhE6eugFzzHHpdVXmncbCTe51&sz=w1000"},
+{"q":"雨(あめ)の高速(こうそく)道路(どうろ)を走行(そうこう)しています。 前(まえ)の車(くるま)の速度(そくど)を遅く(おそ )感じた(かん )あなたは追越(おいこし)車線(しゃせん)に進路を変えよう(か )としています。この場面(ばめん)では危険(きけん)を避ける(さ)ためには どのような運転(うんてん)をすればよいでしょうか。","t":"mc","o":["(90km/h)で走行(そうこう)できる。","もよい","速度(そくど)の規制(きせい)(60km/(・)h)が出されて(だ )いるが、追越し(おいこ )のときは規制(きせい)速度(そくど)を超えて(こ )法定(ほうてい)速度(そくど)","雨天(うてん)時(じ)はミラーの後続車(こうぞくしゃ)が見えにくい(み )ことや、路面(ろめん)が濡れて(ぬ )いてスリップしやすい\n ので慎重(しんちょう)に進路(しんろ)を変(か)える。","右(みぎ)側(がわ)部(ぶ)分(ぶん)に後(こう)続(ぞく)車(しゃ)がいるが相手(あいて)も状況(じょうきょう)がわかっているはずなので進路(しんろ)を変更(へんこう)して"],"a":3,"img":"https://drive.google.com/thumbnail?id=1eYo242oaVqTV6401Qxv0HhDtl88SH4f3&sz=w1000"},
+{"q":"高(こう)速(そく)道(どう)路(ろ)を走(そう)行(こう)しています。前(ぜん)方(ぽう)は渋(じゅう)滞(たい)して車(くるま)が停(てい)止(し)しています。 この場面(ばめん)ではどのような運転(うんてん)をすればよいでしょうか。","t":"mc","o":["右(みぎ)の車線(しゃせん)の方(ほう)が少(すこ)し空(す)いているので移動(いどう)して前(まえ)へ行(い)けるようにする。","前(まえ)の車(くるま)はすぐに進(すす)み始(はじ)めそうなので、そのまま進(しん)行(こう)しても問題(もんだい)ない。","早(はや)めに減速(げんそく)を開始(かいし)し、追突(ついとつ)事故(じこ)を防止(ぼうし)する。"],"a":2,"img":"https://drive.google.com/thumbnail?id=1VL1svN2DNHwLyFzz1BKolIVscgO74GWP&sz=w1000"},
+{"q":"雪(ゆき)の降(ふ)る片(かた)側(がわ)1車(しゃ)線(せん)の道(どう)路(ろ)を走(そう)行(こう)しています。道(どう)路(ろ)には雪(ゆき)が積(つ)もり始(はじ)めています。 この場面(ばめん)ではどのような運転(うんてん)をすればよいでしょうか。","t":"mc","o":["雪(ゆき)道(みち)は強(つよ)くブレーキがかかりですぐに停止(ていし)できるので特(とく)に注(ちゅう)意(い)する必要(ひつよう)はない。","自分(じぶん)が優先(ゆうせん)道路(どうろ)のはずなので左(ひだり)の車(くるま)や歩(ほ)行者(こうしゃ)は気(き)にせず通行(つうこう)すればよい","雪(ゆき)が積(つ)もり標(ひょう)識(しき)や標(ひょう)示(じ)が見(み)えなくなっているので、周(まわ)りの動(うご)きを良(よ)く見(み)て\n 運(うん)転(てん)する。"],"a":2,"img":"https://drive.google.com/thumbnail?id=1xrorWG0GnQe4meSFKw0cYjfJADlvyFbP&sz=w1000"},
+{"q":"貨物(かもつ)専用(せんよう)路上(ろじょう)駐車帯(ちゅうしゃたい)（荷物(にもつ)を集(あつ)めたり配(くば)ったりするトラックだけの駐車帯(ちゅうしゃたい)）から発進(はっしん)しようとしています。車道(しゃどう)と歩道(ほどう)の間(あいだ)にガードレールがあります。 前方(ぜんぽう)には駐車(ちゅうしゃ)している車(くるま)があり、後方(こうほう)からは車(くるま)が接近(せっきん)しています。 この場面(ばめん)ではどのような運転(うんてん)をすればよいでしょうか。","t":"mc","o":["トラックはリアオーバーハングが大きいので、左(ひだり)後(こう)部(ぶ)がガードレールに\n ぶつからないか良(よ)く確(かく)認(にん)する。","後(こう)方(ほう)から来(く)る車(くるま)はまだ遠(とお)いので、自(じ)分(ぶん)が先(さき)に発(はっ)進(しん)する。","前(ぜん)方(ぽう)の駐(ちゅう)車(しゃ)車(しゃ)両(りょう)が発(はっ)進(しん)するタイミングまで、気(き)を付(つ)ける必要(ひつよう)はない。"],"a":0,"img":"https://drive.google.com/thumbnail?id=1s3oXRfMkhE6eugFzzHHpdVXmncbCTe51&sz=w1000"},
 {"q":"信号機(しんごうき)のある交差点(こうさてん)を右折(うせつ)しようとしています。この場面(ばめん)での正(ただ)しい行(こう)動(どう)はどれですか。","t":"mc","o":["右折(うせつ)した先(さき)の道路(どうろ)に駐車(ちゅうしゃ)車両(しゃりょう)があり、その後(うし)ろから歩(ほ)行者(こうしゃ)が渡(わた)ってくるかも\n しれないので注意(ちゅうい)する。","対向車(たいこうしゃ)が接近(せっきん)してきているので急(いそ)いで先(さき)に曲(ま)がる。","右(みぎ)のミラーには自転車(じてんしゃ)や歩(ほ)行者(こうしゃ)が映(うつ)っていないので横断(おうだん)歩道(ほどう)を渡(わた)る人(ひと)はいない。"],"a":0,"img":"https://drive.google.com/thumbnail?id=1P_Pnbrfkl5vxtko0-fEuIe1uVxCoZm3O&sz=w1000"}];
 
 // The exercise player serves two ladders (decks). They share every screen and
@@ -7922,7 +7983,8 @@ class Component extends DCLogic {
     schoolMenu: null,   // 'create' | 'edit' | null
     // teacher monitor
     students: [], selectedStudent: null, selectedStudentName: '', viewingViewed: [],
-    viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, monExpandedChip: null,
+    viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {},
+    viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], monExpandedChip: null,
     leaderboard: [],   // student standings, name + level only
 
     // self sign-up through a branch invite link
@@ -8566,9 +8628,13 @@ class Component extends DCLogic {
       viewingLessons: (st.settings && st.settings.lessons) || {},
       viewingLessonDetails: (st.settings && st.settings.lessonDetails) || {},
       viewingQuizzes: (st.settings && st.settings.quizzes) || {},
-      viewingQuizDetails: (st.settings && st.settings.quizDetails) || {}, monExpandedChip: null });
+      viewingQuizDetails: (st.settings && st.settings.quizDetails) || {},
+      viewingImgQuizzes: (st.settings && st.settings.imgQuizzes) || {},
+      viewingImgQuizDetails: (st.settings && st.settings.imgQuizDetails) || {},
+      viewingExamLog: (st.settings && Array.isArray(st.settings.examLog)) ? st.settings.examLog : [],
+      monExpandedChip: null });
   }
-  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, monExpandedChip: null }); }
+  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], monExpandedChip: null }); }
   toggleMonChip(key){ this.setState(s => ({ monExpandedChip: s.monExpandedChip === key ? null : key })); }
 
   goHome(){ this.setState({ screen: 'home' }); }
@@ -8746,11 +8812,16 @@ class Component extends DCLogic {
     });
     const total = examQuestions.length;
     const pct = total ? Math.round(score / total * 100) : 0;
+    const passed = pct >= EXAM_PASS;
     const settings = { ...this.state.settings };
     const exams = { ...(settings.exams || {}) };
     exams[examBlock] = Math.max(exams[examBlock] || 0, pct);
     settings.exams = exams;
-    const entry = { mode: 'exam', lesson: examBlock, score, total, date: new Date().toISOString() };
+    // keep every attempt (pass or fail) so the learner and the teacher can see
+    // the full exam record, not just the best score
+    const now = new Date().toISOString();
+    settings.examLog = [...(settings.examLog || []), { block: examBlock, score, total, pct, passed, date: now }].slice(-50);
+    const entry = { mode: 'exam', lesson: examBlock, score, total, date: now };
     this.setState({ settings, history: [...this.state.history, entry], examScore: score,
       examResults: results, examTimeUp: !!timeUp, testMode: 'examreview' }, () => this.persist());
   }
@@ -9138,14 +9209,23 @@ class Component extends DCLogic {
     const usageWeekLabel = myChart.weekLabel;
     const myLessonSummary = buildLessonSummary(s.settings.lessons);
     // the learner's own exercise scores, for their profile
-    const myQuizzes = s.settings.quizzes || {};
-    const myqnums = Object.keys(myQuizzes).map(Number).filter(n => n > 0).sort((a, b) => a - b);
-    const myQuizSummary = {
-      hasAny: myqnums.length > 0,
-      passedLabel: myqnums.length ? `ជាប់ ${myqnums.filter(n => myQuizzes[n] >= PASS_PCT).length} / ${myqnums.length} លំហាត់` : 'មិនទាន់ធ្វើ',
-      chips: myqnums.map(n => ({ text: `${n}៖ ${myQuizzes[n]}%`,
-        style: myQuizzes[n] >= PASS_PCT ? 'background:var(--color-accent-100);color:var(--color-accent-800);border-color:var(--color-accent);' : 'opacity:0.65;' })),
+    const chipSummary = rec => {
+      rec = rec || {};
+      const nums = Object.keys(rec).map(Number).filter(n => n > 0).sort((a, b) => a - b);
+      return {
+        hasAny: nums.length > 0,
+        passedLabel: nums.length ? `ជាប់ ${nums.filter(n => rec[n] >= PASS_PCT).length} / ${nums.length} លំហាត់` : 'មិនទាន់ធ្វើ',
+        chips: nums.map(n => ({ text: `${n}៖ ${rec[n]}%`,
+          style: rec[n] >= PASS_PCT ? 'background:var(--color-accent-100);color:var(--color-accent-800);border-color:var(--color-accent);' : 'opacity:0.65;' })),
+      };
     };
+    const myQuizSummary = chipSummary(s.settings.quizzes);
+    const myImgQuizSummary = chipSummary(s.settings.imgQuizzes);
+    const myExamLog = (Array.isArray(s.settings.examLog) ? s.settings.examLog : []).slice().reverse().map(a => ({
+      label: `ឈុតទី ${a.block}`, scoreLabel: `${a.score}/${a.total} · ${a.pct}%`,
+      verdict: a.passed ? 'ជាប់ ✓' : 'ធ្លាក់ ✗', verdictColor: a.passed ? 'color:#3a9e5c;' : 'color:#d0342c;',
+      dateLabel: (() => { const d = new Date(a.date); return `${d.getDate()}/${d.getMonth() + 1}`; })(),
+    }));
     const myLevel = lessonsPassed(s.settings.lessons);
 
     // — the student leaderboard —
@@ -9215,33 +9295,42 @@ class Component extends DCLogic {
       };
     });
 
-    // the same, for the exercises (លំហាត់) the student has done
-    const qrec = s.viewingQuizzes || {};
-    const qdet = s.viewingQuizDetails || {};
-    const qnums = Object.keys(qrec).map(Number).filter(n => n > 0).sort((a, b) => a - b);
-    const qpassed = qnums.filter(n => qrec[n] >= PASS_PCT).length;
-    let qOpenTitle = '', qOpenQuestions = [];
-    const qchips = qnums.map(n => {
-      const det = qdet[n] || [];
-      const key = 'quiz-' + n;
-      const open = s.monExpandedChip === key;
-      if (open) {
-        qOpenTitle = `លំហាត់ទី ${n}`;
-        qOpenQuestions = det.map(d => ({ q: d.q, mark: d.ok ? '✓' : '✗', markColor: d.ok ? 'color:#3a9e5c;' : 'color:#d0342c;' }));
-      }
-      return {
-        text: `${n}៖ ${qrec[n]}%`,
-        onToggle: det.length ? (() => this.toggleMonChip(key)) : (() => {}),
-        style: (qrec[n] >= PASS_PCT
-          ? 'background:var(--color-accent-100);color:var(--color-accent-800);border-color:var(--color-accent);'
-          : 'opacity:0.65;') + (det.length ? 'cursor:pointer;' : '') + (open ? 'outline:2px solid var(--color-accent-700);' : ''),
-      };
-    });
-    const monitorQuizSummary = {
-      hasAny: qnums.length > 0,
-      passedLabel: qnums.length ? `ជាប់ ${qpassed} / ${qnums.length} លំហាត់` : 'មិនទាន់ធ្វើ',
-      chips: qchips, hasOpen: qOpenQuestions.length > 0, openTitle: qOpenTitle, openQuestions: qOpenQuestions,
+    // the same, for the exercises the student has done — a drill-in ladder
+    // summary reused by both លំហាត់ and លំហាត់រូបភាព
+    const ladderSummary = (rec, det, prefix) => {
+      rec = rec || {}; det = det || {};
+      const nums = Object.keys(rec).map(Number).filter(n => n > 0).sort((a, b) => a - b);
+      const passed = nums.filter(n => rec[n] >= PASS_PCT).length;
+      let openTitle = '', openQuestions = [];
+      const chips = nums.map(n => {
+        const dd = det[n] || [];
+        const key = prefix + '-' + n;
+        const open = s.monExpandedChip === key;
+        if (open) {
+          openTitle = `លំហាត់ទី ${n}`;
+          openQuestions = dd.map(d => ({ q: d.q, mark: d.ok ? '✓' : '✗', markColor: d.ok ? 'color:#3a9e5c;' : 'color:#d0342c;' }));
+        }
+        return {
+          text: `${n}៖ ${rec[n]}%`,
+          onToggle: dd.length ? (() => this.toggleMonChip(key)) : (() => {}),
+          style: (rec[n] >= PASS_PCT
+            ? 'background:var(--color-accent-100);color:var(--color-accent-800);border-color:var(--color-accent);'
+            : 'opacity:0.65;') + (dd.length ? 'cursor:pointer;' : '') + (open ? 'outline:2px solid var(--color-accent-700);' : ''),
+        };
+      });
+      return { hasAny: nums.length > 0,
+        passedLabel: nums.length ? `ជាប់ ${passed} / ${nums.length} លំហាត់` : 'មិនទាន់ធ្វើ',
+        chips, hasOpen: openQuestions.length > 0, openTitle, openQuestions };
     };
+    const monitorQuizSummary = ladderSummary(s.viewingQuizzes, s.viewingQuizDetails, 'quiz');
+    const monitorImgQuizSummary = ladderSummary(s.viewingImgQuizzes, s.viewingImgQuizDetails, 'imgquiz');
+    // the exam is not a ladder — show every attempt (pass or fail), newest first
+    const examLogRow = a => ({
+      label: `ឈុតទី ${a.block}`, scoreLabel: `${a.score}/${a.total} · ${a.pct}%`,
+      verdict: a.passed ? 'ជាប់ ✓' : 'ធ្លាក់ ✗', verdictColor: a.passed ? 'color:#3a9e5c;' : 'color:#d0342c;',
+      dateLabel: (() => { const d = new Date(a.date); return `${d.getDate()}/${d.getMonth() + 1}`; })(),
+    });
+    const monitorExamLog = (s.viewingExamLog || []).slice().reverse().map(examLogRow);
 
     const ROLE_LABEL = { admin: 'អ្នកគ្រប់គ្រង', school: 'សាលា/សាខា', teacher: 'គ្រូ', student: 'សិស្ស' };
     const ROLE_TAG = { admin: 'tag tag-accent', school: 'tag tag-outline', teacher: 'tag tag-accent-2', student: 'tag tag-neutral' };
@@ -9418,6 +9507,8 @@ class Component extends DCLogic {
       })(),
       monitorLessonSummary,
       monitorQuizSummary, hasMonitorQuiz: monitorQuizSummary.hasAny,
+      monitorImgQuizSummary, hasMonitorImgQuiz: monitorImgQuizSummary.hasAny,
+      monitorExamLog, hasMonitorExam: monitorExamLog.length > 0,
       monitorUsageDays: monitorChart.days,
       monitorUsageTodayLabel: monitorChart.todayLabel,
       monitorUsageWeekLabel: monitorChart.weekLabel,
@@ -9433,6 +9524,8 @@ class Component extends DCLogic {
       hasBranch: !!(s.mySchoolId && schoolName(s.mySchoolId)),
       bookStats, usageDays, usageTodayLabel, usageWeekLabel, myLessonSummary,
       myQuizSummary, hasMyQuiz: myQuizSummary.hasAny,
+      myImgQuizSummary, hasMyImgQuiz: myImgQuizSummary.hasAny,
+      myExamLog, hasMyExam: myExamLog.length > 0,
       profileInitial: (s.profileName || '?').trim().charAt(0),
       // — leaderboard (its own screen, students only) —
       isRanking: s.screen === 'ranking',
