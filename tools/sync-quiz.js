@@ -17,7 +17,9 @@
  *   · true/false: C is 〇 or ×/✖, D empty.
  *   · A/B/C     : C is the correct option (Ⓐ/Ⓑ/Ⓒ + text), D the other options,
  *                 one per line, each prefixed with its circled letter.
- * An optional 5th column (E) is an image URL (Drive share links are rewritten).
+ * Column E is an optional image URL (Drive share links are rewritten).
+ * Column F is an optional explanation (ការពន្យល់) shown in the review after the
+ * question is done; kept verbatim (not furigana-stripped).
  *
  * The exam keeps its 漢字(かな) readings on purpose (it forbids the dictionary),
  * so its questions and options are NOT furigana-stripped.
@@ -120,6 +122,7 @@ function toQuestions(rows, keepFuri) {
     const c = (r[2] || '').trim();
     const d = (r[3] || '').trim();
     const img = normalizeImg((r[4] || '').trim());
+    const explain = (r[5] || '').trim();
     // skip only a truly blank row; a question may be an image with no text (the
     // picture is the question) as long as it still carries an answer in C
     if (!rawQ && !c) continue;
@@ -130,8 +133,15 @@ function toQuestions(rows, keepFuri) {
       const co = opt(c, keepFuri);
       let all, correctIdx;
       if (co.text) {
-        // format 1 — the option text lives in C (correct) and D (the rest)
-        const others = d.split(/\n+/).map(x => x.trim()).filter(Boolean).map(x => opt(x, keepFuri));
+        // format 1 — the option text lives in C (correct) and D (the rest). A
+        // line inside D with no leading letter is a wrapped continuation of the
+        // option above it, so glue it back on instead of making a phantom option.
+        const others = [];
+        for (const part of d.split(/\n+/).map(x => x.trim()).filter(Boolean)) {
+          const o = opt(part, keepFuri);
+          if (o.idx < 0 && others.length) others[others.length - 1].text += ' ' + o.text;
+          else others.push(o);
+        }
         all = [co, ...others].sort((a, b) => a.idx - b.idx);
         correctIdx = all.indexOf(co);
       } else {
@@ -150,6 +160,7 @@ function toQuestions(rows, keepFuri) {
       item.t = 'mc'; item.o = all.map(o => o.text); item.a = correctIdx;
     } else continue;
     if (img) item.img = img;
+    if (explain) item.e = explain;
     out.push(item);
   }
   return out;
