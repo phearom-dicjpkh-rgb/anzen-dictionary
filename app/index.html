@@ -1200,6 +1200,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                       <div style="font-size:22px;line-height:1;margin-bottom:4px;">{{ p.medal }}</div>
                       <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:19px;border:2px solid rgba(255,255,255,0.6);">{{ p.initial }}</div>
                       <div style="font-size:11px;margin-top:5px;text-align:center;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;">{{ p.name }}</div>
+                    <sc-if value="{{ p.hasStars }}"><div style="font-size:10px;margin-top:1px;">{{ p.stars }}</div></sc-if>
                       <div style="font-size:10px;opacity:0.85;">{{ p.levelLabel }}</div>
                       <div style="width:100%;height:{{ p.podiumHeight }};background:{{ p.podiumBg }};border-radius:6px 6px 0 0;margin-top:6px;display:flex;align-items:flex-start;justify-content:center;padding-top:4px;font-family:var(--font-heading);font-size:15px;color:#f3f2f2;">{{ p.rank }}</div>
                     </div>
@@ -1214,6 +1215,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                     <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid transparent;border-radius:10px;cursor:pointer;" sc-camel-on-click="{{ r.onSelect }}">
                       <div style="flex:none;width:26px;text-align:center;{{ r.badgeStyle }}">{{ r.badge }}</div>
                       <div style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</div>
+                      <sc-if value="{{ r.hasStars }}"><div style="flex:none;font-size:12px;">{{ r.stars }}</div></sc-if>
                       <div style="flex:none;font-size:12px;color:var(--color-accent-700);">{{ r.levelLabel }}</div>
                       <span style="flex:none;opacity:0.35;">›</span>
                     </div>
@@ -1231,6 +1233,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                         <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid transparent;border-radius:10px;cursor:pointer;" sc-camel-on-click="{{ r.onSelect }}">
                           <div style="flex:none;width:26px;text-align:center;{{ r.badgeStyle }}">{{ r.badge }}</div>
                           <div style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</div>
+                          <sc-if value="{{ r.hasStars }}"><div style="flex:none;font-size:12px;">{{ r.stars }}</div></sc-if>
                           <div style="flex:none;font-size:12px;color:var(--color-accent-700);">{{ r.levelLabel }}</div>
                           <span style="flex:none;opacity:0.35;">›</span>
                         </div>
@@ -1266,6 +1269,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                     <div style="font-size:22px;line-height:1;margin-bottom:4px;">{{ p.medal }}</div>
                     <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:19px;border:2px solid rgba(255,255,255,0.6);">{{ p.initial }}</div>
                     <div style="font-size:11px;margin-top:5px;text-align:center;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;">{{ p.name }}</div>
+                    <sc-if value="{{ p.hasStars }}"><div style="font-size:10px;margin-top:1px;">{{ p.stars }}</div></sc-if>
                     <div style="font-size:10px;opacity:0.85;">{{ p.levelLabel }}</div>
                     <div style="width:100%;height:{{ p.podiumHeight }};background:{{ p.podiumBg }};border-radius:6px 6px 0 0;margin-top:6px;display:flex;align-items:flex-start;justify-content:center;padding-top:4px;font-family:var(--font-heading);font-size:15px;color:#f3f2f2;">{{ p.rank }}</div>
                   </div>
@@ -1278,6 +1282,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid transparent;border-radius:10px;{{ r.rowStyle }}">
                   <div style="flex:none;width:26px;text-align:center;{{ r.badgeStyle }}">{{ r.badge }}</div>
                   <div style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</div>
+                  <sc-if value="{{ r.hasStars }}"><div style="flex:none;font-size:12px;">{{ r.stars }}</div></sc-if>
                   <div style="flex:none;font-size:12px;color:var(--color-accent-700);">{{ r.levelLabel }}</div>
                 </div>
               </sc-for>
@@ -7705,14 +7710,25 @@ function buildUsageChart(usage){
 // A learner's "level": how many lessons they have passed across every ladder.
 // Shared by the profile leaderboard and the teacher's follow list so the number
 // is the same everywhere.
-function lessonsPassed(lessons){
+// how many sets in one record (e.g. one ladder, or the exam blocks) were passed
+function passedCount(rec){ let n = 0; for (const k of Object.keys(rec || {})) if (rec[k] >= PASS_PCT) n++; return n; }
+// A student's level rewards harder work more: each passed word-test lesson is
+// worth 1, each passed exercise (លំហាត់) 2, each passed image-exercise 1, and
+// each passed exam block (ប្រឡងសាកល្បង) 3.
+function computeLevel(settings){
+  settings = settings || {};
   let n = 0;
-  for (const kind of Object.keys(lessons || {})) {
-    const rec = lessons[kind] || {};
-    for (const k of Object.keys(rec)) if (rec[k] >= PASS_PCT) n++;
-  }
+  const lessons = settings.lessons || {};
+  for (const kind of Object.keys(lessons)) n += passedCount(lessons[kind]);   // word tests × 1
+  n += passedCount(settings.quizzes) * 2;       // លំហាត់ × 2
+  n += passedCount(settings.imgQuizzes) * 1;    // លំហាត់រូបភាព × 1
+  n += passedCount(settings.exams) * 3;         // ប្រឡងសាកល្បង × 3 (per block)
   return n;
 }
+// a star for every time the exam was passed (each passing attempt in the log)
+function examStars(settings){ const log = (settings || {}).examLog; return Array.isArray(log) ? log.filter(a => a && a.passed).length : 0; }
+// "⭐", "⭐ ×2", … after a name; empty when the exam was never passed
+function starLabel(n){ return n >= 2 ? `⭐ ×${n}` : (n === 1 ? '⭐' : ''); }
 
 // Test results per ladder: how many lessons were passed, and the best score of
 // each one attempted.
@@ -7894,7 +7910,7 @@ function makeDemoBackend(){
       const all=load(); const sch=all.find(x=>x.id===me.school_id);
       const schoolName=sch?(sch.full_name||sch.email||''):'';
       const rows=all.filter(x=>x.role==='student' && x.school_id && x.school_id===me.school_id).map(u=>({
-        full_name: u.full_name||'', level: lessonsPassed((u.settings||{}).lessons),
+        full_name: u.full_name||'', level: computeLevel(u.settings||{}), stars: examStars(u.settings||{}),
         progress: Array.isArray(u.viewed)?u.viewed.length:0, is_me: u.id===me.id, school_name:schoolName }));
       return { rows }; },
     async listTeachers(){ const me=this._me(); const all=load().filter(x=>x.role==='teacher');
@@ -9233,7 +9249,7 @@ class Component extends DCLogic {
       verdict: a.passed ? 'ជាប់ ✓' : 'ធ្លាក់ ✗', verdictColor: a.passed ? 'color:#3a9e5c;' : 'color:#d0342c;',
       dateLabel: (() => { const d = new Date(a.date); return `${d.getDate()}/${d.getMonth() + 1}`; })(),
     }));
-    const myLevel = lessonsPassed(s.settings.lessons);
+    const myLevel = computeLevel(s.settings);
 
     // — the student leaderboard —
     // Rank by level, break ties on words seen, then name. The top three wear a
@@ -9249,6 +9265,7 @@ class Component extends DCLogic {
       badge: MEDALS[i] || String(i + 1),
       name: (r.full_name || '').trim() || 'សិស្ស',
       levelLabel: `កម្រិត ${r.level}`,
+      stars: starLabel(r.stars || 0), hasStars: (r.stars || 0) > 0,
       isMe: !!r.is_me,
       rowStyle: r.is_me
         ? 'background:color-mix(in srgb, var(--color-accent) 14%, transparent);border-color:var(--color-accent);'
@@ -9366,7 +9383,8 @@ class Component extends DCLogic {
       return {
         schoolId: st.school_id || '',
         name: (st.full_name || st.email || '').trim() || 'សិស្ស',
-        level: lessonsPassed((st.settings && st.settings.lessons) || {}),
+        level: computeLevel(st.settings || {}),
+        stars: examStars(st.settings || {}),
         words: keys.size,
         st,
       };
@@ -9381,6 +9399,7 @@ class Component extends DCLogic {
         : 'font-size:13px;font-weight:600;color:var(--color-accent-700);background:var(--color-neutral-200);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;',
       name: e.name,
       levelLabel: `កម្រិត ${e.level} · ${e.words} ពាក្យ`,
+      stars: starLabel(e.stars || 0), hasStars: (e.stars || 0) > 0,
       onSelect: () => this.selectStudentToView(e.st),
     });
 
