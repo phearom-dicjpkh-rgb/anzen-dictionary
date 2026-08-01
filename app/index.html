@@ -1436,6 +1436,14 @@ textarea.input { min-height: 90px; resize: vertical; }
         <div style="padding:18px 20px 30px;">
           <h1 style="font-size:26px;margin:0 0 16px;">ម៉ីនុយ</h1>
           <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ openPlayer }}">
+              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+              <div style="flex:1;min-width:0;">
+                <div class="card-title" style="font-size:15px;">ចាក់ពាក្យ 🎧</div>
+                <div class="card-body" style="font-size:11px;">ស្ដាប់ពាក្យជប៉ុន និង ន័យខ្មែរ ដោយស្វ័យប្រវត្តិ</div>
+              </div>
+              <span style="opacity:0.4;">›</span>
+            </div>
             <sc-if value="{{ isAdmin }}">
             <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goAddWord }}">
               <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
@@ -1566,6 +1574,52 @@ textarea.input { min-height: 90px; resize: vertical; }
           <div class="hr" style="margin:18px 0 12px;"></div>
           <button class="btn btn-secondary btn-block" style="margin-top:0;" sc-camel-on-click="{{ exportCustomWords }}">📋 ចម្លងពាក្យបន្ថែម ទៅ Sheet</button>
           <div style="font-size:11px;opacity:0.6;line-height:1.7;margin-top:8px;">ចម្លងពាក្យដែលបានបន្ថែមក្នុងកម្មវិធី រួច paste ក្រោមជួរចុងក្រោយក្នុង Google Sheet។ ក្រោយ sync ចូល សូមលុបវាចេញពីទីនេះ ដើម្បីកុំឲ្យស្ទួន។</div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isPlayer }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px 40px;">
+          <button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ leavePlayer }}">← ម៉ីនុយ</button>
+          <h1 style="font-size:26px;margin:0 0 14px;">ចាក់ពាក្យ 🎧</h1>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+            <sc-for list="{{ playerSrcChips }}" as="c" hint-placeholder-count="4">
+              <button style="padding:7px 14px;border-radius:99px;border:1.5px solid;font-size:13px;cursor:pointer;{{ c.style }}" sc-camel-on-click="{{ c.onSelect }}">{{ c.label }}</button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ playerIsBook }}">
+            <div class="field" style="margin-bottom:14px;"><label>សៀវភៅ</label>
+              <select class="input" value="{{ playerBook }}" sc-camel-on-change="{{ onPlayerBook }}">
+                <sc-for list="{{ playerBookOptions }}" as="b" hint-placeholder-count="2"><option value="{{ b.value }}">{{ b.label }}</option></sc-for>
+              </select></div>
+          </sc-if>
+          <sc-if value="{{ playerIsLesson }}">
+            <div class="field" style="margin-bottom:14px;"><label>មេរៀន</label>
+              <select class="input" value="{{ playerLesson }}" sc-camel-on-change="{{ onPlayerLesson }}">
+                <sc-for list="{{ playerLessonOptions }}" as="l" hint-placeholder-count="3"><option value="{{ l.value }}">{{ l.label }}</option></sc-for>
+              </select></div>
+          </sc-if>
+
+          <sc-if value="{{ playerHasWord }}">
+          <div style="border-radius:20px;background:linear-gradient(135deg, var(--color-accent-700), var(--color-accent));color:#f3f2f2;padding:30px 22px;text-align:center;margin-bottom:14px;box-shadow:var(--shadow-md);">
+            <div style="font-size:15px;opacity:0.85;margin-bottom:6px;">{{ playerNowKana }}</div>
+            <div style="font-family:var(--font-heading);font-weight:600;font-size:40px;line-height:1.15;margin-bottom:12px;">{{ playerNowJp }}</div>
+            <div style="font-size:20px;line-height:1.5;">{{ playerNowKm }}</div>
+          </div>
+          <div style="text-align:center;font-size:12px;opacity:0.6;margin-bottom:14px;">{{ playerPos }} / {{ playerTotal }}</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:22px;margin-bottom:16px;">
+            <button style="background:transparent;border:none;font-size:26px;cursor:pointer;color:var(--color-text);" sc-camel-on-click="{{ playerPrev }}">⏮</button>
+            <button style="width:66px;height:66px;border-radius:50%;border:none;background:var(--color-accent);color:#f3f2f2;font-size:26px;cursor:pointer;box-shadow:var(--shadow-md);" sc-camel-on-click="{{ playerToggle }}">{{ playerPlayGlyph }}</button>
+            <button style="background:transparent;border:none;font-size:26px;cursor:pointer;color:var(--color-text);" sc-camel-on-click="{{ playerNext }}">⏭</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:14px;font-size:13px;">
+            <button style="background:transparent;border:1.5px solid var(--color-divider);border-radius:99px;padding:6px 13px;cursor:pointer;{{ playerRepeatStyle }}" sc-camel-on-click="{{ playerToggleRepeat }}">🔁 ចាក់ឡើងវិញ</button>
+            <label style="display:flex;align-items:center;gap:6px;">ល្បឿន
+              <select class="input" value="{{ playerRate }}" sc-camel-on-change="{{ onPlayerRate }}" style="width:auto;min-height:30px;padding:2px 6px;">
+                <option value="0.75">0.75×</option><option value="0.95">1×</option><option value="1.2">1.2×</option>
+              </select></label>
+          </div>
+          </sc-if>
+          <sc-if value="{{ playerEmpty }}"><div style="text-align:center;padding:50px 20px;opacity:0.55;font-size:13px;line-height:1.8;">បញ្ជីទទេ<br>ជ្រើសរើសប្រភពផ្សេង</div></sc-if>
         </div>
         </sc-if>
 
@@ -8100,6 +8154,9 @@ class Component extends DCLogic {
     favorites: [], history: [], viewed: [],
     settings: { fontScale: 1, autoAudio: false },
     syncing: false, lastSync: null, toast: null,
+    // ចាក់ពាក្យ (word player)
+    playerSrc: 'book', playerBook: '', playerLesson: 1,
+    playerList: [], playerIdx: 0, playerPlaying: false, playerRepeat: false, playerRate: 0.95,
     testMode: null, testKind: 'mc_jp', testLesson: 1,
     testWords: [], testIdx: 0, testScore: 0, testResults: [],
     // exercises (លំហាត់ / លំហាត់រូបភាព)
@@ -8252,7 +8309,7 @@ class Component extends DCLogic {
       if (this._usageTicks >= 4) { this._usageTicks = 0; this.persist(); }   // save about once a minute
     });
   }
-  goProfile(){ this.setState({ screen: 'profile' }); }
+  goProfile(){ this.stopSpeech(); this.setState({ screen: 'profile', playerPlaying: false }); }
   async loadLeaderboard(){ const r = await Backend.leaderboard(); this.setState({ leaderboard: r.rows || [] }); }
 
   async componentDidMount(){
@@ -8379,6 +8436,78 @@ class Component extends DCLogic {
       else speak();
     } catch(e) { speak(); }
   }
+
+  // — ចាក់ពាក្យ (word player): a music-player-style screen that reads each word's
+  //   Japanese aloud, then its Khmer meaning, and auto-advances through a list —
+  voiceFor(lang){
+    if (lang === 'ja') return this.japaneseVoice();
+    let vs = []; try { vs = window.speechSynthesis.getVoices() || []; } catch(e) { return null; }
+    return vs.find(v => /^km([-_]|$)/i.test(v.lang || '')) || vs.find(v => /khmer|ខ្មែរ/i.test(v.name || '')) || null;
+  }
+  // speak one utterance; call onDone when it ends (or a watchdog fires), but only
+  // while `token` is still the current one — pausing/skipping bumps the token
+  _speak(text, lang, token, onDone){
+    const synth = window.speechSynthesis;
+    const proceed = () => { if (token === this._pt) onDone && onDone(); };
+    if (!text || !synth) { proceed(); return; }
+    const v = this.voiceFor(lang);
+    // no voice for this language (Khmer is missing on most devices): a dead
+    // utterance can hang, so just show the text for a short beat and move on
+    if (!v && lang === 'km') { setTimeout(proceed, 900); return; }
+    try {
+      const u = new SpeechSynthesisUtterance(text);
+      if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = lang === 'km' ? 'km-KH' : 'ja-JP'; }
+      u.rate = this.state.playerRate || 0.95;
+      let fired = false;
+      const fin = () => { if (fired) return; fired = true; clearTimeout(wd); proceed(); };
+      u.onend = fin; u.onerror = fin;
+      const wd = setTimeout(fin, 1200 + (text.length * 90));   // some voices never fire onend
+      try { synth.resume(); } catch(e) {}
+      synth.speak(u);
+    } catch(e) { proceed(); }
+  }
+  stopSpeech(){ this._pt = (this._pt || 0) + 1; try { window.speechSynthesis.cancel(); } catch(e) {} }
+  buildPlaylist(){
+    const s = this.state;
+    if (s.playerSrc === 'fav') return (s.favorites || []).map(id => WORDS.find(w => w.id === id)).filter(Boolean);
+    if (s.playerSrc === 'star') return dedupeWords(WORDS.filter(w => w.cat === 'vocab' && bookBrowsable(w.book) && w.starred));
+    if (s.playerSrc === 'lesson') return this.lessonWords(s.playerLesson);
+    // book (default): all vocab of the chosen book, or every book when none picked
+    return dedupeWords(WORDS.filter(w => w.cat === 'vocab' && bookBrowsable(w.book) && (!s.playerBook || w.book === s.playerBook)));
+  }
+  openPlayer(){
+    this.stopSpeech();
+    const book = this.state.playerBook || (BOOKS[0] || '');
+    this.setState({ screen: 'player', playerBook: book, playerPlaying: false, playerIdx: 0 },
+      () => this.setState({ playerList: this.buildPlaylist() }));
+  }
+  refreshPlaylist(){ this.stopSpeech(); this.setState({ playerList: this.buildPlaylist(), playerIdx: 0, playerPlaying: false }); }
+  setPlayerSrc(src){ this.setState({ playerSrc: src }, () => this.refreshPlaylist()); }
+  onPlayerBook(e){ this.setState({ playerBook: e.target.value }, () => this.refreshPlaylist()); }
+  onPlayerLesson(e){ this.setState({ playerLesson: parseInt(e.target.value, 10) || 1 }, () => this.refreshPlaylist()); }
+  onPlayerRate(e){ this.setState({ playerRate: parseFloat(e.target.value) || 0.95 }); }
+  playerStep(){
+    if (!this.state.playerPlaying) return;
+    const w = this.state.playerList[this.state.playerIdx];
+    if (!w) { this.setState({ playerPlaying: false }); return; }
+    const token = this._pt;
+    const gap = (ms, cb) => setTimeout(() => { if (token === this._pt && this.state.playerPlaying) cb(); }, ms);
+    const advance = () => {
+      const last = this.state.playerIdx >= this.state.playerList.length - 1;
+      if (last && !this.state.playerRepeat) { this.setState({ playerPlaying: false }); return; }
+      const ni = last ? 0 : this.state.playerIdx + 1;
+      this.setState({ playerIdx: ni }, () => gap(300, () => this.playerStep()));
+    };
+    this._speak(w.jp, 'ja', token, () => gap(250, () => this._speak(w.km, 'km', token, () => gap(350, advance))));
+  }
+  playerPlay(){ if (!this.state.playerList.length) { this.showToast('បញ្ជីទទេ'); return; } this.stopSpeech(); this.setState({ playerPlaying: true }, () => this.playerStep()); }
+  playerPause(){ this.stopSpeech(); this.setState({ playerPlaying: false }); }
+  playerToggle(){ this.state.playerPlaying ? this.playerPause() : this.playerPlay(); }
+  playerNext(){ this.stopSpeech(); const last = this.state.playerIdx >= this.state.playerList.length - 1; const ni = last ? 0 : this.state.playerIdx + 1; this.setState({ playerIdx: ni }, () => { if (this.state.playerPlaying) this.playerStep(); }); }
+  playerPrev(){ this.stopSpeech(); const ni = this.state.playerIdx <= 0 ? 0 : this.state.playerIdx - 1; this.setState({ playerIdx: ni }, () => { if (this.state.playerPlaying) this.playerStep(); }); }
+  playerGoto(i){ this.stopSpeech(); this.setState({ playerIdx: i }, () => { if (this.state.playerPlaying) this.playerStep(); }); }
+  playerToggleRepeat(){ this.setState(s => ({ playerRepeat: !s.playerRepeat })); }
+  leavePlayer(){ this.stopSpeech(); this.setState({ playerPlaying: false, screen: 'menu' }); }
 
   // — Login / logout —
   onEmailChange(e){ this.setState({ email: e.target.value }); }
@@ -8758,13 +8887,13 @@ class Component extends DCLogic {
   backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], monExpandedChip: null }); }
   toggleMonChip(key){ this.setState(s => ({ monExpandedChip: s.monExpandedChip === key ? null : key })); }
 
-  goHome(){ this.setState({ screen: 'home' }); }
-  goFavorites(){ this.setState({ screen: 'favorites' }); }
-  goTest(){ this.setState({ screen: 'test', testMode: null }); }
-  goMenu(){ this.setState({ screen: 'menu' }); }
-  goRanking(){ this.setState({ screen: 'ranking' }); this.loadLeaderboard(); }
-  goSettings(){ this.setState({ screen: 'settings', settingsName: this.state.appName, settingsLogo: this.state.appLogo, settingsLogoBlob: null, settingsMsg: '', settingsError: '' }); }
-  goMonitor(){ this.setState({ screen: 'monitor' }, () => this.loadStudents()); }
+  goHome(){ this.stopSpeech(); this.setState({ screen: 'home', playerPlaying: false }); }
+  goFavorites(){ this.stopSpeech(); this.setState({ screen: 'favorites', playerPlaying: false }); }
+  goTest(){ this.stopSpeech(); this.setState({ screen: 'test', testMode: null, playerPlaying: false }); }
+  goMenu(){ this.stopSpeech(); this.setState({ screen: 'menu', playerPlaying: false }); }
+  goRanking(){ this.stopSpeech(); this.setState({ screen: 'ranking', playerPlaying: false }); this.loadLeaderboard(); }
+  goSettings(){ this.stopSpeech(); this.setState({ screen: 'settings', playerPlaying: false, settingsName: this.state.appName, settingsLogo: this.state.appLogo, settingsLogoBlob: null, settingsMsg: '', settingsError: '' }); }
+  goMonitor(){ this.stopSpeech(); this.setState({ screen: 'monitor', playerPlaying: false }, () => this.loadStudents()); }
 
   openDetail(id){
     this.setState({ detailWordId: id });
@@ -9295,6 +9424,16 @@ class Component extends DCLogic {
     const examBest = (s.settings.exams || {});
     const examBestVals = Object.keys(examBest).map(k => examBest[k]);
     const examBestLabel = examBestVals.length ? `ពិន្ទុល្អបំផុត: ${Math.max.apply(null, examBestVals)}%` : 'មិនទាន់ធ្វើ';
+
+    // — ចាក់ពាក្យ (word player) render locals —
+    const PLAYER_SRCS = [{ k: 'book', label: 'សៀវភៅ' }, { k: 'fav', label: 'សំណព្វ' }, { k: 'star', label: 'ផ្កាយ' }, { k: 'lesson', label: 'មេរៀន' }];
+    const playerSrcChips = PLAYER_SRCS.map(x => ({ label: x.label, onSelect: () => this.setPlayerSrc(x.k),
+      style: s.playerSrc === x.k ? 'background:var(--color-accent);color:#f3f2f2;border-color:var(--color-accent);'
+        : 'background:var(--color-surface);border-color:var(--color-divider);color:var(--color-text);' }));
+    const playerBookOptions = [{ value: '', label: 'ទាំងអស់' }, ...BOOKS.map(b => ({ value: b, label: b }))];
+    const playerLessonOptions = [];
+    for (let n = 1; n <= this.lessonTotal(); n++) playerLessonOptions.push({ value: String(n), label: `មេរៀនទី ${n}` });
+    const pw = s.playerList[s.playerIdx] || null;
 
     const viewingSet = s.viewingViewed;
     const multiBook = BOOKS.length > 1;
@@ -9950,6 +10089,20 @@ class Component extends DCLogic {
       }),
 
       // — ប្រឡងសាកល្បង (exam) —
+      // — ចាក់ពាក្យ (word player) —
+      openPlayer: () => this.openPlayer(), leavePlayer: () => this.leavePlayer(),
+      isPlayer: s.screen === 'player',
+      playerSrcChips, playerIsBook: s.playerSrc === 'book', playerIsLesson: s.playerSrc === 'lesson',
+      playerBook: s.playerBook, playerBookOptions, playerLesson: String(s.playerLesson), playerLessonOptions,
+      onPlayerBook: e => this.onPlayerBook(e), onPlayerLesson: e => this.onPlayerLesson(e), onPlayerRate: e => this.onPlayerRate(e),
+      playerHasWord: !!pw, playerEmpty: s.playerList.length === 0,
+      playerNowKana: pw ? pw.kana : '', playerNowJp: pw ? pw.jp : '', playerNowKm: pw ? pw.km : '',
+      playerPos: s.playerList.length ? (s.playerIdx + 1) : 0, playerTotal: s.playerList.length,
+      playerToggle: () => this.playerToggle(), playerNext: () => this.playerNext(), playerPrev: () => this.playerPrev(),
+      playerPlayGlyph: s.playerPlaying ? '⏸' : '▶', playerRate: String(s.playerRate),
+      playerToggleRepeat: () => this.playerToggleRepeat(),
+      playerRepeatStyle: s.playerRepeat ? 'background:var(--color-accent-100);border-color:var(--color-accent);color:var(--color-accent-800);' : '',
+
       openExam: () => this.openExam(), examLockedForMe: this.examLockedForMe(),
       isExamIntro: testMode === 'examintro', isExam: testMode === 'exam', isExamReview: testMode === 'examreview',
       examBestLabel, startExam: () => this.startExam(),
