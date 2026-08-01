@@ -1539,6 +1539,8 @@ textarea.input { min-height: 90px; resize: vertical; }
             <input class="input" type="text" value="{{ awPos }}" sc-camel-on-change="{{ onAwPos }}"></div>
           <div class="field" style="margin-bottom:12px;"><label>ន័យខ្មែរ</label>
             <input class="input" type="text" value="{{ awKm }}" sc-camel-on-change="{{ onAwKm }}"></div>
+          <div class="field" style="margin-bottom:12px;"><label>តំណភ្ជាប់រូបភាព (ស្រេចចិត្ត · Drive ក៏បាន)</label>
+            <input class="input" type="text" value="{{ awImg }}" sc-camel-on-change="{{ onAwImg }}" placeholder="https://…"></div>
 
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;cursor:pointer;" sc-camel-on-click="{{ toggleAwStar }}">
             <span style="font-size:24px;line-height:1;color:{{ awStarColor }};">{{ awStarGlyph }}</span>
@@ -1561,6 +1563,9 @@ textarea.input { min-height: 90px; resize: vertical; }
           <sc-if value="{{ hasAwError }}"><div style="font-size:12px;color:#c0392b;margin-bottom:8px;line-height:1.5;">{{ awError }}</div></sc-if>
           <sc-if value="{{ hasAwMsg }}"><div style="font-size:12px;color:var(--color-accent-700);margin-bottom:8px;line-height:1.5;">{{ awMsg }}</div></sc-if>
           <button class="btn btn-primary btn-block" sc-camel-on-click="{{ saveAddWord }}">{{ awSaveLabel }}</button>
+          <div class="hr" style="margin:18px 0 12px;"></div>
+          <button class="btn btn-secondary btn-block" style="margin-top:0;" sc-camel-on-click="{{ exportCustomWords }}">📋 ចម្លងពាក្យបន្ថែម ទៅ Sheet</button>
+          <div style="font-size:11px;opacity:0.6;line-height:1.7;margin-top:8px;">ចម្លងពាក្យដែលបានបន្ថែមក្នុងកម្មវិធី រួច paste ក្រោមជួរចុងក្រោយក្នុង Google Sheet។ ក្រោយ sync ចូល សូមលុបវាចេញពីទីនេះ ដើម្បីកុំឲ្យស្ទួន។</div>
         </div>
         </sc-if>
 
@@ -2064,8 +2069,10 @@ textarea.input { min-height: 90px; resize: vertical; }
           <input class="input" type="text" value="{{ edKana }}" sc-camel-on-change="{{ onEdKana }}"></div>
         <div class="field" style="margin-bottom:10px;"><label>ថ្នាក់ពាក្យ (ន. · កិ. · គុណ.)</label>
           <input class="input" type="text" value="{{ edPos }}" sc-camel-on-change="{{ onEdPos }}"></div>
-        <div class="field" style="margin-bottom:16px;"><label>ន័យខ្មែរ</label>
+        <div class="field" style="margin-bottom:12px;"><label>ន័យខ្មែរ</label>
           <input class="input" type="text" value="{{ edKm }}" sc-camel-on-change="{{ onEdKm }}"></div>
+        <div class="field" style="margin-bottom:16px;"><label>តំណភ្ជាប់រូបភាព (ស្រេចចិត្ត · Drive ក៏បាន)</label>
+          <input class="input" type="text" value="{{ edImg }}" sc-camel-on-change="{{ onEdImg }}" placeholder="https://…"></div>
 
         <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.55;margin-bottom:8px;">ឧទាហរណ៍</div>
         <sc-for list="{{ edExamples }}" as="ex" hint-placeholder-count="2">
@@ -7193,6 +7200,13 @@ rebuildIndexes();
 
 // Words an admin typed in (stored in Supabase, never in RAW_WORDS). Merged into
 // WORDS at load and after each add, keyed by a "c-" id so re-applying is safe.
+// A Google Drive "share" link is not an <img> src; rewrite it to the thumbnail
+// endpoint (same rule the sync uses), so an admin can paste a Drive link.
+function normalizeImgUrl(url){
+  url = (url || '').trim();
+  const m = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#]*&)?id=|thumbnail\?(?:[^#]*&)?id=)([\w-]{20,})/);
+  return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000` : url;
+}
 function applyCustomWords(rows){
   let changed = false;
   for (const r of (rows || [])) {
@@ -7205,7 +7219,7 @@ function applyCustomWords(rows){
       romaji, romajiNorm: normRomaji(romaji),
       examples: (Array.isArray(r.examples) ? r.examples : []).filter(e => e && e.jp).map(e => ({ jp: e.jp, km: e.km || '' })),
       cat: r.cat || 'vocab', page: r.page || 1, book: r.book || DEFAULT_BOOK,
-      starred: !!r.starred, _custom: true,
+      img: r.img || '', starred: !!r.starred, _custom: true,
     };
     const at = WORDS.findIndex(x => x.id === id);
     if (at >= 0) WORDS[at] = w; else WORDS.push(w);
@@ -7226,6 +7240,7 @@ function applyOverrides(rows){
     if (o.kana != null) w.kana = o.kana;
     if (o.pos != null) w.pos = o.pos;
     if (o.km) w.km = o.km;
+    if (o.img != null) w.img = o.img;
     if (Array.isArray(o.examples)) { w.examples = o.examples.filter(e => e && e.jp); w._sharedEx = false; }
     // a star belongs to the word, so set it on every page that lists it —
     // both ways, otherwise un-starring one row leaves the others starred
@@ -7876,7 +7891,7 @@ function makeSupabaseBackend(){
       return { url: data.publicUrl + '?v=' + Date.now() };   // cache-bust so the new logo shows
     },
     async deleteLogo(){ try { await client.storage.from('logos').remove(['logo.png']); } catch(e){} return { error:null }; },
-    async getOverrides(){ const { data } = await client.from('word_overrides').select('word_id,jp,kana,pos,km,examples,starred'); return { rows: data || [] }; },
+    async getOverrides(){ const { data } = await client.from('word_overrides').select('word_id,jp,kana,pos,km,examples,starred,img'); return { rows: data || [] }; },
     // only touches the starred column, so it never clobbers a correction
     async setStar(word_id, starred){
       const { error } = await client.from('word_overrides').upsert({ word_id, starred }, { onConflict: 'word_id' });
@@ -8071,11 +8086,11 @@ class Component extends DCLogic {
     syncBusy: false, syncMsg: '', syncError: '',
     // admin word editor
     editSearch: '', editWordId: null,
-    edJp: '', edKana: '', edPos: '', edKm: '', edExamples: [],
+    edJp: '', edKana: '', edPos: '', edKm: '', edImg: '', edExamples: [],
     edBusy: false, edMsg: '', edError: '', overridesRev: 0,
     // admin: add a new word / grammar
     awBook: '', awBookMenuOpen: false, awNewBook: '', awCat: 'vocab', awPage: '',
-    awJp: '', awKana: '', awPos: '', awKm: '', awStar: false, awExamples: [],
+    awJp: '', awKana: '', awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [],
     awBusy: false, awMsg: '', awError: '',
     screen: 'home', search: '', catFilter: 'all', searchMode: 'general', pageFilter: null, pageInput: '',
     bookFilter: BOOKS[0] || DEFAULT_BOOK,
@@ -8518,7 +8533,7 @@ class Component extends DCLogic {
   pickEditWord(id){
     const w = WORDS.find(x => x.id === id);
     if (!w) return;
-    this.setState({ editWordId: id, edJp: w.jp, edKana: w.kana, edPos: w.pos, edKm: w.km,
+    this.setState({ editWordId: id, edJp: w.jp, edKana: w.kana, edPos: w.pos, edKm: w.km, edImg: w.img || '',
       edExamples: w.examples.map(e => ({ jp: e.jp, km: e.km })), edMsg: '', edError: '' });
   }
   // Straight from the word sheet, so an admin who spots a mistake while
@@ -8534,6 +8549,7 @@ class Component extends DCLogic {
   onEdKana(e){ this.setState({ edKana: e.target.value }); }
   onEdPos(e){ this.setState({ edPos: e.target.value }); }
   onEdKm(e){ this.setState({ edKm: e.target.value }); }
+  onEdImg(e){ this.setState({ edImg: e.target.value }); }
   onEdExampleJp(i, e){ const v = e.target.value; this.setState(s => ({ edExamples: s.edExamples.map((x, k) => k === i ? { ...x, jp: v } : x) })); }
   onEdExampleKm(i, e){ const v = e.target.value; this.setState(s => ({ edExamples: s.edExamples.map((x, k) => k === i ? { ...x, km: v } : x) })); }
   addEdExample(){ this.setState(s => ({ edExamples: [...s.edExamples, { jp: '', km: '' }] })); }
@@ -8548,7 +8564,7 @@ class Component extends DCLogic {
     const examples = this.state.edExamples
       .map(x => ({ jp: (x.jp || '').trim(), km: (x.km || '').trim() }))
       .filter(x => x.jp);
-    const row = { word_id: id, jp, kana: (this.state.edKana || '').trim(), pos: (this.state.edPos || '').trim(), km, examples };
+    const row = { word_id: id, jp, kana: (this.state.edKana || '').trim(), pos: (this.state.edPos || '').trim(), km, examples, img: normalizeImgUrl(this.state.edImg) };
     const { error } = await Backend.saveOverride(row);
     if (error) { this.setState({ edBusy: false, edError: error }); return; }
     applyOverrides([row]);
@@ -8572,6 +8588,7 @@ class Component extends DCLogic {
   onAwKana(e){ this.setState({ awKana: e.target.value }); }
   onAwPos(e){ this.setState({ awPos: e.target.value }); }
   onAwKm(e){ this.setState({ awKm: e.target.value }); }
+  onAwImg(e){ this.setState({ awImg: e.target.value }); }
   onAwNewBook(e){ this.setState({ awNewBook: e.target.value, awBook: '' }); }
   toggleAwStar(){ this.setState(s => ({ awStar: !s.awStar })); }
   toggleAwBookMenu(){ this.setState(s => ({ awBookMenuOpen: !s.awBookMenuOpen })); }
@@ -8591,14 +8608,47 @@ class Component extends DCLogic {
     const examples = s.awExamples.map(x => ({ jp: (x.jp || '').trim(), km: (x.km || '').trim() })).filter(x => x.jp);
     const page = parseInt(s.awPage, 10);
     const row = { book, page: isNaN(page) ? null : page, cat: s.awCat, jp,
-      kana: (s.awKana || '').trim(), pos: (s.awPos || '').trim(), km, starred: s.awStar, examples };
+      kana: (s.awKana || '').trim(), pos: (s.awPos || '').trim(), km, starred: s.awStar, examples, img: normalizeImgUrl(s.awImg) };
     const { row: saved, error } = await Backend.addCustomWord(row);
     if (error) { this.setState({ awBusy: false, awError: error }); return; }
     applyCustomWords([saved || { id: 'c-' + Date.now(), ...row }]);
     rebuildIndexes();
     // keep the book, category and page so the admin can add the next word fast
     this.setState(st => ({ awBusy: false, awMsg: `បន្ថែម «${jp}» រួចរាល់ ✓`, overridesRev: st.overridesRev + 1,
-      awJp: '', awKana: '', awPos: '', awKm: '', awStar: false, awExamples: [] }));
+      awJp: '', awKana: '', awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [] }));
+  }
+  // copy text to the clipboard, with an execCommand fallback for embedded browsers
+  copyText(text){
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).then(() => true).catch(() => this._copyFallback(text));
+    }
+    return Promise.resolve(this._copyFallback(text));
+  }
+  _copyFallback(text){
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy'); document.body.removeChild(ta);
+      return ok;
+    } catch(e) { return false; }
+  }
+  // Export the admin-added words as Sheet rows (TSV, no header) for the admin to
+  // paste under the last row of the words Google Sheet. Columns match the sheet:
+  // id, book, page, category, jp, kana, pos, km, example_jp, example_km, image.
+  async exportCustomWords(){
+    const { rows } = await Backend.listCustomWords();
+    if (!rows || !rows.length) { this.showToast('គ្មានពាក្យបន្ថែមទេ'); return; }
+    const esc = v => { v = String(v == null ? '' : v); return /[\t\n"]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    const cid = r => 'c' + String(r.id).replace(/[^a-z0-9]/gi, '').slice(0, 10);   // stable, can't clash with p/d/w
+    const lines = rows.map(r => {
+      const ex = Array.isArray(r.examples) ? r.examples : [];
+      const exj = ex.map(e => (e.jp || '').trim()).filter(Boolean).join(' | ');
+      const exk = ex.map(e => (e.km || '').trim()).filter(Boolean).join(' | ');
+      return [cid(r), r.book || '', r.page || '', r.cat || 'vocab', r.jp || '', r.kana || '', r.pos || '', r.km || '', exj, exk, r.img || ''].map(esc).join('\t');
+    });
+    const ok = await this.copyText(lines.join('\n'));
+    this.showToast(ok ? `បានចម្លង ${rows.length} ពាក្យ — paste ក្រោមជួរចុងក្រោយក្នុង Sheet` : 'ចម្លងមិនបាន — សូមសាកម្ដងទៀត');
   }
 
   // — Admin: per-book visibility —
@@ -9630,6 +9680,7 @@ class Component extends DCLogic {
       edKana: s.edKana, onEdKana: e => this.onEdKana(e),
       edPos: s.edPos, onEdPos: e => this.onEdPos(e),
       edKm: s.edKm, onEdKm: e => this.onEdKm(e),
+      edImg: s.edImg, onEdImg: e => this.onEdImg(e),
       edExamples: s.edExamples.map((x, i) => ({
         jp: x.jp, km: x.km, num: `ឧទាហរណ៍ ${i + 1}`,
         onJp: e => this.onEdExampleJp(i, e), onKm: e => this.onEdExampleKm(i, e),
@@ -9653,12 +9704,14 @@ class Component extends DCLogic {
       awKana: s.awKana, onAwKana: e => this.onAwKana(e),
       awPos: s.awPos, onAwPos: e => this.onAwPos(e),
       awKm: s.awKm, onAwKm: e => this.onAwKm(e),
+      awImg: s.awImg, onAwImg: e => this.onAwImg(e),
       awStar: s.awStar, toggleAwStar: () => this.toggleAwStar(),
       awStarGlyph: s.awStar ? '★' : '☆', awStarColor: s.awStar ? '#d0342c' : 'var(--color-text)',
       awExamples: s.awExamples.map((x, i) => ({ jp: x.jp, km: x.km, num: `ឧទាហរណ៍ ${i + 1}`,
         onJp: e => this.onAwExampleJp(i, e), onKm: e => this.onAwExampleKm(i, e), onRemove: () => this.removeAwExample(i) })),
       addAwExample: () => this.addAwExample(),
       saveAddWord: () => this.saveAddWord(),
+      exportCustomWords: () => this.exportCustomWords(),
       awSaveLabel: s.awBusy ? 'កំពុងរក្សាទុក…' : 'បន្ថែមពាក្យ',
       hasAwMsg: !!s.awMsg, awMsg: s.awMsg,
       hasAwError: !!s.awError, awError: s.awError,
