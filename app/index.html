@@ -1061,9 +1061,6 @@ textarea.input { min-height: 90px; resize: vertical; }
               <div class="card-kicker">សរុប</div>
               <div class="card-title" style="font-size:16px;">{{ monitorOverallViewed }} / {{ overallTotal }} ពាក្យ ({{ monitorOverallPct }}%)</div>
             </div>
-            <sc-if value="{{ isAdmin }}">
-            <button class="btn btn-secondary btn-block" style="margin-bottom:16px;" sc-camel-on-click="{{ downloadStudentPdf }}">⬇ ទាញយកលទ្ធផលជា PDF (A4)</button>
-            </sc-if>
 
             <h4 style="font-size:15px;margin:0 0 2px;">លទ្ធផលតេស្ត</h4>
             <div style="font-size:11px;opacity:0.55;margin-bottom:10px;">ចុចលើលំហាត់ ដើម្បីមើលពាក្យត្រូវ/ខុស</div>
@@ -1092,6 +1089,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                           <span style="flex:1;min-width:0;font-size:12px;opacity:0.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ wd.km }}</span>
                         </div>
                       </sc-for>
+                      <sc-if value="{{ isAdmin }}"><button class="btn btn-secondary" style="margin-top:10px;font-size:12px;padding:6px 12px;" sc-camel-on-click="{{ downloadOpenPdf }}">⬇ ទាញយក PDF (A4)</button></sc-if>
                     </div>
                   </sc-if>
                 </div>
@@ -1116,6 +1114,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                       <span style="flex:1;min-width:0;font-size:13px;line-height:1.6;">{{ qq.q }}</span>
                     </div>
                   </sc-for>
+                  <sc-if value="{{ isAdmin }}"><button class="btn btn-secondary" style="margin-top:10px;font-size:12px;padding:6px 12px;" sc-camel-on-click="{{ downloadOpenPdf }}">⬇ ទាញយក PDF (A4)</button></sc-if>
                 </div>
               </sc-if>
             </div>
@@ -1139,6 +1138,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                       <span style="flex:1;min-width:0;font-size:13px;line-height:1.6;">{{ qq.q }}</span>
                     </div>
                   </sc-for>
+                  <sc-if value="{{ isAdmin }}"><button class="btn btn-secondary" style="margin-top:10px;font-size:12px;padding:6px 12px;" sc-camel-on-click="{{ downloadOpenPdf }}">⬇ ទាញយក PDF (A4)</button></sc-if>
                 </div>
               </sc-if>
             </div>
@@ -1153,6 +1153,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                   <span style="display:flex;gap:10px;align-items:center;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
                 </div>
               </sc-for>
+              <sc-if value="{{ hasExamReport }}"><button class="btn btn-secondary" style="margin-top:8px;font-size:12px;padding:6px 12px;" sc-camel-on-click="{{ downloadExamPdf }}">⬇ ទាញយកប្រឡងចុងក្រោយ PDF (A4)</button></sc-if>
             </div>
             </sc-if>
 
@@ -9177,53 +9178,31 @@ class Component extends DCLogic {
   // — Admin: download a student's results as an A4 PDF (via the print dialog) —
   _esc(v){ return String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
   _fmtDate(d){ if (!d) return ''; const x = new Date(d); if (isNaN(x)) return ''; const p = n => String(n).padStart(2, '0'); return `${p(x.getDate())}/${p(x.getMonth() + 1)}/${x.getFullYear()} ${p(x.getHours())}:${p(x.getMinutes())}`; }
-  _reportSections(){
-    const s = this.state, secs = [];
-    const dateFor = (modes, lesson) => { const hs = (s.viewingHistory || []).filter(h => modes.includes(h.mode) && h.lesson === lesson); return hs.length ? hs[hs.length - 1].date : ''; };
-    const KIND = { mc_jp: 'ជប៉ុន → ខ្មែរ', mc_km: 'ខ្មែរ → ជប៉ុន' };
-    for (const kind of Object.keys(KIND)) {
-      const det = (s.viewingLessonDetails || {})[kind] || {};
-      for (const n of Object.keys(det).map(Number).filter(x => x > 0).sort((a, b) => a - b))
-        secs.push({ title: `ជ្រើសរើសពាក្យត្រូវ · ${KIND[kind]} · លំហាត់ទី ${n}`, date: dateFor([kind], n), score: (s.viewingLessons[kind] || {})[n], items: det[n] });
-    }
-    const push = (det, recs, label, mode) => { for (const n of Object.keys(det).map(Number).filter(x => x > 0).sort((a, b) => a - b)) secs.push({ title: `${label} · លំហាត់ទី ${n}`, date: dateFor([mode], n), score: (recs || {})[n], items: det[n] }); };
-    push(s.viewingQuizDetails || {}, s.viewingQuizzes, 'លំហាត់', 'quiz');
-    push(s.viewingImgQuizDetails || {}, s.viewingImgQuizzes, 'លំហាត់រូបភាព', 'imgquiz');
-    const er = s.viewingExamReport;
-    if (er && er.items) secs.push({ title: `ប្រឡងសាកល្បង · ឈុតទី ${er.block}`, date: er.date, scoreLabel: `${er.score} / ${er.total}`, items: er.items });
-    return secs;
-  }
-  downloadStudentPdf(){
+  // build + print an A4 report for ONE exercise the student did. The date shown
+  // is when the STUDENT did it (not the print time).
+  _printReport(sec){
     const s = this.state, esc = v => this._esc(v);
-    const secs = this._reportSections();
-    if (!secs.length) { this.showToast('សិស្សនេះមិនទាន់មានលទ្ធផលទេ'); return; }
+    if (!sec.items || !sec.items.length) { this.showToast('គ្មានទិន្នន័យលំហាត់នេះ'); return; }
     const sch = (s.schools || []).find(x => x.id === s.viewingSchoolId) || {};
     const schoolName = sch.full_name || sch.email || this.state.appName || '';
-    const body = secs.map(sec => {
-      const scoreLabel = sec.scoreLabel || (sec.score != null ? sec.score + '%' : '');
-      const rows = (sec.items || []).map((it, i) => {
-        const q = it.q || it.jp || '';
-        const mark = it.ok ? '<span class="ok">✓</span>' : '<span class="no">✗</span>';
-        const pick = (it.picked != null && it.picked !== '') ? `<div class="ans">ចម្លើយសិស្ស៖ <span class="${it.ok ? 'blue' : 'red'}">${esc(it.picked)}</span></div>` : '';
-        const corr = (it.correct != null && it.correct !== '') ? `<div class="ans">ចម្លើយត្រូវ៖ <span class="blue">${esc(it.correct)}</span></div>` : '';
-        return `<div class="q"><div class="txt"><b>${i + 1}.</b> ${esc(q)} ${mark}</div>${pick}${corr}</div>`;
-      }).join('');
-      return `<div class="sec"><h2>${esc(sec.title)}</h2><div class="sub">ថ្ងៃម៉ោងធ្វើ៖ ${esc(this._fmtDate(sec.date)) || '—'} · ពិន្ទុ៖ ${esc(scoreLabel)}</div>${rows}</div>`;
+    const rows = sec.items.map((it, i) => {
+      const q = it.q || it.jp || '';
+      const mark = it.ok ? '<span class="ok">✓</span>' : '<span class="no">✗</span>';
+      const pick = (it.picked != null && it.picked !== '') ? `<div class="ans">ចម្លើយសិស្ស៖ <span class="${it.ok ? 'blue' : 'red'}">${esc(it.picked)}</span></div>` : '';
+      const corr = (it.correct != null && it.correct !== '') ? `<div class="ans">ចម្លើយត្រូវ៖ <span class="blue">${esc(it.correct)}</span></div>` : '';
+      return `<div class="q"><div class="txt"><b>${i + 1}.</b> ${esc(q)} ${mark}</div>${pick}${corr}</div>`;
     }).join('');
-    const html = `<!doctype html><html lang="km"><head><meta charset="utf-8"><title>លទ្ធផល · ${esc(s.selectedStudentName)}</title><style>
+    const html = `<!doctype html><html lang="km"><head><meta charset="utf-8"><title>${esc(sec.title)} · ${esc(s.selectedStudentName)}</title><style>
       @page{size:A4;margin:14mm;}
       *{font-family:"Khmer OS System","Noto Sans Khmer","Kantumruy Pro","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;box-sizing:border-box;}
-      body{color:#000;font-size:12px;line-height:1.65;margin:0;}
+      body{color:#000;font-size:12.5px;line-height:1.65;margin:0;}
       .hd{border-bottom:2.5px solid #000;padding-bottom:10px;margin-bottom:16px;}
-      .hd h1{font-size:19px;margin:0 0 8px;}
+      .hd h1{font-size:18px;margin:0 0 8px;}
       .hd .row{font-size:12.5px;margin:2px 0;}
-      .hd .row b{display:inline-block;min-width:90px;}
-      .sec{margin:18px 0;}
-      .sec h2{font-size:14px;margin:0 0 3px;border-left:5px solid #0645ad;padding-left:9px;}
-      .sec .sub{font-size:11px;color:#333;margin:0 0 9px;padding-left:14px;}
-      .q{margin:0 0 9px;padding:0 0 8px 14px;border-bottom:1px dotted #ccc;page-break-inside:avoid;}
+      .hd .row b{display:inline-block;min-width:110px;}
+      .q{margin:0 0 10px;padding:0 0 8px;border-bottom:1px dotted #ccc;page-break-inside:avoid;}
       .q .txt{color:#000;}
-      .ans{font-size:11.5px;margin-top:2px;padding-left:16px;}
+      .ans{font-size:12px;margin-top:2px;padding-left:16px;}
       .blue{color:#0645ad;font-weight:600;} .red{color:#cc0000;font-weight:600;}
       .ok{color:#1a7f37;font-weight:bold;} .no{color:#cc0000;font-weight:bold;}
       .foot{margin-top:20px;font-size:10px;color:#888;text-align:center;border-top:1px solid #ddd;padding-top:6px;}
@@ -9231,14 +9210,34 @@ class Component extends DCLogic {
       <div class="hd"><h1>${esc(this.state.appName || 'វចនានុក្រម')} — លទ្ធផលសិស្ស</h1>
         <div class="row"><b>សាលា/សាខា៖</b> ${esc(schoolName)}</div>
         <div class="row"><b>ឈ្មោះសិស្ស៖</b> ${esc(s.selectedStudentName)}</div>
-        <div class="row"><b>បោះពុម្ព៖</b> ${esc(this._fmtDate(new Date().toISOString()))}</div>
-      </div>${body}
+        <div class="row"><b>លំហាត់៖</b> ${esc(sec.title)}</div>
+        <div class="row"><b>ថ្ងៃម៉ោងធ្វើ៖</b> ${esc(this._fmtDate(sec.date)) || '—'}</div>
+        <div class="row"><b>ពិន្ទុ៖</b> ${esc(sec.scoreLabel || '')}</div>
+      </div>${rows}
       <div class="foot">${esc(this.state.appName || 'វចនានុក្រម')} · SSW</div>
     </body></html>`;
     const w = window.open('', '_blank');
     if (!w) { this.showToast('សូមអនុញ្ញាត popup ដើម្បីទាញយក PDF'); return; }
     w.document.open(); w.document.write(html); w.document.close(); w.focus();
     setTimeout(() => { try { w.print(); } catch(e) {} }, 500);
+  }
+  // download the exercise whose drill-in is currently open (chip key: quiz-N /
+  // imgquiz-N / mc_jp-N / mc_km-N)
+  downloadOpenPdf(){
+    const s = this.state, key = s.monExpandedChip;
+    if (!key) { this.showToast('សូមចុចលើលំហាត់មួយសិន'); return; }
+    const i = key.lastIndexOf('-'), pre = key.slice(0, i), n = parseInt(key.slice(i + 1), 10);
+    const dateFor = mode => { const hs = (s.viewingHistory || []).filter(h => h.mode === mode && h.lesson === n); return hs.length ? hs[hs.length - 1].date : ''; };
+    let det, title, mode, score;
+    if (pre === 'quiz') { det = (s.viewingQuizDetails || {})[n]; title = `លំហាត់ · លំហាត់ទី ${n}`; mode = 'quiz'; score = (s.viewingQuizzes || {})[n]; }
+    else if (pre === 'imgquiz') { det = (s.viewingImgQuizDetails || {})[n]; title = `លំហាត់រូបភាព · លំហាត់ទី ${n}`; mode = 'imgquiz'; score = (s.viewingImgQuizzes || {})[n]; }
+    else { const dir = pre === 'mc_km' ? 'ខ្មែរ → ជប៉ុន' : 'ជប៉ុន → ខ្មែរ'; det = ((s.viewingLessonDetails || {})[pre] || {})[n]; title = `ជ្រើសរើសពាក្យត្រូវ · ${dir} · លំហាត់ទី ${n}`; mode = pre; score = ((s.viewingLessons || {})[pre] || {})[n]; }
+    this._printReport({ title, date: dateFor(mode), scoreLabel: score != null ? score + '%' : '', items: det });
+  }
+  downloadExamPdf(){
+    const er = this.state.viewingExamReport;
+    if (!er || !er.items) { this.showToast('គ្មានទិន្នន័យប្រឡង'); return; }
+    this._printReport({ title: `ប្រឡងសាកល្បង · ឈុតទី ${er.block}`, date: er.date, scoreLabel: `${er.score} / ${er.total}`, items: er.items });
   }
 
   goHome(){ this.stopSpeech(); this.setState({ screen: 'home', playerPlaying: false }); }
@@ -10160,10 +10159,11 @@ class Component extends DCLogic {
         if (s.role === 'admin')   set.push('admin');
         return set.includes(s.screen) ? 'var(--color-accent-700)' : 'var(--color-text)';
       })(),
-      monitorLessonSummary, downloadStudentPdf: () => this.downloadStudentPdf(),
+      monitorLessonSummary, downloadOpenPdf: () => this.downloadOpenPdf(), downloadExamPdf: () => this.downloadExamPdf(),
       monitorQuizSummary, hasMonitorQuiz: monitorQuizSummary.hasAny,
       monitorImgQuizSummary, hasMonitorImgQuiz: monitorImgQuizSummary.hasAny,
       monitorExamLog, hasMonitorExam: monitorExamLog.length > 0,
+      hasExamReport: s.role === 'admin' && !!(s.viewingExamReport && s.viewingExamReport.items),
       monitorUsageDays: monitorChart.days,
       monitorUsageTodayLabel: monitorChart.todayLabel,
       monitorUsageWeekLabel: monitorChart.weekLabel,
