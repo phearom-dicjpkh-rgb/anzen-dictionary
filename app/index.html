@@ -1587,22 +1587,36 @@ textarea.input { min-height: 90px; resize: vertical; }
             </sc-for>
           </div>
           <sc-if value="{{ playerIsBook }}">
-            <div style="margin-bottom:14px;">
-              <div style="font-size:12px;opacity:0.6;margin-bottom:7px;">សៀវភៅ</div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <sc-for list="{{ playerBookChips }}" as="b" hint-placeholder-count="2">
-                  <button style="padding:7px 14px;border-radius:99px;border:1.5px solid;font-size:13px;cursor:pointer;{{ b.style }}" sc-camel-on-click="{{ b.onSelect }}">{{ b.label }}</button>
-                </sc-for>
+            <div class="field" style="margin-bottom:14px;"><label>សៀវភៅ</label>
+              <div style="position:relative;">
+                <button class="input" style="width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" sc-camel-on-click="{{ togglePlayerBook }}">
+                  <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ playerBookLabel }}</span>
+                  <span style="opacity:0.5;">▾</span>
+                </button>
+                <sc-if value="{{ playerBookOpen }}">
+                <div style="position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:15;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-md);box-shadow:var(--shadow-md);overflow:hidden;max-height:260px;overflow-y:auto;">
+                  <sc-for list="{{ playerBookMenu }}" as="b" hint-placeholder-count="2">
+                    <div style="padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--color-divider);{{ b.rowStyle }}" sc-camel-on-click="{{ b.onSelect }}">{{ b.name }}</div>
+                  </sc-for>
+                </div>
+                </sc-if>
               </div>
             </div>
           </sc-if>
           <sc-if value="{{ playerIsLesson }}">
-            <div style="margin-bottom:14px;">
-              <div style="font-size:12px;opacity:0.6;margin-bottom:7px;">មេរៀន</div>
-              <div style="display:flex;align-items:center;gap:12px;">
-                <button style="width:42px;height:38px;border-radius:12px;border:1.5px solid var(--color-divider);background:var(--color-surface);font-size:16px;cursor:pointer;flex:none;{{ playerLessonPrevStyle }}" sc-camel-on-click="{{ playerLessonPrev }}">◀</button>
-                <div style="flex:1;text-align:center;font-size:15px;font-family:var(--font-heading);">{{ playerLessonLabel }} <span style="opacity:0.5;font-size:12px;">{{ playerLessonSub }}</span></div>
-                <button style="width:42px;height:38px;border-radius:12px;border:1.5px solid var(--color-divider);background:var(--color-surface);font-size:16px;cursor:pointer;flex:none;{{ playerLessonNextStyle }}" sc-camel-on-click="{{ playerLessonNext }}">▶</button>
+            <div class="field" style="margin-bottom:14px;"><label>មេរៀន</label>
+              <div style="position:relative;">
+                <button class="input" style="width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" sc-camel-on-click="{{ togglePlayerLesson }}">
+                  <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ playerLessonLabel }}</span>
+                  <span style="opacity:0.5;">▾</span>
+                </button>
+                <sc-if value="{{ playerLessonOpen }}">
+                <div style="position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:15;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-md);box-shadow:var(--shadow-md);max-height:260px;overflow-y:auto;">
+                  <sc-for list="{{ playerLessonMenu }}" as="l" hint-placeholder-count="5">
+                    <div style="padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--color-divider);{{ l.rowStyle }}" sc-camel-on-click="{{ l.onSelect }}">{{ l.name }}</div>
+                  </sc-for>
+                </div>
+                </sc-if>
               </div>
             </div>
           </sc-if>
@@ -8163,7 +8177,7 @@ class Component extends DCLogic {
     settings: { fontScale: 1, autoAudio: false },
     syncing: false, lastSync: null, toast: null,
     // ចាក់ពាក្យ (word player)
-    playerSrc: 'book', playerBook: '', playerLesson: 1,
+    playerSrc: 'book', playerBook: '', playerLesson: 1, playerBookOpen: false, playerLessonOpen: false,
     playerList: [], playerIdx: 0, playerPlaying: false, playerRepeat: false, playerRate: 0.95,
     testMode: null, testKind: 'mc_jp', testLesson: 1,
     testWords: [], testIdx: 0, testScore: 0, testResults: [],
@@ -8490,11 +8504,13 @@ class Component extends DCLogic {
       () => this.setState({ playerList: this.buildPlaylist() }));
   }
   refreshPlaylist(){ this.stopSpeech(); this.setState({ playerList: this.buildPlaylist(), playerIdx: 0, playerPlaying: false }); }
-  setPlayerSrc(src){ this.setState({ playerSrc: src }, () => this.refreshPlaylist()); }
-  setPlayerBook(b){ this.setState({ playerBook: b }, () => this.refreshPlaylist()); }
-  // a stepper instead of a <select>: native selects with sc-for options do not
-  // render their options on iOS, so book/lesson use chips + prev/next instead
-  playerLessonStep(d){ const t = this.lessonTotal(); let n = this.state.playerLesson + d; if (n < 1) n = 1; if (n > t) n = t; if (n === this.state.playerLesson) return; this.setState({ playerLesson: n }, () => this.refreshPlaylist()); }
+  setPlayerSrc(src){ this.setState({ playerSrc: src, playerBookOpen: false, playerLessonOpen: false }, () => this.refreshPlaylist()); }
+  // Custom dropdowns (divs, not a native <select>): a native select with sc-for
+  // options renders no options on iOS, so book/lesson use this instead.
+  togglePlayerBook(){ this.setState(s => ({ playerBookOpen: !s.playerBookOpen, playerLessonOpen: false })); }
+  togglePlayerLesson(){ this.setState(s => ({ playerLessonOpen: !s.playerLessonOpen, playerBookOpen: false })); }
+  pickPlayerBook(b){ this.setState({ playerBook: b, playerBookOpen: false }, () => this.refreshPlaylist()); }
+  pickPlayerLesson(n){ this.setState({ playerLesson: n, playerLessonOpen: false }, () => this.refreshPlaylist()); }
   onPlayerRate(e){ this.setState({ playerRate: parseFloat(e.target.value) || 0.95 }); }
   playerStep(){
     if (!this.state.playerPlaying) return;
@@ -9441,10 +9457,12 @@ class Component extends DCLogic {
       style: s.playerSrc === x.k ? 'background:var(--color-accent);color:#f3f2f2;border-color:var(--color-accent);'
         : 'background:var(--color-surface);border-color:var(--color-divider);color:var(--color-text);' }));
     const playerBookOptions = [{ value: '', label: 'ទាំងអស់' }, ...BOOKS.map(b => ({ value: b, label: b }))];
-    const playerBookChips = playerBookOptions.map(o => ({ label: o.label, onSelect: () => this.setPlayerBook(o.value),
-      style: s.playerBook === o.value ? 'background:var(--color-accent);color:#f3f2f2;border-color:var(--color-accent);'
-        : 'background:var(--color-surface);border-color:var(--color-divider);color:var(--color-text);' }));
+    const rowSel = on => (on ? 'background:var(--color-accent-100);color:var(--color-accent-800);font-weight:600;' : '');
+    const playerBookLabel = (playerBookOptions.find(o => o.value === s.playerBook) || playerBookOptions[0]).label;
+    const playerBookMenu = playerBookOptions.map(o => ({ name: o.label, onSelect: () => this.pickPlayerBook(o.value), rowStyle: rowSel(s.playerBook === o.value) }));
     const playerLessonTotal = this.lessonTotal();
+    const playerLessonMenu = [];
+    for (let n = 1; n <= playerLessonTotal; n++) playerLessonMenu.push({ name: `មេរៀនទី ${n}`, onSelect: () => this.pickPlayerLesson(n), rowStyle: rowSel(s.playerLesson === n) });
     const pw = s.playerList[s.playerIdx] || null;
 
     const viewingSet = s.viewingViewed;
@@ -10105,11 +10123,8 @@ class Component extends DCLogic {
       openPlayer: () => this.openPlayer(), leavePlayer: () => this.leavePlayer(),
       isPlayer: s.screen === 'player',
       playerSrcChips, playerIsBook: s.playerSrc === 'book', playerIsLesson: s.playerSrc === 'lesson',
-      playerBookChips,
-      playerLessonLabel: `មេរៀនទី ${s.playerLesson}`, playerLessonSub: `/ ${playerLessonTotal}`,
-      playerLessonPrev: () => this.playerLessonStep(-1), playerLessonNext: () => this.playerLessonStep(1),
-      playerLessonPrevStyle: s.playerLesson <= 1 ? 'opacity:0.4;pointer-events:none;' : '',
-      playerLessonNextStyle: s.playerLesson >= playerLessonTotal ? 'opacity:0.4;pointer-events:none;' : '',
+      playerBookLabel, playerBookMenu, playerBookOpen: s.playerBookOpen, togglePlayerBook: () => this.togglePlayerBook(),
+      playerLessonLabel: `មេរៀនទី ${s.playerLesson}`, playerLessonMenu, playerLessonOpen: s.playerLessonOpen, togglePlayerLesson: () => this.togglePlayerLesson(),
       onPlayerRate: e => this.onPlayerRate(e),
       playerHasWord: !!pw, playerEmpty: s.playerList.length === 0,
       playerNowKana: pw ? pw.kana : '', playerNowJp: pw ? pw.jp : '', playerNowKm: pw ? pw.km : '',
