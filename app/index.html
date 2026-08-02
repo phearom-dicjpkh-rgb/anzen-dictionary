@@ -8674,35 +8674,49 @@ class Component extends DCLogic {
     const fn = { refined: this._paintRefined, bold: this._paintBold, hero: this._paintHero }[this.state.shareStyle] || this._paintRefined;
     fn.call(this, ctx, S, word, wordImg, logoImg);
   }
-  // shared body (image → kana → JP → [divider] → KM), vertically centered between
-  // the header and footer; returns nothing
+  // draw the WHOLE image fit inside a box (object-fit:contain — never cropped)
+  _containImg(ctx, img, x, y, w, h){
+    const ir = img.width / img.height, br = w / h; let dw, dh;
+    if (ir > br) { dw = w; dh = w / ir; } else { dh = h; dw = h * ir; }
+    ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+  }
+  // shared body (image → kana → JP → [divider] → KM), centered between top and
+  // bottom AND scaled down to fit, so nothing is ever clipped
   _paintBody(ctx, W, H, cx, cw, top, bottom, word, wordImg, opt){
-    const gap = Math.round(W * 0.03);
-    const imgH = wordImg ? Math.round(H * 0.24) : 0;
-    const kanaSize = Math.round(W * 0.04);
+    const avail = bottom - top;
+    let gap = Math.round(W * 0.028);
+    let imgH = wordImg ? Math.round(H * 0.24) : 0;
+    let kanaSize = Math.round(W * 0.04);
     let jpSize = Math.round(W * 0.155); ctx.font = `800 ${jpSize}px sans-serif`;
-    while (ctx.measureText(word.jp).width > cw * 0.94 && (jpSize -= 6) > 28) ctx.font = `800 ${jpSize}px sans-serif`;
-    const kmSize = Math.round(W * (opt.kmSize || 0.052));
-    const kmLines = this._wrapLines(ctx, word.km || '', cw * 0.92, `600 ${kmSize}px sans-serif`);
+    while (ctx.measureText(word.jp).width > cw * 0.94 && (jpSize -= 6) > 24) ctx.font = `800 ${jpSize}px sans-serif`;
+    let kmSize = Math.round(W * (opt.kmSize || 0.05));
+    let kmLines = this._wrapLines(ctx, word.km || '', cw * 0.9, `600 ${kmSize}px sans-serif`);
+    const measure = () => (wordImg ? imgH + gap * 1.5 : 0) + (word.kana ? kanaSize * 1.3 : 0)
+      + jpSize * 1.12 + (opt.divider ? kmSize * 1.0 : gap) + kmLines.length * (kmSize * 1.34) + (opt.kmPill ? kmSize * 0.5 : 0);
+    let blockH = measure();
+    if (blockH > avail) {           // shrink everything to fit the space
+      const sc = avail / blockH;
+      imgH = Math.round(imgH * sc); kanaSize = Math.round(kanaSize * sc); jpSize = Math.round(jpSize * sc);
+      kmSize = Math.round(kmSize * sc); gap = Math.round(gap * sc);
+      kmLines = this._wrapLines(ctx, word.km || '', cw * 0.9, `600 ${kmSize}px sans-serif`);
+      blockH = measure();
+    }
     const kmLH = kmSize * 1.34;
-    const divH = opt.divider ? Math.round(W * 0.06) : gap;
-    const blockH = (wordImg ? imgH + gap * 1.5 : 0) + (word.kana ? kanaSize * 1.3 : 0) + jpSize * 1.12 + divH + kmLines.length * kmLH;
-    let y = top + Math.max(gap, (bottom - top - blockH) / 2);
+    let y = top + Math.max(0, (avail - blockH) / 2);
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     if (wordImg) {
-      const iw = Math.min(cw, imgH * 1.7);
-      this._coverImg(ctx, wordImg, cx - iw / 2, y, iw, imgH, Math.round(W * 0.045));
-      if (opt.imgBorder) { ctx.strokeStyle = opt.imgBorder; ctx.lineWidth = Math.max(2, W * 0.004); this._roundPath(ctx, cx - iw / 2, y, iw, imgH, Math.round(W * 0.045)); ctx.stroke(); }
+      const iw = Math.min(cw, imgH * 1.9), fx = cx - iw / 2, r = Math.round(W * 0.04), p = Math.round(W * 0.012);
+      this._roundPath(ctx, fx, y, iw, imgH, r); ctx.fillStyle = opt.imgBg || '#ffffff'; ctx.fill();
+      ctx.save(); this._roundPath(ctx, fx, y, iw, imgH, r); ctx.clip(); this._containImg(ctx, wordImg, fx + p, y + p, iw - 2 * p, imgH - 2 * p); ctx.restore();
+      if (opt.imgBorder) { ctx.strokeStyle = opt.imgBorder; ctx.lineWidth = Math.max(2, W * 0.006); this._roundPath(ctx, fx, y, iw, imgH, r); ctx.stroke(); }
       y += imgH + gap * 1.5;
     }
     if (word.kana) { ctx.fillStyle = opt.kana; ctx.font = `400 ${kanaSize}px sans-serif`; ctx.fillText(word.kana, cx, y); y += kanaSize * 1.3; }
     ctx.fillStyle = opt.jp; ctx.font = `800 ${jpSize}px sans-serif`; ctx.fillText(word.jp, cx, y); y += jpSize * 1.12;
-    if (opt.divider) { const dy = y + divH * 0.42; ctx.strokeStyle = opt.divider; ctx.lineWidth = Math.max(2, W * 0.004); ctx.beginPath(); ctx.moveTo(cx - W * 0.08, dy); ctx.lineTo(cx + W * 0.08, dy); ctx.stroke(); y += divH; }
-    else y += divH;
+    if (opt.divider) { const dy = y + kmSize * 0.4; ctx.strokeStyle = opt.divider; ctx.lineWidth = Math.max(2, W * 0.004); ctx.beginPath(); ctx.moveTo(cx - W * 0.08, dy); ctx.lineTo(cx + W * 0.08, dy); ctx.stroke(); y += kmSize; }
+    else y += gap;
     if (opt.kmPill) {
       ctx.font = `600 ${kmSize}px sans-serif`;
-      const line = kmLines.join(' '); const tw = Math.min(cw, ctx.measureText(line).width + W * 0.09);
-      // pill sized to the widest line
       let pillW = 0; for (const ln of kmLines) pillW = Math.max(pillW, ctx.measureText(ln).width);
       pillW = Math.min(cw, pillW + W * 0.09);
       const pillH = kmLines.length * kmLH + kmSize * 0.5;
@@ -8733,7 +8747,7 @@ class Component extends DCLogic {
     ctx.fillStyle = '#faf7f1'; ctx.fillRect(0, 0, W, H);
     this._header(ctx, W, pad, ms, logoImg, '#b68235', '#fff8ec', '#8a5f22', word.id || '', '#fbf1df', '#8a5f22');
     this._paintBody(ctx, W, H, W / 2, W - 2 * pad, pad + ms, H - Math.round(H * 0.075), word, wordImg,
-      { kana: '#9a8560', jp: '#1c1a17', km: '#8a5f22', divider: '#b68235', imgBorder: '#ecdcbd' });
+      { kana: '#9a8560', jp: '#1c1a17', km: '#8a5f22', divider: '#b68235', imgBorder: '#ecdcbd', imgBg: '#f4ead6' });
     this._footer(ctx, W, H, '#c3b39a');
   }
   _paintBold(ctx, S, word, wordImg, logoImg){
@@ -8742,23 +8756,8 @@ class Component extends DCLogic {
     g.addColorStop(0, '#2b221a'); g.addColorStop(0.6, '#1a1512'); g.addColorStop(1, '#100c09');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     this._header(ctx, W, pad, ms, logoImg, GOLD, '#fff8ec', GOLDL, word.id || '', 'rgba(231,201,141,0.14)', GOLDL);
-    // circular image with a gold ring goes in place of the plain image
-    if (wordImg) {
-      const top = pad + ms, bottom = H - Math.round(H * 0.075);
-      // rough vertical placement: image sits in the upper part of the body
-      const r = Math.round(W * 0.24);
-      const cyImg = top + r + Math.round(W * 0.03);
-      ctx.fillStyle = GOLD; ctx.beginPath(); ctx.arc(W / 2, cyImg, r + W * 0.018, 0, 7); ctx.fill();
-      ctx.fillStyle = '#211b15'; ctx.beginPath(); ctx.arc(W / 2, cyImg, r, 0, 7); ctx.fill();
-      this._circleImg(ctx, wordImg, W / 2, cyImg, r - W * 0.022);
-      // text block below the circle (null image so the body doesn't redraw it)
-      this._paintBody(ctx, W, H, W / 2, W - 2 * pad, cyImg + r + Math.round(W * 0.03), bottom, word, null,
-        { kana: GOLDL, jp: '#ffffff', km: '#1c1512', kmPill: GOLD, kmSize: 0.049 });
-    }
-    if (!wordImg) {
-      this._paintBody(ctx, W, H, W / 2, W - 2 * pad, pad + ms, H - Math.round(H * 0.075), word, null,
-        { kana: GOLDL, jp: '#ffffff', km: '#1c1512', kmPill: GOLD, kmSize: 0.049 });
-    }
+    this._paintBody(ctx, W, H, W / 2, W - 2 * pad, pad + ms, H - Math.round(H * 0.075), word, wordImg,
+      { kana: GOLDL, jp: '#ffffff', km: '#1c1512', kmPill: GOLD, kmSize: 0.048, imgBg: '#221b14', imgBorder: GOLD });
     this._footer(ctx, W, H, 'rgba(231,201,141,0.5)');
   }
   _paintHero(ctx, S, word, wordImg, logoImg){
@@ -8766,9 +8765,11 @@ class Component extends DCLogic {
     const heroH = Math.round(H * 0.52);
     ctx.fillStyle = '#faf7f1'; ctx.fillRect(0, 0, W, H);
     if (wordImg) {
-      this._coverImg(ctx, wordImg, 0, 0, W, heroH, 0);
-      const sc = ctx.createLinearGradient(0, 0, 0, heroH * 0.45); sc.addColorStop(0, 'rgba(0,0,0,0.4)'); sc.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = sc; ctx.fillRect(0, 0, W, heroH * 0.45);
+      // dark backdrop so the whole (uncropped) image sits cleanly with letterboxing
+      ctx.fillStyle = '#241d16'; ctx.fillRect(0, 0, W, heroH);
+      this._containImg(ctx, wordImg, 0, Math.round(H * 0.01), W, heroH - Math.round(H * 0.02));
+      const sc = ctx.createLinearGradient(0, 0, 0, heroH * 0.42); sc.addColorStop(0, 'rgba(0,0,0,0.45)'); sc.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = sc; ctx.fillRect(0, 0, W, heroH * 0.42);
     } else {
       const g = ctx.createLinearGradient(0, 0, W, heroH); g.addColorStop(0, '#caa059'); g.addColorStop(1, GOLDD);
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, heroH);
