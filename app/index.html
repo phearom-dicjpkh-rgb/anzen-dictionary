@@ -1676,6 +1676,12 @@ textarea.input { min-height: 90px; resize: vertical; }
             <div style="font-size:13px;margin-bottom:14px;padding:9px 13px;border-radius:var(--radius-md);background:var(--color-accent-100);color:var(--color-accent-800);">ពាក្យ៖ <b>{{ shareWordLabel }}</b></div>
           </sc-if>
 
+          <div style="font-size:12px;opacity:0.6;margin-bottom:7px;">រចនាបថ</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+            <sc-for list="{{ shareStyleChips }}" as="c" hint-placeholder-count="3">
+              <button style="padding:7px 14px;border-radius:99px;border:1.5px solid;font-size:13px;cursor:pointer;{{ c.style }}" sc-camel-on-click="{{ c.onSelect }}">{{ c.label }}</button>
+            </sc-for>
+          </div>
           <div style="font-size:12px;opacity:0.6;margin-bottom:7px;">ទំហំ</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
             <sc-for list="{{ shareSizeChips }}" as="c" hint-placeholder-count="3">
@@ -8241,7 +8247,7 @@ class Component extends DCLogic {
     playerSrc: 'book', playerBook: '', playerLesson: 1, playerBookOpen: false, playerLessonOpen: false,
     playerList: [], playerIdx: 0, playerPlaying: false, playerRepeat: false, playerRate: 0.95,
     // admin: share-image maker
-    shareSearch: '', shareWordId: null, shareSize: 'square', shareImgData: '', shareBusy: false, shareErr: '',
+    shareSearch: '', shareWordId: null, shareSize: 'square', shareStyle: 'refined', shareImgData: '', shareBusy: false, shareErr: '',
     testMode: null, testKind: 'mc_jp', testLesson: 1,
     testWords: [], testIdx: 0, testScore: 0, testResults: [],
     // exercises (លំហាត់ / លំហាត់រូបភាព)
@@ -8603,6 +8609,7 @@ class Component extends DCLogic {
   onShareSearch(e){ this.setState({ shareSearch: e.target.value }); }
   pickShareWord(id){ this.setState({ shareWordId: id, shareSearch: '' }, () => this.drawShareCard()); }
   setShareSize(sz){ this.setState({ shareSize: sz }, () => this.drawShareCard()); }
+  setShareStyle(st){ this.setState({ shareStyle: st }, () => this.drawShareCard()); }
   _loadImg(url){ return new Promise(res => { if (!url) return res(null); const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => res(null); im.src = url; }); }
   // a Drive thumbnail link taints the canvas, but its googleusercontent form
   // sends CORS headers, so rewrite to that for drawing
@@ -8633,53 +8640,147 @@ class Component extends DCLogic {
     if (ir > br) { dh = h; dw = h * ir; } else { dw = w; dh = w / ir; }
     ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); ctx.restore();
   }
-  _wrapText(ctx, text, cx, y, maxW, lineH){
-    const words = String(text || '').split(/\s+/); let line = '', yy = y;
-    for (const wd of words) {
-      const test = line ? line + ' ' + wd : wd;
-      if (ctx.measureText(test).width > maxW && line) { ctx.fillText(line, cx, yy); line = wd; yy += lineH; }
-      else line = test;
-    }
-    if (line) ctx.fillText(line, cx, yy);
-    return yy + lineH;
+  _graphemes(str){ try { const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' }); return [...seg.segment(str)].map(s => s.segment); } catch(e) { return Array.from(str); } }
+  // wrap into lines within maxW; space-split for spaced text, grapheme-split for
+  // continuous Khmer (which has no spaces)
+  _wrapLines(ctx, text, maxW, font){
+    ctx.font = font; text = String(text || '');
+    const spaced = /\s/.test(text);
+    const units = spaced ? text.split(/\s+/).filter(Boolean) : this._graphemes(text);
+    const sep = spaced ? ' ' : '';
+    const lines = []; let line = '';
+    for (const u of units) { const t = line ? line + sep + u : u; if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = u; } else line = t; }
+    if (line) lines.push(line);
+    return lines.length ? lines : [''];
+  }
+  // the 辞 mark in a rounded square, used when there is no uploaded logo
+  _drawMark(ctx, x, y, s, bg, fg){
+    this._roundPath(ctx, x, y, s, s, s * 0.22); ctx.fillStyle = bg; ctx.fill();
+    ctx.save(); ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `${Math.round(s * 0.6)}px Georgia, serif`; ctx.fillText('辞', x + s / 2, y + s / 2 + s * 0.02); ctx.restore();
+  }
+  _idPill(ctx, text, anchorX, top, h, bg, fg, align){
+    ctx.save(); ctx.font = `600 ${Math.round(h * 0.46)}px sans-serif`; ctx.textBaseline = 'middle';
+    const w = ctx.measureText(text).width + h * 0.95; const x = align === 'right' ? anchorX - w : anchorX;
+    this._roundPath(ctx, x, top, w, h, h / 2); ctx.fillStyle = bg; ctx.fill();
+    ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.fillText(text, x + w / 2, top + h / 2); ctx.restore();
+  }
+  _circleImg(ctx, img, cx, cy, r){
+    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.clip();
+    const ir = img.width / img.height; let dw, dh; if (ir > 1) { dh = 2 * r; dw = 2 * r * ir; } else { dw = 2 * r; dh = 2 * r / ir; }
+    ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh); ctx.restore();
   }
   _paintShareCard(ctx, S, word, wordImg, logoImg){
-    const W = S.w, H = S.h, ACC = '#b68235', ACCD = '#7d571d', INK = '#201f1d';
-    const bg = ctx.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#c9974a'); bg.addColorStop(1, ACCD);
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
-    const m = Math.round(W * 0.05), px = m, py = m, pw = W - 2 * m, ph = H - 2 * m;
-    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 12;
-    this._roundPath(ctx, px, py, pw, ph, Math.round(W * 0.045)); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.restore();
-    const cx = W / 2, u = pw;   // u = layout unit (panel width)
-    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    // header: logo + app name
-    let y = py + Math.round(ph * 0.055);
-    const ls = Math.round(u * 0.12);
-    if (logoImg) { this._coverImg(ctx, logoImg, cx - ls / 2, y, ls, ls, ls * 0.24); y += ls + Math.round(u * 0.025); }
-    ctx.fillStyle = ACCD; ctx.font = `700 ${Math.round(u * 0.05)}px sans-serif`;
-    ctx.fillText(this.state.appName || 'វចនានុក្រម', cx, y + Math.round(u * 0.045)); y += Math.round(u * 0.10);
-    // id badge (top-right of panel)
-    const idText = word.id || ''; ctx.font = `600 ${Math.round(u * 0.032)}px sans-serif`;
-    const bw = ctx.measureText(idText).width + Math.round(u * 0.06), bh = Math.round(u * 0.07);
-    this._roundPath(ctx, px + pw - bw - Math.round(u * 0.05), py + Math.round(u * 0.05), bw, bh, bh / 2);
-    ctx.fillStyle = '#fff3e4'; ctx.fill(); ctx.fillStyle = ACCD;
-    ctx.fillText(idText, px + pw - bw / 2 - Math.round(u * 0.05), py + Math.round(u * 0.05) + bh * 0.68);
-    // word image
-    if (wordImg) { const iw = u * 0.66, ih = Math.min(ph * 0.30, u * 0.5); this._coverImg(ctx, wordImg, cx - iw / 2, y, iw, ih, Math.round(u * 0.03)); y += ih + Math.round(u * 0.05); }
-    else { y += Math.round(ph * 0.02); }
-    // kana
-    if (word.kana) { ctx.fillStyle = '#9a8460'; ctx.font = `400 ${Math.round(u * 0.042)}px sans-serif`; y += Math.round(u * 0.04); ctx.fillText(word.kana, cx, y); }
-    // JP (auto-shrink to fit)
-    let jp = Math.round(u * 0.17); ctx.fillStyle = INK; do { ctx.font = `700 ${jp}px sans-serif`; } while (ctx.measureText(word.jp).width > u * 0.86 && (jp -= 6) > 24);
-    y += jp + Math.round(u * 0.02); ctx.fillText(word.jp, cx, y);
-    // divider
-    y += Math.round(u * 0.045); ctx.strokeStyle = '#ece0cc'; ctx.lineWidth = Math.max(2, u * 0.004); ctx.beginPath(); ctx.moveTo(cx - u * 0.14, y); ctx.lineTo(cx + u * 0.14, y); ctx.stroke();
-    // KM meaning (wraps)
-    y += Math.round(u * 0.075); ctx.fillStyle = ACCD; ctx.font = `600 ${Math.round(u * 0.058)}px sans-serif`;
-    this._wrapText(ctx, word.km || '', cx, y, u * 0.82, Math.round(u * 0.078));
-    // footer
-    ctx.fillStyle = '#c3b6a1'; ctx.font = `500 ${Math.round(u * 0.03)}px sans-serif`;
-    ctx.fillText('SSW DICTIONARY', cx, py + ph - Math.round(ph * 0.045));
+    const fn = { refined: this._paintRefined, bold: this._paintBold, hero: this._paintHero }[this.state.shareStyle] || this._paintRefined;
+    fn.call(this, ctx, S, word, wordImg, logoImg);
+  }
+  // shared body (image → kana → JP → [divider] → KM), vertically centered between
+  // the header and footer; returns nothing
+  _paintBody(ctx, W, H, cx, cw, top, bottom, word, wordImg, opt){
+    const gap = Math.round(W * 0.03);
+    const imgH = wordImg ? Math.round(H * 0.24) : 0;
+    const kanaSize = Math.round(W * 0.04);
+    let jpSize = Math.round(W * 0.155); ctx.font = `800 ${jpSize}px sans-serif`;
+    while (ctx.measureText(word.jp).width > cw * 0.94 && (jpSize -= 6) > 28) ctx.font = `800 ${jpSize}px sans-serif`;
+    const kmSize = Math.round(W * (opt.kmSize || 0.052));
+    const kmLines = this._wrapLines(ctx, word.km || '', cw * 0.92, `600 ${kmSize}px sans-serif`);
+    const kmLH = kmSize * 1.34;
+    const divH = opt.divider ? Math.round(W * 0.06) : gap;
+    const blockH = (wordImg ? imgH + gap * 1.5 : 0) + (word.kana ? kanaSize * 1.3 : 0) + jpSize * 1.12 + divH + kmLines.length * kmLH;
+    let y = top + Math.max(gap, (bottom - top - blockH) / 2);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    if (wordImg) {
+      const iw = Math.min(cw, imgH * 1.7);
+      this._coverImg(ctx, wordImg, cx - iw / 2, y, iw, imgH, Math.round(W * 0.045));
+      if (opt.imgBorder) { ctx.strokeStyle = opt.imgBorder; ctx.lineWidth = Math.max(2, W * 0.004); this._roundPath(ctx, cx - iw / 2, y, iw, imgH, Math.round(W * 0.045)); ctx.stroke(); }
+      y += imgH + gap * 1.5;
+    }
+    if (word.kana) { ctx.fillStyle = opt.kana; ctx.font = `400 ${kanaSize}px sans-serif`; ctx.fillText(word.kana, cx, y); y += kanaSize * 1.3; }
+    ctx.fillStyle = opt.jp; ctx.font = `800 ${jpSize}px sans-serif`; ctx.fillText(word.jp, cx, y); y += jpSize * 1.12;
+    if (opt.divider) { const dy = y + divH * 0.42; ctx.strokeStyle = opt.divider; ctx.lineWidth = Math.max(2, W * 0.004); ctx.beginPath(); ctx.moveTo(cx - W * 0.08, dy); ctx.lineTo(cx + W * 0.08, dy); ctx.stroke(); y += divH; }
+    else y += divH;
+    if (opt.kmPill) {
+      ctx.font = `600 ${kmSize}px sans-serif`;
+      const line = kmLines.join(' '); const tw = Math.min(cw, ctx.measureText(line).width + W * 0.09);
+      // pill sized to the widest line
+      let pillW = 0; for (const ln of kmLines) pillW = Math.max(pillW, ctx.measureText(ln).width);
+      pillW = Math.min(cw, pillW + W * 0.09);
+      const pillH = kmLines.length * kmLH + kmSize * 0.5;
+      this._roundPath(ctx, cx - pillW / 2, y, pillW, pillH, Math.round(kmSize * 0.7)); ctx.fillStyle = opt.kmPill; ctx.fill();
+      ctx.fillStyle = opt.km; let yy = y + kmSize * 0.4;
+      for (const ln of kmLines) { ctx.fillText(ln, cx, yy); yy += kmLH; }
+    } else {
+      ctx.fillStyle = opt.km; ctx.font = `600 ${kmSize}px sans-serif`;
+      for (const ln of kmLines) { ctx.fillText(ln, cx, y); y += kmLH; }
+    }
+  }
+  _header(ctx, W, pad, ms, logoImg, markBg, markFg, nameColor, idText, idBg, idFg){
+    if (logoImg) this._coverImg(ctx, logoImg, pad, pad, ms, ms, ms * 0.24); else this._drawMark(ctx, pad, pad, ms, markBg, markFg);
+    ctx.save(); ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = nameColor;
+    ctx.font = `700 ${Math.round(W * 0.034)}px sans-serif`; try { ctx.letterSpacing = Math.round(W * 0.004) + 'px'; } catch(e) {}
+    ctx.fillText((this.state.appName || 'វចនានុក្រម').toUpperCase(), pad + ms + W * 0.03, pad + ms * 0.55);
+    try { ctx.letterSpacing = '0px'; } catch(e) {} ctx.restore();
+    if (idText) this._idPill(ctx, idText, W - pad, pad + ms * 0.18, Math.round(W * 0.062), idBg, idFg, 'right');
+  }
+  _footer(ctx, W, H, color){
+    ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = color;
+    ctx.font = `500 ${Math.round(W * 0.027)}px sans-serif`; try { ctx.letterSpacing = Math.round(W * 0.005) + 'px'; } catch(e) {}
+    ctx.fillText((this.state.appName || 'វចនានុក្រម') + ' · SSW', W / 2, H - Math.round(H * 0.045));
+    try { ctx.letterSpacing = '0px'; } catch(e) {} ctx.restore();
+  }
+  _paintRefined(ctx, S, word, wordImg, logoImg){
+    const W = S.w, H = S.h, pad = Math.round(W * 0.08), ms = Math.round(W * 0.10);
+    ctx.fillStyle = '#faf7f1'; ctx.fillRect(0, 0, W, H);
+    this._header(ctx, W, pad, ms, logoImg, '#b68235', '#fff8ec', '#8a5f22', word.id || '', '#fbf1df', '#8a5f22');
+    this._paintBody(ctx, W, H, W / 2, W - 2 * pad, pad + ms, H - Math.round(H * 0.075), word, wordImg,
+      { kana: '#9a8560', jp: '#1c1a17', km: '#8a5f22', divider: '#b68235', imgBorder: '#ecdcbd' });
+    this._footer(ctx, W, H, '#c3b39a');
+  }
+  _paintBold(ctx, S, word, wordImg, logoImg){
+    const W = S.w, H = S.h, pad = Math.round(W * 0.08), ms = Math.round(W * 0.10), GOLD = '#b68235', GOLDL = '#e7c98d';
+    const g = ctx.createRadialGradient(W * 0.28, 0, 0, W * 0.28, 0, H * 1.15);
+    g.addColorStop(0, '#2b221a'); g.addColorStop(0.6, '#1a1512'); g.addColorStop(1, '#100c09');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    this._header(ctx, W, pad, ms, logoImg, GOLD, '#fff8ec', GOLDL, word.id || '', 'rgba(231,201,141,0.14)', GOLDL);
+    // circular image with a gold ring goes in place of the plain image
+    if (wordImg) {
+      const top = pad + ms, bottom = H - Math.round(H * 0.075);
+      // rough vertical placement: image sits in the upper part of the body
+      const r = Math.round(W * 0.24);
+      const cyImg = top + r + Math.round(W * 0.03);
+      ctx.fillStyle = GOLD; ctx.beginPath(); ctx.arc(W / 2, cyImg, r + W * 0.018, 0, 7); ctx.fill();
+      ctx.fillStyle = '#211b15'; ctx.beginPath(); ctx.arc(W / 2, cyImg, r, 0, 7); ctx.fill();
+      this._circleImg(ctx, wordImg, W / 2, cyImg, r - W * 0.022);
+      // text block below the circle (null image so the body doesn't redraw it)
+      this._paintBody(ctx, W, H, W / 2, W - 2 * pad, cyImg + r + Math.round(W * 0.03), bottom, word, null,
+        { kana: GOLDL, jp: '#ffffff', km: '#1c1512', kmPill: GOLD, kmSize: 0.049 });
+    }
+    if (!wordImg) {
+      this._paintBody(ctx, W, H, W / 2, W - 2 * pad, pad + ms, H - Math.round(H * 0.075), word, null,
+        { kana: GOLDL, jp: '#ffffff', km: '#1c1512', kmPill: GOLD, kmSize: 0.049 });
+    }
+    this._footer(ctx, W, H, 'rgba(231,201,141,0.5)');
+  }
+  _paintHero(ctx, S, word, wordImg, logoImg){
+    const W = S.w, H = S.h, pad = Math.round(W * 0.06), ms = Math.round(W * 0.09), GOLDD = '#8a5f22';
+    const heroH = Math.round(H * 0.52);
+    ctx.fillStyle = '#faf7f1'; ctx.fillRect(0, 0, W, H);
+    if (wordImg) {
+      this._coverImg(ctx, wordImg, 0, 0, W, heroH, 0);
+      const sc = ctx.createLinearGradient(0, 0, 0, heroH * 0.45); sc.addColorStop(0, 'rgba(0,0,0,0.4)'); sc.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = sc; ctx.fillRect(0, 0, W, heroH * 0.45);
+    } else {
+      const g = ctx.createLinearGradient(0, 0, W, heroH); g.addColorStop(0, '#caa059'); g.addColorStop(1, GOLDD);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, heroH);
+      this._drawMark(ctx, W / 2 - W * 0.12, heroH / 2 - W * 0.12, W * 0.24, 'rgba(255,255,255,0.9)', GOLDD);
+    }
+    // header over the hero
+    if (logoImg) this._coverImg(ctx, logoImg, pad, pad, ms, ms, ms * 0.24); else this._drawMark(ctx, pad, pad, ms, 'rgba(255,255,255,0.92)', GOLDD);
+    this._idPill(ctx, word.id || '', W - pad, pad + ms * 0.18, Math.round(W * 0.058), 'rgba(0,0,0,0.32)', '#ffffff', 'right');
+    // bottom text panel
+    this._paintBody(ctx, W, H, W / 2, W - 2 * Math.round(W * 0.08), heroH, H - Math.round(H * 0.06), word, null,
+      { kana: '#9a8560', jp: '#1c1a17', km: '#8a5f22', divider: '#e6d6bb' });
+    this._footer(ctx, W, H, '#c3b39a');
   }
   downloadShare(){
     const data = this.state.shareImgData; if (!data) return;
@@ -9628,9 +9729,11 @@ class Component extends DCLogic {
         (w.id && w.id.toLowerCase().includes(shareQL))
       ).slice(0, 30).map(w => ({ jp: w.jp, km: w.km, onSelect: () => this.pickShareWord(w.id) })) : [];
     const shareWord = WORDS.find(w => w.id === s.shareWordId) || null;
-    const shareSizeChips = Object.keys(SHARE_SIZES).map(k => ({ label: SHARE_SIZES[k].label, onSelect: () => this.setShareSize(k),
-      style: s.shareSize === k ? 'background:var(--color-accent);color:#f3f2f2;border-color:var(--color-accent);'
-        : 'background:var(--color-surface);border-color:var(--color-divider);color:var(--color-text);' }));
+    const chipStyle = on => on ? 'background:var(--color-accent);color:#f3f2f2;border-color:var(--color-accent);'
+      : 'background:var(--color-surface);border-color:var(--color-divider);color:var(--color-text);';
+    const shareSizeChips = Object.keys(SHARE_SIZES).map(k => ({ label: SHARE_SIZES[k].label, onSelect: () => this.setShareSize(k), style: chipStyle(s.shareSize === k) }));
+    const SHARE_STYLES = [{ k: 'refined', label: 'ស្អាតទន់ភ្លន់' }, { k: 'bold', label: 'ខ្មៅដិត' }, { k: 'hero', label: 'រូបភាពពេញ' }];
+    const shareStyleChips = SHARE_STYLES.map(x => ({ label: x.label, onSelect: () => this.setShareStyle(x.k), style: chipStyle(s.shareStyle === x.k) }));
 
     const viewingSet = s.viewingViewed;
     const multiBook = BOOKS.length > 1;
@@ -10291,7 +10394,7 @@ class Component extends DCLogic {
       shareSearch: s.shareSearch, onShareSearch: e => this.onShareSearch(e),
       shareResults, shareHasResults: shareResults.length > 0,
       shareHasWord: !!shareWord, shareWordLabel: shareWord ? `${shareWord.jp} — ${shareWord.km}` : '',
-      shareSizeChips, shareBusy: s.shareBusy,
+      shareSizeChips, shareStyleChips, shareBusy: s.shareBusy,
       shareHasImg: !!s.shareImgData && !s.shareBusy, shareImgData: s.shareImgData,
       downloadShare: () => this.downloadShare(),
       shareHasErr: !!s.shareErr, shareErr: s.shareErr,
