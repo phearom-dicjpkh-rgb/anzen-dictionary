@@ -1463,6 +1463,14 @@ textarea.input { min-height: 90px; resize: vertical; }
               </div>
               <span style="opacity:0.4;">›</span>
             </div>
+            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goShare }}">
+              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg>
+              <div style="flex:1;min-width:0;">
+                <div class="card-title" style="font-size:15px;">រូបភាពចែករំលែក</div>
+                <div class="card-body" style="font-size:11px;">បង្កើតរូបភាពពាក្យ សម្រាប់បណ្ដាញសង្គម</div>
+              </div>
+              <span style="opacity:0.4;">›</span>
+            </div>
             </sc-if>
             <sc-if value="{{ menuHasAccounts }}">
             <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goAdmin }}">
@@ -1644,6 +1652,46 @@ textarea.input { min-height: 90px; resize: vertical; }
           </div>
           </sc-if>
           <sc-if value="{{ playerEmpty }}"><div style="text-align:center;padding:50px 20px;opacity:0.55;font-size:13px;line-height:1.8;">បញ្ជីទទេ<br>ជ្រើសរើសប្រភពផ្សេង</div></sc-if>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isShare }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px 40px;">
+          <button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ goMenu }}">← ម៉ីនុយ</button>
+          <h1 style="font-size:26px;margin:0 0 4px;">រូបភាពចែករំលែក</h1>
+          <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">បង្កើត​រូបភាព​ពាក្យ​ស្អាតៗ សម្រាប់​ចែក​រំលែក​លើ​បណ្ដាញ​សង្គម</div>
+          <div class="field" style="margin-bottom:10px;"><label>ជ្រើសរើសពាក្យ</label>
+            <input class="input" type="text" value="{{ shareSearch }}" sc-camel-on-change="{{ onShareSearch }}" placeholder="ស្វែងរកពាក្យ ឬ 漢字…"></div>
+          <sc-if value="{{ shareHasResults }}">
+            <div style="border:1px solid var(--color-divider);border-radius:var(--radius-md);max-height:230px;overflow-y:auto;margin-bottom:14px;">
+              <sc-for list="{{ shareResults }}" as="r" hint-placeholder-count="5">
+                <div style="padding:10px 13px;cursor:pointer;border-bottom:1px solid var(--color-divider);display:flex;gap:8px;align-items:baseline;" sc-camel-on-click="{{ r.onSelect }}">
+                  <span style="font-family:var(--font-heading);font-size:15px;flex:none;">{{ r.jp }}</span>
+                  <span style="font-size:12px;opacity:0.55;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.km }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ shareHasWord }}">
+            <div style="font-size:13px;margin-bottom:14px;padding:9px 13px;border-radius:var(--radius-md);background:var(--color-accent-100);color:var(--color-accent-800);">ពាក្យ៖ <b>{{ shareWordLabel }}</b></div>
+          </sc-if>
+
+          <div style="font-size:12px;opacity:0.6;margin-bottom:7px;">ទំហំ</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+            <sc-for list="{{ shareSizeChips }}" as="c" hint-placeholder-count="3">
+              <button style="padding:7px 14px;border-radius:99px;border:1.5px solid;font-size:13px;cursor:pointer;{{ c.style }}" sc-camel-on-click="{{ c.onSelect }}">{{ c.label }}</button>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ shareBusy }}"><div style="text-align:center;padding:40px 0;opacity:0.6;font-size:13px;">កំពុងបង្កើត…</div></sc-if>
+          <sc-if value="{{ shareHasImg }}">
+            <div style="display:flex;justify-content:center;margin-bottom:14px;">
+              <img src="{{ shareImgData }}" alt="" style="max-width:100%;max-height:420px;border-radius:12px;box-shadow:var(--shadow-md);border:1px solid var(--color-divider);">
+            </div>
+            <button class="btn btn-primary btn-block" sc-camel-on-click="{{ downloadShare }}">⬇ ទាញយករូបភាព</button>
+          </sc-if>
+          <sc-if value="{{ shareHasErr }}"><div style="font-size:12px;color:#c0392b;margin-top:6px;line-height:1.6;">{{ shareErr }}</div></sc-if>
+          <sc-if value="{{ shareNoWord }}"><div style="text-align:center;padding:40px 20px;opacity:0.5;font-size:13px;">ស្វែងរក រួច​ជ្រើសរើស​ពាក្យ​ដើម្បី​បង្កើត​រូបភាព</div></sc-if>
         </div>
         </sc-if>
 
@@ -7834,6 +7882,13 @@ const LOCK_COLS = {
   exam: ['exam_locked', 'exam_locked_schools'],
 };
 
+// Sizes an admin can pick for the share image (បង្កើតរូបភាពចែករំលែក)
+const SHARE_SIZES = {
+  square: { w: 1080, h: 1080, label: 'ការ៉េ 1:1' },
+  story:  { w: 1080, h: 1920, label: 'Story 9:16' },
+  land:   { w: 1200, h: 675,  label: 'ផ្ដេក 16:9' },
+};
+
 // The last seven days of time in the app. Shared by a learner's own profile
 // and by the teacher's view of them, so both read the same shape.
 function buildUsageChart(usage){
@@ -8185,6 +8240,8 @@ class Component extends DCLogic {
     // ចាក់ពាក្យ (word player)
     playerSrc: 'book', playerBook: '', playerLesson: 1, playerBookOpen: false, playerLessonOpen: false,
     playerList: [], playerIdx: 0, playerPlaying: false, playerRepeat: false, playerRate: 0.95,
+    // admin: share-image maker
+    shareSearch: '', shareWordId: null, shareSize: 'square', shareImgData: '', shareBusy: false, shareErr: '',
     testMode: null, testKind: 'mc_jp', testLesson: 1,
     testWords: [], testIdx: 0, testScore: 0, testResults: [],
     // exercises (លំហាត់ / លំហាត់រូបភាព)
@@ -8540,6 +8597,97 @@ class Component extends DCLogic {
   playerGoto(i){ this.stopSpeech(); this.setState({ playerIdx: i }, () => { if (this.state.playerPlaying) this.playerStep(); }); }
   playerToggleRepeat(){ this.setState(s => ({ playerRepeat: !s.playerRepeat })); }
   leavePlayer(){ this.stopSpeech(); this.setState({ playerPlaying: false, screen: 'menu' }); }
+
+  // — Admin: make a shareable image of a word (for social media) —
+  goShare(){ this.setState({ screen: 'share', shareErr: '' }, () => { if (this.state.shareWordId) this.drawShareCard(); }); }
+  onShareSearch(e){ this.setState({ shareSearch: e.target.value }); }
+  pickShareWord(id){ this.setState({ shareWordId: id, shareSearch: '' }, () => this.drawShareCard()); }
+  setShareSize(sz){ this.setState({ shareSize: sz }, () => this.drawShareCard()); }
+  _loadImg(url){ return new Promise(res => { if (!url) return res(null); const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => res(null); im.src = url; }); }
+  // a Drive thumbnail link taints the canvas, but its googleusercontent form
+  // sends CORS headers, so rewrite to that for drawing
+  _corsImg(url){ const m = (url || '').match(/(?:[?&]id=|\/d\/)([\w-]{20,})/); return m ? `https://lh3.googleusercontent.com/d/${m[1]}=w1400` : (url || ''); }
+  async drawShareCard(){
+    const word = WORDS.find(x => x.id === this.state.shareWordId);
+    if (!word) { this.setState({ shareImgData: '', shareErr: '' }); return; }
+    const S = SHARE_SIZES[this.state.shareSize] || SHARE_SIZES.square;
+    this.setState({ shareBusy: true, shareErr: '' });
+    const [wordImg, logoImg] = await Promise.all([
+      this._loadImg(word.img ? this._corsImg(word.img) : ''),
+      this._loadImg(this.state.appLogo || ''),
+    ]);
+    try {
+      const cv = document.createElement('canvas'); cv.width = S.w; cv.height = S.h;
+      this._paintShareCard(cv.getContext('2d'), S, word, wordImg, logoImg);
+      const data = cv.toDataURL('image/png');
+      this.setState({ shareImgData: data, shareBusy: false });
+    } catch (e) {
+      this.setState({ shareBusy: false, shareImgData: '', shareErr: 'រូបភាពពាក្យនេះទាញយកមិនបាន — សូមប្ដូរពាក្យ ឬ ពាក្យដែលគ្មានរូប' });
+    }
+  }
+  _roundPath(ctx, x, y, w, h, r){ r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+  // draw an image to cover a rounded box (like object-fit:cover)
+  _coverImg(ctx, img, x, y, w, h, r){
+    ctx.save(); this._roundPath(ctx, x, y, w, h, r); ctx.clip();
+    const ir = img.width / img.height, br = w / h; let dw, dh;
+    if (ir > br) { dh = h; dw = h * ir; } else { dw = w; dh = w / ir; }
+    ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); ctx.restore();
+  }
+  _wrapText(ctx, text, cx, y, maxW, lineH){
+    const words = String(text || '').split(/\s+/); let line = '', yy = y;
+    for (const wd of words) {
+      const test = line ? line + ' ' + wd : wd;
+      if (ctx.measureText(test).width > maxW && line) { ctx.fillText(line, cx, yy); line = wd; yy += lineH; }
+      else line = test;
+    }
+    if (line) ctx.fillText(line, cx, yy);
+    return yy + lineH;
+  }
+  _paintShareCard(ctx, S, word, wordImg, logoImg){
+    const W = S.w, H = S.h, ACC = '#b68235', ACCD = '#7d571d', INK = '#201f1d';
+    const bg = ctx.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#c9974a'); bg.addColorStop(1, ACCD);
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    const m = Math.round(W * 0.05), px = m, py = m, pw = W - 2 * m, ph = H - 2 * m;
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 12;
+    this._roundPath(ctx, px, py, pw, ph, Math.round(W * 0.045)); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.restore();
+    const cx = W / 2, u = pw;   // u = layout unit (panel width)
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    // header: logo + app name
+    let y = py + Math.round(ph * 0.055);
+    const ls = Math.round(u * 0.12);
+    if (logoImg) { this._coverImg(ctx, logoImg, cx - ls / 2, y, ls, ls, ls * 0.24); y += ls + Math.round(u * 0.025); }
+    ctx.fillStyle = ACCD; ctx.font = `700 ${Math.round(u * 0.05)}px sans-serif`;
+    ctx.fillText(this.state.appName || 'វចនានុក្រម', cx, y + Math.round(u * 0.045)); y += Math.round(u * 0.10);
+    // id badge (top-right of panel)
+    const idText = word.id || ''; ctx.font = `600 ${Math.round(u * 0.032)}px sans-serif`;
+    const bw = ctx.measureText(idText).width + Math.round(u * 0.06), bh = Math.round(u * 0.07);
+    this._roundPath(ctx, px + pw - bw - Math.round(u * 0.05), py + Math.round(u * 0.05), bw, bh, bh / 2);
+    ctx.fillStyle = '#fff3e4'; ctx.fill(); ctx.fillStyle = ACCD;
+    ctx.fillText(idText, px + pw - bw / 2 - Math.round(u * 0.05), py + Math.round(u * 0.05) + bh * 0.68);
+    // word image
+    if (wordImg) { const iw = u * 0.66, ih = Math.min(ph * 0.30, u * 0.5); this._coverImg(ctx, wordImg, cx - iw / 2, y, iw, ih, Math.round(u * 0.03)); y += ih + Math.round(u * 0.05); }
+    else { y += Math.round(ph * 0.02); }
+    // kana
+    if (word.kana) { ctx.fillStyle = '#9a8460'; ctx.font = `400 ${Math.round(u * 0.042)}px sans-serif`; y += Math.round(u * 0.04); ctx.fillText(word.kana, cx, y); }
+    // JP (auto-shrink to fit)
+    let jp = Math.round(u * 0.17); ctx.fillStyle = INK; do { ctx.font = `700 ${jp}px sans-serif`; } while (ctx.measureText(word.jp).width > u * 0.86 && (jp -= 6) > 24);
+    y += jp + Math.round(u * 0.02); ctx.fillText(word.jp, cx, y);
+    // divider
+    y += Math.round(u * 0.045); ctx.strokeStyle = '#ece0cc'; ctx.lineWidth = Math.max(2, u * 0.004); ctx.beginPath(); ctx.moveTo(cx - u * 0.14, y); ctx.lineTo(cx + u * 0.14, y); ctx.stroke();
+    // KM meaning (wraps)
+    y += Math.round(u * 0.075); ctx.fillStyle = ACCD; ctx.font = `600 ${Math.round(u * 0.058)}px sans-serif`;
+    this._wrapText(ctx, word.km || '', cx, y, u * 0.82, Math.round(u * 0.078));
+    // footer
+    ctx.fillStyle = '#c3b6a1'; ctx.font = `500 ${Math.round(u * 0.03)}px sans-serif`;
+    ctx.fillText('SSW DICTIONARY', cx, py + ph - Math.round(ph * 0.045));
+  }
+  downloadShare(){
+    const data = this.state.shareImgData; if (!data) return;
+    const word = WORDS.find(x => x.id === this.state.shareWordId);
+    const a = document.createElement('a'); a.href = data;
+    a.download = `${(word && word.id) || 'word'}.png`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
 
   // — Login / logout —
   onEmailChange(e){ this.setState({ email: e.target.value }); }
@@ -9471,6 +9619,19 @@ class Component extends DCLogic {
     for (let n = 1; n <= playerLessonTotal; n++) playerLessonMenu.push({ name: `មេរៀនទី ${n}`, onSelect: () => this.pickPlayerLesson(n), rowStyle: rowSel(s.playerLesson === n) });
     const pw = s.playerList[s.playerIdx] || null;
 
+    // — share-image maker locals —
+    const shareQ = (s.shareSearch || '').trim();
+    const shareQL = shareQ.toLowerCase();
+    const shareResults = shareQ ? WORDS.filter(w =>
+        (w.jp && w.jp.includes(shareQ)) || (w.kana && w.kana.includes(shareQ)) ||
+        (w.km && w.km.toLowerCase().includes(shareQL)) || (w.romajiNorm && w.romajiNorm.includes(shareQL)) ||
+        (w.id && w.id.toLowerCase().includes(shareQL))
+      ).slice(0, 30).map(w => ({ jp: w.jp, km: w.km, onSelect: () => this.pickShareWord(w.id) })) : [];
+    const shareWord = WORDS.find(w => w.id === s.shareWordId) || null;
+    const shareSizeChips = Object.keys(SHARE_SIZES).map(k => ({ label: SHARE_SIZES[k].label, onSelect: () => this.setShareSize(k),
+      style: s.shareSize === k ? 'background:var(--color-accent);color:#f3f2f2;border-color:var(--color-accent);'
+        : 'background:var(--color-surface);border-color:var(--color-divider);color:var(--color-text);' }));
+
     const viewingSet = s.viewingViewed;
     const multiBook = BOOKS.length > 1;
     const monitorPageProgress = [];
@@ -10125,6 +10286,17 @@ class Component extends DCLogic {
       }),
 
       // — ប្រឡងសាកល្បង (exam) —
+      // — Admin: share-image maker —
+      goShare: () => this.goShare(), isShare: s.screen === 'share',
+      shareSearch: s.shareSearch, onShareSearch: e => this.onShareSearch(e),
+      shareResults, shareHasResults: shareResults.length > 0,
+      shareHasWord: !!shareWord, shareWordLabel: shareWord ? `${shareWord.jp} — ${shareWord.km}` : '',
+      shareSizeChips, shareBusy: s.shareBusy,
+      shareHasImg: !!s.shareImgData && !s.shareBusy, shareImgData: s.shareImgData,
+      downloadShare: () => this.downloadShare(),
+      shareHasErr: !!s.shareErr, shareErr: s.shareErr,
+      shareNoWord: !shareWord && !s.shareBusy && !s.shareErr,
+
       // — ចាក់ពាក្យ (word player) —
       openPlayer: () => this.openPlayer(), leavePlayer: () => this.leavePlayer(),
       isPlayer: s.screen === 'player',
