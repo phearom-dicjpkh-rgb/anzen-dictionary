@@ -1061,6 +1061,9 @@ textarea.input { min-height: 90px; resize: vertical; }
               <div class="card-kicker">សរុប</div>
               <div class="card-title" style="font-size:16px;">{{ monitorOverallViewed }} / {{ overallTotal }} ពាក្យ ({{ monitorOverallPct }}%)</div>
             </div>
+            <sc-if value="{{ isAdmin }}">
+            <button class="btn btn-secondary btn-block" style="margin-bottom:16px;" sc-camel-on-click="{{ downloadStudentPdf }}">⬇ ទាញយកលទ្ធផលជា PDF (A4)</button>
+            </sc-if>
 
             <h4 style="font-size:15px;margin:0 0 2px;">លទ្ធផលតេស្ត</h4>
             <div style="font-size:11px;opacity:0.55;margin-bottom:10px;">ចុចលើលំហាត់ ដើម្បីមើលពាក្យត្រូវ/ខុស</div>
@@ -8213,7 +8216,7 @@ class Component extends DCLogic {
     // teacher monitor
     students: [], selectedStudent: null, selectedStudentName: '', viewingViewed: [],
     viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {},
-    viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], monExpandedChip: null,
+    viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingExamReport: null, viewingSchoolId: null, viewingHistory: [], monExpandedChip: null,
     leaderboard: [],   // student standings, name + level only
 
     // self sign-up through a branch invite link
@@ -8249,10 +8252,10 @@ class Component extends DCLogic {
     // admin: share-image maker
     shareSearch: '', shareWordId: null, shareSize: 'square', shareStyle: 'refined', shareImgData: '', shareBusy: false, shareErr: '',
     testMode: null, testKind: 'mc_jp', testLesson: 1,
-    testWords: [], testIdx: 0, testScore: 0, testResults: [],
+    testWords: [], testIdx: 0, testScore: 0, testResults: [], testPicks: [],
     // exercises (លំហាត់ / លំហាត់រូបភាព)
     quizDeck: 'quiz',
-    quizLesson: 1, quizQuestions: [], quizIdx: 0, quizScore: 0, quizResults: [], quizAnswered: false, quizPicked: null,
+    quizLesson: 1, quizQuestions: [], quizIdx: 0, quizScore: 0, quizResults: [], quizPicks: [], quizAnswered: false, quizPicked: null,
     exercisesLocked: false, exercisesLockedSchools: [],
     imgExercisesLocked: false, imgExercisesLockedSchools: [],
     examLocked: false, examLockedSchools: [],
@@ -9164,10 +9167,79 @@ class Component extends DCLogic {
       viewingImgQuizzes: (st.settings && st.settings.imgQuizzes) || {},
       viewingImgQuizDetails: (st.settings && st.settings.imgQuizDetails) || {},
       viewingExamLog: (st.settings && Array.isArray(st.settings.examLog)) ? st.settings.examLog : [],
+      viewingExamReport: (st.settings && st.settings.examReport) || null,
+      viewingSchoolId: st.school_id || null, viewingHistory: Array.isArray(st.history) ? st.history : [],
       monExpandedChip: null });
   }
   backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], monExpandedChip: null }); }
   toggleMonChip(key){ this.setState(s => ({ monExpandedChip: s.monExpandedChip === key ? null : key })); }
+
+  // — Admin: download a student's results as an A4 PDF (via the print dialog) —
+  _esc(v){ return String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  _fmtDate(d){ if (!d) return ''; const x = new Date(d); if (isNaN(x)) return ''; const p = n => String(n).padStart(2, '0'); return `${p(x.getDate())}/${p(x.getMonth() + 1)}/${x.getFullYear()} ${p(x.getHours())}:${p(x.getMinutes())}`; }
+  _reportSections(){
+    const s = this.state, secs = [];
+    const dateFor = (modes, lesson) => { const hs = (s.viewingHistory || []).filter(h => modes.includes(h.mode) && h.lesson === lesson); return hs.length ? hs[hs.length - 1].date : ''; };
+    const KIND = { mc_jp: 'ជប៉ុន → ខ្មែរ', mc_km: 'ខ្មែរ → ជប៉ុន' };
+    for (const kind of Object.keys(KIND)) {
+      const det = (s.viewingLessonDetails || {})[kind] || {};
+      for (const n of Object.keys(det).map(Number).filter(x => x > 0).sort((a, b) => a - b))
+        secs.push({ title: `ជ្រើសរើសពាក្យត្រូវ · ${KIND[kind]} · លំហាត់ទី ${n}`, date: dateFor([kind], n), score: (s.viewingLessons[kind] || {})[n], items: det[n] });
+    }
+    const push = (det, recs, label, mode) => { for (const n of Object.keys(det).map(Number).filter(x => x > 0).sort((a, b) => a - b)) secs.push({ title: `${label} · លំហាត់ទី ${n}`, date: dateFor([mode], n), score: (recs || {})[n], items: det[n] }); };
+    push(s.viewingQuizDetails || {}, s.viewingQuizzes, 'លំហាត់', 'quiz');
+    push(s.viewingImgQuizDetails || {}, s.viewingImgQuizzes, 'លំហាត់រូបភាព', 'imgquiz');
+    const er = s.viewingExamReport;
+    if (er && er.items) secs.push({ title: `ប្រឡងសាកល្បង · ឈុតទី ${er.block}`, date: er.date, scoreLabel: `${er.score} / ${er.total}`, items: er.items });
+    return secs;
+  }
+  downloadStudentPdf(){
+    const s = this.state, esc = v => this._esc(v);
+    const secs = this._reportSections();
+    if (!secs.length) { this.showToast('សិស្សនេះមិនទាន់មានលទ្ធផលទេ'); return; }
+    const sch = (s.schools || []).find(x => x.id === s.viewingSchoolId) || {};
+    const schoolName = sch.full_name || sch.email || this.state.appName || '';
+    const body = secs.map(sec => {
+      const scoreLabel = sec.scoreLabel || (sec.score != null ? sec.score + '%' : '');
+      const rows = (sec.items || []).map((it, i) => {
+        const q = it.q || it.jp || '';
+        const mark = it.ok ? '<span class="ok">✓</span>' : '<span class="no">✗</span>';
+        const pick = (it.picked != null && it.picked !== '') ? `<div class="ans">ចម្លើយសិស្ស៖ <span class="${it.ok ? 'blue' : 'red'}">${esc(it.picked)}</span></div>` : '';
+        const corr = (it.correct != null && it.correct !== '') ? `<div class="ans">ចម្លើយត្រូវ៖ <span class="blue">${esc(it.correct)}</span></div>` : '';
+        return `<div class="q"><div class="txt"><b>${i + 1}.</b> ${esc(q)} ${mark}</div>${pick}${corr}</div>`;
+      }).join('');
+      return `<div class="sec"><h2>${esc(sec.title)}</h2><div class="sub">ថ្ងៃម៉ោងធ្វើ៖ ${esc(this._fmtDate(sec.date)) || '—'} · ពិន្ទុ៖ ${esc(scoreLabel)}</div>${rows}</div>`;
+    }).join('');
+    const html = `<!doctype html><html lang="km"><head><meta charset="utf-8"><title>លទ្ធផល · ${esc(s.selectedStudentName)}</title><style>
+      @page{size:A4;margin:14mm;}
+      *{font-family:"Khmer OS System","Noto Sans Khmer","Kantumruy Pro","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;box-sizing:border-box;}
+      body{color:#000;font-size:12px;line-height:1.65;margin:0;}
+      .hd{border-bottom:2.5px solid #000;padding-bottom:10px;margin-bottom:16px;}
+      .hd h1{font-size:19px;margin:0 0 8px;}
+      .hd .row{font-size:12.5px;margin:2px 0;}
+      .hd .row b{display:inline-block;min-width:90px;}
+      .sec{margin:18px 0;}
+      .sec h2{font-size:14px;margin:0 0 3px;border-left:5px solid #0645ad;padding-left:9px;}
+      .sec .sub{font-size:11px;color:#333;margin:0 0 9px;padding-left:14px;}
+      .q{margin:0 0 9px;padding:0 0 8px 14px;border-bottom:1px dotted #ccc;page-break-inside:avoid;}
+      .q .txt{color:#000;}
+      .ans{font-size:11.5px;margin-top:2px;padding-left:16px;}
+      .blue{color:#0645ad;font-weight:600;} .red{color:#cc0000;font-weight:600;}
+      .ok{color:#1a7f37;font-weight:bold;} .no{color:#cc0000;font-weight:bold;}
+      .foot{margin-top:20px;font-size:10px;color:#888;text-align:center;border-top:1px solid #ddd;padding-top:6px;}
+    </style></head><body>
+      <div class="hd"><h1>${esc(this.state.appName || 'វចនានុក្រម')} — លទ្ធផលសិស្ស</h1>
+        <div class="row"><b>សាលា/សាខា៖</b> ${esc(schoolName)}</div>
+        <div class="row"><b>ឈ្មោះសិស្ស៖</b> ${esc(s.selectedStudentName)}</div>
+        <div class="row"><b>បោះពុម្ព៖</b> ${esc(this._fmtDate(new Date().toISOString()))}</div>
+      </div>${body}
+      <div class="foot">${esc(this.state.appName || 'វចនានុក្រម')} · SSW</div>
+    </body></html>`;
+    const w = window.open('', '_blank');
+    if (!w) { this.showToast('សូមអនុញ្ញាត popup ដើម្បីទាញយក PDF'); return; }
+    w.document.open(); w.document.write(html); w.document.close(); w.focus();
+    setTimeout(() => { try { w.print(); } catch(e) {} }, 500);
+  }
 
   goHome(){ this.stopSpeech(); this.setState({ screen: 'home', playerPlaying: false }); }
   goFavorites(){ this.stopSpeech(); this.setState({ screen: 'favorites', playerPlaying: false }); }
@@ -9242,7 +9314,7 @@ class Component extends DCLogic {
     const words = shuffle(this.lessonWords(n));
     if (!words.length) return;
     this.setState({ testMode: 'mc',
-      testLesson: n, testWords: words, testIdx: 0, testScore: 0, testResults: [],
+      testLesson: n, testWords: words, testIdx: 0, testScore: 0, testResults: [], testPicks: [],
       mcSelected: null, mcAnswered: false, mcOptions: this.buildMcOptions(words[0]) });
   }
   retryTest(){ this.startLesson(this.state.testLesson); }
@@ -9263,7 +9335,7 @@ class Component extends DCLogic {
     const qs = this.quizSlice(n);
     if (!qs.length) return;
     this.setState({ testMode: 'quiz', quizLesson: n, quizQuestions: qs,
-      quizIdx: 0, quizScore: 0, quizResults: [], quizAnswered: false, quizPicked: null });
+      quizIdx: 0, quizScore: 0, quizResults: [], quizPicks: [], quizAnswered: false, quizPicked: null });
   }
   lockedQuiz(){ this.showToast(`ត្រូវធ្វើលំហាត់មុនអោយបាន ${PASS_PCT}% សិន`); }
   answerQuiz(choice){
@@ -9273,7 +9345,9 @@ class Component extends DCLogic {
     this.setState(s => {
       const quizResults = s.quizResults.slice();
       quizResults[s.quizIdx] = correct;
-      return { quizPicked: choice, quizAnswered: true, quizScore: s.quizScore + (correct ? 1 : 0), quizResults };
+      const quizPicks = s.quizPicks.slice();
+      quizPicks[s.quizIdx] = choice;
+      return { quizPicked: choice, quizAnswered: true, quizScore: s.quizScore + (correct ? 1 : 0), quizResults, quizPicks };
     });
   }
   quizNext(){
@@ -9294,8 +9368,13 @@ class Component extends DCLogic {
     settings[c.prog] = quizzes;
     // keep which questions were right/wrong for the best attempt, for the teacher
     if (isBest) {
+      const L = ['A', 'B', 'C', 'D', 'E'];
+      const lab = (q, v) => v === undefined || v === null ? '—'
+        : q.t === 'tf' ? (v ? '〇 (ត្រូវ)' : '✖ (ខុស)')
+        : `${L[v] || '?'}. ${q.o[v] || ''}`;
+      const picks = this.state.quizPicks;
       const details = { ...(settings[c.det] || {}) };
-      details[quizLesson] = quizQuestions.map((q, i) => ({ q: q.q, ok: !!quizResults[i] }));
+      details[quizLesson] = quizQuestions.map((q, i) => ({ q: q.q, ok: !!quizResults[i], picked: lab(q, picks[i]), correct: lab(q, q.a) }));
       settings[c.det] = details;
     }
     const entry = { mode: this.state.quizDeck === 'img' ? 'imgquiz' : 'quiz', lesson: quizLesson, score: quizScore, total, date: new Date().toISOString() };
@@ -9337,12 +9416,16 @@ class Component extends DCLogic {
     const { examBlock, examQuestions, examAnswers } = this.state;
     const label = (q, v) => q.t === 'tf' ? (v === true ? '〇' : v === false ? '✖' : '—')
       : (v === undefined ? '—' : (['A', 'B', 'C', 'D', 'E'][v] || '?'));
+    // a fuller label (letter + option text) for the PDF report
+    const full = (q, v) => q.t === 'tf' ? (v === true ? '〇 (ត្រូវ)' : v === false ? '✖ (ខុស)' : '—')
+      : (v === undefined ? '—' : `${['A', 'B', 'C', 'D', 'E'][v] || '?'}. ${q.o[v] || ''}`);
     let score = 0;
     const results = examQuestions.map((q, i) => {
       const picked = examAnswers[i];
       const ok = picked !== undefined && picked === q.a;
       if (ok) score++;
-      return { q: q.q, ok, answered: picked !== undefined, correctLabel: label(q, q.a), pickedLabel: label(q, picked), e: q.e || '' };
+      return { q: q.q, ok, answered: picked !== undefined, correctLabel: label(q, q.a), pickedLabel: label(q, picked), e: q.e || '',
+        pickedFull: full(q, picked), correctFull: full(q, q.a) };
     });
     const total = examQuestions.length;
     const pct = total ? Math.round(score / total * 100) : 0;
@@ -9355,6 +9438,8 @@ class Component extends DCLogic {
     // the full exam record, not just the best score
     const now = new Date().toISOString();
     settings.examLog = [...(settings.examLog || []), { block: examBlock, score, total, pct, passed, date: now }].slice(-50);
+    // the latest attempt's full per-question record, for the admin PDF
+    settings.examReport = { block: examBlock, score, total, date: now, items: results.map(r => ({ q: r.q, ok: r.ok, picked: r.pickedFull, correct: r.correctFull })) };
     const entry = { mode: 'exam', lesson: examBlock, score, total, date: now };
     this.setState({ settings, history: [...this.state.history, entry], examScore: score,
       examResults: results, examTimeUp: !!timeUp, testMode: 'examreview' }, () => this.persist());
@@ -9379,7 +9464,9 @@ class Component extends DCLogic {
     if (isBest) {
       const details = { ...(settings.lessonDetails || {}) };
       const dKind = { ...(details[testKind] || {}) };
-      dKind[testLesson] = testWords.map((w, i) => ({ jp: w.jp, kana: w.kana, km: w.km, ok: !!testResults[i] }));
+      const askJp = testKind !== 'mc_km';   // JP prompt, KM answers
+      dKind[testLesson] = testWords.map((w, i) => ({ jp: w.jp, kana: w.kana, km: w.km, ok: !!testResults[i],
+        q: askJp ? w.jp : w.km, picked: this.state.testPicks[i] || '', correct: askJp ? w.km : w.jp }));
       details[testKind] = dKind;
       settings.lessonDetails = details;
     }
@@ -9405,7 +9492,9 @@ class Component extends DCLogic {
     this.setState(s => {
       const testResults = s.testResults.slice();
       testResults[s.testIdx] = !!opt.correct;   // remember right/wrong per word
-      return { mcSelected: opt, mcAnswered: true, testScore: s.testScore + (opt.correct ? 1 : 0), testResults };
+      const testPicks = s.testPicks.slice();
+      testPicks[s.testIdx] = opt.text;           // remember which option was chosen
+      return { mcSelected: opt, mcAnswered: true, testScore: s.testScore + (opt.correct ? 1 : 0), testResults, testPicks };
     });
   }
   mcNext(){
@@ -10071,7 +10160,7 @@ class Component extends DCLogic {
         if (s.role === 'admin')   set.push('admin');
         return set.includes(s.screen) ? 'var(--color-accent-700)' : 'var(--color-text)';
       })(),
-      monitorLessonSummary,
+      monitorLessonSummary, downloadStudentPdf: () => this.downloadStudentPdf(),
       monitorQuizSummary, hasMonitorQuiz: monitorQuizSummary.hasAny,
       monitorImgQuizSummary, hasMonitorImgQuiz: monitorImgQuizSummary.hasAny,
       monitorExamLog, hasMonitorExam: monitorExamLog.length > 0,
