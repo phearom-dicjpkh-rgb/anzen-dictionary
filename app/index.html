@@ -1436,6 +1436,7 @@ textarea.input { min-height: 90px; resize: vertical; }
         <div style="padding:18px 20px 30px;">
           <h1 style="font-size:26px;margin:0 0 16px;">ម៉ីនុយ</h1>
           <div style="display:flex;flex-direction:column;gap:10px;">
+            <sc-if value="{{ playerInMenu }}">
             <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ openPlayer }}">
               <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
               <div style="flex:1;min-width:0;">
@@ -1444,6 +1445,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               </div>
               <span style="opacity:0.4;">›</span>
             </div>
+            </sc-if>
             <sc-if value="{{ isAdmin }}">
             <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goAddWord }}">
               <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
@@ -2019,6 +2021,10 @@ textarea.input { min-height: 90px; resize: vertical; }
       <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ testColor }};" sc-camel-on-click="{{ goTest }}">
         <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ testColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path></svg>
         <span style="font-size:10px;">តេស្ត</span>
+      </button>
+      <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ playerColor }};" sc-camel-on-click="{{ openPlayer }}">
+        <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ playerColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M15.54 8.46a5 5 0 010 7.07"></path><path d="M19.07 4.93a10 10 0 010 14.14"></path></svg>
+        <span style="font-size:10px;">ចាក់ពាក្យ</span>
       </button>
       <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ rankingColor }};" sc-camel-on-click="{{ goRanking }}">
         <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ rankingColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"></circle><path d="M8.5 12.5L7 21l5-3 5 3-1.5-8.5"></path></svg>
@@ -10171,6 +10177,8 @@ class Component extends DCLogic {
       homeColor: s.screen === 'home' ? 'var(--color-accent-700)' : 'var(--color-text)',
       favColor: s.screen === 'favorites' ? 'var(--color-accent-700)' : 'var(--color-text)',
       testColor: s.screen === 'test' ? 'var(--color-accent-700)' : 'var(--color-text)',
+      playerColor: s.screen === 'player' ? 'var(--color-accent-700)' : 'var(--color-text)',
+      playerInMenu: s.role !== 'student',
       settingsColor: s.screen === 'settings' ? 'var(--color-accent-700)' : 'var(--color-text)',
 
       hasToast: !!s.toast, toast: s.toast,
