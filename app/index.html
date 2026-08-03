@@ -2223,7 +2223,7 @@ textarea.input { min-height: 90px; resize: vertical; }
             <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="{{ detailWord.favFill }}" stroke="var(--color-accent-700)" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
           </button>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px;">
           <span class="{{ detailWord.tagClass }}">{{ detailWord.pos }}</span>
           <button class="btn btn-secondary" sc-camel-on-click="{{ playDetailAudio }}">
             <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M15.54 8.46a5 5 0 010 7.07"></path></svg>
@@ -2233,6 +2233,10 @@ textarea.input { min-height: 90px; resize: vertical; }
           <button class="btn btn-secondary" sc-camel-on-click="{{ editDetailWord }}">
             <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             កែពាក្យ
+          </button>
+          <button class="btn btn-secondary" sc-camel-on-click="{{ shareDetailWord }}">
+            <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg>
+            បង្កើតរូបភាព
           </button>
           </sc-if>
         </div>
@@ -9081,6 +9085,12 @@ class Component extends DCLogic {
     this.setState({ detailWordId: null });
     this.pickEditWord(id);
   }
+  // jump straight from the word popup to the share-image maker, for this word
+  shareDetailWord(){
+    const id = this.state.detailWordId;
+    if (!id) return;
+    this.setState({ detailWordId: null, shareWordId: id, shareSearch: '', screen: 'share', shareErr: '' }, () => this.drawShareCard());
+  }
   closeEditWord(){ this.setState({ editWordId: null, edMsg: '', edError: '' }); }
   onEdJp(e){ this.setState({ edJp: e.target.value }); }
   onEdKana(e){ this.setState({ edKana: e.target.value }); }
@@ -10490,6 +10500,7 @@ class Component extends DCLogic {
       editNoResults: !!s.editSearch.trim() && editResults.length === 0,
       isEditingWord: !!s.editWordId, closeEditWord: () => this.closeEditWord(),
       editDetailWord: () => this.editDetailWord(),
+      shareDetailWord: () => this.shareDetailWord(),
       edJp: s.edJp, onEdJp: e => this.onEdJp(e),
       edKana: s.edKana, onEdKana: e => this.onEdKana(e),
       edPos: s.edPos, onEdPos: e => this.onEdPos(e),
