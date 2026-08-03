@@ -512,18 +512,20 @@ textarea.input { min-height: 90px; resize: vertical; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }
 
 /* A4 results sheet (admin print/PDF) */
-#print-sheet { color:#111; -webkit-print-color-adjust:exact; print-color-adjust:exact; font-size:12.5px; line-height:1.55; }
-#print-sheet .bar { background:#1a4b8c; color:#fff; font-weight:600; font-size:13px; padding:6px 12px; display:flex; justify-content:space-between; margin-top:6px; }
-#print-sheet table { width:100%; border-collapse:collapse; }
-#print-sheet td, #print-sheet th { border:1px solid #c7d0e0; padding:6px 9px; vertical-align:top; text-align:left; }
-#print-sheet th { background:#eef2f8; color:#1a4b8c; font-weight:600; font-size:12px; }
-#print-sheet td.k { background:#f5f7fb; font-weight:600; width:150px; color:#333; }
+.report { color:#111; -webkit-print-color-adjust:exact; print-color-adjust:exact; font-size:12.5px; line-height:1.55; }
+.report .bar { background:#1a4b8c; color:#fff; font-weight:600; font-size:13px; padding:6px 12px; display:flex; justify-content:space-between; margin-top:6px; }
+.report table { width:100%; border-collapse:collapse; }
+.report td, .report th { border:1px solid #c7d0e0; padding:6px 9px; vertical-align:top; text-align:left; }
+.report th { background:#eef2f8; color:#1a4b8c; font-weight:600; font-size:12px; }
+.report td.k { background:#f5f7fb; font-weight:600; width:150px; color:#333; }
+#print-mount { display:none; }
 @media print {
   @page { size:A4; margin:12mm; }
-  body * { visibility:hidden !important; }
-  #print-sheet, #print-sheet * { visibility:visible !important; }
-  #print-sheet { position:absolute !important; left:0 !important; top:0 !important; width:100% !important; max-width:none !important; box-shadow:none !important; padding:0 !important; margin:0 !important; }
-  #print-sheet tr, #print-sheet .prow { page-break-inside:avoid; }
+  html, body { height:auto !important; overflow:visible !important; background:#fff !important; }
+  body.printing > * { display:none !important; }
+  body.printing #print-mount { display:block !important; }
+  .report .prow, .report tr { page-break-inside:avoid; }
+  .report img { max-width:230px !important; max-height:150px !important; }
   .no-print { display:none !important; }
 }
 </style>
@@ -2150,7 +2152,7 @@ textarea.input { min-height: 90px; resize: vertical; }
         <button style="background:#1a63c9;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:14px;font-weight:600;cursor:pointer;" sc-camel-on-click="{{ doPrint }}">🖨 រក្សាទុក / បោះពុម្ព PDF</button>
       </div>
       <div style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:16px;display:flex;justify-content:center;">
-        <div id="print-sheet" style="width:100%;max-width:780px;background:#fff;padding:28px 30px;box-shadow:0 8px 30px rgba(0,0,0,0.35);box-sizing:border-box;">
+        <div id="print-sheet" class="report" style="width:100%;max-width:780px;background:#fff;padding:28px 30px;box-shadow:0 8px 30px rgba(0,0,0,0.35);box-sizing:border-box;">
           <div style="display:flex;align-items:center;gap:14px;border-bottom:3px solid #1a4b8c;padding-bottom:12px;">
             <sc-if value="{{ prHasLogo }}"><img src="{{ pr.logo }}" alt="" style="width:56px;height:56px;border-radius:8px;object-fit:cover;flex:none;"></sc-if>
             <sc-if value="{{ prNoLogo }}"><div style="width:56px;height:56px;border-radius:8px;background:#b68235;color:#fff8ec;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:32px;flex:none;">辞</div></sc-if>
@@ -2180,7 +2182,10 @@ textarea.input { min-height: 90px; resize: vertical; }
             <sc-for list="{{ prItems }}" as="it" hint-placeholder-count="8">
               <div class="prow" style="display:flex;font-size:12px;border-top:1px solid #d7deea;">
                 <div style="width:36px;padding:6px 7px;text-align:center;color:#555;border-right:1px solid #eef1f6;">{{ it.n }}</div>
-                <div style="flex:2;padding:6px 7px;border-right:1px solid #eef1f6;color:#111;line-height:1.5;">{{ it.q }}</div>
+                <div style="flex:2;padding:6px 7px;border-right:1px solid #eef1f6;color:#111;line-height:1.5;">
+                  <div>{{ it.q }}</div>
+                  <sc-if value="{{ it.hasImg }}"><img src="{{ it.img }}" alt="" style="margin-top:5px;max-width:150px;max-height:110px;border-radius:6px;border:1px solid #d7deea;object-fit:contain;display:block;"></sc-if>
+                </div>
                 <div style="flex:1.5;padding:6px 7px;border-right:1px solid #eef1f6;font-weight:600;{{ it.pickedColor }}">{{ it.picked }}</div>
                 <div style="flex:1.5;padding:6px 7px;border-right:1px solid #eef1f6;font-weight:600;color:#1558b0;">{{ it.correct }}</div>
                 <div style="width:38px;padding:6px 7px;text-align:center;font-weight:700;{{ it.markColor }}">{{ it.mark }}</div>
@@ -2338,6 +2343,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 </div>
 
 </x-dc>
+<div id="print-mount" class="report"></div>
 <script type="text/x-dc" data-dc-script="">
 
 const POS_CLASS = { 'ន.':'tag tag-neutral', 'កិ.':'tag tag-accent', 'គុណ.':'tag tag-accent-2' };
@@ -9258,6 +9264,7 @@ class Component extends DCLogic {
       n: i + 1, q: it.q || it.jp || '', mark: it.ok ? '✓' : '✗', markColor: it.ok ? 'color:#1a7f37;' : 'color:#c0392b;',
       hasPicked: it.picked != null && it.picked !== '', picked: it.picked || '', pickedColor: it.ok ? 'color:#1558b0;' : 'color:#c0392b;',
       hasCorrect: it.correct != null && it.correct !== '', correct: it.correct || '',
+      hasImg: !!it.img, img: it.img || '',
     }));
     this.setState({ printOpen: true, printReport: {
       appName: this.state.appName || 'វចនានុក្រម', logo: this.state.appLogo || '',
@@ -9267,7 +9274,22 @@ class Component extends DCLogic {
     } });
   }
   closePrint(){ this.setState({ printOpen: false }); }
-  doPrint(){ try { window.print(); } catch(e) { this.showToast('បោះពុម្ពមិនបាន'); } }
+  doPrint(){
+    try {
+      const sheet = document.getElementById('print-sheet');
+      const mount = document.getElementById('print-mount');
+      // Clone the rendered sheet into a normal-flow node at <body> level. The
+      // overlay is position:fixed inside a scroll box, so it cannot paginate;
+      // this mount is a plain block, so a long list breaks across A4 pages.
+      if (sheet && mount) { mount.innerHTML = sheet.innerHTML; }
+      document.body.classList.add('printing');
+      const done = () => { document.body.classList.remove('printing'); if (mount) mount.innerHTML = ''; window.removeEventListener('afterprint', done); };
+      window.addEventListener('afterprint', done);
+      window.print();
+      // Safari/older WebKit may not fire afterprint — clean up shortly after too.
+      setTimeout(done, 1500);
+    } catch(e) { this.showToast('បោះពុម្ពមិនបាន'); }
+  }
   // download the exercise whose drill-in is currently open (chip key: quiz-N /
   // imgquiz-N / mc_jp-N / mc_km-N)
   downloadOpenPdf(){
@@ -9420,7 +9442,7 @@ class Component extends DCLogic {
         : `${L[v] || '?'}. ${q.o[v] || ''}`;
       const picks = this.state.quizPicks;
       const details = { ...(settings[c.det] || {}) };
-      details[quizLesson] = quizQuestions.map((q, i) => ({ q: q.q, ok: !!quizResults[i], picked: lab(q, picks[i]), correct: lab(q, q.a) }));
+      details[quizLesson] = quizQuestions.map((q, i) => ({ q: q.q, ok: !!quizResults[i], picked: lab(q, picks[i]), correct: lab(q, q.a), img: q.img || '' }));
       settings[c.det] = details;
     }
     const entry = { mode: this.state.quizDeck === 'img' ? 'imgquiz' : 'quiz', lesson: quizLesson, score: quizScore, total, date: new Date().toISOString() };
@@ -9485,7 +9507,7 @@ class Component extends DCLogic {
     const now = new Date().toISOString();
     settings.examLog = [...(settings.examLog || []), { block: examBlock, score, total, pct, passed, date: now }].slice(-50);
     // the latest attempt's full per-question record, for the admin PDF
-    settings.examReport = { block: examBlock, score, total, date: now, items: results.map(r => ({ q: r.q, ok: r.ok, picked: r.pickedFull, correct: r.correctFull })) };
+    settings.examReport = { block: examBlock, score, total, date: now, items: results.map((r, i) => ({ q: r.q, ok: r.ok, picked: r.pickedFull, correct: r.correctFull, img: examQuestions[i].img || '' })) };
     const entry = { mode: 'exam', lesson: examBlock, score, total, date: now };
     this.setState({ settings, history: [...this.state.history, entry], examScore: score,
       examResults: results, examTimeUp: !!timeUp, testMode: 'examreview' }, () => this.persist());
@@ -9512,7 +9534,7 @@ class Component extends DCLogic {
       const dKind = { ...(details[testKind] || {}) };
       const askJp = testKind !== 'mc_km';   // JP prompt, KM answers
       dKind[testLesson] = testWords.map((w, i) => ({ jp: w.jp, kana: w.kana, km: w.km, ok: !!testResults[i],
-        q: askJp ? w.jp : w.km, picked: this.state.testPicks[i] || '', correct: askJp ? w.km : w.jp }));
+        q: askJp ? w.jp : w.km, picked: this.state.testPicks[i] || '', correct: askJp ? w.km : w.jp, img: w.img || '' }));
       details[testKind] = dKind;
       settings.lessonDetails = details;
     }
