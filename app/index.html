@@ -1125,6 +1125,19 @@ textarea.input { min-height: 90px; resize: vertical; }
               </sc-for>
             </div>
 
+            <sc-if value="{{ hasWordAttempts }}">
+            <h4 style="font-size:15px;margin:0 0 4px;">តេស្តពាក្យ · រាល់ការធ្វើ</h4>
+            <div style="font-size:11px;opacity:0.55;margin-bottom:10px;">{{ attemptsHint }}</div>
+            <div class="card elev-sm" style="gap:2px;margin-bottom:22px;">
+              <sc-for list="{{ monitorWordAttempts }}" as="a" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--color-divider);font-size:13px;{{ a.rowStyle }}" sc-camel-on-click="{{ a.onOpen }}">
+                  <span style="display:flex;align-items:center;gap:7px;min-width:0;"><sc-if value="{{ a.canOpen }}"><span style="color:var(--color-accent-700);font-size:14px;flex:none;">⬇</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span></span>
+                  <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+                </div>
+              </sc-for>
+            </div>
+            </sc-if>
+
             <sc-if value="{{ hasMonitorQuiz }}">
             <h4 style="font-size:15px;margin:0 0 10px;">លំហាត់</h4>
             <div class="card elev-sm" style="gap:8px;margin-bottom:22px;">
@@ -1146,6 +1159,19 @@ textarea.input { min-height: 90px; resize: vertical; }
                   <sc-if value="{{ isAdmin }}"><button class="btn btn-secondary" style="margin-top:10px;font-size:12px;padding:6px 12px;" sc-camel-on-click="{{ downloadOpenPdf }}">⬇ ទាញយក PDF (A4)</button></sc-if>
                 </div>
               </sc-if>
+            </div>
+            </sc-if>
+
+            <sc-if value="{{ hasQuizAttempts }}">
+            <h4 style="font-size:15px;margin:0 0 4px;">លំហាត់ · រាល់ការធ្វើ</h4>
+            <div style="font-size:11px;opacity:0.55;margin-bottom:10px;">{{ attemptsHint }}</div>
+            <div class="card elev-sm" style="gap:2px;margin-bottom:22px;">
+              <sc-for list="{{ monitorQuizAttempts }}" as="a" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--color-divider);font-size:13px;{{ a.rowStyle }}" sc-camel-on-click="{{ a.onOpen }}">
+                  <span style="display:flex;align-items:center;gap:7px;min-width:0;"><sc-if value="{{ a.canOpen }}"><span style="color:var(--color-accent-700);font-size:14px;flex:none;">⬇</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span></span>
+                  <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+                </div>
+              </sc-for>
             </div>
             </sc-if>
 
@@ -1173,16 +1199,29 @@ textarea.input { min-height: 90px; resize: vertical; }
             </div>
             </sc-if>
 
-            <sc-if value="{{ hasMonitorExam }}">
-            <h4 style="font-size:15px;margin:0 0 10px;">ប្រឡងសាកល្បង</h4>
-            <div class="card elev-sm" style="gap:6px;margin-bottom:22px;">
-              <sc-for list="{{ monitorExamLog }}" as="a" hint-placeholder-count="3">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--color-divider);font-size:13px;">
-                  <span>{{ a.label }}</span>
-                  <span style="display:flex;gap:10px;align-items:center;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+            <sc-if value="{{ hasImgAttempts }}">
+            <h4 style="font-size:15px;margin:0 0 4px;">លំហាត់រូបភាព · រាល់ការធ្វើ</h4>
+            <div style="font-size:11px;opacity:0.55;margin-bottom:10px;">{{ attemptsHint }}</div>
+            <div class="card elev-sm" style="gap:2px;margin-bottom:22px;">
+              <sc-for list="{{ monitorImgAttempts }}" as="a" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--color-divider);font-size:13px;{{ a.rowStyle }}" sc-camel-on-click="{{ a.onOpen }}">
+                  <span style="display:flex;align-items:center;gap:7px;min-width:0;"><sc-if value="{{ a.canOpen }}"><span style="color:var(--color-accent-700);font-size:14px;flex:none;">⬇</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span></span>
+                  <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
                 </div>
               </sc-for>
-              <sc-if value="{{ hasExamReport }}"><button class="btn btn-secondary" style="margin-top:8px;font-size:12px;padding:6px 12px;" sc-camel-on-click="{{ downloadExamPdf }}">⬇ ទាញយកប្រឡងចុងក្រោយ PDF (A4)</button></sc-if>
+            </div>
+            </sc-if>
+
+            <sc-if value="{{ hasExamAttempts }}">
+            <h4 style="font-size:15px;margin:0 0 4px;">ប្រឡងសាកល្បង · រាល់ការធ្វើ</h4>
+            <div style="font-size:11px;opacity:0.55;margin-bottom:10px;">{{ attemptsHint }}</div>
+            <div class="card elev-sm" style="gap:2px;margin-bottom:22px;">
+              <sc-for list="{{ monitorExamAttempts }}" as="a" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--color-divider);font-size:13px;{{ a.rowStyle }}" sc-camel-on-click="{{ a.onOpen }}">
+                  <span style="display:flex;align-items:center;gap:7px;min-width:0;"><sc-if value="{{ a.canOpen }}"><span style="color:var(--color-accent-700);font-size:14px;flex:none;">⬇</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span></span>
+                  <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+                </div>
+              </sc-for>
             </div>
             </sc-if>
 
@@ -7507,6 +7546,7 @@ const IMGQUIZ_SIZE = 5;          // លំហាត់រូបភាព: 5 ques
 const EXAM_SIZE = 50;            // ប្រឡងសាកល្បង: 50 questions per exam
 const EXAM_MINUTES = 80;         // countdown length
 const EXAM_PASS = 90;            // pass mark % (45/50)
+const HISTORY_MAX = 200;         // keep the most recent N attempts (each with its full question detail)
 const RAW_QUIZ = [
 {"q":"日本では、トラックが国内貨物の7割以上を運んでおり、人々の生活や仕事を支えている。","t":"tf","a":false},
 {"q":"トラックの運転手になるには、必ず大型免許が必要である。","t":"tf","a":false},
@@ -9389,6 +9429,21 @@ class Component extends DCLogic {
     if (!er || !er.items) { this.showToast('គ្មានទិន្នន័យប្រឡង'); return; }
     this._printReport({ title: `ប្រឡងសាកល្បង · ឈុតទី ${er.block}`, date: er.date, scoreLabel: `${er.score} / ${er.total}`, items: er.items });
   }
+  // open one specific attempt (by its index in the viewed student's history) as
+  // an A4 PDF — this is how every single run, pass or fail, is reviewed/downloaded
+  openHistoryPdf(idx){
+    const h = (this.state.viewingHistory || [])[idx];
+    if (!h) { this.showToast('គ្មានទិន្នន័យ'); return; }
+    if (!Array.isArray(h.items) || !h.items.length) { this.showToast('ការធ្វើនេះមិនមានទិន្នន័យលម្អិត (បានធ្វើមុនពេលកែប្រែ)'); return; }
+    const pct = h.total ? Math.round(h.score / h.total * 100) : 0;
+    const dir = h.mode === 'mc_km' ? 'ខ្មែរ → ជប៉ុន' : 'ជប៉ុន → ខ្មែរ';
+    const title = h.mode === 'exam' ? `ប្រឡងសាកល្បង · ឈុតទី ${h.lesson}`
+      : h.mode === 'quiz' ? `លំហាត់ · លំហាត់ទី ${h.lesson}`
+      : h.mode === 'imgquiz' ? `លំហាត់រូបភាព · លំហាត់ទី ${h.lesson}`
+      : `ជ្រើសរើសពាក្យត្រូវ · ${dir} · មេរៀនទី ${h.lesson}`;
+    const scoreLabel = h.mode === 'exam' ? `${h.score} / ${h.total} · ${pct}%` : `${pct}%`;
+    this._printReport({ title, date: h.date, scoreLabel, items: h.items });
+  }
 
   goHome(){ this.stopSpeech(); this.setState({ screen: 'home', playerPlaying: false }); }
   goFavorites(){ this.stopSpeech(); this.setState({ screen: 'favorites', playerPlaying: false }); }
@@ -9515,19 +9570,22 @@ class Component extends DCLogic {
     const isBest = pct >= prevBest;
     quizzes[quizLesson] = Math.max(prevBest, pct);
     settings[c.prog] = quizzes;
-    // keep which questions were right/wrong for the best attempt, for the teacher
+    // the exact question breakdown of THIS attempt (right/wrong + chosen/correct)
+    const L = ['A', 'B', 'C', 'D', 'E'];
+    const lab = (q, v) => v === undefined || v === null ? '—'
+      : q.t === 'tf' ? (v ? '〇 (ត្រូវ)' : '✖ (ខុស)')
+      : `${L[v] || '?'}. ${q.o[v] || ''}`;
+    const picks = this.state.quizPicks;
+    const attemptItems = quizQuestions.map((q, i) => ({ q: q.q, ok: !!quizResults[i], picked: lab(q, picks[i]), correct: lab(q, q.a), img: q.img || '' }));
+    // keep the best attempt's breakdown for the ladder drill-in
     if (isBest) {
-      const L = ['A', 'B', 'C', 'D', 'E'];
-      const lab = (q, v) => v === undefined || v === null ? '—'
-        : q.t === 'tf' ? (v ? '〇 (ត្រូវ)' : '✖ (ខុស)')
-        : `${L[v] || '?'}. ${q.o[v] || ''}`;
-      const picks = this.state.quizPicks;
       const details = { ...(settings[c.det] || {}) };
-      details[quizLesson] = quizQuestions.map((q, i) => ({ q: q.q, ok: !!quizResults[i], picked: lab(q, picks[i]), correct: lab(q, q.a), img: q.img || '' }));
+      details[quizLesson] = attemptItems;
       settings[c.det] = details;
     }
-    const entry = { mode: this.state.quizDeck === 'img' ? 'imgquiz' : 'quiz', lesson: quizLesson, score: quizScore, total, date: new Date().toISOString() };
-    this.setState({ settings, history: [...this.state.history, entry], testMode: 'quizresults' }, () => this.persist());
+    // log every attempt with its full detail, so a teacher can open any single run
+    const entry = { mode: this.state.quizDeck === 'img' ? 'imgquiz' : 'quiz', lesson: quizLesson, score: quizScore, total, date: new Date().toISOString(), items: attemptItems };
+    this.setState({ settings, history: [...this.state.history, entry].slice(-HISTORY_MAX), testMode: 'quizresults' }, () => this.persist());
   }
   retryQuiz(){ this.startQuiz(this.state.quizLesson); }
   backToQuizList(){ this.setState({ testMode: 'quizlist' }); }
@@ -9588,9 +9646,11 @@ class Component extends DCLogic {
     const now = new Date().toISOString();
     settings.examLog = [...(settings.examLog || []), { block: examBlock, score, total, pct, passed, date: now }].slice(-50);
     // the latest attempt's full per-question record, for the admin PDF
-    settings.examReport = { block: examBlock, score, total, date: now, items: results.map((r, i) => ({ q: r.q, ok: r.ok, picked: r.pickedFull, correct: r.correctFull, img: examQuestions[i].img || '' })) };
-    const entry = { mode: 'exam', lesson: examBlock, score, total, date: now };
-    this.setState({ settings, history: [...this.state.history, entry], examScore: score,
+    const attemptItems = results.map((r, i) => ({ q: r.q, ok: r.ok, picked: r.pickedFull, correct: r.correctFull, img: examQuestions[i].img || '' }));
+    settings.examReport = { block: examBlock, score, total, date: now, items: attemptItems };
+    // log every exam attempt with its full detail, so any single run is openable
+    const entry = { mode: 'exam', lesson: examBlock, score, total, date: now, items: attemptItems };
+    this.setState({ settings, history: [...this.state.history, entry].slice(-HISTORY_MAX), examScore: score,
       examResults: results, examTimeUp: !!timeUp, testMode: 'examreview' }, () => this.persist());
   }
   quitExam(){ clearInterval(this._examTimer); this.setState({ testMode: 'examintro' }); }
@@ -9609,18 +9669,21 @@ class Component extends DCLogic {
     forKind[testLesson] = Math.max(prevBest, pct);
     lessons[testKind] = forKind;
     settings.lessons = lessons;
-    // remember which words this lesson got right/wrong, so a teacher can review it
+    // the exact word breakdown of THIS attempt (right/wrong + chosen/correct)
+    const askJp = testKind !== 'mc_km';   // JP prompt, KM answers
+    const attemptItems = testWords.map((w, i) => ({ jp: w.jp, kana: w.kana, km: w.km, ok: !!testResults[i],
+      q: askJp ? w.jp : w.km, picked: this.state.testPicks[i] || '', correct: askJp ? w.km : w.jp, img: w.img || '' }));
+    // keep the best attempt's breakdown for the ladder drill-in
     if (isBest) {
       const details = { ...(settings.lessonDetails || {}) };
       const dKind = { ...(details[testKind] || {}) };
-      const askJp = testKind !== 'mc_km';   // JP prompt, KM answers
-      dKind[testLesson] = testWords.map((w, i) => ({ jp: w.jp, kana: w.kana, km: w.km, ok: !!testResults[i],
-        q: askJp ? w.jp : w.km, picked: this.state.testPicks[i] || '', correct: askJp ? w.km : w.jp, img: w.img || '' }));
+      dKind[testLesson] = attemptItems;
       details[testKind] = dKind;
       settings.lessonDetails = details;
     }
-    const entry = { mode: testKind, lesson: testLesson, score: testScore, total, date: new Date().toISOString() };
-    this.setState({ settings, history: [...this.state.history, entry], testMode: 'results' }, () => this.persist());
+    // log every attempt with its full detail, so a teacher can open any single run
+    const entry = { mode: testKind, lesson: testLesson, score: testScore, total, date: new Date().toISOString(), items: attemptItems };
+    this.setState({ settings, history: [...this.state.history, entry].slice(-HISTORY_MAX), testMode: 'results' }, () => this.persist());
   }
 
   // Two choices only, as asked: the answer and one other word from the pool.
@@ -10134,6 +10197,33 @@ class Component extends DCLogic {
     });
     const monitorExamLog = (s.viewingExamLog || []).slice().reverse().map(examLogRow);
 
+    // Every attempt of every kind (pass or fail), newest first. Each row opens
+    // that exact run as an A4 PDF — this is how the admin reviews/downloads any
+    // single test the student did, not just the best score.
+    const attemptList = (modes, labeler) => (s.viewingHistory || [])
+      .map((h, i) => ({ h, i }))
+      .filter(x => modes.indexOf(x.h.mode) !== -1)
+      .reverse()
+      .map(({ h, i }) => {
+        const pct = h.total ? Math.round(h.score / h.total * 100) : 0;
+        const passed = pct >= PASS_PCT;
+        const d = new Date(h.date);
+        const canOpen = s.role === 'admin' && Array.isArray(h.items) && h.items.length > 0;
+        return {
+          label: labeler(h),
+          scoreLabel: `${h.score}/${h.total} · ${pct}%`,
+          dateLabel: `${d.getDate()}/${d.getMonth() + 1}`,
+          verdict: passed ? 'ជាប់ ✓' : 'ធ្លាក់ ✗',
+          verdictColor: passed ? 'color:#3a9e5c;' : 'color:#d0342c;',
+          canOpen, rowStyle: canOpen ? 'cursor:pointer;' : '',
+          onOpen: canOpen ? (() => this.openHistoryPdf(i)) : (() => {}),
+        };
+      });
+    const monitorWordAttempts = attemptList(['mc_jp', 'mc_km'], h => `${MODE_LABEL[h.mode] || ''} · មេរៀនទី ${h.lesson}`);
+    const monitorQuizAttempts = attemptList(['quiz'], h => `លំហាត់ទី ${h.lesson}`);
+    const monitorImgAttempts = attemptList(['imgquiz'], h => `លំហាត់ទី ${h.lesson}`);
+    const monitorExamAttempts = attemptList(['exam'], h => `ឈុតទី ${h.lesson}`);
+
     const ROLE_LABEL = { admin: 'អ្នកគ្រប់គ្រង', school: 'សាលា/សាខា', teacher: 'គ្រូ', student: 'សិស្ស' };
     const ROLE_TAG = { admin: 'tag tag-accent', school: 'tag tag-outline', teacher: 'tag tag-accent-2', student: 'tag tag-neutral' };
     // A school only ever works inside its own branch; an admin picks one first,
@@ -10317,6 +10407,12 @@ class Component extends DCLogic {
       monitorImgQuizSummary, hasMonitorImgQuiz: monitorImgQuizSummary.hasAny,
       monitorExamLog, hasMonitorExam: monitorExamLog.length > 0,
       hasExamReport: s.role === 'admin' && !!(s.viewingExamReport && s.viewingExamReport.items),
+      // per-attempt lists (every run, pass or fail; admin can open each as a PDF)
+      monitorWordAttempts, hasWordAttempts: monitorWordAttempts.length > 0,
+      monitorQuizAttempts, hasQuizAttempts: monitorQuizAttempts.length > 0,
+      monitorImgAttempts, hasImgAttempts: monitorImgAttempts.length > 0,
+      monitorExamAttempts, hasExamAttempts: monitorExamAttempts.length > 0,
+      attemptsHint: s.role === 'admin' ? 'ចុចលើការធ្វើនីមួយៗ ដើម្បីទាញយក PDF' : 'រាល់ការធ្វើរបស់សិស្ស',
       monitorUsageDays: monitorChart.days,
       monitorUsageTodayLabel: monitorChart.todayLabel,
       monitorUsageWeekLabel: monitorChart.weekLabel,
