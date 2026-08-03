@@ -518,6 +518,9 @@ textarea.input { min-height: 90px; resize: vertical; }
 .report td, .report th { border:1px solid #c7d0e0; padding:6px 9px; vertical-align:top; text-align:left; }
 .report th { background:#eef2f8; color:#1a4b8c; font-weight:600; font-size:12px; }
 .report td.k { background:#f5f7fb; font-weight:600; width:150px; color:#333; }
+.report ruby { ruby-align:center; }
+.report rt { font-size:0.58em; color:#555; font-weight:400; line-height:1; }
+.report .qcell { line-height:2.1; }
 #print-mount { display:none; }
 @media print {
   @page { size:A4; margin:12mm; }
@@ -2184,7 +2187,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               <div class="prow" style="display:flex;font-size:12px;border-top:1px solid #d7deea;">
                 <div style="width:36px;padding:6px 7px;text-align:center;color:#555;border-right:1px solid #eef1f6;">{{ it.n }}</div>
                 <div style="flex:2;padding:6px 7px;border-right:1px solid #eef1f6;color:#111;line-height:1.5;">
-                  <div>{{ it.q }}</div>
+                  <div class="qcell">{{ it.q }}</div>
                   <sc-if value="{{ it.hasImg }}"><img src="{{ it.img }}" alt="" style="margin-top:5px;max-width:150px;max-height:110px;border-radius:6px;border:1px solid #d7deea;object-fit:contain;display:block;"></sc-if>
                 </div>
                 <div style="flex:1.5;padding:6px 7px;border-right:1px solid #eef1f6;font-weight:600;{{ it.pickedColor }}">{{ it.picked }}</div>
@@ -7308,6 +7311,49 @@ function normRomaji(r){
     .replace(/fu/g,'hu').replace(/([aiueo])\1+/g,'$1');
 }
 
+// — automatic furigana for the results PDF —
+// There is no morphological analyser in this offline app, so readings come from
+// two sources: (1) readings already written inline as 漢字（かな）/漢字(かな) in
+// the text, and (2) a longest-match lookup against the app's own dictionary
+// (jp → kana). Only words the dictionary knows get a reading; the rest are left
+// as-is (better to under-annotate than to guess a wrong reading).
+const HAS_KANJI = /[㐀-鿿豈-﫿]/;
+let _furiMap = null, _furiMax = 0;
+function furiMap(){
+  if (_furiMap) return _furiMap;
+  _furiMap = new Map();
+  for (const w of WORDS){
+    if (!w || !w.jp || !w.kana || w.jp === w.kana) continue;
+    if (!HAS_KANJI.test(w.jp)) continue;
+    if (!_furiMap.has(w.jp)){ _furiMap.set(w.jp, w.kana); if (w.jp.length > _furiMax) _furiMax = w.jp.length; }
+  }
+  return _furiMap;
+}
+function _escHtml(s){ return String(s).replace(/[&<>]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c])); }
+function furiganaHTML(text){
+  text = String(text || '');
+  const map = furiMap(), max = Math.min(_furiMax || 1, 16);
+  const isKanji = c => HAS_KANJI.test(c);
+  let out = '', i = 0; const n = text.length;
+  while (i < n){
+    if (isKanji(text[i])){
+      // a reading already written after the kanji run → turn it into ruby
+      let j = i; while (j < n && isKanji(text[j])) j++;
+      const pm = text.slice(j).match(/^[（(]([ぁ-ゖァ-ヺー]+)[）)]/);
+      if (pm){ out += `<ruby>${_escHtml(text.slice(i, j))}<rt>${_escHtml(pm[1])}</rt></ruby>`; i = j + pm[0].length; continue; }
+    }
+    // longest dictionary word starting here (must contain a kanji)
+    let hit = 0;
+    for (let L = Math.min(max, n - i); L >= 1; L--){
+      const sub = text.slice(i, i + L);
+      if (map.has(sub) && HAS_KANJI.test(sub)){ out += `<ruby>${_escHtml(sub)}<rt>${_escHtml(map.get(sub))}</rt></ruby>`; i += L; hit = 1; break; }
+    }
+    if (hit) continue;
+    out += _escHtml(text[i]); i++;
+  }
+  return out;
+}
+
 // ex_jp / ex_km (r[5], r[6]) accept either a single string or an array, so a
 // word can carry several example sentences.
 const toArr = v => (v == null || v === '') ? [] : (Array.isArray(v) ? v.filter(Boolean) : [v]);
@@ -9283,18 +9329,21 @@ class Component extends DCLogic {
   // height decides where a page ends), then split the single sheet into real A4
   // page cards so the preview shows the same page breaks the saved PDF will.
   _paginatePreviewSoon(){
+    // setTimeout, not requestAnimationFrame: rAF is paused while the tab is in
+    // the background, which would leave the PDF un-paginated / un-annotated.
     const run = (tries) => {
       const sheet = document.getElementById('print-sheet');
-      if (!sheet) { if (tries > 0) requestAnimationFrame(() => run(tries - 1)); return; }
+      if (!sheet) { if (tries > 0) setTimeout(() => run(tries - 1), 30); return; }
       if (sheet.dataset.paged) return;
+      this._annotateFurigana(sheet);             // add readings above the kanji first
       this._printSourceHTML = sheet.innerHTML;   // pristine flat copy — this is what actually prints
       const pend = [...sheet.querySelectorAll('img')].filter(im => !im.complete);
       if (!pend.length) { this._paginatePreview(); return; }
       let left = pend.length;
-      const fin = () => { if (--left <= 0) requestAnimationFrame(() => this._paginatePreview()); };
+      const fin = () => { if (--left <= 0) setTimeout(() => this._paginatePreview(), 0); };
       pend.forEach(im => { im.addEventListener('load', fin); im.addEventListener('error', fin); });
     };
-    requestAnimationFrame(() => run(5));
+    setTimeout(() => run(5), 16);
   }
   _paginatePreview(){
     const sheet = document.getElementById('print-sheet');
@@ -9307,15 +9356,22 @@ class Component extends DCLogic {
     const footerEls = kids.slice(rtblIdx + 1);    // the small footer line
     const rhead = rtbl.querySelector('.rhead');
     const rows = [...rtbl.querySelectorAll('.prow')];
-    const W = Math.round(sheet.getBoundingClientRect().width);
+    // Width from the viewport, not getBoundingClientRect: a backgrounded tab
+    // reports a collapsed rect (~60px), which would make PAGE_H tiny and force
+    // one row per page. This mirrors the sheet's own width:100%/max-width:780.
+    const measured = sheet.getBoundingClientRect().width;
+    const W = Math.round(measured > 100 ? Math.min(measured, 780) : Math.min(780, Math.max(320, (window.innerWidth || 800) - 32)));
     const PAD = 22;
     const PAGE_H = Math.round(W * 297 / 210);      // A4 aspect at the preview width
     const rtblStyle = rtbl.getAttribute('style') || '';
     const wrap = document.createElement('div');
     wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;';
     sheet.appendChild(wrap);                        // attach live so heights measure
+    // No min-height while packing: it would inflate an under-full page's
+    // scrollHeight to ~PAGE_H and (with sub-pixel rounding) trip the overflow
+    // test on every row. The A4 min-height is applied after packing, for looks.
     const mkPage = () => { const p = document.createElement('div'); p.className = 'a4page';
-      p.style.cssText = `width:${W}px;min-height:${PAGE_H}px;background:#fff;box-sizing:border-box;padding:${PAD}px;box-shadow:0 6px 22px rgba(0,0,0,0.32);position:relative;`;
+      p.style.cssText = `width:${W}px;background:#fff;box-sizing:border-box;padding:${PAD}px;box-shadow:0 6px 22px rgba(0,0,0,0.32);position:relative;`;
       wrap.appendChild(p); return p; };
     const mkTable = () => { const t = document.createElement('div'); t.className = 'rtbl';
       t.setAttribute('style', rtblStyle); t.appendChild(rhead.cloneNode(true)); return t; };
@@ -9332,13 +9388,25 @@ class Component extends DCLogic {
     }
     footerEls.forEach(el => page.appendChild(el));   // footer sits after the last row
     const pages = [...wrap.querySelectorAll('.a4page')];
-    pages.forEach((p, i) => { const lbl = document.createElement('div');
+    pages.forEach((p, i) => { p.style.minHeight = PAGE_H + 'px';   // now give each card its A4 look
+      const lbl = document.createElement('div');
       lbl.style.cssText = 'position:absolute;bottom:7px;right:14px;font-size:10px;color:#9aa3b2;';
       lbl.textContent = `ទំព័រ ${i + 1} / ${pages.length}`; p.appendChild(lbl); });
     [...sheet.children].forEach(c => { if (c !== wrap) c.remove(); });   // drop the now-empty original blocks
     sheet.dataset.paged = '1';
     sheet.style.background = 'transparent'; sheet.style.boxShadow = 'none';
     sheet.style.padding = '0'; sheet.style.maxWidth = 'none';
+  }
+  // add furigana (reading above the kanji) to every question cell, from the app's
+  // own dictionary — done before the print source is captured, so it prints too
+  _annotateFurigana(sheet){
+    sheet.querySelectorAll('.qcell').forEach(el => {
+      if (el.dataset.furi) return;
+      const txt = el.textContent || '';
+      if (!HAS_KANJI.test(txt)) return;
+      el.innerHTML = furiganaHTML(txt);
+      el.dataset.furi = '1';
+    });
   }
   _clearPrintMount(){ document.body.classList.remove('printing'); const m = document.getElementById('print-mount'); if (m) m.innerHTML = ''; }
   closePrint(){ this._clearPrintMount(); this._printSourceHTML = null; this.setState({ printOpen: false }); }
