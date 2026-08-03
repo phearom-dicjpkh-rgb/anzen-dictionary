@@ -524,8 +524,20 @@ textarea.input { min-height: 90px; resize: vertical; }
   html, body { height:auto !important; overflow:visible !important; background:#fff !important; }
   body.printing > * { display:none !important; }
   body.printing #print-mount { display:block !important; }
-  .report .prow, .report tr { page-break-inside:avoid; }
-  .report img { max-width:230px !important; max-height:150px !important; }
+  /* Render the results list as a real table when printing: browsers break
+     between table rows cleanly, and never slice a row across two pages the way
+     a flex row gets cut. The flex layout is kept for the on-screen preview. */
+  .report .rtbl { display:table !important; width:100% !important; border-collapse:collapse !important; table-layout:fixed !important; }
+  .report .rhead, .report .prow { display:table-row !important; }
+  .report .rhead > div, .report .prow > div { display:table-cell !important; vertical-align:top !important; }
+  .report .rhead > div:nth-child(1), .report .prow > div:nth-child(1) { width:32px !important; }
+  .report .rhead > div:nth-child(2), .report .prow > div:nth-child(2) { width:auto !important; }
+  .report .rhead > div:nth-child(3), .report .prow > div:nth-child(3),
+  .report .rhead > div:nth-child(4), .report .prow > div:nth-child(4) { width:24% !important; }
+  .report .rhead > div:nth-child(5), .report .prow > div:nth-child(5) { width:30px !important; }
+  /* keep a whole question (text + image) together on one page */
+  .report .prow, .report tr { page-break-inside:avoid !important; break-inside:avoid !important; -webkit-column-break-inside:avoid !important; }
+  .report img { max-width:170px !important; max-height:130px !important; page-break-inside:avoid !important; break-inside:avoid !important; }
   .no-print { display:none !important; }
 }
 </style>
@@ -2171,8 +2183,8 @@ textarea.input { min-height: 90px; resize: vertical; }
             <tr><td class="k">ពិន្ទុ</td><td>{{ pr.scoreLabel }}</td></tr>
           </table>
           <div class="bar"><span>លទ្ធផលលំហាត់</span><span>សរុប {{ pr.count }} សំណួរ</span></div>
-          <div style="border:1px solid #c7d0e0;">
-            <div style="display:flex;background:#eef2f8;color:#1a4b8c;font-weight:600;font-size:12px;">
+          <div class="rtbl" style="border:1px solid #c7d0e0;">
+            <div class="rhead" style="display:flex;background:#eef2f8;color:#1a4b8c;font-weight:600;font-size:12px;">
               <div style="width:36px;padding:6px 7px;text-align:center;border-right:1px solid #c7d0e0;">លេខ</div>
               <div style="flex:2;padding:6px 7px;border-right:1px solid #c7d0e0;">សំណួរ</div>
               <div style="flex:1.5;padding:6px 7px;border-right:1px solid #c7d0e0;">ចម្លើយសិស្ស</div>
