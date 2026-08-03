@@ -9278,6 +9278,7 @@ class Component extends DCLogic {
       hasCorrect: it.correct != null && it.correct !== '', correct: it.correct || '',
       hasImg: !!it.img, img: it.img || '',
     }));
+    this._clearPrintMount();   // drop any stale clone from a previous print
     this.setState({ printOpen: true, printReport: {
       appName: this.state.appName || 'វចនានុក្រម', logo: this.state.appLogo || '',
       school, student: s.selectedStudentName || '', title: sec.title || '',
@@ -9285,7 +9286,8 @@ class Component extends DCLogic {
       count: items.length, items,
     } });
   }
-  closePrint(){ this.setState({ printOpen: false }); }
+  _clearPrintMount(){ document.body.classList.remove('printing'); const m = document.getElementById('print-mount'); if (m) m.innerHTML = ''; }
+  closePrint(){ this._clearPrintMount(); this.setState({ printOpen: false }); }
   doPrint(){
     try {
       const sheet = document.getElementById('print-sheet');
@@ -9295,11 +9297,15 @@ class Component extends DCLogic {
       // this mount is a plain block, so a long list breaks across A4 pages.
       if (sheet && mount) { mount.innerHTML = sheet.innerHTML; }
       document.body.classList.add('printing');
-      const done = () => { document.body.classList.remove('printing'); if (mount) mount.innerHTML = ''; window.removeEventListener('afterprint', done); };
-      window.addEventListener('afterprint', done);
       window.print();
-      // Safari/older WebKit may not fire afterprint — clean up shortly after too.
-      setTimeout(done, 1500);
+      // Do NOT clean up on a timer or on `afterprint`. On a phone, "Save as PDF"
+      // is asynchronous and user-driven: the PDF is rendered many seconds after
+      // window.print() returns (once A4 is chosen and Save is tapped), and some
+      // browsers fire `afterprint` immediately. Cleaning up early strips the
+      // print styles, so the phone captures the on-screen overlay (dark frame,
+      // sliced rows) instead of this table. We reset only when the preview is
+      // closed or the next PDF is opened — harmless meanwhile, since the
+      // `body.printing` rules live inside @media print and never affect screen.
     } catch(e) { this.showToast('បោះពុម្ពមិនបាន'); }
   }
   // download the exercise whose drill-in is currently open (chip key: quiz-N /
