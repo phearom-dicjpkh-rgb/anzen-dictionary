@@ -1213,6 +1213,37 @@ textarea.input { min-height: 90px; resize: vertical; }
               <div style="text-align:center;font-size:10px;opacity:0.45;margin-top:6px;">នាទី ក្នុងមួយថ្ងៃ</div>
             </div>
 
+            <h4 style="font-size:15px;margin:0 0 4px;">ប្រវត្តិលម្អិត · ជ្រើសរើសថ្ងៃ</h4>
+            <div style="font-size:11px;opacity:0.55;margin-bottom:10px;">តាមដានសកម្មភាពសិក្សាតាំងពីចាប់ផ្ដើមប្រើ · ស្ដាប់បែងចែកដោយឡែក 🎧</div>
+            <div class="card elev-sm" style="margin-bottom:22px;">
+              <div style="display:flex;gap:10px;margin-bottom:12px;">
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:10px;opacity:0.6;margin-bottom:3px;">ចាប់ពី</div>
+                  <input class="input" type="date" value="{{ monUsageFrom }}" min="{{ monUsageFirstDay }}" max="{{ monUsageTo }}" sc-camel-on-change="{{ onMonUsageFrom }}" style="min-height:38px;">
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:10px;opacity:0.6;margin-bottom:3px;">ដល់</div>
+                  <input class="input" type="date" value="{{ monUsageTo }}" min="{{ monUsageFrom }}" max="{{ monUsageToday }}" sc-camel-on-change="{{ onMonUsageTo }}" style="min-height:38px;">
+                </div>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;">
+                <div style="flex:1 1 46%;background:var(--color-accent-100);color:var(--color-accent-800);border-radius:10px;padding:8px 10px;"><div style="font-size:10px;opacity:0.7;">សរុប</div><div style="font-size:15px;font-weight:700;">{{ monUsageTotalLabel }}</div></div>
+                <div style="flex:1 1 46%;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:10px;padding:8px 10px;"><div style="font-size:10px;opacity:0.7;">ស្ដាប់ 🎧</div><div style="font-size:15px;font-weight:700;">{{ monUsageListenLabel }}</div></div>
+                <div style="flex:1 1 46%;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:10px;padding:8px 10px;"><div style="font-size:10px;opacity:0.7;">សិក្សា (ក្រៅស្ដាប់)</div><div style="font-size:15px;font-weight:700;">{{ monUsageStudyLabel }}</div></div>
+                <div style="flex:1 1 46%;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:10px;padding:8px 10px;"><div style="font-size:10px;opacity:0.7;">ថ្ងៃសកម្ម · មធ្យម</div><div style="font-size:15px;font-weight:700;">{{ monUsageActiveDays }} · {{ monUsageAvgLabel }}</div></div>
+              </div>
+              <div style="max-height:300px;overflow-y:auto;border-top:1px solid var(--color-divider);">
+                <sc-for list="{{ monUsageRows }}" as="d" hint-placeholder-count="8">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 2px;border-bottom:1px solid var(--color-divider);font-size:12px;">
+                    <span style="display:flex;flex-direction:column;"><span style="font-weight:600;">{{ d.dateLabel }}</span><span style="font-size:10px;opacity:0.5;">{{ d.weekday }}</span></span>
+                    <span style="flex:1;height:6px;margin:0 10px;background:var(--color-neutral-200);border-radius:99px;overflow:hidden;"><span style="display:block;height:100%;width:{{ d.barHeight }};background:{{ d.barColor }};"></span></span>
+                    <span style="display:flex;gap:9px;align-items:center;flex:none;"><span style="font-weight:600;">{{ d.totalLabel }}</span><sc-if value="{{ d.hasListen }}"><span style="opacity:0.6;">🎧 {{ d.listenLabel }}</span></sc-if></span>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ monUsageEmpty }}"><div style="font-size:12px;opacity:0.55;padding:12px 2px;text-align:center;">គ្មានទិន្នន័យក្នុងចន្លោះថ្ងៃនេះ</div></sc-if>
+              </div>
+            </div>
+
             <h4 style="font-size:15px;margin:0 0 10px;">ការមើលពាក្យតាមទំព័រ</h4>
             <div style="display:flex;flex-direction:column;gap:10px;">
               <sc-for list="{{ monitorPageProgress }}" as="p" hint-placeholder-count="8">
@@ -8044,6 +8075,34 @@ const SHARE_SIZES = {
   land:   { w: 1200, h: 675,  label: 'ផ្ដេក 16:9' },
 };
 
+// How long a day-by-day usage record is kept. ~2 years effectively means "since
+// the student started", while still bounding the jsonb size.
+const USAGE_KEEP_DAYS = 730;
+
+// A day-by-day usage record over a chosen date range, for the teacher's detailed
+// view: each day's total time and how much of it was listening (🎧), plus totals.
+function buildUsageDetail(usage, listen, from, to){
+  usage = usage || {}; listen = listen || {};
+  const keys = [...new Set([...Object.keys(usage), ...Object.keys(listen)])]
+    .filter(k => (!from || k >= from) && (!to || k <= to))
+    .sort().reverse();
+  let totalSecs = 0, listenSecs = 0, activeDays = 0;
+  const peak = Math.max(300, ...keys.map(k => usage[k] || 0), 0);
+  const rows = keys.map(k => {
+    const t = usage[k] || 0, l = Math.min(listen[k] || 0, t || (listen[k] || 0));
+    totalSecs += t; listenSecs += l; if (t > 0) activeDays++;
+    const d = new Date(k + 'T00:00:00');
+    return { key: k,
+      dateLabel: `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`,
+      weekday: KH_WEEKDAY[d.getDay()],
+      totalLabel: fmtDuration(t), listenLabel: fmtDuration(l), hasListen: l > 0,
+      barHeight: Math.max(t > 0 ? 4 : 1, Math.round(t / peak * 100)) + '%',
+      barColor: 'var(--color-accent)',
+    };
+  });
+  return { rows, totalSecs, listenSecs, studySecs: Math.max(0, totalSecs - listenSecs), activeDays };
+}
+
 // The last seven days of time in the app. Shared by a learner's own profile
 // and by the teacher's view of them, so both read the same shape.
 function buildUsageChart(usage){
@@ -8361,7 +8420,7 @@ class Component extends DCLogic {
     schoolMenu: null,   // 'create' | 'edit' | null
     // teacher monitor
     students: [], selectedStudent: null, selectedStudentName: '', viewingViewed: [],
-    viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {},
+    viewingUsage: {}, viewingListen: {}, monUsageFrom: '', monUsageTo: '', viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {},
     viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingExamReport: null, viewingSchoolId: null, viewingHistory: [], monExpandedChip: null, monOpenSections: [],
     leaderboard: [],   // student standings, name + level only
 
@@ -8540,13 +8599,22 @@ class Component extends DCLogic {
   }
   addUsage(sec){
     const key = dayKey(new Date());
-    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - USAGE_KEEP_DAYS);
     const oldest = dayKey(cutoff);
+    // count this tick as listening if the word player is actively playing audio
+    const listening = !!this.state.playerPlaying;
     this.setState(s => {
       const usage = {};
       for (const k of Object.keys(s.usage || {})) if (k >= oldest) usage[k] = s.usage[k];
       usage[key] = (usage[key] || 0) + sec;
-      return { usage };
+      const settings = { ...s.settings };
+      if (listening) {
+        const ul = {};
+        for (const k of Object.keys(settings.usageListen || {})) if (k >= oldest) ul[k] = settings.usageListen[k];
+        ul[key] = (ul[key] || 0) + sec;
+        settings.usageListen = ul;
+      }
+      return { usage, settings };
     }, () => {
       this._usageTicks = (this._usageTicks || 0) + 1;
       if (this._usageTicks >= 4) { this._usageTicks = 0; this.persist(); }   // save about once a minute
@@ -9334,6 +9402,8 @@ class Component extends DCLogic {
     this.setState({ selectedStudent: st.id, selectedStudentName: st.full_name || st.email,
       viewingViewed: Array.isArray(st.viewed) ? st.viewed : [],
       viewingUsage: (st.usage && typeof st.usage === 'object') ? st.usage : {},
+      viewingListen: (st.settings && st.settings.usageListen && typeof st.settings.usageListen === 'object') ? st.settings.usageListen : {},
+      monUsageFrom: '', monUsageTo: '',
       viewingLessons: (st.settings && st.settings.lessons) || {},
       viewingLessonDetails: (st.settings && st.settings.lessonDetails) || {},
       viewingQuizzes: (st.settings && st.settings.quizzes) || {},
@@ -9345,7 +9415,9 @@ class Component extends DCLogic {
       viewingSchoolId: st.school_id || null, viewingHistory: Array.isArray(st.history) ? st.history : [],
       monExpandedChip: null, monOpenSections: [] });
   }
-  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], monExpandedChip: null, monOpenSections: [] }); }
+  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingListen: {}, monUsageFrom: '', monUsageTo: '', viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], monExpandedChip: null, monOpenSections: [] }); }
+  onMonUsageFrom(e){ this.setState({ monUsageFrom: e.target.value }); }
+  onMonUsageTo(e){ this.setState({ monUsageTo: e.target.value }); }
   toggleMonChip(key){ this.setState(s => ({ monExpandedChip: s.monExpandedChip === key ? null : key })); }
   toggleMonSection(key){ this.setState(s => ({ monOpenSections: (s.monOpenSections || []).includes(key) ? s.monOpenSections.filter(k => k !== key) : [...(s.monOpenSections || []), key] })); }
 
@@ -10227,6 +10299,14 @@ class Component extends DCLogic {
 
     // the same two panels again, for whichever student is being followed
     const monitorChart = buildUsageChart(s.viewingUsage);
+    // detailed usage over a chosen date range (defaults: first recorded day → today)
+    const _vUsage = s.viewingUsage || {}, _vListen = s.viewingListen || {};
+    const _usageKeys = [...new Set([...Object.keys(_vUsage), ...Object.keys(_vListen)])].sort();
+    const _firstDay = _usageKeys.length ? _usageKeys[0] : dayKey(new Date());
+    const _today = dayKey(new Date());
+    const monUsageFrom = s.monUsageFrom || _firstDay;
+    const monUsageTo = s.monUsageTo || _today;
+    const usageDetail = buildUsageDetail(_vUsage, _vListen, monUsageFrom, monUsageTo);
     // test results a teacher can drill into: each lesson chip is tappable to
     // reveal which words the student got right (green ✓) or wrong (red ✗)
     const monitorLessonSummary = Object.keys(MODE_LABEL).map(kind => {
@@ -10529,6 +10609,15 @@ class Component extends DCLogic {
       monitorUsageDays: monitorChart.days,
       monitorUsageTodayLabel: monitorChart.todayLabel,
       monitorUsageWeekLabel: monitorChart.weekLabel,
+      // detailed usage history with a date-range picker + listening split
+      monUsageFrom, monUsageTo, monUsageFirstDay: _firstDay, monUsageToday: _today,
+      onMonUsageFrom: e => this.onMonUsageFrom(e), onMonUsageTo: e => this.onMonUsageTo(e),
+      monUsageRows: usageDetail.rows, monUsageEmpty: usageDetail.rows.length === 0,
+      monUsageTotalLabel: fmtDuration(usageDetail.totalSecs),
+      monUsageListenLabel: fmtDuration(usageDetail.listenSecs),
+      monUsageStudyLabel: fmtDuration(usageDetail.studySecs),
+      monUsageActiveDays: `${usageDetail.activeDays} ថ្ងៃ`,
+      monUsageAvgLabel: fmtDuration(usageDetail.activeDays ? Math.round(usageDetail.totalSecs / usageDetail.activeDays) : 0),
 
       // — Profile —
       isProfile: s.screen === 'profile',
