@@ -853,6 +853,16 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <div style="font-size:13px;color:var(--color-accent-700);flex:none;">{{ l.bestLabel }}</div>
               </div>
             </sc-for>
+            <sc-if value="{{ showMcMix }}">
+              <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:12px;cursor:pointer;background:var(--color-accent-100);border:1px solid var(--color-accent);" sc-camel-on-click="{{ startLessonMix }}">
+                <div style="font-size:19px;width:26px;text-align:center;flex:none;">🎲</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="card-title" style="font-size:15px;">លំហាត់ច្របល់</div>
+                  <div class="card-body" style="font-size:11px;">ពាក្យច្របល់ពីគ្រប់លំហាត់ · ធ្វើម្ដងទៀតបានឥតកំណត់</div>
+                </div>
+                <div style="font-size:13px;color:var(--color-accent-700);flex:none;">▸</div>
+              </div>
+            </sc-if>
           </div>
           </sc-if>
         </div>
@@ -932,6 +942,16 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <div style="font-size:13px;color:var(--color-accent-700);flex:none;">{{ l.bestLabel }}</div>
               </div>
             </sc-for>
+            <sc-if value="{{ showQuizMix }}">
+              <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:12px;cursor:pointer;background:var(--color-accent-100);border:1px solid var(--color-accent);" sc-camel-on-click="{{ startQuizMix }}">
+                <div style="font-size:19px;width:26px;text-align:center;flex:none;">🎲</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="card-title" style="font-size:15px;">លំហាត់ច្របល់</div>
+                  <div class="card-body" style="font-size:11px;">សំណួរច្របល់ពីគ្រប់លំហាត់ · ធ្វើម្ដងទៀតបានឥតកំណត់</div>
+                </div>
+                <div style="font-size:13px;color:var(--color-accent-700);flex:none;">▸</div>
+              </div>
+            </sc-if>
           </div>
         </div>
         </sc-if>
@@ -8006,8 +8026,8 @@ const RAW_EXAM = [
 // The exercise player serves two ladders (decks). They share every screen and
 // method; only the question source, set size and where progress is stored differ.
 const QUIZ_DECKS = {
-  quiz: { data: RAW_QUIZ,    size: QUIZ_SIZE,    prog: 'quizzes',    det: 'quizDetails',    title: 'លំហាត់' },
-  img:  { data: RAW_IMGQUIZ, size: IMGQUIZ_SIZE, prog: 'imgQuizzes',  det: 'imgQuizDetails', title: 'លំហាត់រូបភាព' },
+  quiz: { data: RAW_QUIZ,    size: QUIZ_SIZE,    prog: 'quizzes',    det: 'quizDetails',    title: 'លំហាត់', mixSize: 20 },
+  img:  { data: RAW_IMGQUIZ, size: IMGQUIZ_SIZE, prog: 'imgQuizzes',  det: 'imgQuizDetails', title: 'លំហាត់រូបភាព', mixSize: 10 },
 };
 
 // Each lockable section maps to a (boolean, jsonb) column pair on app_settings.
@@ -8379,11 +8399,11 @@ class Component extends DCLogic {
     shareSearch: '', shareWordId: null, shareSize: 'square', shareStyle: 'refined', shareImgData: '', shareBusy: false, shareErr: '',
     // admin: A4 results preview / print
     printOpen: false, printReport: null,
-    testMode: null, testKind: 'mc_jp', testLesson: 1,
+    testMode: null, testKind: 'mc_jp', testLesson: 1, testMix: false,
     testWords: [], testIdx: 0, testScore: 0, testResults: [], testPicks: [],
     // exercises (លំហាត់ / លំហាត់រូបភាព)
     quizDeck: 'quiz',
-    quizLesson: 1, quizQuestions: [], quizIdx: 0, quizScore: 0, quizResults: [], quizPicks: [], quizAnswered: false, quizPicked: null,
+    quizLesson: 1, quizMix: false, quizQuestions: [], quizIdx: 0, quizScore: 0, quizResults: [], quizPicks: [], quizAnswered: false, quizPicked: null,
     exercisesLocked: false, exercisesLockedSchools: [],
     imgExercisesLocked: false, imgExercisesLockedSchools: [],
     examLocked: false, examLockedSchools: [],
@@ -9491,10 +9511,11 @@ class Component extends DCLogic {
     if (!items) { this.showToast('ការធ្វើនេះមិនមានទិន្នន័យលម្អិត (បានធ្វើមុនពេលកែប្រែ)'); return; }
     const pct = h.total ? Math.round(h.score / h.total * 100) : 0;
     const dir = h.mode === 'mc_km' ? 'ខ្មែរ → ជប៉ុន' : 'ជប៉ុន → ខ្មែរ';
+    const lessonLabel = h.mix ? 'ច្របល់' : `លំហាត់ទី ${h.lesson}`;
     const title = h.mode === 'exam' ? `ប្រឡងសាកល្បង · ឈុតទី ${h.lesson}`
-      : h.mode === 'quiz' ? `លំហាត់ · លំហាត់ទី ${h.lesson}`
-      : h.mode === 'imgquiz' ? `លំហាត់រូបភាព · លំហាត់ទី ${h.lesson}`
-      : `ជ្រើសរើសពាក្យត្រូវ · ${dir} · មេរៀនទី ${h.lesson}`;
+      : h.mode === 'quiz' ? `លំហាត់ · ${lessonLabel}`
+      : h.mode === 'imgquiz' ? `លំហាត់រូបភាព · ${lessonLabel}`
+      : `ជ្រើសរើសពាក្យត្រូវ · ${dir} · ${h.mix ? 'ច្របល់' : 'មេរៀនទី ' + h.lesson}`;
     const scoreLabel = h.mode === 'exam' ? `${h.score} / ${h.total} · ${pct}%` : `${pct}%`;
     this._printReport({ title, date: h.date, scoreLabel, items });
   }
@@ -9571,11 +9592,22 @@ class Component extends DCLogic {
   startLesson(n){
     const words = shuffle(this.lessonWords(n));
     if (!words.length) return;
-    this.setState({ testMode: 'mc',
+    this.setState({ testMode: 'mc', testMix: false,
       testLesson: n, testWords: words, testIdx: 0, testScore: 0, testResults: [], testPicks: [],
       mcSelected: null, mcAnswered: false, mcOptions: this.buildMcOptions(words[0]) });
   }
-  retryTest(){ this.startLesson(this.state.testLesson); }
+  // Every lesson of this kind passed → offer a mixed round (random words from the
+  // whole pool) so the student always has something new to practise.
+  testAllDone(kind){ const t = this.lessonTotal(); return this.lessonUnlocked(kind) >= t && this.lessonBest(kind, t) >= PASS_PCT; }
+  startLessonMix(){
+    const pool = this.testPool();
+    const words = sample(pool, Math.min(LESSON_SIZE * 2, pool.length));
+    if (!words.length) return;
+    this.setState({ testMode: 'mc', testMix: true,
+      testLesson: 0, testWords: words, testIdx: 0, testScore: 0, testResults: [], testPicks: [],
+      mcSelected: null, mcAnswered: false, mcOptions: this.buildMcOptions(words[0]) });
+  }
+  retryTest(){ this.state.testMix ? this.startLessonMix() : this.startLesson(this.state.testLesson); }
   backToLessons(){ this.setState({ testMode: 'lessons' }); }
   backToHub(){ this.setState({ testMode: null }); }
   lockedLesson(){ this.showToast(`ត្រូវធ្វើលំហាត់មុនអោយបាន ${PASS_PCT}% សិន`); }
@@ -9592,7 +9624,17 @@ class Component extends DCLogic {
   startQuiz(n){
     const qs = this.quizSlice(n);
     if (!qs.length) return;
-    this.setState({ testMode: 'quiz', quizLesson: n, quizQuestions: qs,
+    this.setState({ testMode: 'quiz', quizLesson: n, quizMix: false, quizQuestions: qs,
+      quizIdx: 0, quizScore: 0, quizResults: [], quizPicks: [], quizAnswered: false, quizPicked: null });
+  }
+  // Every lesson of this deck passed → offer a mixed round (random questions from
+  // the whole deck, reshuffled each time) so practice never runs out.
+  quizAllDone(){ const t = this.quizTotal(); return this.quizUnlocked() >= t && this.quizBest(t) >= PASS_PCT; }
+  startQuizMix(){
+    const c = this.qDeck();
+    const qs = sample(c.data, Math.min(c.mixSize || c.size, c.data.length));
+    if (!qs.length) return;
+    this.setState({ testMode: 'quiz', quizLesson: 0, quizMix: true, quizQuestions: qs,
       quizIdx: 0, quizScore: 0, quizResults: [], quizPicks: [], quizAnswered: false, quizPicked: null });
   }
   lockedQuiz(){ this.showToast(`ត្រូវធ្វើលំហាត់មុនអោយបាន ${PASS_PCT}% សិន`); }
@@ -9615,15 +9657,10 @@ class Component extends DCLogic {
   }
   finishQuiz(){
     const c = this.qDeck();
-    const { quizLesson, quizScore, quizQuestions, quizResults } = this.state;
+    const { quizLesson, quizScore, quizQuestions, quizResults, quizMix } = this.state;
     const total = quizQuestions.length;
     const pct = total ? Math.round(quizScore / total * 100) : 0;
     const settings = { ...this.state.settings };
-    const quizzes = { ...(settings[c.prog] || {}) };
-    const prevBest = quizzes[quizLesson] || 0;
-    const isBest = pct >= prevBest;
-    quizzes[quizLesson] = Math.max(prevBest, pct);
-    settings[c.prog] = quizzes;
     // the exact question breakdown of THIS attempt (right/wrong + chosen/correct)
     const L = ['A', 'B', 'C', 'D', 'E'];
     const lab = (q, v) => v === undefined || v === null ? '—'
@@ -9631,17 +9668,24 @@ class Component extends DCLogic {
       : `${L[v] || '?'}. ${q.o[v] || ''}`;
     const picks = this.state.quizPicks;
     const attemptItems = quizQuestions.map((q, i) => ({ q: q.q, ok: !!quizResults[i], picked: lab(q, picks[i]), correct: lab(q, q.a), img: q.img || '' }));
-    // keep the best attempt's breakdown for the ladder drill-in
-    if (isBest) {
-      const details = { ...(settings[c.det] || {}) };
-      details[quizLesson] = attemptItems;
-      settings[c.det] = details;
+    // a mixed round is just practice — it never changes the ladder locks/bests
+    if (!quizMix) {
+      const quizzes = { ...(settings[c.prog] || {}) };
+      const prevBest = quizzes[quizLesson] || 0;
+      const isBest = pct >= prevBest;
+      quizzes[quizLesson] = Math.max(prevBest, pct);
+      settings[c.prog] = quizzes;
+      if (isBest) {
+        const details = { ...(settings[c.det] || {}) };
+        details[quizLesson] = attemptItems;
+        settings[c.det] = details;
+      }
     }
     // log every attempt with its full detail, so a teacher can open any single run
-    const entry = { mode: this.state.quizDeck === 'img' ? 'imgquiz' : 'quiz', lesson: quizLesson, score: quizScore, total, date: new Date().toISOString(), items: attemptItems };
+    const entry = { mode: this.state.quizDeck === 'img' ? 'imgquiz' : 'quiz', lesson: quizMix ? 0 : quizLesson, mix: !!quizMix, score: quizScore, total, date: new Date().toISOString(), items: attemptItems };
     this.setState({ settings, history: [...this.state.history, entry].slice(-HISTORY_MAX), testMode: 'quizresults' }, () => this.persist());
   }
-  retryQuiz(){ this.startQuiz(this.state.quizLesson); }
+  retryQuiz(){ this.state.quizMix ? this.startQuizMix() : this.startQuiz(this.state.quizLesson); }
   backToQuizList(){ this.setState({ testMode: 'quizlist' }); }
 
   // — ប្រឡងសាកល្បង (mock exam): 50 questions, 80-min countdown, one random
@@ -9711,32 +9755,33 @@ class Component extends DCLogic {
   backFromExam(){ this.setState({ testMode: null, screen: 'test' }); }
 
   finishTest(){
-    const { testKind, testLesson, testScore, testWords, testResults } = this.state;
+    const { testKind, testLesson, testScore, testWords, testResults, testMix } = this.state;
     const total = testWords.length;
     const pct = total ? Math.round(testScore / total * 100) : 0;
     const settings = { ...this.state.settings };
-    // keep the best attempt, so a bad retry cannot re-lock what was earned
-    const lessons = { ...(settings.lessons || {}) };
-    const forKind = { ...(lessons[testKind] || {}) };
-    const prevBest = forKind[testLesson] || 0;
-    const isBest = pct >= prevBest;    // refresh the stored word breakdown on a new best
-    forKind[testLesson] = Math.max(prevBest, pct);
-    lessons[testKind] = forKind;
-    settings.lessons = lessons;
     // the exact word breakdown of THIS attempt (right/wrong + chosen/correct)
     const askJp = testKind !== 'mc_km';   // JP prompt, KM answers
     const attemptItems = testWords.map((w, i) => ({ jp: w.jp, kana: w.kana, km: w.km, ok: !!testResults[i],
       q: askJp ? w.jp : w.km, picked: this.state.testPicks[i] || '', correct: askJp ? w.km : w.jp, img: w.img || '' }));
-    // keep the best attempt's breakdown for the ladder drill-in
-    if (isBest) {
-      const details = { ...(settings.lessonDetails || {}) };
-      const dKind = { ...(details[testKind] || {}) };
-      dKind[testLesson] = attemptItems;
-      details[testKind] = dKind;
-      settings.lessonDetails = details;
+    // a mixed round is just practice — it never changes the ladder locks/bests
+    if (!testMix) {
+      const lessons = { ...(settings.lessons || {}) };
+      const forKind = { ...(lessons[testKind] || {}) };
+      const prevBest = forKind[testLesson] || 0;
+      const isBest = pct >= prevBest;    // refresh the stored word breakdown on a new best
+      forKind[testLesson] = Math.max(prevBest, pct);
+      lessons[testKind] = forKind;
+      settings.lessons = lessons;
+      if (isBest) {
+        const details = { ...(settings.lessonDetails || {}) };
+        const dKind = { ...(details[testKind] || {}) };
+        dKind[testLesson] = attemptItems;
+        details[testKind] = dKind;
+        settings.lessonDetails = details;
+      }
     }
     // log every attempt with its full detail, so a teacher can open any single run
-    const entry = { mode: testKind, lesson: testLesson, score: testScore, total, date: new Date().toISOString(), items: attemptItems };
+    const entry = { mode: testKind, lesson: testMix ? 0 : testLesson, mix: !!testMix, score: testScore, total, date: new Date().toISOString(), items: attemptItems };
     this.setState({ settings, history: [...this.state.history, entry].slice(-HISTORY_MAX), testMode: 'results' }, () => this.persist());
   }
 
@@ -10287,9 +10332,9 @@ class Component extends DCLogic {
         summary: `ជាប់ ${pass} / ${attempts.length}`,
         toggle: () => this.toggleMonSection(key) };
     };
-    const wordSec = mkSection('word', 'តេស្តពាក្យ', attemptList(['mc_jp', 'mc_km'], h => `${MODE_LABEL[h.mode] || ''} · មេរៀនទី ${h.lesson}`));
-    const quizSec = mkSection('quiz', 'លំហាត់', attemptList(['quiz'], h => `លំហាត់ទី ${h.lesson}`));
-    const imgSec = mkSection('img', 'លំហាត់រូបភាព', attemptList(['imgquiz'], h => `លំហាត់ទី ${h.lesson}`));
+    const wordSec = mkSection('word', 'តេស្តពាក្យ', attemptList(['mc_jp', 'mc_km'], h => `${MODE_LABEL[h.mode] || ''} · ${h.mix ? 'ច្របល់ 🎲' : 'មេរៀនទី ' + h.lesson}`));
+    const quizSec = mkSection('quiz', 'លំហាត់', attemptList(['quiz'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
+    const imgSec = mkSection('img', 'លំហាត់រូបភាព', attemptList(['imgquiz'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const examSec = mkSection('exam', 'ប្រឡងសាកល្បង', attemptList(['exam'], h => `ឈុតទី ${h.lesson}`));
 
     const ROLE_LABEL = { admin: 'អ្នកគ្រប់គ្រង', school: 'សាលា/សាខា', teacher: 'គ្រូ', student: 'សិស្ស' };
@@ -10717,13 +10762,14 @@ class Component extends DCLogic {
       lessonItems,
       lessonHeading: 'ជ្រើសរើសពាក្យត្រូវ',
       lessonUnlockLabel: `បើកសោ ${lessonUnlocked} / ${lessonTotal} លំហាត់ · ត្រូវបាន ${PASS_PCT}% ដើម្បីបន្ត`,
+      showMcMix: this.testAllDone(kind), startLessonMix: () => this.startLessonMix(),
       isMcLessons: true,
       isKindJp: kind === 'mc_jp', isKindKm: kind === 'mc_km',
       setKindJp: () => this.setTestKind('mc_jp'), setKindKm: () => this.setTestKind('mc_km'),
 
       backToHub: () => this.backToHub(), backToLessons: () => this.backToLessons(),
       testProgressLabel: `${Math.min(s.testIdx+1, total)} / ${total}`,
-      lessonTitle: `លំហាត់ទី ${s.testLesson}`,
+      lessonTitle: s.testMix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${s.testLesson}`,
       currentWord,
 
       mcOptions, mcAnswered: s.mcAnswered, mcNext: () => this.mcNext(),
@@ -10737,8 +10783,8 @@ class Component extends DCLogic {
       resultScoreLabel: `${s.testScore} / ${total}`,
       resultPercentLabel: total > 0 ? `${testPct}%` : '',
       resultPassed: testPct >= PASS_PCT, resultFailed: total > 0 && testPct < PASS_PCT,
-      resultNote: testPct >= PASS_PCT ? 'ជាប់ ✓ លំហាត់បន្ទាប់បើកសោហើយ' : `មិនទាន់ជាប់ — ត្រូវបាន ${PASS_PCT}% ឡើងទៅ`,
-      resultNoteColor: testPct >= PASS_PCT ? 'var(--color-accent-700)' : 'var(--color-text)',
+      resultNote: s.testMix ? 'លំហាត់ច្របល់ — សាកម្ដងទៀតបានតាមចិត្ត 🎲' : (testPct >= PASS_PCT ? 'ជាប់ ✓ លំហាត់បន្ទាប់បើកសោហើយ' : `មិនទាន់ជាប់ — ត្រូវបាន ${PASS_PCT}% ឡើងទៅ`),
+      resultNoteColor: (s.testMix || testPct >= PASS_PCT) ? 'var(--color-accent-700)' : 'var(--color-text)',
       retryTest: () => this.retryTest(),
 
       // — exercises (លំហាត់ / លំហាត់រូបភាព) —
@@ -10749,8 +10795,9 @@ class Component extends DCLogic {
       isQuizList: testMode === 'quizlist', isQuiz: testMode === 'quiz', isQuizResults: testMode === 'quizresults',
       quizListTitle: this.qDeck().title,
       quizItems, quizUnlockLabel: `បើកសោ ${quizUnlocked} / ${quizTotal} លំហាត់ · ត្រូវបាន ${PASS_PCT}% ដើម្បីបន្ត`,
+      showQuizMix: this.quizAllDone(), startQuizMix: () => this.startQuizMix(),
       backToQuizList: () => this.backToQuizList(),
-      quizTitle: `${this.qDeck().title}ទី ${s.quizLesson}`,
+      quizTitle: s.quizMix ? `${this.qDeck().title}ច្របល់ 🎲` : `${this.qDeck().title}ទី ${s.quizLesson}`,
       quizProgressLabel: `${Math.min(s.quizIdx + 1, quizTotalQ)} / ${quizTotalQ}`,
       quizProgressPct: quizTotalQ ? Math.round(Math.min(s.quizIdx + 1, quizTotalQ) / quizTotalQ * 100) + '%' : '0%',
       quizScoreLabel: `${s.quizScore} ពិន្ទុ`,
@@ -10763,8 +10810,8 @@ class Component extends DCLogic {
       quizHasExplain: !!(s.quizAnswered && quizQ && quizQ.e), quizExplain: (quizQ && quizQ.e) || '',
       quizResultScore: `${s.quizScore} / ${quizTotalQ}`,
       quizResultPct: quizTotalQ > 0 ? `${quizPct}%` : '',
-      quizResultNote: quizPct >= PASS_PCT ? 'ជាប់ ✓ លំហាត់បន្ទាប់បើកសោហើយ' : `មិនទាន់ជាប់ — ត្រូវបាន ${PASS_PCT}% ឡើងទៅ`,
-      quizResultNoteColor: quizPct >= PASS_PCT ? 'var(--color-accent-700)' : 'var(--color-text)',
+      quizResultNote: s.quizMix ? 'លំហាត់ច្របល់ — សាកម្ដងទៀតបានតាមចិត្ត 🎲' : (quizPct >= PASS_PCT ? 'ជាប់ ✓ លំហាត់បន្ទាប់បើកសោហើយ' : `មិនទាន់ជាប់ — ត្រូវបាន ${PASS_PCT}% ឡើងទៅ`),
+      quizResultNoteColor: (s.quizMix || quizPct >= PASS_PCT) ? 'var(--color-accent-700)' : 'var(--color-text)',
       retryQuiz: () => this.retryQuiz(),
       toggleExercisesLockAll: () => this.toggleExercisesLockAll(),
       exLockAllLabel: s.exercisesLocked ? 'ដោះសោ' : 'ចាក់សោគ្រប់សាលា',
