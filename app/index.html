@@ -8469,6 +8469,7 @@ class Component extends DCLogic {
     setInterval(() => {
       if (document.visibilityState !== 'visible') return;
       if (!this.state.userId) return;
+      if (this.state.printOpen) return;   // don't re-render while the paginated PDF preview is open
       this.addUsage(TICK);
     }, TICK * 1000);
     const flush = () => { if (this.state.userId) this.persist(); };
@@ -9279,23 +9280,85 @@ class Component extends DCLogic {
       hasImg: !!it.img, img: it.img || '',
     }));
     this._clearPrintMount();   // drop any stale clone from a previous print
+    this._printSourceHTML = null;
     this.setState({ printOpen: true, printReport: {
       appName: this.state.appName || 'វចនានុក្រម', logo: this.state.appLogo || '',
       school, student: s.selectedStudentName || '', title: sec.title || '',
       dateLabel: this._fmtDate(sec.date) || '—', scoreLabel: sec.scoreLabel || '—',
       count: items.length, items,
-    } });
+    } }, () => this._paginatePreviewSoon());
+  }
+  // Once the overlay has rendered, wait for the question images to load (their
+  // height decides where a page ends), then split the single sheet into real A4
+  // page cards so the preview shows the same page breaks the saved PDF will.
+  _paginatePreviewSoon(){
+    const run = (tries) => {
+      const sheet = document.getElementById('print-sheet');
+      if (!sheet) { if (tries > 0) requestAnimationFrame(() => run(tries - 1)); return; }
+      if (sheet.dataset.paged) return;
+      this._printSourceHTML = sheet.innerHTML;   // pristine flat copy — this is what actually prints
+      const pend = [...sheet.querySelectorAll('img')].filter(im => !im.complete);
+      if (!pend.length) { this._paginatePreview(); return; }
+      let left = pend.length;
+      const fin = () => { if (--left <= 0) requestAnimationFrame(() => this._paginatePreview()); };
+      pend.forEach(im => { im.addEventListener('load', fin); im.addEventListener('error', fin); });
+    };
+    requestAnimationFrame(() => run(5));
+  }
+  _paginatePreview(){
+    const sheet = document.getElementById('print-sheet');
+    if (!sheet || sheet.dataset.paged) return;
+    const rtbl = sheet.querySelector('.rtbl');
+    if (!rtbl) return;
+    const kids = [...sheet.children];
+    const rtblIdx = kids.indexOf(rtbl);
+    const introEls = kids.slice(0, rtblIdx);      // header, title, info table, results bar
+    const footerEls = kids.slice(rtblIdx + 1);    // the small footer line
+    const rhead = rtbl.querySelector('.rhead');
+    const rows = [...rtbl.querySelectorAll('.prow')];
+    const W = Math.round(sheet.getBoundingClientRect().width);
+    const PAD = 22;
+    const PAGE_H = Math.round(W * 297 / 210);      // A4 aspect at the preview width
+    const rtblStyle = rtbl.getAttribute('style') || '';
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;';
+    sheet.appendChild(wrap);                        // attach live so heights measure
+    const mkPage = () => { const p = document.createElement('div'); p.className = 'a4page';
+      p.style.cssText = `width:${W}px;min-height:${PAGE_H}px;background:#fff;box-sizing:border-box;padding:${PAD}px;box-shadow:0 6px 22px rgba(0,0,0,0.32);position:relative;`;
+      wrap.appendChild(p); return p; };
+    const mkTable = () => { const t = document.createElement('div'); t.className = 'rtbl';
+      t.setAttribute('style', rtblStyle); t.appendChild(rhead.cloneNode(true)); return t; };
+    let page = mkPage();
+    introEls.forEach(el => page.appendChild(el));   // page 1 keeps the header block
+    let tbl = mkTable(); page.appendChild(tbl);
+    for (const row of rows) {
+      tbl.appendChild(row);
+      // a row that pushes past the page bottom starts a fresh page (never split)
+      if (page.scrollHeight > PAGE_H && tbl.querySelectorAll('.prow').length > 1) {
+        tbl.removeChild(row);
+        page = mkPage(); tbl = mkTable(); page.appendChild(tbl); tbl.appendChild(row);
+      }
+    }
+    footerEls.forEach(el => page.appendChild(el));   // footer sits after the last row
+    const pages = [...wrap.querySelectorAll('.a4page')];
+    pages.forEach((p, i) => { const lbl = document.createElement('div');
+      lbl.style.cssText = 'position:absolute;bottom:7px;right:14px;font-size:10px;color:#9aa3b2;';
+      lbl.textContent = `ទំព័រ ${i + 1} / ${pages.length}`; p.appendChild(lbl); });
+    [...sheet.children].forEach(c => { if (c !== wrap) c.remove(); });   // drop the now-empty original blocks
+    sheet.dataset.paged = '1';
+    sheet.style.background = 'transparent'; sheet.style.boxShadow = 'none';
+    sheet.style.padding = '0'; sheet.style.maxWidth = 'none';
   }
   _clearPrintMount(){ document.body.classList.remove('printing'); const m = document.getElementById('print-mount'); if (m) m.innerHTML = ''; }
-  closePrint(){ this._clearPrintMount(); this.setState({ printOpen: false }); }
+  closePrint(){ this._clearPrintMount(); this._printSourceHTML = null; this.setState({ printOpen: false }); }
   doPrint(){
     try {
-      const sheet = document.getElementById('print-sheet');
       const mount = document.getElementById('print-mount');
-      // Clone the rendered sheet into a normal-flow node at <body> level. The
-      // overlay is position:fixed inside a scroll box, so it cannot paginate;
-      // this mount is a plain block, so a long list breaks across A4 pages.
-      if (sheet && mount) { mount.innerHTML = sheet.innerHTML; }
+      // Print the pristine flat sheet (a single .rtbl the @media print rules turn
+      // into a paginating table), NOT the on-screen A4 page cards — those have
+      // fixed heights and shadows that would print badly.
+      const src = this._printSourceHTML || ((document.getElementById('print-sheet') || {}).innerHTML) || '';
+      if (mount) { mount.innerHTML = src; }
       document.body.classList.add('printing');
       window.print();
       // Do NOT clean up on a timer or on `afterprint`. On a phone, "Save as PDF"
