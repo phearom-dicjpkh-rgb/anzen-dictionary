@@ -647,10 +647,10 @@ textarea.input { min-height: 90px; resize: vertical; }
     <sc-if value="{{ hasRole }}" hint-placeholder-val="{{ true }}">
     <div style="flex:none;width:100%;height:calc(56px + env(safe-area-inset-top, 0px));padding-top:env(safe-area-inset-top, 0px);display:flex;align-items:center;gap:11px;padding-left:18px;padding-right:18px;background:var(--color-surface);border-bottom:1px solid var(--color-divider);box-sizing:border-box;z-index:15;">
       <sc-if value="{{ hasLogo }}">
-        <img src="{{ appLogo }}" alt="logo" style="width:34px;height:34px;flex:none;border-radius:8px;object-fit:cover;background:var(--color-bg);">
+        <img src="{{ appLogo }}" alt="logo" title="ចុចដើម្បីផ្ទុកឡើងវិញ" sc-camel-on-click="{{ reloadPage }}" style="width:34px;height:34px;flex:none;border-radius:8px;object-fit:cover;background:var(--color-bg);cursor:pointer;">
       </sc-if>
       <sc-if value="{{ noLogo }}">
-        <div style="width:34px;height:34px;flex:none;border-radius:8px;background:var(--color-accent);color:#f3f2f2;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:19px;line-height:1;">辞</div>
+        <div title="ចុចដើម្បីផ្ទុកឡើងវិញ" sc-camel-on-click="{{ reloadPage }}" style="width:34px;height:34px;flex:none;border-radius:8px;background:var(--color-accent);color:#f3f2f2;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:19px;line-height:1;cursor:pointer;">辞</div>
       </sc-if>
       <div style="flex:1 1 auto;min-width:0;font-family:var(--font-heading);font-weight:600;font-size:18px;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ appName }}</div>
       <sc-if value="{{ isHome }}">
@@ -9520,6 +9520,7 @@ class Component extends DCLogic {
     this._printReport({ title, date: h.date, scoreLabel, items });
   }
 
+  reloadPage(){ this.stopSpeech(); try { location.reload(); } catch(e) { location.href = location.href; } }
   goHome(){ this.stopSpeech(); this.setState({ screen: 'home', playerPlaying: false }); }
   goFavorites(){ this.stopSpeech(); this.setState({ screen: 'favorites', playerPlaying: false }); }
   goTest(){ this.stopSpeech(); this.setState({ screen: 'test', testMode: null, playerPlaying: false }); }
@@ -10903,6 +10904,7 @@ class Component extends DCLogic {
       toggleDetailFavorite: () => this.toggleDetailFavorite(), playDetailAudio: () => this.playDetailAudio(),
       toggleDetailStar: e => this.toggleDetailStar(e),
 
+      reloadPage: () => this.reloadPage(),
       goHome: () => this.goHome(), goFavorites: () => this.goFavorites(), goTest: () => this.goTest(), goSettings: () => this.goSettings(),
       homeColor: s.screen === 'home' ? 'var(--color-accent-700)' : 'var(--color-text)',
       favColor: s.screen === 'favorites' ? 'var(--color-accent-700)' : 'var(--color-text)',
