@@ -1608,7 +1608,9 @@ textarea.input { min-height: 90px; resize: vertical; }
           <button class="btn btn-primary btn-block" sc-camel-on-click="{{ saveAddWord }}">{{ awSaveLabel }}</button>
           <div class="hr" style="margin:18px 0 12px;"></div>
           <button class="btn btn-secondary btn-block" style="margin-top:0;" sc-camel-on-click="{{ exportCustomWords }}">📋 ចម្លងពាក្យបន្ថែម ទៅ Sheet</button>
-          <div style="font-size:11px;opacity:0.6;line-height:1.7;margin-top:8px;">ចម្លងពាក្យដែលបានបន្ថែមក្នុងកម្មវិធី រួច paste ក្រោមជួរចុងក្រោយក្នុង Google Sheet។ ក្រោយ sync ចូល សូមលុបវាចេញពីទីនេះ ដើម្បីកុំឲ្យស្ទួន។</div>
+          <div style="font-size:11px;opacity:0.6;line-height:1.7;margin-top:8px;">ចម្លងតែពាក្យដែលបានបន្ថែមក្នុងកម្មវិធី រួច paste ក្រោមជួរចុងក្រោយក្នុង Google Sheet។ ក្រោយ sync ចូល សូមលុបវាចេញពីទីនេះ ដើម្បីកុំឲ្យស្ទួន។</div>
+          <button class="btn btn-secondary btn-block" style="margin-top:14px;" sc-camel-on-click="{{ exportAllWords }}">📥 ចម្លងពាក្យទាំងអស់ (ជំនួស Sheet)</button>
+          <div style="font-size:11px;opacity:0.6;line-height:1.7;margin-top:8px;">ចម្លងពាក្យទាំងអស់ក្នុងកម្មវិធី (រួមទាំងពាក្យថ្មី និង ការកែ)។ បើក Google Sheet → ជ្រើសតារាងទាំងមូល → លុប → paste ចាប់ពីប្រអប់ A1។ មានជួរក្បាល (header) រួចស្រាប់។</div>
         </div>
         </sc-if>
 
@@ -9198,6 +9200,25 @@ class Component extends DCLogic {
     this.showToast(ok ? `បានចម្លង ${rows.length} ពាក្យ — paste ក្រោមជួរចុងក្រោយក្នុង Sheet` : 'ចម្លងមិនបាន — សូមសាកម្ដងទៀត');
   }
 
+  // Export EVERY word the app currently holds (synced words + admin edits +
+  // admin-added words) as a full Sheet, header included, so the admin can select
+  // the whole Google Sheet, delete it, and paste this over it from cell A1.
+  async exportAllWords(){
+    const esc = v => { v = String(v == null ? '' : v); return /[\t\n"]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    const header = ['id', 'book', 'page', 'category', 'jp', 'kana', 'pos', 'km', 'example_jp', 'example_km', 'image'];
+    const lines = WORDS.map(w => {
+      // examples were copied onto every occurrence of a word at load; keep them
+      // only on their original row so the Sheet doesn't gain duplicate examples
+      const ex = w._sharedEx ? [] : (Array.isArray(w.examples) ? w.examples : []);
+      const exj = ex.map(e => (e.jp || '').trim()).filter(Boolean).join(' | ');
+      const exk = ex.map(e => (e.km || '').trim()).filter(Boolean).join(' | ');
+      return [w.id, w.book || '', w.page || '', w.cat || 'vocab', w.jp || '', w.kana || '', w.pos || '', w.km || '', exj, exk, w.img || ''].map(esc).join('\t');
+    });
+    const text = [header.join('\t'), ...lines].join('\n');
+    const ok = await this.copyText(text);
+    this.showToast(ok ? `បានចម្លងពាក្យទាំងអស់ ${WORDS.length} ជួរ — paste ពីលើ Sheet ចាប់ពី A1` : 'ចម្លងមិនបាន — សូមសាកម្ដងទៀត');
+  }
+
   // — Admin: per-book visibility —
   goBooks(){ this.setState({ screen: 'books', awMsg: '' }); }
   async saveBookVis(book, patch){
@@ -10537,6 +10558,7 @@ class Component extends DCLogic {
       addAwExample: () => this.addAwExample(),
       saveAddWord: () => this.saveAddWord(),
       exportCustomWords: () => this.exportCustomWords(),
+      exportAllWords: () => this.exportAllWords(),
       awSaveLabel: s.awBusy ? 'កំពុងរក្សាទុក…' : 'បន្ថែមពាក្យ',
       hasAwMsg: !!s.awMsg, awMsg: s.awMsg,
       hasAwError: !!s.awError, awError: s.awError,
