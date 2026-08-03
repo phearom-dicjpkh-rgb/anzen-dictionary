@@ -1092,136 +1092,86 @@ textarea.input { min-height: 90px; resize: vertical; }
             </div>
 
             <h4 style="font-size:15px;margin:0 0 2px;">លទ្ធផលតេស្ត</h4>
-            <div style="font-size:11px;opacity:0.55;margin-bottom:10px;">ចុចលើលំហាត់ ដើម្បីមើលពាក្យត្រូវ/ខុស</div>
+            <div style="font-size:11px;opacity:0.55;margin-bottom:10px;">{{ attemptsHint }} · ចុចលើចំណងជើង ដើម្បីលាក់/បង្ហាញ</div>
+            <sc-if value="{{ hasAnyAttempts }}">
             <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:22px;">
-              <sc-for list="{{ monitorLessonSummary }}" as="t" hint-placeholder-count="3">
-                <div class="card elev-sm" style="gap:8px;">
-                  <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:13px;">
-                    <span>{{ t.label }}</span>
-                    <span style="opacity:0.65;font-size:12px;">{{ t.passedLabel }}</span>
+
+              <sc-if value="{{ wordSec.hasAny }}">
+              <div class="card elev-sm" style="padding:0;gap:0;overflow:hidden;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;cursor:pointer;" sc-camel-on-click="{{ wordSec.toggle }}">
+                  <span style="font-weight:600;font-size:14px;">{{ wordSec.chevron }} {{ wordSec.label }}</span>
+                  <span style="font-size:12px;opacity:0.6;">{{ wordSec.summary }}</span>
+                </div>
+                <sc-if value="{{ wordSec.open }}">
+                  <div style="padding:0 14px 10px;">
+                    <sc-for list="{{ wordSec.attempts }}" as="a" hint-placeholder-count="4">
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--color-divider);font-size:13px;{{ a.rowStyle }}" sc-camel-on-click="{{ a.onOpen }}">
+                        <span style="display:flex;align-items:center;gap:7px;min-width:0;"><sc-if value="{{ a.canOpen }}"><span style="color:var(--color-accent-700);font-size:14px;flex:none;">⬇</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span></span>
+                        <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+                      </div>
+                    </sc-for>
                   </div>
-                  <sc-if value="{{ t.hasAny }}">
-                    <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                      <sc-for list="{{ t.chips }}" as="c" hint-placeholder-count="4">
-                        <span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}" sc-camel-on-click="{{ c.onToggle }}">{{ c.text }}</span>
-                      </sc-for>
-                    </div>
-                  </sc-if>
-                  <sc-if value="{{ t.hasOpen }}">
-                    <div style="border-top:1px solid var(--color-divider);padding-top:8px;margin-top:2px;">
-                      <div style="font-size:11px;opacity:0.6;margin-bottom:6px;">{{ t.openTitle }}</div>
-                      <sc-for list="{{ t.openWords }}" as="wd" hint-placeholder-count="10">
-                        <div style="display:flex;align-items:baseline;gap:8px;padding:4px 0;border-bottom:1px solid var(--color-divider);">
-                          <span style="flex:none;font-size:15px;font-weight:700;{{ wd.markColor }}">{{ wd.mark }}</span>
-                          <span style="flex:none;font-family:var(--font-heading);font-size:15px;">{{ wd.jp }}</span>
-                          <span style="flex:none;font-size:11px;opacity:0.5;">{{ wd.kana }}</span>
-                          <span style="flex:1;min-width:0;font-size:12px;opacity:0.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ wd.km }}</span>
-                        </div>
-                      </sc-for>
-                      <sc-if value="{{ isAdmin }}"><button class="btn btn-secondary" style="margin-top:10px;font-size:12px;padding:6px 12px;" sc-camel-on-click="{{ downloadOpenPdf }}">⬇ ទាញយក PDF (A4)</button></sc-if>
-                    </div>
-                  </sc-if>
-                </div>
-              </sc-for>
-            </div>
-
-            <sc-if value="{{ hasWordAttempts }}">
-            <h4 style="font-size:15px;margin:0 0 4px;">តេស្តពាក្យ · រាល់ការធ្វើ</h4>
-            <div style="font-size:11px;opacity:0.55;margin-bottom:10px;">{{ attemptsHint }}</div>
-            <div class="card elev-sm" style="gap:2px;margin-bottom:22px;">
-              <sc-for list="{{ monitorWordAttempts }}" as="a" hint-placeholder-count="4">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--color-divider);font-size:13px;{{ a.rowStyle }}" sc-camel-on-click="{{ a.onOpen }}">
-                  <span style="display:flex;align-items:center;gap:7px;min-width:0;"><sc-if value="{{ a.canOpen }}"><span style="color:var(--color-accent-700);font-size:14px;flex:none;">⬇</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span></span>
-                  <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
-                </div>
-              </sc-for>
-            </div>
-            </sc-if>
-
-            <sc-if value="{{ hasMonitorQuiz }}">
-            <h4 style="font-size:15px;margin:0 0 10px;">លំហាត់</h4>
-            <div class="card elev-sm" style="gap:8px;margin-bottom:22px;">
-              <div style="display:flex;justify-content:flex-end;font-size:12px;opacity:0.65;">{{ monitorQuizSummary.passedLabel }}</div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                <sc-for list="{{ monitorQuizSummary.chips }}" as="c" hint-placeholder-count="4">
-                  <span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}" sc-camel-on-click="{{ c.onToggle }}">{{ c.text }}</span>
-                </sc-for>
+                </sc-if>
               </div>
-              <sc-if value="{{ monitorQuizSummary.hasOpen }}">
-                <div style="border-top:1px solid var(--color-divider);padding-top:8px;margin-top:2px;">
-                  <div style="font-size:11px;opacity:0.6;margin-bottom:6px;">{{ monitorQuizSummary.openTitle }}</div>
-                  <sc-for list="{{ monitorQuizSummary.openQuestions }}" as="qq" hint-placeholder-count="10">
-                    <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--color-divider);">
-                      <span style="flex:none;font-size:15px;font-weight:700;{{ qq.markColor }}">{{ qq.mark }}</span>
-                      <span style="flex:1;min-width:0;font-size:13px;line-height:1.6;">{{ qq.q }}</span>
-                    </div>
-                  </sc-for>
-                  <sc-if value="{{ isAdmin }}"><button class="btn btn-secondary" style="margin-top:10px;font-size:12px;padding:6px 12px;" sc-camel-on-click="{{ downloadOpenPdf }}">⬇ ទាញយក PDF (A4)</button></sc-if>
-                </div>
               </sc-if>
-            </div>
-            </sc-if>
 
-            <sc-if value="{{ hasQuizAttempts }}">
-            <h4 style="font-size:15px;margin:0 0 4px;">លំហាត់ · រាល់ការធ្វើ</h4>
-            <div style="font-size:11px;opacity:0.55;margin-bottom:10px;">{{ attemptsHint }}</div>
-            <div class="card elev-sm" style="gap:2px;margin-bottom:22px;">
-              <sc-for list="{{ monitorQuizAttempts }}" as="a" hint-placeholder-count="4">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--color-divider);font-size:13px;{{ a.rowStyle }}" sc-camel-on-click="{{ a.onOpen }}">
-                  <span style="display:flex;align-items:center;gap:7px;min-width:0;"><sc-if value="{{ a.canOpen }}"><span style="color:var(--color-accent-700);font-size:14px;flex:none;">⬇</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span></span>
-                  <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+              <sc-if value="{{ quizSec.hasAny }}">
+              <div class="card elev-sm" style="padding:0;gap:0;overflow:hidden;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;cursor:pointer;" sc-camel-on-click="{{ quizSec.toggle }}">
+                  <span style="font-weight:600;font-size:14px;">{{ quizSec.chevron }} {{ quizSec.label }}</span>
+                  <span style="font-size:12px;opacity:0.6;">{{ quizSec.summary }}</span>
                 </div>
-              </sc-for>
-            </div>
-            </sc-if>
-
-            <sc-if value="{{ hasMonitorImgQuiz }}">
-            <h4 style="font-size:15px;margin:0 0 10px;">លំហាត់រូបភាព</h4>
-            <div class="card elev-sm" style="gap:8px;margin-bottom:22px;">
-              <div style="display:flex;justify-content:flex-end;font-size:12px;opacity:0.65;">{{ monitorImgQuizSummary.passedLabel }}</div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                <sc-for list="{{ monitorImgQuizSummary.chips }}" as="c" hint-placeholder-count="4">
-                  <span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}" sc-camel-on-click="{{ c.onToggle }}">{{ c.text }}</span>
-                </sc-for>
+                <sc-if value="{{ quizSec.open }}">
+                  <div style="padding:0 14px 10px;">
+                    <sc-for list="{{ quizSec.attempts }}" as="a" hint-placeholder-count="4">
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--color-divider);font-size:13px;{{ a.rowStyle }}" sc-camel-on-click="{{ a.onOpen }}">
+                        <span style="display:flex;align-items:center;gap:7px;min-width:0;"><sc-if value="{{ a.canOpen }}"><span style="color:var(--color-accent-700);font-size:14px;flex:none;">⬇</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span></span>
+                        <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
               </div>
-              <sc-if value="{{ monitorImgQuizSummary.hasOpen }}">
-                <div style="border-top:1px solid var(--color-divider);padding-top:8px;margin-top:2px;">
-                  <div style="font-size:11px;opacity:0.6;margin-bottom:6px;">{{ monitorImgQuizSummary.openTitle }}</div>
-                  <sc-for list="{{ monitorImgQuizSummary.openQuestions }}" as="qq" hint-placeholder-count="5">
-                    <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--color-divider);">
-                      <span style="flex:none;font-size:15px;font-weight:700;{{ qq.markColor }}">{{ qq.mark }}</span>
-                      <span style="flex:1;min-width:0;font-size:13px;line-height:1.6;">{{ qq.q }}</span>
-                    </div>
-                  </sc-for>
-                  <sc-if value="{{ isAdmin }}"><button class="btn btn-secondary" style="margin-top:10px;font-size:12px;padding:6px 12px;" sc-camel-on-click="{{ downloadOpenPdf }}">⬇ ទាញយក PDF (A4)</button></sc-if>
-                </div>
               </sc-if>
-            </div>
-            </sc-if>
 
-            <sc-if value="{{ hasImgAttempts }}">
-            <h4 style="font-size:15px;margin:0 0 4px;">លំហាត់រូបភាព · រាល់ការធ្វើ</h4>
-            <div style="font-size:11px;opacity:0.55;margin-bottom:10px;">{{ attemptsHint }}</div>
-            <div class="card elev-sm" style="gap:2px;margin-bottom:22px;">
-              <sc-for list="{{ monitorImgAttempts }}" as="a" hint-placeholder-count="4">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--color-divider);font-size:13px;{{ a.rowStyle }}" sc-camel-on-click="{{ a.onOpen }}">
-                  <span style="display:flex;align-items:center;gap:7px;min-width:0;"><sc-if value="{{ a.canOpen }}"><span style="color:var(--color-accent-700);font-size:14px;flex:none;">⬇</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span></span>
-                  <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+              <sc-if value="{{ imgSec.hasAny }}">
+              <div class="card elev-sm" style="padding:0;gap:0;overflow:hidden;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;cursor:pointer;" sc-camel-on-click="{{ imgSec.toggle }}">
+                  <span style="font-weight:600;font-size:14px;">{{ imgSec.chevron }} {{ imgSec.label }}</span>
+                  <span style="font-size:12px;opacity:0.6;">{{ imgSec.summary }}</span>
                 </div>
-              </sc-for>
-            </div>
-            </sc-if>
+                <sc-if value="{{ imgSec.open }}">
+                  <div style="padding:0 14px 10px;">
+                    <sc-for list="{{ imgSec.attempts }}" as="a" hint-placeholder-count="4">
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--color-divider);font-size:13px;{{ a.rowStyle }}" sc-camel-on-click="{{ a.onOpen }}">
+                        <span style="display:flex;align-items:center;gap:7px;min-width:0;"><sc-if value="{{ a.canOpen }}"><span style="color:var(--color-accent-700);font-size:14px;flex:none;">⬇</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span></span>
+                        <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+              </sc-if>
 
-            <sc-if value="{{ hasExamAttempts }}">
-            <h4 style="font-size:15px;margin:0 0 4px;">ប្រឡងសាកល្បង · រាល់ការធ្វើ</h4>
-            <div style="font-size:11px;opacity:0.55;margin-bottom:10px;">{{ attemptsHint }}</div>
-            <div class="card elev-sm" style="gap:2px;margin-bottom:22px;">
-              <sc-for list="{{ monitorExamAttempts }}" as="a" hint-placeholder-count="3">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--color-divider);font-size:13px;{{ a.rowStyle }}" sc-camel-on-click="{{ a.onOpen }}">
-                  <span style="display:flex;align-items:center;gap:7px;min-width:0;"><sc-if value="{{ a.canOpen }}"><span style="color:var(--color-accent-700);font-size:14px;flex:none;">⬇</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span></span>
-                  <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+              <sc-if value="{{ examSec.hasAny }}">
+              <div class="card elev-sm" style="padding:0;gap:0;overflow:hidden;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;cursor:pointer;" sc-camel-on-click="{{ examSec.toggle }}">
+                  <span style="font-weight:600;font-size:14px;">{{ examSec.chevron }} {{ examSec.label }}</span>
+                  <span style="font-size:12px;opacity:0.6;">{{ examSec.summary }}</span>
                 </div>
-              </sc-for>
+                <sc-if value="{{ examSec.open }}">
+                  <div style="padding:0 14px 10px;">
+                    <sc-for list="{{ examSec.attempts }}" as="a" hint-placeholder-count="3">
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--color-divider);font-size:13px;{{ a.rowStyle }}" sc-camel-on-click="{{ a.onOpen }}">
+                        <span style="display:flex;align-items:center;gap:7px;min-width:0;"><sc-if value="{{ a.canOpen }}"><span style="color:var(--color-accent-700);font-size:14px;flex:none;">⬇</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span></span>
+                        <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+              </sc-if>
+
             </div>
             </sc-if>
 
@@ -8340,7 +8290,7 @@ class Component extends DCLogic {
     // teacher monitor
     students: [], selectedStudent: null, selectedStudentName: '', viewingViewed: [],
     viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {},
-    viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingExamReport: null, viewingSchoolId: null, viewingHistory: [], monExpandedChip: null,
+    viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingExamReport: null, viewingSchoolId: null, viewingHistory: [], monExpandedChip: null, monOpenSections: [],
     leaderboard: [],   // student standings, name + level only
 
     // self sign-up through a branch invite link
@@ -9296,10 +9246,11 @@ class Component extends DCLogic {
       viewingExamLog: (st.settings && Array.isArray(st.settings.examLog)) ? st.settings.examLog : [],
       viewingExamReport: (st.settings && st.settings.examReport) || null,
       viewingSchoolId: st.school_id || null, viewingHistory: Array.isArray(st.history) ? st.history : [],
-      monExpandedChip: null });
+      monExpandedChip: null, monOpenSections: [] });
   }
-  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], monExpandedChip: null }); }
+  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], monExpandedChip: null, monOpenSections: [] }); }
   toggleMonChip(key){ this.setState(s => ({ monExpandedChip: s.monExpandedChip === key ? null : key })); }
+  toggleMonSection(key){ this.setState(s => ({ monOpenSections: (s.monOpenSections || []).includes(key) ? s.monOpenSections.filter(k => k !== key) : [...(s.monOpenSections || []), key] })); }
 
   // — Admin: download a student's results as an A4 PDF (via the print dialog) —
   _esc(v){ return String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -9432,9 +9383,13 @@ class Component extends DCLogic {
   // open one specific attempt (by its index in the viewed student's history) as
   // an A4 PDF — this is how every single run, pass or fail, is reviewed/downloaded
   openHistoryPdf(idx){
-    const h = (this.state.viewingHistory || [])[idx];
+    const s = this.state, h = (s.viewingHistory || [])[idx];
     if (!h) { this.showToast('គ្មានទិន្នន័យ'); return; }
-    if (!Array.isArray(h.items) || !h.items.length) { this.showToast('ការធ្វើនេះមិនមានទិន្នន័យលម្អិត (បានធ្វើមុនពេលកែប្រែ)'); return; }
+    // every attempt keeps its own detail now; for an exam done before that, fall
+    // back to the stored latest-exam report if it is the same run (pass or fail)
+    let items = (Array.isArray(h.items) && h.items.length) ? h.items : null;
+    if (!items && h.mode === 'exam') { const er = s.viewingExamReport; if (er && Array.isArray(er.items) && er.date === h.date) items = er.items; }
+    if (!items) { this.showToast('ការធ្វើនេះមិនមានទិន្នន័យលម្អិត (បានធ្វើមុនពេលកែប្រែ)'); return; }
     const pct = h.total ? Math.round(h.score / h.total * 100) : 0;
     const dir = h.mode === 'mc_km' ? 'ខ្មែរ → ជប៉ុន' : 'ជប៉ុន → ខ្មែរ';
     const title = h.mode === 'exam' ? `ប្រឡងសាកល្បង · ឈុតទី ${h.lesson}`
@@ -9442,7 +9397,7 @@ class Component extends DCLogic {
       : h.mode === 'imgquiz' ? `លំហាត់រូបភាព · លំហាត់ទី ${h.lesson}`
       : `ជ្រើសរើសពាក្យត្រូវ · ${dir} · មេរៀនទី ${h.lesson}`;
     const scoreLabel = h.mode === 'exam' ? `${h.score} / ${h.total} · ${pct}%` : `${pct}%`;
-    this._printReport({ title, date: h.date, scoreLabel, items: h.items });
+    this._printReport({ title, date: h.date, scoreLabel, items });
   }
 
   goHome(){ this.stopSpeech(); this.setState({ screen: 'home', playerPlaying: false }); }
@@ -10208,9 +10163,12 @@ class Component extends DCLogic {
         const pct = h.total ? Math.round(h.score / h.total * 100) : 0;
         const passed = pct >= PASS_PCT;
         const d = new Date(h.date);
-        const canOpen = s.role === 'admin' && Array.isArray(h.items) && h.items.length > 0;
+        const er = s.viewingExamReport;
+        const hasDetail = (Array.isArray(h.items) && h.items.length > 0)
+          || (h.mode === 'exam' && er && Array.isArray(er.items) && er.date === h.date);
+        const canOpen = s.role === 'admin' && hasDetail;
         return {
-          label: labeler(h),
+          label: labeler(h), passed,
           scoreLabel: `${h.score}/${h.total} · ${pct}%`,
           dateLabel: `${d.getDate()}/${d.getMonth() + 1}`,
           verdict: passed ? 'ជាប់ ✓' : 'ធ្លាក់ ✗',
@@ -10219,10 +10177,21 @@ class Component extends DCLogic {
           onOpen: canOpen ? (() => this.openHistoryPdf(i)) : (() => {}),
         };
       });
-    const monitorWordAttempts = attemptList(['mc_jp', 'mc_km'], h => `${MODE_LABEL[h.mode] || ''} · មេរៀនទី ${h.lesson}`);
-    const monitorQuizAttempts = attemptList(['quiz'], h => `លំហាត់ទី ${h.lesson}`);
-    const monitorImgAttempts = attemptList(['imgquiz'], h => `លំហាត់ទី ${h.lesson}`);
-    const monitorExamAttempts = attemptList(['exam'], h => `ឈុតទី ${h.lesson}`);
+    // One collapsible box per category (word test, exercise, image, exam). The
+    // header shows a ជាប់ x/N summary and a chevron; tapping it reveals the list
+    // of every attempt (pass and fail together), each openable as a PDF.
+    const mkSection = (key, label, attempts) => {
+      const open = (s.monOpenSections || []).indexOf(key) !== -1;
+      const pass = attempts.filter(a => a.passed).length;
+      return { key, label, attempts, hasAny: attempts.length > 0, open,
+        chevron: open ? '▾' : '▸',
+        summary: `ជាប់ ${pass} / ${attempts.length}`,
+        toggle: () => this.toggleMonSection(key) };
+    };
+    const wordSec = mkSection('word', 'តេស្តពាក្យ', attemptList(['mc_jp', 'mc_km'], h => `${MODE_LABEL[h.mode] || ''} · មេរៀនទី ${h.lesson}`));
+    const quizSec = mkSection('quiz', 'លំហាត់', attemptList(['quiz'], h => `លំហាត់ទី ${h.lesson}`));
+    const imgSec = mkSection('img', 'លំហាត់រូបភាព', attemptList(['imgquiz'], h => `លំហាត់ទី ${h.lesson}`));
+    const examSec = mkSection('exam', 'ប្រឡងសាកល្បង', attemptList(['exam'], h => `ឈុតទី ${h.lesson}`));
 
     const ROLE_LABEL = { admin: 'អ្នកគ្រប់គ្រង', school: 'សាលា/សាខា', teacher: 'គ្រូ', student: 'សិស្ស' };
     const ROLE_TAG = { admin: 'tag tag-accent', school: 'tag tag-outline', teacher: 'tag tag-accent-2', student: 'tag tag-neutral' };
@@ -10407,11 +10376,10 @@ class Component extends DCLogic {
       monitorImgQuizSummary, hasMonitorImgQuiz: monitorImgQuizSummary.hasAny,
       monitorExamLog, hasMonitorExam: monitorExamLog.length > 0,
       hasExamReport: s.role === 'admin' && !!(s.viewingExamReport && s.viewingExamReport.items),
-      // per-attempt lists (every run, pass or fail; admin can open each as a PDF)
-      monitorWordAttempts, hasWordAttempts: monitorWordAttempts.length > 0,
-      monitorQuizAttempts, hasQuizAttempts: monitorQuizAttempts.length > 0,
-      monitorImgAttempts, hasImgAttempts: monitorImgAttempts.length > 0,
-      monitorExamAttempts, hasExamAttempts: monitorExamAttempts.length > 0,
+      // collapsible per-category boxes: every attempt (pass + fail together),
+      // each openable as a PDF (admin). Tap the title to hide/show the list.
+      wordSec, quizSec, imgSec, examSec,
+      hasAnyAttempts: wordSec.hasAny || quizSec.hasAny || imgSec.hasAny || examSec.hasAny,
       attemptsHint: s.role === 'admin' ? 'ចុចលើការធ្វើនីមួយៗ ដើម្បីទាញយក PDF' : 'រាល់ការធ្វើរបស់សិស្ស',
       monitorUsageDays: monitorChart.days,
       monitorUsageTodayLabel: monitorChart.todayLabel,
