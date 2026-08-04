@@ -1666,7 +1666,7 @@ textarea.input { min-height: 90px; resize: vertical; }
         </sc-if>
 
         <sc-if value="{{ isPlayer }}" hint-placeholder-val="{{ false }}">
-        <div style="padding:18px 20px 40px;">
+        <div style="padding:18px 20px 20px;min-height:660px;display:flex;flex-direction:column;box-sizing:border-box;">
           <button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ leavePlayer }}">← ម៉ីនុយ</button>
           <h1 style="font-size:26px;margin:0 0 14px;">ចាក់ពាក្យ 🎧</h1>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
@@ -1710,23 +1710,30 @@ textarea.input { min-height: 90px; resize: vertical; }
           </sc-if>
 
           <sc-if value="{{ playerHasWord }}">
-          <div style="border-radius:20px;background:linear-gradient(135deg, var(--color-accent-700), var(--color-accent));color:#f3f2f2;padding:30px 22px;text-align:center;margin-bottom:14px;box-shadow:var(--shadow-md);">
-            <div style="font-size:15px;opacity:0.85;margin-bottom:6px;">{{ playerNowKana }}</div>
-            <div style="font-family:var(--font-heading);font-weight:600;font-size:40px;line-height:1.15;margin-bottom:12px;">{{ playerNowJp }}</div>
-            <div style="font-size:20px;line-height:1.5;">{{ playerNowKm }}</div>
+          <!-- flexible middle: the word card is centred and size-bounded, so its
+               growth for wordy entries never nudges the controls up or down -->
+          <div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;padding:6px 0;">
+            <div style="border-radius:20px;background:linear-gradient(135deg, var(--color-accent-700), var(--color-accent));color:#f3f2f2;padding:26px 22px;text-align:center;box-shadow:var(--shadow-md);min-height:180px;max-height:100%;display:flex;flex-direction:column;justify-content:center;overflow-y:auto;">
+              <div style="font-size:15px;opacity:0.85;margin-bottom:6px;">{{ playerNowKana }}</div>
+              <div style="font-family:var(--font-heading);font-weight:600;font-size:40px;line-height:1.15;margin-bottom:12px;">{{ playerNowJp }}</div>
+              <div style="font-size:20px;line-height:1.5;">{{ playerNowKm }}</div>
+            </div>
           </div>
-          <div style="text-align:center;font-size:12px;opacity:0.6;margin-bottom:14px;">{{ playerPos }} / {{ playerTotal }}</div>
-          <div style="display:flex;align-items:center;justify-content:center;gap:22px;margin-bottom:16px;">
-            <button style="background:transparent;border:none;font-size:26px;cursor:pointer;color:var(--color-text);" sc-camel-on-click="{{ playerPrev }}">⏮</button>
-            <button style="width:66px;height:66px;border-radius:50%;border:none;background:var(--color-accent);color:#f3f2f2;font-size:26px;cursor:pointer;box-shadow:var(--shadow-md);" sc-camel-on-click="{{ playerToggle }}">{{ playerPlayGlyph }}</button>
-            <button style="background:transparent;border:none;font-size:26px;cursor:pointer;color:var(--color-text);" sc-camel-on-click="{{ playerNext }}">⏭</button>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:center;gap:14px;font-size:13px;">
-            <button style="background:transparent;border:1.5px solid var(--color-divider);border-radius:99px;padding:6px 13px;cursor:pointer;{{ playerRepeatStyle }}" sc-camel-on-click="{{ playerToggleRepeat }}">🔁 ចាក់ឡើងវិញ</button>
-            <label style="display:flex;align-items:center;gap:6px;">ល្បឿន
-              <select class="input" value="{{ playerRate }}" sc-camel-on-change="{{ onPlayerRate }}" style="width:auto;min-height:30px;padding:2px 6px;">
-                <option value="0.75">0.75×</option><option value="0.95">1×</option><option value="1.2">1.2×</option>
-              </select></label>
+          <!-- controls, pinned to the bottom of the screen -->
+          <div style="flex:none;">
+            <div style="text-align:center;font-size:12px;opacity:0.6;margin-bottom:12px;">{{ playerPos }} / {{ playerTotal }}</div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:22px;margin-bottom:14px;">
+              <button style="background:transparent;border:none;font-size:26px;cursor:pointer;color:var(--color-text);" sc-camel-on-click="{{ playerPrev }}">⏮</button>
+              <button style="width:66px;height:66px;border-radius:50%;border:none;background:var(--color-accent);color:#f3f2f2;font-size:26px;cursor:pointer;box-shadow:var(--shadow-md);" sc-camel-on-click="{{ playerToggle }}">{{ playerPlayGlyph }}</button>
+              <button style="background:transparent;border:none;font-size:26px;cursor:pointer;color:var(--color-text);" sc-camel-on-click="{{ playerNext }}">⏭</button>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:14px;font-size:13px;">
+              <button style="background:transparent;border:1.5px solid var(--color-divider);border-radius:99px;padding:6px 13px;cursor:pointer;{{ playerRepeatStyle }}" sc-camel-on-click="{{ playerToggleRepeat }}">🔁 ចាក់ឡើងវិញ</button>
+              <label style="display:flex;align-items:center;gap:6px;">ល្បឿន
+                <select class="input" value="{{ playerRate }}" sc-camel-on-change="{{ onPlayerRate }}" style="width:auto;min-height:30px;padding:2px 6px;">
+                  <option value="0.75">0.75×</option><option value="0.95">1×</option><option value="1.2">1.2×</option>
+                </select></label>
+            </div>
           </div>
           </sc-if>
           <sc-if value="{{ playerEmpty }}"><div style="text-align:center;padding:50px 20px;opacity:0.55;font-size:13px;line-height:1.8;">បញ្ជីទទេ<br>ជ្រើសរើសប្រភពផ្សេង</div></sc-if>
@@ -8721,11 +8728,29 @@ class Component extends DCLogic {
     const gap = (ms, cb) => setTimeout(() => { if (token === this._pt && this.state.playerPlaying) cb(); }, ms);
     const advance = () => {
       const last = this.state.playerIdx >= this.state.playerList.length - 1;
-      if (last && !this.state.playerRepeat) { this.setState({ playerPlaying: false }); return; }
-      const ni = last ? 0 : this.state.playerIdx + 1;
-      this.setState({ playerIdx: ni }, () => gap(300, () => this.playerStep()));
+      if (!last) { this.setState({ playerIdx: this.state.playerIdx + 1 }, () => gap(300, () => this.playerStep())); return; }
+      // reached the end of the list
+      if (this.state.playerRepeat) { this.setState({ playerIdx: 0 }, () => gap(300, () => this.playerStep())); return; }
+      // playing by lesson: mark it heard and roll straight on to the next lesson
+      if (this.state.playerSrc === 'lesson') {
+        this._markLessonHeard(this.state.playerLesson);
+        const next = this.state.playerLesson + 1;
+        if (next <= this.lessonTotal()) {
+          this.setState({ playerLesson: next, playerList: this.lessonWords(next), playerIdx: 0 },
+            () => gap(600, () => this.playerStep()));
+          return;
+        }
+      }
+      this.setState({ playerPlaying: false });
     };
     this._speak(w.jp, 'ja', token, () => gap(250, () => this._speak(w.km, 'km', token, () => gap(350, advance))));
+  }
+  // remember a lesson the student has listened to all the way through (persisted,
+  // so the lesson picker can show it in a different colour)
+  _markLessonHeard(n){
+    const heard = Array.isArray(this.state.settings.playerHeard) ? this.state.settings.playerHeard : [];
+    if (heard.indexOf(n) !== -1) return;
+    this.setState({ settings: { ...this.state.settings, playerHeard: [...heard, n] } }, () => this.persist());
   }
   playerPlay(){ if (!this.state.playerList.length) { this.showToast('បញ្ជីទទេ'); return; } this.stopSpeech(); this.setState({ playerPlaying: true }, () => this.playerStep()); }
   playerPause(){ this.stopSpeech(); this.setState({ playerPlaying: false }); }
@@ -10102,8 +10127,16 @@ class Component extends DCLogic {
     const playerBookLabel = (playerBookOptions.find(o => o.value === s.playerBook) || playerBookOptions[0]).label;
     const playerBookMenu = playerBookOptions.map(o => ({ name: o.label, onSelect: () => this.pickPlayerBook(o.value), rowStyle: rowSel(s.playerBook === o.value) }));
     const playerLessonTotal = this.lessonTotal();
+    const heardSet = new Set(Array.isArray(s.settings.playerHeard) ? s.settings.playerHeard : []);
     const playerLessonMenu = [];
-    for (let n = 1; n <= playerLessonTotal; n++) playerLessonMenu.push({ name: `មេរៀនទី ${n}`, onSelect: () => this.pickPlayerLesson(n), rowStyle: rowSel(s.playerLesson === n) });
+    for (let n = 1; n <= playerLessonTotal; n++) {
+      const heard = heardSet.has(n), sel = s.playerLesson === n;
+      playerLessonMenu.push({
+        name: heard ? `មេរៀនទី ${n} ✓ ស្ដាប់ហើយ` : `មេរៀនទី ${n}`,
+        onSelect: () => this.pickPlayerLesson(n),
+        rowStyle: sel ? rowSel(true) : (heard ? 'color:#2f8f57;background:rgba(58,158,92,0.10);font-weight:600;' : ''),
+      });
+    }
     const pw = s.playerList[s.playerIdx] || null;
 
     // — share-image maker locals —
@@ -10862,7 +10895,7 @@ class Component extends DCLogic {
       isPlayer: s.screen === 'player',
       playerSrcChips, playerIsBook: s.playerSrc === 'book', playerIsLesson: s.playerSrc === 'lesson',
       playerBookLabel, playerBookMenu, playerBookOpen: s.playerBookOpen, togglePlayerBook: () => this.togglePlayerBook(),
-      playerLessonLabel: `មេរៀនទី ${s.playerLesson}`, playerLessonMenu, playerLessonOpen: s.playerLessonOpen, togglePlayerLesson: () => this.togglePlayerLesson(),
+      playerLessonLabel: heardSet.has(s.playerLesson) ? `មេរៀនទី ${s.playerLesson} ✓` : `មេរៀនទី ${s.playerLesson}`, playerLessonMenu, playerLessonOpen: s.playerLessonOpen, togglePlayerLesson: () => this.togglePlayerLesson(),
       onPlayerRate: e => this.onPlayerRate(e),
       playerHasWord: !!pw, playerEmpty: s.playerList.length === 0,
       playerNowKana: pw ? pw.kana : '', playerNowJp: pw ? pw.jp : '', playerNowKm: pw ? pw.km : '',
