@@ -1759,11 +1759,12 @@ textarea.input { min-height: 90px; resize: vertical; }
             <div style="font-size:11px;opacity:0.55;margin-bottom:14px;">និពន្ធសៀវភៅដោយអក្សរ លាយរូបភាព (Link)។ រក្សាទុករួច បង្ហាញនៅទីនេះ។</div>
             <div style="display:flex;flex-direction:column;gap:9px;">
               <sc-for list="{{ libBooks }}" as="b" hint-placeholder-count="3">
-                <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:12px;">
-                  <div style="flex:1;min-width:0;cursor:pointer;" sc-camel-on-click="{{ b.onEdit }}">
+                <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:10px;">
+                  <div style="flex:1;min-width:0;cursor:pointer;" sc-camel-on-click="{{ b.onRead }}">
                     <div class="card-title" style="font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ b.title }}</div>
-                    <div class="card-body" style="font-size:11px;">កែសម្រួល · {{ b.dateLabel }}</div>
+                    <div class="card-body" style="font-size:11px;">ចុចដើម្បីអាន · {{ b.dateLabel }}</div>
                   </div>
+                  <button class="btn btn-secondary" style="flex:none;font-size:12px;padding:6px 11px;" sc-camel-on-click="{{ b.onRead }}">📖 អាន</button>
                   <button class="btn btn-secondary" style="flex:none;font-size:12px;padding:6px 11px;" sc-camel-on-click="{{ b.onEdit }}">កែ</button>
                   <button class="btn btn-ghost" style="flex:none;font-size:12px;padding:6px 9px;color:#c0342c;" sc-camel-on-click="{{ b.onDelete }}">លុប</button>
                 </div>
@@ -1775,6 +1776,11 @@ textarea.input { min-height: 90px; resize: vertical; }
           <sc-if value="{{ libIsEdit }}">
           <div style="padding:14px 18px 40px;">
             <div id="lib-editor-root"></div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ libIsRead }}">
+          <div style="padding:14px 18px 40px;">
+            <div id="lib-read-root"></div>
           </div>
           </sc-if>
         </sc-if>
@@ -9312,6 +9318,48 @@ class Component extends DCLogic {
   async loadBooks(){ const { rows } = await Backend.listBooks(); this.setState({ libBooks: Array.isArray(rows) ? rows : [] }); }
   libNewBook(){ this.setState({ libMode: 'edit', libBookId: null, libErr: '' }, () => this._buildEditorSoon(null)); }
   async libEditBook(id){ const { book } = await Backend.getBook(id); this.setState({ libMode: 'edit', libBookId: id, libErr: '' }, () => this._buildEditorSoon(book || {})); }
+  // read-only view: the finished book, no editor chrome
+  async libReadBook(id){ const { book } = await Backend.getBook(id); this._libReadData = book || {}; this.setState({ libMode: 'read', libBookId: id }, () => this._buildReadSoon()); }
+  _buildReadSoon(){
+    const run = t => { const root = document.getElementById('lib-read-root'); if (!root) { if (t > 0) setTimeout(() => run(t - 1), 30); return; } this._buildReadView(this._libReadData || {}, root); };
+    setTimeout(() => run(6), 16);
+  }
+  _buildReadView(book, root){
+    root.innerHTML = '';
+    const A4W = 794, PAD = 48;
+    // top: back + zoom
+    const top = document.createElement('div');
+    top.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;';
+    const back = document.createElement('button');
+    back.type = 'button'; back.textContent = '← បញ្ជីសៀវភៅ';
+    back.style.cssText = 'background:transparent;border:none;color:var(--color-accent-700);font-size:14px;cursor:pointer;padding:4px 0;';
+    back.addEventListener('click', () => this.libBackToList());
+    top.appendChild(back);
+    // the A4 sheet (rendered content, not editable)
+    const sheet = document.createElement('div');
+    sheet.className = 'report';   // reuse the print styles (page breaks, ruby, etc.)
+    sheet.style.cssText = `width:${A4W}px;min-height:600px;background:#fff;color:#111;padding:${PAD}px;margin:0 auto;box-shadow:0 2px 16px rgba(0,0,0,0.28);font-size:16px;line-height:1.85;box-sizing:border-box;overflow-wrap:break-word;`;
+    sheet.innerHTML = this._sanitizeBookHtml(book.content || '<p style="opacity:0.5;">(សៀវភៅទទេ)</p>');
+    let zoom = 0.6;
+    const zlabel = document.createElement('span'); zlabel.style.cssText = 'min-width:38px;text-align:center;font-weight:600;font-size:12px;';
+    const applyZoom = () => { sheet.style.zoom = zoom; zlabel.textContent = Math.round(zoom * 100) + '%'; };
+    const zbtn = (t, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.style.cssText = 'width:30px;height:30px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:16px;'; b.addEventListener('click', fn); return b; };
+    const zoomWrap = document.createElement('div'); zoomWrap.style.cssText = 'display:flex;align-items:center;gap:6px;';
+    zoomWrap.appendChild(zbtn('−', () => { zoom = Math.max(0.3, Math.round((zoom - 0.1) * 10) / 10); applyZoom(); }));
+    zoomWrap.appendChild(zlabel);
+    zoomWrap.appendChild(zbtn('+', () => { zoom = Math.min(1.8, Math.round((zoom + 0.1) * 10) / 10); applyZoom(); }));
+    top.appendChild(zoomWrap);
+    root.appendChild(top);
+    // title
+    const h = document.createElement('h1'); h.textContent = book.title || ''; h.style.cssText = 'font-size:22px;margin:0 0 12px;';
+    root.appendChild(h);
+    // grey canvas with its own scroll
+    const canvas = document.createElement('div');
+    canvas.style.cssText = 'overflow:auto;background:#7f7f7f;padding:16px;border-radius:10px;max-height:600px;-webkit-overflow-scrolling:touch;';
+    canvas.appendChild(sheet);
+    root.appendChild(canvas);
+    setTimeout(() => { const cw = canvas.clientWidth - 32; if (cw > 0) zoom = Math.min(1, Math.max(0.3, Math.round((cw / A4W) * 20) / 20)); applyZoom(); }, 60);
+  }
   libBackToList(){ this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
   async libDeleteBook(id){ if (!window.confirm('លុបសៀវភៅនេះមែនទេ?')) return; await Backend.deleteBook(id); this.loadBooks(); }
   // strip anything unsafe before a book is stored (it is shown to other users)
@@ -10739,11 +10787,12 @@ class Component extends DCLogic {
       isMonitor: s.screen === 'monitor',
       // — បណ្ណាល័យ (authored books, Admin) —
       isLibrary: s.screen === 'library',
-      libIsList: s.libMode === 'list', libIsEdit: s.libMode === 'edit',
+      libIsList: s.libMode === 'list', libIsEdit: s.libMode === 'edit', libIsRead: s.libMode === 'read',
       libEmpty: (s.libBooks || []).length === 0,
       libBooks: (s.libBooks || []).map(b => ({
         title: b.title || '(គ្មានចំណងជើង)',
         dateLabel: b.updated_at ? (() => { const d = new Date(b.updated_at); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; })() : '',
+        onRead: () => this.libReadBook(b.id),
         onEdit: () => this.libEditBook(b.id),
         onDelete: () => this.libDeleteBook(b.id),
       })),
