@@ -1539,6 +1539,14 @@ textarea.input { min-height: 90px; resize: vertical; }
               </div>
               <span style="opacity:0.4;">›</span>
             </div>
+            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goLibrary }}">
+              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"></path><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"></path></svg>
+              <div style="flex:1;min-width:0;">
+                <div class="card-title" style="font-size:15px;">បណ្ណាល័យសៀវភៅ</div>
+                <div class="card-body" style="font-size:11px;">និពន្ធសៀវភៅ (អក្សរ + រូបភាព) សម្រាប់សិស្ស</div>
+              </div>
+              <span style="opacity:0.4;">›</span>
+            </div>
             <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goShare }}">
               <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg>
               <div style="flex:1;min-width:0;">
@@ -1738,6 +1746,37 @@ textarea.input { min-height: 90px; resize: vertical; }
           </sc-if>
           <sc-if value="{{ playerEmpty }}"><div style="text-align:center;padding:50px 20px;opacity:0.55;font-size:13px;line-height:1.8;">បញ្ជីទទេ<br>ជ្រើសរើសប្រភពផ្សេង</div></sc-if>
         </div>
+        </sc-if>
+
+        <sc-if value="{{ isLibrary }}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{ libIsList }}">
+          <div style="padding:18px 20px 40px;">
+            <button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ goMenu }}">← ម៉ីនុយ</button>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px;">
+              <h1 style="font-size:24px;margin:0;">បណ្ណាល័យសៀវភៅ</h1>
+              <button class="btn btn-primary" style="padding:9px 14px;font-size:13px;" sc-camel-on-click="{{ libNewBook }}">+ សៀវភៅថ្មី</button>
+            </div>
+            <div style="font-size:11px;opacity:0.55;margin-bottom:14px;">និពន្ធសៀវភៅដោយអក្សរ លាយរូបភាព (Link)។ រក្សាទុករួច បង្ហាញនៅទីនេះ។</div>
+            <div style="display:flex;flex-direction:column;gap:9px;">
+              <sc-for list="{{ libBooks }}" as="b" hint-placeholder-count="3">
+                <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:12px;">
+                  <div style="flex:1;min-width:0;cursor:pointer;" sc-camel-on-click="{{ b.onEdit }}">
+                    <div class="card-title" style="font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ b.title }}</div>
+                    <div class="card-body" style="font-size:11px;">កែសម្រួល · {{ b.dateLabel }}</div>
+                  </div>
+                  <button class="btn btn-secondary" style="flex:none;font-size:12px;padding:6px 11px;" sc-camel-on-click="{{ b.onEdit }}">កែ</button>
+                  <button class="btn btn-ghost" style="flex:none;font-size:12px;padding:6px 9px;color:#c0342c;" sc-camel-on-click="{{ b.onDelete }}">លុប</button>
+                </div>
+              </sc-for>
+              <sc-if value="{{ libEmpty }}"><div style="text-align:center;padding:40px 20px;opacity:0.55;font-size:13px;line-height:1.8;">មិនទាន់មានសៀវភៅ<br>ចុច "+ សៀវភៅថ្មី" ដើម្បីចាប់ផ្ដើម</div></sc-if>
+            </div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ libIsEdit }}">
+          <div style="padding:14px 18px 40px;">
+            <div id="lib-editor-root"></div>
+          </div>
+          </sc-if>
         </sc-if>
 
         <sc-if value="{{ isShare }}" hint-placeholder-val="{{ false }}">
@@ -8177,6 +8216,14 @@ function makeSupabaseBackend(){
     async addCustomWord(row){ const { data, error } = await client.from('custom_words').insert(row).select().single(); return { row: data, error: error ? error.message : null }; },
     async getBookSettings(){ const { data } = await client.from('book_settings').select('book,locked,all_schools,schools'); return { rows: data || [] }; },
     async saveBookSetting(row){ const { error } = await client.from('book_settings').upsert(row, { onConflict: 'book' }); return { error: error ? error.message : null }; },
+    // — authored books (បណ្ណាល័យ, Admin) —
+    async listBooks(){ const { data } = await client.from('books').select('id,title,sort,updated_at').order('sort').order('updated_at', { ascending: false }); return { rows: data || [] }; },
+    async getBook(id){ const { data, error } = await client.from('books').select('*').eq('id', id).single(); return { book: data || null, error: error ? error.message : null }; },
+    async saveBook(row){
+      if (row.id) { const { error } = await client.from('books').update({ title: row.title, content: row.content, updated_at: new Date().toISOString() }).eq('id', row.id); return { id: row.id, error: error ? error.message : null }; }
+      const { data, error } = await client.from('books').insert({ title: row.title, content: row.content }).select('id').single(); return { id: data && data.id, error: error ? error.message : null };
+    },
+    async deleteBook(id){ const { error } = await client.from('books').delete().eq('id', id); return { error: error ? error.message : null }; },
     // Asks the Edge Function to start the GitHub sync workflow (the token that
     // lets it do so lives on the server, never in this page).
     async syncWords(){
@@ -8313,6 +8360,15 @@ function makeDemoBackend(){
       rows.push(row); localStorage.setItem('dict_demo_booksettings', JSON.stringify(rows));
       return { error: null };
     },
+    _books(){ try { return JSON.parse(localStorage.getItem('dict_demo_books') || '[]'); } catch(e){ return []; } },
+    async listBooks(){ return { rows: this._books().map(({ content, ...r }) => r) }; },
+    async getBook(id){ return { book: this._books().find(x => x.id === id) || null, error: null }; },
+    async saveBook(row){
+      const b = this._books();
+      if (row.id) { const x = b.find(y => y.id === row.id); if (x) { x.title = row.title; x.content = row.content; x.updated_at = new Date().toISOString(); } localStorage.setItem('dict_demo_books', JSON.stringify(b)); return { id: row.id, error: null }; }
+      const id = 'b-' + Date.now(); b.push({ id, title: row.title, content: row.content, sort: b.length, updated_at: new Date().toISOString() }); localStorage.setItem('dict_demo_books', JSON.stringify(b)); return { id, error: null };
+    },
+    async deleteBook(id){ localStorage.setItem('dict_demo_books', JSON.stringify(this._books().filter(x => x.id !== id))); return { error: null }; },
     async createAccount(p){ const us=load(); const email=String(p.email).trim().toLowerCase(); if(us.find(x=>x.email===email)) return { error:'អ៊ីមែលនេះមានរួចហើយ' }; us.push({ id:'u-'+Date.now(), email, password:p.password, full_name:p.full_name||'', role:p.role, teacher_id:p.role==='student'?(p.teacher_id||null):null, school_id:p.role==='school'?null:(p.school_id||null), viewed:[], favorites:[], history:[], settings:{} }); save(us); return { error:null }; },
     async updateAccount(id, patch){ const us=load(); const u=us.find(x=>x.id===id); if(!u) return { error:'not found' }; if(patch.full_name!=null) u.full_name=patch.full_name; if(patch.role!=null) u.role=patch.role; if(patch.teacher_id!==undefined) u.teacher_id=u.role==='student'?(patch.teacher_id||null):null; if(patch.school_id!==undefined) u.school_id=u.role==='school'?null:(patch.school_id||null); if(patch.password) u.password=patch.password; save(us); return { error:null }; },
     async deleteAccount(id){ let us=load(); us=us.filter(x=>x.id!==id); save(us); return { error:null }; },
@@ -8390,6 +8446,8 @@ class Component extends DCLogic {
     examScore: 0, examResults: [], examTimeUp: false,
     mcOptions: [], mcSelected: null, mcAnswered: false,
     pageQuizOpen: false, pageQuizQuestions: [], pageQuizIdx: 0, pageQuizScore: 0, pageQuizSelected: null, pageQuizAnswered: false, pageQuizDone: false,
+    // authored books (បណ្ណាល័យ, Admin)
+    libBooks: [], libMode: 'list', libBookId: null, libBusy: false, libErr: '',
   };
 
   // — "Add to home screen" helper: Android can prompt, iOS must be told how —
@@ -8510,6 +8568,7 @@ class Component extends DCLogic {
       if (document.visibilityState !== 'visible') return;
       if (!this.state.userId) return;
       if (this.state.printOpen) return;   // don't re-render while the paginated PDF preview is open
+      if (this.state.screen === 'library' && this.state.libMode === 'edit') return;   // nor while writing a book
       this.addUsage(TICK);
     }, TICK * 1000);
     const flush = () => { if (this.state.userId) this.persist(); };
@@ -9246,6 +9305,111 @@ class Component extends DCLogic {
 
   // — Admin: per-book visibility —
   goBooks(){ this.setState({ screen: 'books', awMsg: '' }); }
+
+  // — បណ្ណាល័យ: admin-authored books (rich text + image links). The editor is
+  //   built imperatively so dc-runtime re-renders never wipe what's being typed. —
+  goLibrary(){ this.setState({ screen: 'library', libMode: 'list', libBookId: null, libErr: '' }, () => this.loadBooks()); }
+  async loadBooks(){ const { rows } = await Backend.listBooks(); this.setState({ libBooks: Array.isArray(rows) ? rows : [] }); }
+  libNewBook(){ this.setState({ libMode: 'edit', libBookId: null, libErr: '' }, () => this._buildEditorSoon(null)); }
+  async libEditBook(id){ const { book } = await Backend.getBook(id); this.setState({ libMode: 'edit', libBookId: id, libErr: '' }, () => this._buildEditorSoon(book || {})); }
+  libBackToList(){ this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
+  async libDeleteBook(id){ if (!window.confirm('លុបសៀវភៅនេះមែនទេ?')) return; await Backend.deleteBook(id); this.loadBooks(); }
+  // strip anything unsafe before a book is stored (it is shown to other users)
+  _sanitizeBookHtml(html){
+    const doc = new DOMParser().parseFromString(html || '', 'text/html');
+    doc.querySelectorAll('script,style,iframe,object,embed,link,meta,form').forEach(n => n.remove());
+    doc.querySelectorAll('*').forEach(el => {
+      [...el.attributes].forEach(a => {
+        const n = a.name.toLowerCase();
+        if (n.startsWith('on')) el.removeAttribute(a.name);
+        if ((n === 'href' || n === 'src') && /^\s*javascript:/i.test(a.value)) el.removeAttribute(a.name);
+      });
+    });
+    return doc.body.innerHTML;
+  }
+  async saveBook(){
+    const titleEl = document.getElementById('lib-title'), edEl = document.getElementById('lib-editor');
+    const errEl = document.getElementById('lib-err'), btn = document.getElementById('lib-save');
+    const title = (titleEl ? titleEl.value : '').trim();
+    const content = this._sanitizeBookHtml(edEl ? edEl.innerHTML : '');
+    const showErr = m => { if (errEl) { errEl.textContent = m; errEl.style.display = 'block'; } };
+    if (!title) { showErr('សូមបញ្ចូលចំណងជើងសៀវភៅ'); return; }
+    if (btn) { btn.disabled = true; btn.textContent = 'កំពុងរក្សាទុក…'; }
+    const { error } = await Backend.saveBook({ id: this.state.libBookId, title, content });
+    if (error) { showErr(error); if (btn) { btn.disabled = false; btn.textContent = '💾 រក្សាទុក'; } return; }
+    this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks());
+  }
+  _buildEditorSoon(book){
+    const run = t => { const root = document.getElementById('lib-editor-root'); if (!root) { if (t > 0) setTimeout(() => run(t - 1), 30); return; } this._buildBookEditor(book || {}, root); };
+    setTimeout(() => run(6), 16);
+  }
+  _buildBookEditor(book, root){
+    root.innerHTML = '';
+    const exec = (cmd, val) => { document.execCommand(cmd, false, val == null ? null : val); ed.focus(); };
+    // top bar: back + save
+    const top = document.createElement('div');
+    top.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;';
+    const back = document.createElement('button');
+    back.type = 'button'; back.textContent = '← បញ្ជីសៀវភៅ';
+    back.style.cssText = 'background:transparent;border:none;color:var(--color-accent-700);font-size:14px;cursor:pointer;padding:4px 0;';
+    back.addEventListener('click', () => this.libBackToList());
+    const save = document.createElement('button');
+    save.id = 'lib-save'; save.type = 'button'; save.textContent = '💾 រក្សាទុក';
+    save.style.cssText = 'background:var(--color-accent-700);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer;';
+    save.addEventListener('click', () => this.saveBook());
+    top.appendChild(back); top.appendChild(save); root.appendChild(top);
+    // title
+    const title = document.createElement('input');
+    title.id = 'lib-title'; title.className = 'input'; title.placeholder = 'ចំណងជើងសៀវភៅ'; title.value = book.title || '';
+    title.style.cssText = 'margin-bottom:10px;font-size:18px;font-weight:600;';
+    root.appendChild(title);
+    // toolbar
+    const bar = document.createElement('div');
+    bar.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px;border:1px solid var(--color-divider);border-radius:10px;margin-bottom:8px;background:var(--color-surface);';
+    const ed = document.createElement('div');
+    ed.id = 'lib-editor'; ed.contentEditable = 'true';
+    ed.style.cssText = 'min-height:360px;border:1px solid var(--color-divider);border-radius:10px;padding:14px;font-size:15px;line-height:1.9;overflow-wrap:break-word;word-break:break-word;background:var(--color-bg);';
+    ed.innerHTML = book.content || '';
+    try { document.execCommand('styleWithCSS', false, true); } catch(e){}
+    const btn = (label, fn, tip, extra) => {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (tip) b.title = tip;
+      b.style.cssText = 'min-width:34px;height:34px;padding:0 9px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:14px;' + (extra || '');
+      b.addEventListener('mousedown', e => e.preventDefault());   // keep the editor's selection
+      b.addEventListener('click', fn);
+      bar.appendChild(b); return b;
+    };
+    btn('B', () => exec('bold'), 'ដិត', 'font-weight:700;');
+    btn('I', () => exec('italic'), 'ទ្រេត', 'font-style:italic;');
+    btn('U', () => exec('underline'), 'គូស', 'text-decoration:underline;');
+    btn('H', () => exec('formatBlock', 'H2'), 'ចំណងជើង');
+    btn('¶', () => exec('formatBlock', 'P'), 'អត្ថបទ');
+    btn('•', () => exec('insertUnorderedList'), 'បញ្ជី');
+    btn('⬅', () => exec('justifyLeft'), 'ឆ្វេង');
+    btn('⬌', () => exec('justifyCenter'), 'កណ្ដាល');
+    btn('A−', () => exec('fontSize', '2'), 'អក្សរតូច');
+    btn('A', () => exec('fontSize', '3'), 'ធម្មតា');
+    btn('A+', () => exec('fontSize', '5'), 'អក្សរធំ');
+    // colour swatches
+    ['#201f1d', '#c0342c', '#1558b0', '#2f8f57', '#b6810f'].forEach(c => {
+      const sw = document.createElement('button'); sw.type = 'button'; sw.title = 'ពណ៌';
+      sw.style.cssText = `width:28px;height:28px;border-radius:6px;border:1px solid rgba(0,0,0,0.15);background:${c};cursor:pointer;`;
+      sw.addEventListener('mousedown', e => e.preventDefault());
+      sw.addEventListener('click', () => exec('foreColor', c));
+      bar.appendChild(sw);
+    });
+    btn('🖼 រូប', () => { const url = window.prompt('Link រូបភាព (https://…)'); if (url && url.trim()) exec('insertHTML', `<img src="${url.trim().replace(/"/g, '&quot;')}" style="max-width:100%;height:auto;border-radius:6px;display:block;margin:8px auto;">`); }, 'បញ្ចូលរូបភាព');
+    btn('― បន្ទាត់', () => exec('insertHorizontalRule'), 'បន្ទាត់');
+    root.appendChild(bar);
+    root.appendChild(ed);
+    const err = document.createElement('div');
+    err.id = 'lib-err'; err.style.cssText = 'display:none;color:#c0342c;font-size:12px;margin-top:8px;';
+    root.appendChild(err);
+    const hint = document.createElement('div');
+    hint.style.cssText = 'font-size:11px;opacity:0.5;margin-top:8px;line-height:1.7;';
+    hint.textContent = 'ជ្រើសអក្សរ រួចចុចប៊ូតុងធ្វើទ្រង់ទ្រាយ។ រូបភាពដាក់ជា Link (ត្រូវ online)។ ការចុចពាក្យ→បកប្រែ នឹងមកនៅដំណាក់កាលបន្ទាប់។';
+    root.appendChild(hint);
+    setTimeout(() => ed.focus(), 60);
+  }
   async saveBookVis(book, patch){
     const cur = BOOK_VIS.get(book) || { locked: false, allSchools: true, schools: new Set() };
     const next = { locked: patch.locked != null ? patch.locked : cur.locked,
@@ -10508,6 +10672,17 @@ class Component extends DCLogic {
       isHome: s.screen === 'home', isFavorites: s.screen === 'favorites', isSettings: s.screen === 'settings',
       isTestHub: s.screen === 'test' && !testMode,
       isMonitor: s.screen === 'monitor',
+      // — បណ្ណាល័យ (authored books, Admin) —
+      isLibrary: s.screen === 'library',
+      libIsList: s.libMode === 'list', libIsEdit: s.libMode === 'edit',
+      libEmpty: (s.libBooks || []).length === 0,
+      libBooks: (s.libBooks || []).map(b => ({
+        title: b.title || '(គ្មានចំណងជើង)',
+        dateLabel: b.updated_at ? (() => { const d = new Date(b.updated_at); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; })() : '',
+        onEdit: () => this.libEditBook(b.id),
+        onDelete: () => this.libDeleteBook(b.id),
+      })),
+      goLibrary: () => this.goLibrary(), libNewBook: () => this.libNewBook(),
       goMonitor: () => this.goMonitor(),
       monitorColor: s.screen === 'monitor' ? 'var(--color-accent-700)' : 'var(--color-text)',
       monitorPageProgress, monitorOverallViewed, monitorOverallPct, overallTotal: monitorTotal,
