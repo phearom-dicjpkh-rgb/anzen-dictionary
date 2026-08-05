@@ -9343,9 +9343,25 @@ class Component extends DCLogic {
     const run = t => { const root = document.getElementById('lib-editor-root'); if (!root) { if (t > 0) setTimeout(() => run(t - 1), 30); return; } this._buildBookEditor(book || {}, root); };
     setTimeout(() => run(6), 16);
   }
+  // keep the editor's selection alive across toolbar clicks (esp. dropdowns,
+  // which steal focus) so a format command still lands on the chosen text
+  _saveLibSel(){ try { const s = window.getSelection(); if (!s.rangeCount) return; const r = s.getRangeAt(0); const ed = document.getElementById('lib-editor'); if (ed && ed.contains(r.commonAncestorContainer)) this._libRange = r.cloneRange(); } catch(e){} }
+  _restoreLibSel(){ try { const ed = document.getElementById('lib-editor'); if (ed) ed.focus(); if (!this._libRange) return; const s = window.getSelection(); s.removeAllRanges(); s.addRange(this._libRange); } catch(e){} }
+  // set an exact pixel font size on the selection (execCommand only knows 1–7)
+  _setFontSize(px){
+    this._restoreLibSel();
+    const ed = document.getElementById('lib-editor'); if (!ed) return;
+    // the <font size=7> tag-swap trick needs styleWithCSS off, else fontSize
+    // produces a css span we can't retarget to an exact px value
+    try { document.execCommand('styleWithCSS', false, false); } catch(e){}
+    document.execCommand('fontSize', false, '7');
+    try { document.execCommand('styleWithCSS', false, true); } catch(e){}
+    ed.querySelectorAll('font[size="7"]').forEach(f => { f.removeAttribute('size'); f.style.fontSize = px + 'px'; });
+    ed.focus(); this._saveLibSel();
+  }
   _buildBookEditor(book, root){
     root.innerHTML = '';
-    const exec = (cmd, val) => { document.execCommand(cmd, false, val == null ? null : val); ed.focus(); };
+    const A4W = 794, A4H = 1123, PAD = 48;   // A4 at 96dpi, with a print-like margin
     // top bar: back + save
     const top = document.createElement('div');
     top.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;';
@@ -9363,14 +9379,19 @@ class Component extends DCLogic {
     title.id = 'lib-title'; title.className = 'input'; title.placeholder = 'ចំណងជើងសៀវភៅ'; title.value = book.title || '';
     title.style.cssText = 'margin-bottom:10px;font-size:18px;font-weight:600;';
     root.appendChild(title);
-    // toolbar
-    const bar = document.createElement('div');
-    bar.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px;border:1px solid var(--color-divider);border-radius:10px;margin-bottom:8px;background:var(--color-surface);';
+    // the A4 sheet (the editable area)
     const ed = document.createElement('div');
     ed.id = 'lib-editor'; ed.contentEditable = 'true';
-    ed.style.cssText = 'min-height:360px;border:1px solid var(--color-divider);border-radius:10px;padding:14px;font-size:15px;line-height:1.9;overflow-wrap:break-word;word-break:break-word;background:var(--color-bg);';
+    ed.style.cssText = `width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px;margin:0 auto;box-shadow:0 2px 16px rgba(0,0,0,0.28);font-size:16px;line-height:1.8;overflow-wrap:break-word;word-break:break-word;box-sizing:border-box;outline:none;`;
     ed.innerHTML = book.content || '';
     try { document.execCommand('styleWithCSS', false, true); } catch(e){}
+    // buttons keep the editor's live selection (mousedown preventDefault), so
+    // just run the command on it; only the size dropdown, which steals focus,
+    // needs the save/restore helpers
+    const exec = (cmd, val) => { document.execCommand(cmd, false, val == null ? null : val); ed.focus(); };
+    // toolbar row 1: formatting
+    const bar = document.createElement('div');
+    bar.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px;border:1px solid var(--color-divider);border-radius:10px;margin-bottom:8px;background:var(--color-surface);';
     const btn = (label, fn, tip, extra) => {
       const b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (tip) b.title = tip;
       b.style.cssText = 'min-width:34px;height:34px;padding:0 9px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:14px;' + (extra || '');
@@ -9386,10 +9407,14 @@ class Component extends DCLogic {
     btn('•', () => exec('insertUnorderedList'), 'បញ្ជី');
     btn('⬅', () => exec('justifyLeft'), 'ឆ្វេង');
     btn('⬌', () => exec('justifyCenter'), 'កណ្ដាល');
-    btn('A−', () => exec('fontSize', '2'), 'អក្សរតូច');
-    btn('A', () => exec('fontSize', '3'), 'ធម្មតា');
-    btn('A+', () => exec('fontSize', '5'), 'អក្សរធំ');
-    // colour swatches
+    // numeric font size
+    const sizeSel = document.createElement('select'); sizeSel.title = 'ទំហំអក្សរ (px)';
+    sizeSel.style.cssText = 'height:34px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:13px;padding:0 6px;';
+    [10,12,14,16,18,20,24,28,32,36,48,64].forEach(px => { const o = document.createElement('option'); o.value = px; o.textContent = px + 'px'; if (px === 16) o.selected = true; sizeSel.appendChild(o); });
+    sizeSel.addEventListener('mousedown', () => this._saveLibSel());
+    sizeSel.addEventListener('change', () => this._setFontSize(sizeSel.value));
+    bar.appendChild(sizeSel);
+    // colours
     ['#201f1d', '#c0342c', '#1558b0', '#2f8f57', '#b6810f'].forEach(c => {
       const sw = document.createElement('button'); sw.type = 'button'; sw.title = 'ពណ៌';
       sw.style.cssText = `width:28px;height:28px;border-radius:6px;border:1px solid rgba(0,0,0,0.15);background:${c};cursor:pointer;`;
@@ -9399,16 +9424,56 @@ class Component extends DCLogic {
     });
     btn('🖼 រូប', () => { const url = window.prompt('Link រូបភាព (https://…)'); if (url && url.trim()) exec('insertHTML', `<img src="${url.trim().replace(/"/g, '&quot;')}" style="max-width:100%;height:auto;border-radius:6px;display:block;margin:8px auto;">`); }, 'បញ្ចូលរូបភាព');
     btn('― បន្ទាត់', () => exec('insertHorizontalRule'), 'បន្ទាត់');
+    btn('➕ ទំព័រ', () => exec('insertHTML', '<div class="pgbrk" contenteditable="false" style="height:0;border-top:2px dashed #c8a24a;margin:26px 0;position:relative;break-after:page;page-break-after:always;"><span style="position:absolute;left:50%;top:-11px;transform:translateX(-50%);background:#fff;color:#b6810f;font-size:11px;padding:0 8px;">▬ ទំព័រថ្មី ▬</span></div><p><br></p>'), 'បន្ថែមទំព័រថ្មី');
     root.appendChild(bar);
-    root.appendChild(ed);
+    // toolbar row 2: paper zoom + page mode
+    const barB = document.createElement('div');
+    barB.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:8px;font-size:12px;';
+    let zoom = 0.6;
+    const zlabel = document.createElement('span'); zlabel.style.cssText = 'min-width:38px;text-align:center;font-weight:600;';
+    const applyZoom = () => { ed.style.zoom = zoom; zlabel.textContent = Math.round(zoom * 100) + '%'; };
+    const zbtn = (t, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.style.cssText = 'width:30px;height:30px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:16px;'; b.addEventListener('click', fn); return b; };
+    const zoomWrap = document.createElement('div'); zoomWrap.style.cssText = 'display:flex;align-items:center;gap:6px;';
+    const zl = document.createElement('span'); zl.textContent = 'ទំហំក្រដាស់'; zl.style.opacity = '0.7';
+    zoomWrap.appendChild(zl);
+    zoomWrap.appendChild(zbtn('−', () => { zoom = Math.max(0.3, Math.round((zoom - 0.1) * 10) / 10); applyZoom(); }));
+    zoomWrap.appendChild(zlabel);
+    zoomWrap.appendChild(zbtn('+', () => { zoom = Math.min(1.8, Math.round((zoom + 0.1) * 10) / 10); applyZoom(); }));
+    barB.appendChild(zoomWrap);
+    let pageMode = 'a4';
+    const modeWrap = document.createElement('div'); modeWrap.style.cssText = 'display:flex;align-items:center;gap:6px;';
+    const ml = document.createElement('span'); ml.textContent = 'ទំព័រ'; ml.style.opacity = '0.7'; modeWrap.appendChild(ml);
+    const modeBtn = document.createElement('button'); modeBtn.type = 'button';
+    modeBtn.style.cssText = 'height:30px;padding:0 14px;border:1px solid var(--color-divider);border-radius:99px;background:var(--color-bg);cursor:pointer;font-size:12px;';
+    const applyMode = () => {
+      if (pageMode === 'a4') { ed.style.minHeight = A4H + 'px'; ed.style.backgroundImage = `repeating-linear-gradient(#fff, #fff ${A4H - 1}px, #e2c98f ${A4H - 1}px, #e2c98f ${A4H}px)`; modeBtn.textContent = 'A4 ស្វ័យប្រវត្តិ'; }
+      else { ed.style.minHeight = '480px'; ed.style.backgroundImage = 'none'; modeBtn.textContent = 'គ្មានកំណត់'; }
+    };
+    modeBtn.addEventListener('click', () => { pageMode = pageMode === 'a4' ? 'free' : 'a4'; applyMode(); });
+    modeWrap.appendChild(modeBtn); barB.appendChild(modeWrap);
+    root.appendChild(barB);
+    // grey canvas that the A4 sheet floats on (its own scroll, keeps toolbar in view)
+    const canvas = document.createElement('div');
+    canvas.style.cssText = 'overflow:auto;background:#7f7f7f;padding:16px;border-radius:10px;max-height:560px;-webkit-overflow-scrolling:touch;';
+    canvas.appendChild(ed);
+    root.appendChild(canvas);
+    applyMode();
+    // error + hint
     const err = document.createElement('div');
     err.id = 'lib-err'; err.style.cssText = 'display:none;color:#c0342c;font-size:12px;margin-top:8px;';
     root.appendChild(err);
     const hint = document.createElement('div');
     hint.style.cssText = 'font-size:11px;opacity:0.5;margin-top:8px;line-height:1.7;';
-    hint.textContent = 'ជ្រើសអក្សរ រួចចុចប៊ូតុងធ្វើទ្រង់ទ្រាយ។ រូបភាពដាក់ជា Link (ត្រូវ online)។ ការចុចពាក្យ→បកប្រែ នឹងមកនៅដំណាក់កាលបន្ទាប់។';
+    hint.textContent = 'ក្រដាស់ A4 · ពង្រីក/បង្រួមដោយ −/+ · "A4 ស្វ័យប្រវត្តិ" បង្ហាញព្រំដែនទំព័រ, "គ្មានកំណត់" ក្រដាស់វែងតែមួយ · "➕ ទំព័រ" បន្ថែមទំព័រថ្មី។ រូបភាពដាក់ជា Link។';
     root.appendChild(hint);
-    setTimeout(() => ed.focus(), 60);
+    // fit the sheet to the canvas width, track selection, focus
+    ed.addEventListener('keyup', () => this._saveLibSel());
+    ed.addEventListener('mouseup', () => this._saveLibSel());
+    setTimeout(() => {
+      const cw = canvas.clientWidth - 32;
+      if (cw > 0) zoom = Math.min(1, Math.max(0.3, Math.round((cw / A4W) * 20) / 20));
+      applyZoom(); ed.focus(); this._saveLibSel();
+    }, 60);
   }
   async saveBookVis(book, patch){
     const cur = BOOK_VIS.get(book) || { locked: false, allSchools: true, schools: new Set() };
