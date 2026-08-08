@@ -8574,7 +8574,7 @@ class Component extends DCLogic {
       if (document.visibilityState !== 'visible') return;
       if (!this.state.userId) return;
       if (this.state.printOpen) return;   // don't re-render while the paginated PDF preview is open
-      if (this.state.screen === 'library' && this.state.libMode === 'edit') return;   // nor while writing a book
+      if (this.state.screen === 'library' && this.state.libMode !== 'list') return;   // nor while writing/reading a book
       this.addUsage(TICK);
     }, TICK * 1000);
     const flush = () => { if (this.state.userId) this.persist(); };
@@ -9326,23 +9326,38 @@ class Component extends DCLogic {
   }
   _buildReadView(book, root){
     root.innerHTML = '';
-    const A4W = 794, A4H = 1123, PAD = 48;   // one page = one A4 sheet
-    // — split the content into A4 pages: forced at "➕ ទំព័រ" breaks, and also
-    //   whenever a page fills up, so the reader sees one book page at a time —
-    const src = document.createElement('div');
-    src.innerHTML = this._sanitizeBookHtml(book.content || '');
-    const canvas = document.createElement('div');
-    canvas.style.cssText = 'overflow:auto;background:#7f7f7f;padding:16px;border-radius:10px;max-height:600px;-webkit-overflow-scrolling:touch;display:flex;justify-content:center;';
+    const A4W = 794, A4H = 1123, PAD = 48;
+    // full-screen overlay — the page fills the screen, no app chrome
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:120;background:#454545;display:flex;flex-direction:column;';
+    root.appendChild(ov);
+    const icon = (txt, fn, extra) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.style.cssText = 'width:34px;height:34px;border:none;border-radius:8px;background:rgba(255,255,255,0.16);color:#fff;font-size:17px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;' + (extra || ''); b.addEventListener('click', fn); return b; };
+    // thin top bar (icons only)
+    const bar = document.createElement('div');
+    bar.style.cssText = 'flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;padding-top:calc(6px + env(safe-area-inset-top, 0px));background:rgba(0,0,0,0.35);';
+    bar.appendChild(icon('✕', () => this.libBackToList()));
+    const rightBar = document.createElement('div'); rightBar.style.cssText = 'display:flex;align-items:center;gap:6px;';
+    const jin = document.createElement('input'); jin.type = 'number'; jin.min = '1';
+    jin.style.cssText = 'width:46px;height:34px;border:none;border-radius:8px;background:rgba(255,255,255,0.16);color:#fff;text-align:center;font-size:14px;';
+    const jtot = document.createElement('span'); jtot.style.cssText = 'color:#fff;font-size:13px;opacity:0.8;';
+    rightBar.appendChild(jin); rightBar.appendChild(jtot);
+    rightBar.appendChild(icon('−', () => { zoom = Math.max(0.3, Math.round((zoom - 0.1) * 20) / 20); apply(); }));
+    rightBar.appendChild(icon('+', () => { zoom = Math.min(2.5, Math.round((zoom + 0.1) * 20) / 20); apply(); }));
+    bar.appendChild(rightBar);
+    ov.appendChild(bar);
+    // page area (fills the rest)
+    const area = document.createElement('div');
+    area.style.cssText = 'flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;display:flex;align-items:center;justify-content:center;position:relative;';
     const wrap = document.createElement('div');
-    canvas.appendChild(wrap);
-    root.appendChild(canvas);   // attach now so page.scrollHeight measures correctly
+    area.appendChild(wrap); ov.appendChild(area);
+    // — paginate the content into A4 sheets —
+    const src = document.createElement('div'); src.innerHTML = this._sanitizeBookHtml(book.content || '');
     const mkPage = () => { const p = document.createElement('div'); p.className = 'a4page report';
-      p.style.cssText = `width:${A4W}px;height:${A4H}px;background:#fff;color:#111;padding:${PAD}px;box-sizing:border-box;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.28);font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;`;
+      p.style.cssText = `width:${A4W}px;height:${A4H}px;background:#fff;color:#111;padding:${PAD}px;box-sizing:border-box;overflow:hidden;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;`;
       wrap.appendChild(p); return p; };
-    // build pages by moving top-level blocks in and starting a new page on overflow
     let page = mkPage();
-    const nodes = [...src.childNodes].filter(n => n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim()));
-    for (const n of nodes) {
+    const blocks = [...src.childNodes].filter(n => n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim()));
+    for (const n of blocks) {
       if (n.nodeType === 1 && n.classList && n.classList.contains('pgbrk')) { if (page.childNodes.length) page = mkPage(); continue; }
       page.appendChild(n);
       if (page.scrollHeight > A4H && page.childNodes.length > 1) { page.removeChild(n); page = mkPage(); page.appendChild(n); }
@@ -9350,58 +9365,35 @@ class Component extends DCLogic {
     let pages = [...wrap.querySelectorAll('.a4page')];
     if (!pages.length) { const p = mkPage(); p.innerHTML = '<p style="opacity:0.5;">(សៀវភៅទទេ)</p>'; pages = [p]; }
     const total = pages.length;
-    let cur = 0, zoom = 0.6;
-    // — header: back · zoom · page jump —
-    const top = document.createElement('div');
-    top.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap;';
-    const back = document.createElement('button'); back.type = 'button'; back.textContent = '← បញ្ជីសៀវភៅ';
-    back.style.cssText = 'background:transparent;border:none;color:var(--color-accent-700);font-size:14px;cursor:pointer;padding:4px 0;';
-    back.addEventListener('click', () => this.libBackToList());
-    top.appendChild(back);
-    const rightWrap = document.createElement('div'); rightWrap.style.cssText = 'display:flex;align-items:center;gap:12px;flex-wrap:wrap;';
-    // zoom
-    const zlabel = document.createElement('span'); zlabel.style.cssText = 'min-width:38px;text-align:center;font-weight:600;font-size:12px;';
-    const zbtn = (t, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.style.cssText = 'width:30px;height:30px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:16px;'; b.addEventListener('click', fn); return b; };
-    const zoomWrap = document.createElement('div'); zoomWrap.style.cssText = 'display:flex;align-items:center;gap:6px;';
-    zoomWrap.appendChild(zbtn('−', () => { zoom = Math.max(0.3, Math.round((zoom - 0.1) * 10) / 10); apply(); }));
-    zoomWrap.appendChild(zlabel);
-    zoomWrap.appendChild(zbtn('+', () => { zoom = Math.min(1.8, Math.round((zoom + 0.1) * 10) / 10); apply(); }));
-    rightWrap.appendChild(zoomWrap);
-    // page jump (search a page)
-    const jumpWrap = document.createElement('div'); jumpWrap.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:12px;';
-    const jl = document.createElement('span'); jl.textContent = 'ទំព័រ'; jl.style.opacity = '0.7'; jumpWrap.appendChild(jl);
-    const jumpInput = document.createElement('input'); jumpInput.type = 'number'; jumpInput.min = '1'; jumpInput.max = String(total);
-    jumpInput.style.cssText = 'width:52px;height:32px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);text-align:center;font-size:13px;';
-    const goInput = () => { const v = parseInt(jumpInput.value, 10); if (!isNaN(v)) { cur = Math.max(0, Math.min(total - 1, v - 1)); apply(); } };
-    jumpInput.addEventListener('change', goInput);
-    jumpInput.addEventListener('keydown', e => { if (e.key === 'Enter') goInput(); });
-    jumpWrap.appendChild(jumpInput);
-    const jt = document.createElement('span'); jt.textContent = '/ ' + total; jt.style.opacity = '0.7'; jumpWrap.appendChild(jt);
-    rightWrap.appendChild(jumpWrap);
-    top.appendChild(rightWrap);
-    // title
-    const h = document.createElement('h1'); h.textContent = book.title || ''; h.style.cssText = 'font-size:20px;margin:0 0 10px;';
-    // — footer: small prev / page / next —
-    const foot = document.createElement('div');
-    foot.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:16px;margin-top:12px;';
-    const navBtn = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.style.cssText = 'min-width:44px;height:38px;padding:0 16px;border:1px solid var(--color-divider);border-radius:99px;background:var(--color-bg);cursor:pointer;font-size:14px;'; b.addEventListener('click', fn); return b; };
-    const prevB = navBtn('‹ មុន', () => { cur = Math.max(0, cur - 1); apply(); });
-    const label = document.createElement('span'); label.style.cssText = 'font-size:13px;font-weight:600;min-width:96px;text-align:center;';
-    const nextB = navBtn('បន្ទាប់ ›', () => { cur = Math.min(total - 1, cur + 1); apply(); });
-    foot.appendChild(prevB); foot.appendChild(label); foot.appendChild(nextB);
-    // apply current page + zoom
+    jin.max = String(total); jtot.textContent = '/ ' + total;
+    let cur = 0, zoom = 1;
+    // prev / next as small round buttons on the page edges (no wasted space)
+    const edge = (txt, fn, side) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt;
+      b.style.cssText = `position:absolute;${side}:6px;top:50%;transform:translateY(-50%);width:40px;height:40px;border:none;border-radius:50%;background:rgba(0,0,0,0.45);color:#fff;font-size:24px;line-height:1;cursor:pointer;z-index:5;display:flex;align-items:center;justify-content:center;`;
+      b.addEventListener('click', fn); return b; };
+    const prevB = edge('‹', () => { cur = Math.max(0, cur - 1); apply(); }, 'left');
+    const nextB = edge('›', () => { cur = Math.min(total - 1, cur + 1); apply(); }, 'right');
+    area.appendChild(prevB); area.appendChild(nextB);
+    const goInput = () => { const v = parseInt(jin.value, 10); if (!isNaN(v)) { cur = Math.max(0, Math.min(total - 1, v - 1)); apply(); } };
+    jin.addEventListener('change', goInput);
+    jin.addEventListener('keydown', e => { if (e.key === 'Enter') { goInput(); jin.blur(); } });
     const apply = () => {
       pages.forEach((p, i) => { p.style.display = i === cur ? 'block' : 'none'; p.style.zoom = zoom; });
-      label.textContent = `ទំព័រ ${cur + 1} / ${total}`;
-      jumpInput.value = cur + 1;
-      zlabel.textContent = Math.round(zoom * 100) + '%';
-      prevB.disabled = cur === 0; nextB.disabled = cur === total - 1;
-      prevB.style.opacity = cur === 0 ? '0.4' : '1'; nextB.style.opacity = cur === total - 1 ? '0.4' : '1';
-      canvas.scrollTop = 0; canvas.scrollLeft = 0;
+      jin.value = cur + 1;
+      prevB.style.display = cur === 0 ? 'none' : 'flex';
+      nextB.style.display = cur === total - 1 ? 'none' : 'flex';
+      area.scrollTop = 0; area.scrollLeft = 0;
     };
-    // put the header + title before the (already-attached) canvas, footer after
-    root.insertBefore(h, canvas); root.insertBefore(top, h); root.appendChild(foot);
-    setTimeout(() => { const cw = canvas.clientWidth - 32; if (cw > 0) zoom = Math.min(1, Math.max(0.3, Math.round((cw / A4W) * 20) / 20)); apply(); }, 60);
+    // fit the whole A4 page inside the screen (no top/bottom cut), largest that fits
+    const fit = () => {
+      if (!document.body.contains(ov)) { window.removeEventListener('resize', onResize); return; }
+      const ah = area.clientHeight - 20, aw = area.clientWidth - 20;
+      if (ah > 0 && aw > 0) zoom = Math.max(0.2, Math.min(ah / A4H, aw / A4W));
+      apply();
+    };
+    const onResize = () => fit();
+    window.addEventListener('resize', onResize);
+    setTimeout(fit, 60);
   }
   libBackToList(){ this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
   async libDeleteBook(id){ if (!window.confirm('លុបសៀវភៅនេះមែនទេ?')) return; await Backend.deleteBook(id); this.loadBooks(); }
