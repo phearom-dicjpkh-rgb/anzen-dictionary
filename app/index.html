@@ -9326,39 +9326,82 @@ class Component extends DCLogic {
   }
   _buildReadView(book, root){
     root.innerHTML = '';
-    const A4W = 794, PAD = 48;
-    // top: back + zoom
+    const A4W = 794, A4H = 1123, PAD = 48;   // one page = one A4 sheet
+    // — split the content into A4 pages: forced at "➕ ទំព័រ" breaks, and also
+    //   whenever a page fills up, so the reader sees one book page at a time —
+    const src = document.createElement('div');
+    src.innerHTML = this._sanitizeBookHtml(book.content || '');
+    const canvas = document.createElement('div');
+    canvas.style.cssText = 'overflow:auto;background:#7f7f7f;padding:16px;border-radius:10px;max-height:600px;-webkit-overflow-scrolling:touch;display:flex;justify-content:center;';
+    const wrap = document.createElement('div');
+    canvas.appendChild(wrap);
+    root.appendChild(canvas);   // attach now so page.scrollHeight measures correctly
+    const mkPage = () => { const p = document.createElement('div'); p.className = 'a4page report';
+      p.style.cssText = `width:${A4W}px;height:${A4H}px;background:#fff;color:#111;padding:${PAD}px;box-sizing:border-box;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.28);font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;`;
+      wrap.appendChild(p); return p; };
+    // build pages by moving top-level blocks in and starting a new page on overflow
+    let page = mkPage();
+    const nodes = [...src.childNodes].filter(n => n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim()));
+    for (const n of nodes) {
+      if (n.nodeType === 1 && n.classList && n.classList.contains('pgbrk')) { if (page.childNodes.length) page = mkPage(); continue; }
+      page.appendChild(n);
+      if (page.scrollHeight > A4H && page.childNodes.length > 1) { page.removeChild(n); page = mkPage(); page.appendChild(n); }
+    }
+    let pages = [...wrap.querySelectorAll('.a4page')];
+    if (!pages.length) { const p = mkPage(); p.innerHTML = '<p style="opacity:0.5;">(សៀវភៅទទេ)</p>'; pages = [p]; }
+    const total = pages.length;
+    let cur = 0, zoom = 0.6;
+    // — header: back · zoom · page jump —
     const top = document.createElement('div');
-    top.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;';
-    const back = document.createElement('button');
-    back.type = 'button'; back.textContent = '← បញ្ជីសៀវភៅ';
+    top.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap;';
+    const back = document.createElement('button'); back.type = 'button'; back.textContent = '← បញ្ជីសៀវភៅ';
     back.style.cssText = 'background:transparent;border:none;color:var(--color-accent-700);font-size:14px;cursor:pointer;padding:4px 0;';
     back.addEventListener('click', () => this.libBackToList());
     top.appendChild(back);
-    // the A4 sheet (rendered content, not editable)
-    const sheet = document.createElement('div');
-    sheet.className = 'report';   // reuse the print styles (page breaks, ruby, etc.)
-    sheet.style.cssText = `width:${A4W}px;min-height:600px;background:#fff;color:#111;padding:${PAD}px;margin:0 auto;box-shadow:0 2px 16px rgba(0,0,0,0.28);font-size:16px;line-height:1.85;box-sizing:border-box;overflow-wrap:break-word;`;
-    sheet.innerHTML = this._sanitizeBookHtml(book.content || '<p style="opacity:0.5;">(សៀវភៅទទេ)</p>');
-    let zoom = 0.6;
+    const rightWrap = document.createElement('div'); rightWrap.style.cssText = 'display:flex;align-items:center;gap:12px;flex-wrap:wrap;';
+    // zoom
     const zlabel = document.createElement('span'); zlabel.style.cssText = 'min-width:38px;text-align:center;font-weight:600;font-size:12px;';
-    const applyZoom = () => { sheet.style.zoom = zoom; zlabel.textContent = Math.round(zoom * 100) + '%'; };
     const zbtn = (t, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.style.cssText = 'width:30px;height:30px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:16px;'; b.addEventListener('click', fn); return b; };
     const zoomWrap = document.createElement('div'); zoomWrap.style.cssText = 'display:flex;align-items:center;gap:6px;';
-    zoomWrap.appendChild(zbtn('−', () => { zoom = Math.max(0.3, Math.round((zoom - 0.1) * 10) / 10); applyZoom(); }));
+    zoomWrap.appendChild(zbtn('−', () => { zoom = Math.max(0.3, Math.round((zoom - 0.1) * 10) / 10); apply(); }));
     zoomWrap.appendChild(zlabel);
-    zoomWrap.appendChild(zbtn('+', () => { zoom = Math.min(1.8, Math.round((zoom + 0.1) * 10) / 10); applyZoom(); }));
-    top.appendChild(zoomWrap);
-    root.appendChild(top);
+    zoomWrap.appendChild(zbtn('+', () => { zoom = Math.min(1.8, Math.round((zoom + 0.1) * 10) / 10); apply(); }));
+    rightWrap.appendChild(zoomWrap);
+    // page jump (search a page)
+    const jumpWrap = document.createElement('div'); jumpWrap.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:12px;';
+    const jl = document.createElement('span'); jl.textContent = 'ទំព័រ'; jl.style.opacity = '0.7'; jumpWrap.appendChild(jl);
+    const jumpInput = document.createElement('input'); jumpInput.type = 'number'; jumpInput.min = '1'; jumpInput.max = String(total);
+    jumpInput.style.cssText = 'width:52px;height:32px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);text-align:center;font-size:13px;';
+    const goInput = () => { const v = parseInt(jumpInput.value, 10); if (!isNaN(v)) { cur = Math.max(0, Math.min(total - 1, v - 1)); apply(); } };
+    jumpInput.addEventListener('change', goInput);
+    jumpInput.addEventListener('keydown', e => { if (e.key === 'Enter') goInput(); });
+    jumpWrap.appendChild(jumpInput);
+    const jt = document.createElement('span'); jt.textContent = '/ ' + total; jt.style.opacity = '0.7'; jumpWrap.appendChild(jt);
+    rightWrap.appendChild(jumpWrap);
+    top.appendChild(rightWrap);
     // title
-    const h = document.createElement('h1'); h.textContent = book.title || ''; h.style.cssText = 'font-size:22px;margin:0 0 12px;';
-    root.appendChild(h);
-    // grey canvas with its own scroll
-    const canvas = document.createElement('div');
-    canvas.style.cssText = 'overflow:auto;background:#7f7f7f;padding:16px;border-radius:10px;max-height:600px;-webkit-overflow-scrolling:touch;';
-    canvas.appendChild(sheet);
-    root.appendChild(canvas);
-    setTimeout(() => { const cw = canvas.clientWidth - 32; if (cw > 0) zoom = Math.min(1, Math.max(0.3, Math.round((cw / A4W) * 20) / 20)); applyZoom(); }, 60);
+    const h = document.createElement('h1'); h.textContent = book.title || ''; h.style.cssText = 'font-size:20px;margin:0 0 10px;';
+    // — footer: small prev / page / next —
+    const foot = document.createElement('div');
+    foot.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:16px;margin-top:12px;';
+    const navBtn = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.style.cssText = 'min-width:44px;height:38px;padding:0 16px;border:1px solid var(--color-divider);border-radius:99px;background:var(--color-bg);cursor:pointer;font-size:14px;'; b.addEventListener('click', fn); return b; };
+    const prevB = navBtn('‹ មុន', () => { cur = Math.max(0, cur - 1); apply(); });
+    const label = document.createElement('span'); label.style.cssText = 'font-size:13px;font-weight:600;min-width:96px;text-align:center;';
+    const nextB = navBtn('បន្ទាប់ ›', () => { cur = Math.min(total - 1, cur + 1); apply(); });
+    foot.appendChild(prevB); foot.appendChild(label); foot.appendChild(nextB);
+    // apply current page + zoom
+    const apply = () => {
+      pages.forEach((p, i) => { p.style.display = i === cur ? 'block' : 'none'; p.style.zoom = zoom; });
+      label.textContent = `ទំព័រ ${cur + 1} / ${total}`;
+      jumpInput.value = cur + 1;
+      zlabel.textContent = Math.round(zoom * 100) + '%';
+      prevB.disabled = cur === 0; nextB.disabled = cur === total - 1;
+      prevB.style.opacity = cur === 0 ? '0.4' : '1'; nextB.style.opacity = cur === total - 1 ? '0.4' : '1';
+      canvas.scrollTop = 0; canvas.scrollLeft = 0;
+    };
+    // put the header + title before the (already-attached) canvas, footer after
+    root.insertBefore(h, canvas); root.insertBefore(top, h); root.appendChild(foot);
+    setTimeout(() => { const cw = canvas.clientWidth - 32; if (cw > 0) zoom = Math.min(1, Math.max(0.3, Math.round((cw / A4W) * 20) / 20)); apply(); }, 60);
   }
   libBackToList(){ this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
   async libDeleteBook(id){ if (!window.confirm('លុបសៀវភៅនេះមែនទេ?')) return; await Backend.deleteBook(id); this.loadBooks(); }
