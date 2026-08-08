@@ -9536,9 +9536,18 @@ class Component extends DCLogic {
     const ml = document.createElement('span'); ml.textContent = 'ទំព័រ'; ml.style.opacity = '0.7'; modeWrap.appendChild(ml);
     const modeBtn = document.createElement('button'); modeBtn.type = 'button';
     modeBtn.style.cssText = 'height:30px;padding:0 14px;border:1px solid var(--color-divider);border-radius:99px;background:var(--color-bg);cursor:pointer;font-size:12px;';
+    const GAP = 22;   // grey gap drawn between the stacked A4 sheets
     const applyMode = () => {
-      if (pageMode === 'a4') { ed.style.minHeight = A4H + 'px'; ed.style.backgroundImage = `repeating-linear-gradient(#fff, #fff ${A4H - 1}px, #e2c98f ${A4H - 1}px, #e2c98f ${A4H}px)`; modeBtn.textContent = 'A4 ស្វ័យប្រវត្តិ'; }
-      else { ed.style.minHeight = '480px'; ed.style.backgroundImage = 'none'; modeBtn.textContent = 'គ្មានកំណត់'; }
+      if (pageMode === 'a4') {
+        ed.style.minHeight = A4H + 'px';
+        ed.style.backgroundColor = '#7f7f7f';   // shows through the gaps
+        // white sheet · thin shadow line · grey gap · repeat → looks like stacked pages
+        ed.style.backgroundImage = `repeating-linear-gradient(to bottom, #ffffff 0px, #ffffff ${A4H - GAP - 3}px, #c9c9c9 ${A4H - GAP - 3}px, #c9c9c9 ${A4H - GAP}px, #7f7f7f ${A4H - GAP}px, #7f7f7f ${A4H}px)`;
+        modeBtn.textContent = 'A4 ដាក់ៗគ្នា';
+      } else {
+        ed.style.minHeight = '480px'; ed.style.backgroundColor = '#fff'; ed.style.backgroundImage = 'none';
+        modeBtn.textContent = 'គ្មានកំណត់';
+      }
     };
     modeBtn.addEventListener('click', () => { pageMode = pageMode === 'a4' ? 'free' : 'a4'; applyMode(); });
     modeWrap.appendChild(modeBtn); barB.appendChild(modeWrap);
@@ -9555,7 +9564,7 @@ class Component extends DCLogic {
     root.appendChild(err);
     const hint = document.createElement('div');
     hint.style.cssText = 'font-size:11px;opacity:0.5;margin-top:8px;line-height:1.7;';
-    hint.textContent = 'ក្រដាស់ A4 · ពង្រីក/បង្រួមដោយ −/+ · "A4 ស្វ័យប្រវត្តិ" បង្ហាញព្រំដែនទំព័រ, "គ្មានកំណត់" ក្រដាស់វែងតែមួយ · "➕ ទំព័រ" បន្ថែមទំព័រថ្មី។ រូបភាពដាក់ជា Link។';
+    hint.textContent = 'ក្រដាស់ A4 · "A4 ដាក់ៗគ្នា" បង្ហាញទំព័រដាក់ជាន់គ្នា (ដូចពេលអាន), "គ្មានកំណត់" ក្រដាស់វែងតែមួយ · "➕ ទំព័រ" ចាប់ទំព័រថ្មីស្អាត · ពង្រីក/បង្រួម −/+ · រូបភាពដាក់ជា Link។';
     root.appendChild(hint);
     // fit the sheet to the canvas width, track selection, focus
     ed.addEventListener('keyup', () => this._saveLibSel());
