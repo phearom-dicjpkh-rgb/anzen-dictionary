@@ -9381,6 +9381,16 @@ class Component extends DCLogic {
     pop.querySelector('#bwp-speak').addEventListener('click', () => this.playAudio(jp));
     this.playAudio(jp);   // read it aloud on tap
   }
+  // two-finger pinch to zoom the paper (native page-zoom is off, so we do our own)
+  _attachPinchZoom(el, getZoom, setZoom){
+    let d0 = 0, z0 = 1, on = false;
+    const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    el.style.touchAction = 'pan-x pan-y';
+    el.addEventListener('touchstart', e => { if (e.touches.length === 2) { on = true; d0 = dist(e.touches) || 1; z0 = getZoom(); } }, { passive: true });
+    el.addEventListener('touchmove', e => { if (on && e.touches.length === 2) { e.preventDefault(); setZoom(Math.max(0.2, Math.min(3, z0 * (dist(e.touches) / d0)))); } }, { passive: false });
+    const end = e => { if (!e.touches || e.touches.length < 2) on = false; };
+    el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
+  }
   _buildReadView(book, root){
     root.innerHTML = '';
     const A4W = 794, A4H = 1123, PAD = 48;
@@ -9453,6 +9463,7 @@ class Component extends DCLogic {
     };
     const onResize = () => fit();
     window.addEventListener('resize', onResize);
+    this._attachPinchZoom(area, () => zoom, z => { zoom = z; apply(); });
     setTimeout(fit, 60);
   }
   libBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
@@ -9610,6 +9621,7 @@ class Component extends DCLogic {
     canvas.appendChild(ed);
     root.appendChild(canvas);
     applyMode();
+    this._attachPinchZoom(canvas, () => zoom, z => { zoom = Math.round(z * 20) / 20; applyZoom(); });
     // error + hint
     const err = document.createElement('div');
     err.id = 'lib-err'; err.style.cssText = 'display:none;color:#c0342c;font-size:12px;margin-top:8px;';
