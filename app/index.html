@@ -9393,7 +9393,22 @@ class Component extends DCLogic {
     const end = e => { if (!e.touches || e.touches.length < 2) on = false; };
     el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
   }
+  // preload the images first — paginating before they load measures wrong page
+  // heights and clips content, which looks like missing data
   _buildReadView(book, root){
+    const html = this._sanitizeBookHtml((book && book.content) || '');
+    const pre = document.createElement('div'); pre.innerHTML = html;
+    pre.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.setAttribute('src', s); });
+    const finalHtml = pre.innerHTML;
+    const pend = [...pre.querySelectorAll('img')].filter(im => !im.complete);
+    const build = () => this._buildReadViewNow(book, root, finalHtml);
+    if (!pend.length) { build(); return; }
+    let left = pend.length, fired = false;
+    const done = () => { if (!fired && --left <= 0) { fired = true; build(); } };
+    pend.forEach(im => { im.addEventListener('load', done); im.addEventListener('error', done); });
+    setTimeout(() => { if (!fired) { fired = true; build(); } }, 3000);   // don't hang on a slow image
+  }
+  _buildReadViewNow(book, root, html){
     root.innerHTML = '';
     const A4W = 794, A4H = 1123, PAD = 48;
     // full-screen overlay — the page fills the screen, no app chrome
@@ -9424,7 +9439,7 @@ class Component extends DCLogic {
     stage.style.cssText = 'margin:auto;flex:none;position:relative;';
     area.appendChild(stage); ov.appendChild(area);
     // — paginate the content into A4 sheets (absolutely stacked; only one shown) —
-    const src = document.createElement('div'); src.innerHTML = this._sanitizeBookHtml(book.content || '');
+    const src = document.createElement('div'); src.innerHTML = html || '';
     const mkPage = () => { const p = document.createElement('div'); p.className = 'a4page report';
       p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;height:${A4H}px;background:#fff;color:#111;padding:${PAD}px;box-sizing:border-box;overflow:hidden;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;will-change:transform;`;
       stage.appendChild(p); return p; };
