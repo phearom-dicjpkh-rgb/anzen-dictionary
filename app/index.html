@@ -9382,12 +9382,14 @@ class Component extends DCLogic {
     this.playAudio(jp);   // read it aloud on tap
   }
   // two-finger pinch to zoom the paper (native page-zoom is off, so we do our own)
+  // setZoom receives (newZoom, cx, cy) where cx/cy is the pinch midpoint relative
+  // to el — so a caller can zoom toward the point between the fingers
   _attachPinchZoom(el, getZoom, setZoom){
     let d0 = 0, z0 = 1, on = false;
     const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
     el.style.touchAction = 'pan-x pan-y';
     el.addEventListener('touchstart', e => { if (e.touches.length === 2) { on = true; d0 = dist(e.touches) || 1; z0 = getZoom(); } }, { passive: true });
-    el.addEventListener('touchmove', e => { if (on && e.touches.length === 2) { e.preventDefault(); setZoom(z0 * (dist(e.touches) / d0)); } }, { passive: false });
+    el.addEventListener('touchmove', e => { if (on && e.touches.length === 2) { e.preventDefault(); const t = e.touches, r = el.getBoundingClientRect(); setZoom(z0 * (dist(t) / d0), (t[0].clientX + t[1].clientX) / 2 - r.left, (t[0].clientY + t[1].clientY) / 2 - r.top); } }, { passive: false });
     const end = e => { if (!e.touches || e.touches.length < 2) on = false; };
     el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
   }
@@ -9470,7 +9472,15 @@ class Component extends DCLogic {
     };
     const onResize = () => fit();
     window.addEventListener('resize', onResize);
-    this._attachPinchZoom(area, () => scale, s => { scale = Math.max(1, Math.min(5, s)); applyView(); });
+    // pinch zooms toward the point between the fingers (keep that spot in place)
+    this._attachPinchZoom(area, () => scale, (s, cx, cy) => {
+      const zOld = fitZoom * scale, nz = Math.max(1, Math.min(5, s)), zNew = fitZoom * nz;
+      const px = (area.scrollLeft + cx - stage.offsetLeft) / (zOld || 1);
+      const py = (area.scrollTop + cy - stage.offsetTop) / (zOld || 1);
+      scale = nz; applyView();
+      area.scrollLeft = stage.offsetLeft + px * zNew - cx;
+      area.scrollTop = stage.offsetTop + py * zNew - cy;
+    });
     setTimeout(fit, 60);
   }
   libBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
