@@ -9483,7 +9483,7 @@ class Component extends DCLogic {
     });
     setTimeout(fit, 60);
   }
-  libBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
+  libBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); const ib = document.getElementById('lib-img-bar'); if (ib) ib.remove(); this._edSelImg = null; this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
   async libDeleteBook(id){ if (!window.confirm('លុបសៀវភៅនេះមែនទេ?')) return; await Backend.deleteBook(id); this.loadBooks(); }
   // strip anything unsafe before a book is stored (it is shown to other users)
   _sanitizeBookHtml(html){
@@ -9499,6 +9499,7 @@ class Component extends DCLogic {
     return doc.body.innerHTML;
   }
   async saveBook(){
+    this._deselectEditorImage();   // drop the selection outline so it isn't saved
     const titleEl = document.getElementById('lib-title'), edEl = document.getElementById('lib-editor');
     const errEl = document.getElementById('lib-err'), btn = document.getElementById('lib-save');
     const title = (titleEl ? titleEl.value : '').trim();
@@ -9529,6 +9530,36 @@ class Component extends DCLogic {
     try { document.execCommand('styleWithCSS', false, true); } catch(e){}
     ed.querySelectorAll('font[size="7"]').forEach(f => { f.removeAttribute('size'); f.style.fontSize = px + 'px'; });
     ed.focus(); this._saveLibSel();
+  }
+  // tap an image in the editor → a bar to resize / align / move / delete it
+  _selectEditorImage(img){
+    if (this._edSelImg && this._edSelImg !== img) { this._edSelImg.style.outline = ''; this._edSelImg.style.outlineOffset = ''; }
+    this._edSelImg = img;
+    img.style.outline = '3px solid var(--color-accent)'; img.style.outlineOffset = '2px';
+    this._showImgBar();
+  }
+  _deselectEditorImage(){
+    const b = document.getElementById('lib-img-bar'); if (b) b.remove();
+    if (this._edSelImg) { this._edSelImg.style.outline = ''; this._edSelImg.style.outlineOffset = ''; this._edSelImg = null; }
+  }
+  _showImgBar(){
+    const img = this._edSelImg, host = document.getElementById('lib-editor-root'); if (!img || !host) return;
+    const old = document.getElementById('lib-img-bar'); if (old) old.remove();
+    const bar = document.createElement('div'); bar.id = 'lib-img-bar';
+    bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:130;background:var(--color-surface);border-top:1px solid var(--color-divider);box-shadow:0 -4px 20px rgba(0,0,0,0.3);padding:10px 12px calc(10px + env(safe-area-inset-bottom, 0px));display:flex;flex-wrap:wrap;gap:7px;align-items:center;justify-content:center;';
+    const ed = document.getElementById('lib-editor');
+    const mk = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.style.cssText = 'height:38px;padding:0 12px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:14px;'; b.addEventListener('click', fn); return b; };
+    const getPct = () => img.dataset.w ? +img.dataset.w : Math.max(10, Math.min(100, Math.round(img.offsetWidth / ((ed && ed.clientWidth) || img.offsetWidth) * 100)));
+    const setPct = p => { p = Math.max(10, Math.min(100, p)); img.style.width = p + '%'; img.style.maxWidth = '100%'; img.style.height = 'auto'; img.dataset.w = p; };
+    const align = m => { img.style.display = 'block'; img.style.margin = m; };
+    bar.appendChild(mk('− តូច', () => setPct(getPct() - 10)));
+    bar.appendChild(mk('+ ធំ', () => setPct(getPct() + 10)));
+    bar.appendChild(mk('⬅', () => align('8px 0')));
+    bar.appendChild(mk('⬛ កណ្ដាល', () => align('8px auto')));
+    bar.appendChild(mk('➡', () => align('8px 0 8px auto')));
+    bar.appendChild(mk('🗑 លុប', () => { img.remove(); this._deselectEditorImage(); }));
+    bar.appendChild(mk('✕', () => this._deselectEditorImage()));
+    host.appendChild(bar);
   }
   _buildBookEditor(book, root){
     root.innerHTML = '';
@@ -9650,6 +9681,8 @@ class Component extends DCLogic {
     // fit the sheet to the canvas width, track selection, focus
     ed.addEventListener('keyup', () => this._saveLibSel());
     ed.addEventListener('mouseup', () => this._saveLibSel());
+    // tap an image → its resize/align bar; tap elsewhere closes it
+    ed.addEventListener('click', e => { if (e.target && e.target.tagName === 'IMG') this._selectEditorImage(e.target); else this._deselectEditorImage(); });
     setTimeout(() => {
       const cw = canvas.clientWidth - 32;
       if (cw > 0) zoom = Math.min(1, Math.max(0.3, Math.round((cw / A4W) * 20) / 20));
