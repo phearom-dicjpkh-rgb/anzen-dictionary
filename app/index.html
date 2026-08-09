@@ -9396,21 +9396,22 @@ class Component extends DCLogic {
   // preload the images first — paginating before they load measures wrong page
   // heights and clips content, which looks like missing data
   _buildReadView(book, root){
-    const html = this._sanitizeBookHtml((book && book.content) || '');
+    const bmeta = this._parseBookMeta((book && book.content) || '');
+    const html = this._sanitizeBookHtml(bmeta.html);
     const pre = document.createElement('div'); pre.innerHTML = html;
     pre.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.setAttribute('src', s); });
     const finalHtml = pre.innerHTML;
     const pend = [...pre.querySelectorAll('img')].filter(im => !im.complete);
-    const build = () => this._buildReadViewNow(book, root, finalHtml);
+    const build = () => this._buildReadViewNow(book, root, finalHtml, bmeta.margin, bmeta.startPage);
     if (!pend.length) { build(); return; }
     let left = pend.length, fired = false;
     const done = () => { if (!fired && --left <= 0) { fired = true; build(); } };
     pend.forEach(im => { im.addEventListener('load', done); im.addEventListener('error', done); });
     setTimeout(() => { if (!fired) { fired = true; build(); } }, 3000);   // don't hang on a slow image
   }
-  _buildReadViewNow(book, root, html){
+  _buildReadViewNow(book, root, html, margin, startPage){
     root.innerHTML = '';
-    const A4W = 794, A4H = 1123, PAD = 48;
+    const A4W = 794, A4H = 1123, PAD = margin || 48, START = startPage || 1;
     // full-screen overlay — the page fills the screen, no app chrome
     const ov = document.createElement('div');
     ov.style.cssText = 'position:fixed;inset:0;z-index:120;background:#454545;display:flex;flex-direction:column;';
@@ -9455,6 +9456,10 @@ class Component extends DCLogic {
     pages.forEach(p => this._wrapBookWords(p));
     // fix Google-Drive share links so the pictures actually load
     pages.forEach(p => p.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; }));
+    // page number in the bottom margin, centred, auto-incrementing from the start
+    pages.forEach((p, i) => { const pn = document.createElement('div');
+      pn.style.cssText = `position:absolute;left:0;right:0;bottom:${Math.max(10, Math.round(PAD / 2) - 6)}px;text-align:center;font-size:13px;color:#666;`;
+      pn.textContent = String(START + i); p.appendChild(pn); });
     area.addEventListener('click', e => { const el = e.target.closest && e.target.closest('.bookword'); if (el && el.dataset.jp) this._showBookWordPopup(el.dataset.jp); });
     const total = pages.length;
     jin.max = String(total); jtot.textContent = '/ ' + total;
@@ -9503,7 +9508,7 @@ class Component extends DCLogic {
   // strip anything unsafe before a book is stored (it is shown to other users)
   _sanitizeBookHtml(html){
     const doc = new DOMParser().parseFromString(html || '', 'text/html');
-    doc.querySelectorAll('script,style,iframe,object,embed,link,meta,form').forEach(n => n.remove());
+    doc.querySelectorAll('script,style,iframe,object,embed,link,meta,form,.lib-guide,[data-bookmeta]').forEach(n => n.remove());
     doc.querySelectorAll('*').forEach(el => {
       [...el.attributes].forEach(a => {
         const n = a.name.toLowerCase();
@@ -9513,12 +9518,22 @@ class Component extends DCLogic {
     });
     return doc.body.innerHTML;
   }
+  // page margin + starting page number are kept as a hidden marker inside the
+  // content, so no extra DB columns are needed
+  _parseBookMeta(content){
+    const d = document.createElement('div'); d.innerHTML = content || '';
+    const meta = d.querySelector('div[data-bookmeta]');
+    let margin = 64, startPage = 1;
+    if (meta) { const mm = parseInt(meta.getAttribute('data-margin'), 10), sp = parseInt(meta.getAttribute('data-start'), 10); if (!isNaN(mm)) margin = mm; if (!isNaN(sp)) startPage = sp; meta.remove(); }
+    return { margin: Math.max(16, Math.min(160, margin)), startPage: Math.max(1, startPage), html: d.innerHTML };
+  }
   async saveBook(){
     this._deselectEditorImage();   // drop the selection outline so it isn't saved
     const titleEl = document.getElementById('lib-title'), edEl = document.getElementById('lib-editor');
     const errEl = document.getElementById('lib-err'), btn = document.getElementById('lib-save');
     const title = (titleEl ? titleEl.value : '').trim();
-    const content = this._sanitizeBookHtml(edEl ? edEl.innerHTML : '');
+    const meta = `<div data-bookmeta="1" data-margin="${this._libMargin || 64}" data-start="${this._libStartPage || 1}" style="display:none"></div>`;
+    const content = meta + this._sanitizeBookHtml(edEl ? edEl.innerHTML : '');
     const showErr = m => { if (errEl) { errEl.textContent = m; errEl.style.display = 'block'; } };
     if (!title) { showErr('សូមបញ្ចូលចំណងជើងសៀវភៅ'); return; }
     if (btn) { btn.disabled = true; btn.textContent = 'កំពុងរក្សាទុក…'; }
@@ -9578,7 +9593,11 @@ class Component extends DCLogic {
   }
   _buildBookEditor(book, root){
     root.innerHTML = '';
-    const A4W = 794, A4H = 1123, PAD = 48;   // A4 at 96dpi, with a print-like margin
+    const A4W = 794, A4H = 1123;
+    // margin + starting page number come from the hidden marker in the content
+    const bmeta = this._parseBookMeta(book.content || '');
+    let PAD = bmeta.margin;
+    this._libMargin = bmeta.margin; this._libStartPage = bmeta.startPage;
     // top bar: back + save
     const top = document.createElement('div');
     top.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;';
@@ -9599,8 +9618,12 @@ class Component extends DCLogic {
     // the A4 sheet (the editable area)
     const ed = document.createElement('div');
     ed.id = 'lib-editor'; ed.contentEditable = 'true';
-    ed.style.cssText = `width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px;margin:0 auto;box-shadow:0 2px 16px rgba(0,0,0,0.28);font-size:16px;line-height:1.8;overflow-wrap:break-word;word-break:break-word;box-sizing:border-box;outline:none;`;
-    ed.innerHTML = book.content || '';
+    ed.style.cssText = `position:relative;width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px;margin:0 auto;box-shadow:0 2px 16px rgba(0,0,0,0.28);font-size:16px;line-height:1.8;overflow-wrap:break-word;word-break:break-word;box-sizing:border-box;outline:none;`;
+    ed.innerHTML = bmeta.html;
+    // a dashed guide showing the writable area (its own margin); stripped on save
+    const guide = document.createElement('div'); guide.className = 'lib-guide'; guide.contentEditable = 'false';
+    const applyMargin = () => { ed.style.padding = PAD + 'px'; guide.style.cssText = `position:absolute;top:${PAD}px;left:${PAD}px;right:${PAD}px;bottom:${PAD}px;border:1px dashed #b9c4d6;pointer-events:none;z-index:0;`; };
+    applyMargin(); ed.insertBefore(guide, ed.firstChild);
     try { document.execCommand('styleWithCSS', false, true); } catch(e){}
     // buttons keep the editor's live selection (mousedown preventDefault), so
     // just run the command on it; only the size dropdown, which steals focus,
@@ -9677,6 +9700,16 @@ class Component extends DCLogic {
     };
     modeBtn.addEventListener('click', () => { pageMode = pageMode === 'a4' ? 'free' : 'a4'; applyMode(); });
     modeWrap.appendChild(modeBtn); barB.appendChild(modeWrap);
+    // margin (រឹម) control
+    const marWrap = document.createElement('div'); marWrap.style.cssText = 'display:flex;align-items:center;gap:6px;';
+    const mrl = document.createElement('span'); mrl.textContent = 'រឹម'; mrl.style.opacity = '0.7'; marWrap.appendChild(mrl);
+    const mlabel = document.createElement('span'); mlabel.style.cssText = 'min-width:42px;text-align:center;';
+    const setMargin = m => { PAD = Math.max(16, Math.min(160, m)); this._libMargin = PAD; applyMargin(); mlabel.textContent = PAD + 'px'; };
+    marWrap.appendChild(zbtn('−', () => setMargin(PAD - 8)));
+    marWrap.appendChild(mlabel);
+    marWrap.appendChild(zbtn('+', () => setMargin(PAD + 8)));
+    barB.appendChild(marWrap);
+    setMargin(PAD);
     root.appendChild(barB);
     // grey canvas that the A4 sheet floats on (its own scroll, keeps toolbar in view)
     const canvas = document.createElement('div');
@@ -9685,6 +9718,16 @@ class Component extends DCLogic {
     root.appendChild(canvas);
     applyMode();
     this._attachPinchZoom(canvas, () => zoom, z => { zoom = Math.max(0.3, Math.min(3, Math.round(z * 20) / 20)); applyZoom(); });
+    // page-number footer (centred, below the sheet) — sets the first page number,
+    // the reader then numbers each following page automatically
+    const pnWrap = document.createElement('div');
+    pnWrap.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;font-size:13px;';
+    const pnl = document.createElement('span'); pnl.textContent = 'លេខទំព័រចាប់ផ្ដើម'; pnl.style.opacity = '0.7';
+    const pnInput = document.createElement('input'); pnInput.type = 'number'; pnInput.min = '1'; pnInput.value = String(this._libStartPage || 1);
+    pnInput.style.cssText = 'width:64px;height:34px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);text-align:center;font-size:14px;';
+    pnInput.addEventListener('change', () => { const v = parseInt(pnInput.value, 10); this._libStartPage = (!isNaN(v) && v >= 1) ? v : 1; pnInput.value = String(this._libStartPage); });
+    pnWrap.appendChild(pnl); pnWrap.appendChild(pnInput);
+    root.appendChild(pnWrap);
     // error + hint
     const err = document.createElement('div');
     err.id = 'lib-err'; err.style.cssText = 'display:none;color:#c0342c;font-size:12px;margin-top:8px;';
