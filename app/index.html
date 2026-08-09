@@ -9425,6 +9425,8 @@ class Component extends DCLogic {
   _buildReadViewNow(book, root, html, margin, startPage){
     root.innerHTML = '';
     const A4W = 794, A4H = 1123, PAD = margin || 48, START = startPage || 1;
+    const bookId = (book && book.id) || null;
+    const marks = new Set(this._getBookmarks(bookId));   // pages the reader flagged
     // full-screen overlay — the page fills the screen, no app chrome
     const ov = document.createElement('div');
     ov.style.cssText = 'position:fixed;inset:0;z-index:120;background:#454545;display:flex;flex-direction:column;';
@@ -9433,7 +9435,15 @@ class Component extends DCLogic {
     // thin top bar (icons only)
     const bar = document.createElement('div');
     bar.style.cssText = 'flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;padding-top:calc(6px + env(safe-area-inset-top, 0px));background:rgba(0,0,0,0.35);';
-    bar.appendChild(icon('✕', () => this.libBackToList()));
+    const leftBar = document.createElement('div'); leftBar.style.cssText = 'display:flex;align-items:center;gap:6px;';
+    leftBar.appendChild(icon('✕', () => this.libBackToList()));
+    // 🔖 toggles a bookmark on the current page; ☰ opens the bookmark list
+    const bmBtn = icon('🔖', () => { if (marks.has(cur)) marks.delete(cur); else marks.add(cur); this._setBookmarks(bookId, [...marks]); applyView(); if (bmPanel.style.display !== 'none') renderBmPanel(); });
+    bmBtn.title = 'ចំណាំ / ដកចំណាំទំព័រនេះ';
+    const bmListBtn = icon('☰', () => { const show = bmPanel.style.display === 'none'; if (show) renderBmPanel(); bmPanel.style.display = show ? 'block' : 'none'; }, 'font-size:15px;');
+    bmListBtn.title = 'បញ្ជីចំណាំ';
+    leftBar.appendChild(bmBtn); leftBar.appendChild(bmListBtn);
+    bar.appendChild(leftBar);
     const rightBar = document.createElement('div'); rightBar.style.cssText = 'display:flex;align-items:center;gap:6px;';
     const jin = document.createElement('input'); jin.type = 'number'; jin.min = '1';
     jin.style.cssText = 'width:46px;height:34px;border:none;border-radius:8px;background:rgba(255,255,255,0.16);color:#fff;text-align:center;font-size:14px;';
@@ -9480,7 +9490,8 @@ class Component extends DCLogic {
     area.addEventListener('click', e => { const el = e.target.closest && e.target.closest('.bookword'); if (el && el.dataset.jp) this._showBookWordPopup(el.dataset.jp); });
     const total = pages.length;
     jin.max = String(total); jtot.textContent = '/ ' + total;
-    let cur = 0, fitZoom = 1, scale = 1;   // scale 1..5 = 100%..500% of the fit-to-screen size
+    // reopen where the reader left off last time
+    let cur = Math.max(0, Math.min(total - 1, this._getLastReadPage(bookId))), fitZoom = 1, scale = 1;   // scale 1..5 = 100%..500%
     const resetScroll = () => { area.scrollTop = 0; area.scrollLeft = 0; };
     const applyView = () => {
       const z = fitZoom * scale;
@@ -9491,6 +9502,10 @@ class Component extends DCLogic {
       jin.value = cur + 1; zlabel.textContent = Math.round(scale * 100) + '%';
       prevB.style.display = cur === 0 ? 'none' : 'flex';
       nextB.style.display = cur === total - 1 ? 'none' : 'flex';
+      // reflect bookmark state of the shown page + remember the reading position
+      bmBtn.style.background = marks.has(cur) ? '#c9971f' : 'rgba(255,255,255,0.16)';
+      bmListBtn.textContent = marks.size ? ('☰ ' + marks.size) : '☰';
+      this._setLastReadPage(bookId, cur);
     };
     // prev / next — fixed on screen, do NOT scroll with the paper
     const edge = (txt, fn, side) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt;
@@ -9499,6 +9514,26 @@ class Component extends DCLogic {
     const prevB = edge('‹', () => { cur = Math.max(0, cur - 1); applyView(); resetScroll(); }, 'left');
     const nextB = edge('›', () => { cur = Math.min(total - 1, cur + 1); applyView(); resetScroll(); }, 'right');
     ov.appendChild(prevB); ov.appendChild(nextB);
+    // bookmark list — tap a row to jump, ✕ to remove
+    const bmPanel = document.createElement('div');
+    bmPanel.style.cssText = 'position:absolute;top:calc(48px + env(safe-area-inset-top, 0px));left:8px;z-index:9;background:#2b2b2b;color:#fff;border-radius:12px;box-shadow:0 10px 34px rgba(0,0,0,0.55);padding:6px;min-width:170px;max-height:64vh;overflow:auto;display:none;';
+    ov.appendChild(bmPanel);
+    const renderBmPanel = () => {
+      const arr = [...marks].sort((a, b) => a - b);
+      bmPanel.innerHTML = '';
+      const title = document.createElement('div'); title.textContent = arr.length ? 'ចំណាំ' : 'គ្មានចំណាំ';
+      title.style.cssText = 'font-size:12px;opacity:0.6;padding:6px 8px 6px;'; bmPanel.appendChild(title);
+      arr.forEach(idx => {
+        const row = document.createElement('div'); row.style.cssText = 'display:flex;align-items:center;gap:6px;';
+        const go = document.createElement('button'); go.type = 'button'; go.textContent = '🔖 ទំព័រ ' + (START + idx);
+        go.style.cssText = 'flex:1;text-align:left;background:transparent;border:none;color:#fff;font-size:14px;padding:9px 8px;border-radius:8px;cursor:pointer;';
+        go.addEventListener('click', () => { cur = Math.max(0, Math.min(total - 1, idx)); applyView(); resetScroll(); bmPanel.style.display = 'none'; });
+        const del = document.createElement('button'); del.type = 'button'; del.textContent = '✕';
+        del.style.cssText = 'width:30px;height:32px;background:transparent;border:none;color:#fff;opacity:0.55;font-size:13px;cursor:pointer;flex:none;';
+        del.addEventListener('click', () => { marks.delete(idx); this._setBookmarks(bookId, [...marks]); renderBmPanel(); applyView(); });
+        row.appendChild(go); row.appendChild(del); bmPanel.appendChild(row);
+      });
+    };
     const goInput = () => { const v = parseInt(jin.value, 10); if (!isNaN(v)) { cur = Math.max(0, Math.min(total - 1, v - 1)); applyView(); resetScroll(); } };
     jin.addEventListener('change', goInput);
     jin.addEventListener('keydown', e => { if (e.key === 'Enter') { goInput(); jin.blur(); } });
@@ -9522,6 +9557,13 @@ class Component extends DCLogic {
     });
     setTimeout(fit, 60);
   }
+  // per-book reading bookmarks + last-read page, kept on this device (localStorage)
+  _bmAll(){ try { return JSON.parse(localStorage.getItem('dict_book_bookmarks') || '{}') || {}; } catch(e){ return {}; } }
+  _getBookmarks(bookId){ if (!bookId) return []; const a = this._bmAll()[bookId]; return Array.isArray(a) ? a : []; }
+  _setBookmarks(bookId, arr){ if (!bookId) return; try { const o = this._bmAll(); if (arr && arr.length) o[bookId] = arr.slice().sort((a, b) => a - b); else delete o[bookId]; localStorage.setItem('dict_book_bookmarks', JSON.stringify(o)); } catch(e){} }
+  _lastAll(){ try { return JSON.parse(localStorage.getItem('dict_book_lastpage') || '{}') || {}; } catch(e){ return {}; } }
+  _getLastReadPage(bookId){ if (!bookId) return 0; const v = this._lastAll()[bookId]; return (typeof v === 'number' && v >= 0) ? v : 0; }
+  _setLastReadPage(bookId, idx){ if (!bookId) return; try { const o = this._lastAll(); o[bookId] = idx; localStorage.setItem('dict_book_lastpage', JSON.stringify(o)); } catch(e){} }
   libBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); const ib = document.getElementById('lib-img-bar'); if (ib) ib.remove(); this._edSelImg = null; this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
   async libDeleteBook(id){ if (!window.confirm('លុបសៀវភៅនេះមែនទេ?')) return; await Backend.deleteBook(id); this.loadBooks(); }
   // strip anything unsafe before a book is stored (it is shown to other users)
