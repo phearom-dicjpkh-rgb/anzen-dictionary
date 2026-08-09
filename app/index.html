@@ -7341,6 +7341,10 @@ function normRomaji(r){
 // (jp → kana). Only words the dictionary knows get a reading; the rest are left
 // as-is (better to under-annotate than to guess a wrong reading).
 const HAS_KANJI = /[㐀-鿿豈-﫿]/;
+// any Japanese char (hiragana, katakana incl. half-width, or kanji) — lets the
+// book reader also make kana-only headwords (デジタコ, あいさつ…) tappable
+const HAS_JP = /[぀-ヿ㐀-鿿豈-﫿ｦ-ﾟ]/;
+const HIRAGANA_ONE = /^[぀-ゟ]$/;
 let _furiMap = null, _furiMax = 0;
 function furiMap(){
   if (_furiMap) return _furiMap;
@@ -9331,27 +9335,36 @@ class Component extends DCLogic {
     if (this._bwMap) return this._bwMap;
     this._bwMap = new Map(); this._bwMax = 0;
     for (const w of WORDS) {
-      if (!w || !w.jp || !HAS_KANJI.test(w.jp)) continue;
-      if (!this._bwMap.has(w.jp)) { this._bwMap.set(w.jp, { kana: w.kana || '', km: w.km || '' }); if (w.jp.length > this._bwMax) this._bwMax = w.jp.length; }
+      if (!w || !w.jp) continue;
+      const jp = w.jp;
+      // keep real words (incl. kana-only ones like デジタコ / あいさつ); skip grammar
+      // placeholders (〜…) and multi-token / sentence entries that never appear verbatim
+      if (jp.length > 20 || jp.indexOf('〜') >= 0 || /[（）()\s\/、。，,！!？?・「」]/.test(jp)) continue;
+      if (!HAS_JP.test(jp)) continue;
+      if (!this._bwMap.has(jp)) { this._bwMap.set(jp, { kana: w.kana || '', km: w.km || '' }); if (jp.length > this._bwMax) this._bwMax = jp.length; }
     }
     return this._bwMap;
   }
   // wrap every dictionary word inside the rendered book in a tappable span
   _wrapBookWords(container){
-    const map = this._bookWordMap(), max = Math.min(this._bwMax || 1, 16);
+    const map = this._bookWordMap(), max = Math.min(this._bwMax || 1, 20);
     const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
     const targets = []; let node;
-    while ((node = walker.nextNode())) { if (node.parentNode && node.parentNode.classList && node.parentNode.classList.contains('bookword')) continue; if (HAS_KANJI.test(node.textContent)) targets.push(node); }
+    while ((node = walker.nextNode())) { if (node.parentNode && node.parentNode.classList && node.parentNode.classList.contains('bookword')) continue; if (HAS_JP.test(node.textContent)) targets.push(node); }
     for (const tn of targets) {
       const text = tn.textContent, frag = document.createDocumentFragment();
       let i = 0, buf = '';
       const flush = () => { if (buf) { frag.appendChild(document.createTextNode(buf)); buf = ''; } };
       while (i < text.length) {
         let hit = 0;
-        if (HAS_KANJI.test(text[i])) {
+        // longest dictionary word starting here (kana or kanji); a lone hiragana is
+        // almost always a particle, so never wrap a 1-char hiragana match
+        if (HAS_JP.test(text[i])) {
           for (let L = Math.min(max, text.length - i); L >= 1; L--) {
             const sub = text.slice(i, i + L);
-            if (map.has(sub)) { flush(); const s = document.createElement('span'); s.className = 'bookword'; s.dataset.jp = sub; s.textContent = sub; frag.appendChild(s); i += L; hit = 1; break; }
+            if (!map.has(sub)) continue;
+            if (L === 1 && HIRAGANA_ONE.test(sub)) break;
+            flush(); const s = document.createElement('span'); s.className = 'bookword'; s.dataset.jp = sub; s.textContent = sub; frag.appendChild(s); i += L; hit = 1; break;
           }
         }
         if (hit) continue;
