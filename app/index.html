@@ -9387,7 +9387,7 @@ class Component extends DCLogic {
     const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
     el.style.touchAction = 'pan-x pan-y';
     el.addEventListener('touchstart', e => { if (e.touches.length === 2) { on = true; d0 = dist(e.touches) || 1; z0 = getZoom(); } }, { passive: true });
-    el.addEventListener('touchmove', e => { if (on && e.touches.length === 2) { e.preventDefault(); setZoom(Math.max(0.2, Math.min(3, z0 * (dist(e.touches) / d0)))); } }, { passive: false });
+    el.addEventListener('touchmove', e => { if (on && e.touches.length === 2) { e.preventDefault(); setZoom(z0 * (dist(e.touches) / d0)); } }, { passive: false });
     const end = e => { if (!e.touches || e.touches.length < 2) on = false; };
     el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
   }
@@ -9408,20 +9408,24 @@ class Component extends DCLogic {
     jin.style.cssText = 'width:46px;height:34px;border:none;border-radius:8px;background:rgba(255,255,255,0.16);color:#fff;text-align:center;font-size:14px;';
     const jtot = document.createElement('span'); jtot.style.cssText = 'color:#fff;font-size:13px;opacity:0.8;';
     rightBar.appendChild(jin); rightBar.appendChild(jtot);
-    rightBar.appendChild(icon('−', () => { zoom = Math.max(0.3, Math.round((zoom - 0.1) * 20) / 20); apply(); }));
-    rightBar.appendChild(icon('+', () => { zoom = Math.min(2.5, Math.round((zoom + 0.1) * 20) / 20); apply(); }));
+    rightBar.appendChild(icon('−', () => { scale = Math.max(1, Math.round((scale - 0.5) * 2) / 2); applyView(); }));
+    const zlabel = document.createElement('span'); zlabel.style.cssText = 'color:#fff;font-size:12px;min-width:42px;text-align:center;';
+    rightBar.appendChild(zlabel);
+    rightBar.appendChild(icon('+', () => { scale = Math.min(5, Math.round((scale + 0.5) * 2) / 2); applyView(); }));
     bar.appendChild(rightBar);
     ov.appendChild(bar);
-    // page area (fills the rest)
+    // page area (scrolls). The sheet is centred with margin:auto so both edges stay
+    // reachable by scrolling when zoomed in past the screen.
     const area = document.createElement('div');
-    area.style.cssText = 'flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;display:flex;align-items:center;justify-content:center;position:relative;';
-    const wrap = document.createElement('div');
-    area.appendChild(wrap); ov.appendChild(area);
-    // — paginate the content into A4 sheets —
+    area.style.cssText = 'flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;display:flex;position:relative;';
+    const stage = document.createElement('div');
+    stage.style.cssText = 'margin:auto;flex:none;position:relative;';
+    area.appendChild(stage); ov.appendChild(area);
+    // — paginate the content into A4 sheets (absolutely stacked; only one shown) —
     const src = document.createElement('div'); src.innerHTML = this._sanitizeBookHtml(book.content || '');
     const mkPage = () => { const p = document.createElement('div'); p.className = 'a4page report';
-      p.style.cssText = `width:${A4W}px;height:${A4H}px;background:#fff;color:#111;padding:${PAD}px;box-sizing:border-box;overflow:hidden;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;`;
-      wrap.appendChild(p); return p; };
+      p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;height:${A4H}px;background:#fff;color:#111;padding:${PAD}px;box-sizing:border-box;overflow:hidden;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;will-change:transform;`;
+      stage.appendChild(p); return p; };
     let page = mkPage();
     const blocks = [...src.childNodes].filter(n => n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim()));
     for (const n of blocks) {
@@ -9429,41 +9433,44 @@ class Component extends DCLogic {
       page.appendChild(n);
       if (page.scrollHeight > A4H && page.childNodes.length > 1) { page.removeChild(n); page = mkPage(); page.appendChild(n); }
     }
-    let pages = [...wrap.querySelectorAll('.a4page')];
+    let pages = [...stage.querySelectorAll('.a4page')];
     if (!pages.length) { const p = mkPage(); p.innerHTML = '<p style="opacity:0.5;">(សៀវភៅទទេ)</p>'; pages = [p]; }
-    // make dictionary words tappable → translation card
     pages.forEach(p => this._wrapBookWords(p));
+    // fix Google-Drive share links so the pictures actually load
+    pages.forEach(p => p.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; }));
     area.addEventListener('click', e => { const el = e.target.closest && e.target.closest('.bookword'); if (el && el.dataset.jp) this._showBookWordPopup(el.dataset.jp); });
     const total = pages.length;
     jin.max = String(total); jtot.textContent = '/ ' + total;
-    let cur = 0, zoom = 1;
-    // prev / next as small round buttons on the page edges (no wasted space)
-    const edge = (txt, fn, side) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt;
-      b.style.cssText = `position:absolute;${side}:6px;top:50%;transform:translateY(-50%);width:40px;height:40px;border:none;border-radius:50%;background:rgba(0,0,0,0.45);color:#fff;font-size:24px;line-height:1;cursor:pointer;z-index:5;display:flex;align-items:center;justify-content:center;`;
-      b.addEventListener('click', fn); return b; };
-    const prevB = edge('‹', () => { cur = Math.max(0, cur - 1); apply(); }, 'left');
-    const nextB = edge('›', () => { cur = Math.min(total - 1, cur + 1); apply(); }, 'right');
-    area.appendChild(prevB); area.appendChild(nextB);
-    const goInput = () => { const v = parseInt(jin.value, 10); if (!isNaN(v)) { cur = Math.max(0, Math.min(total - 1, v - 1)); apply(); } };
-    jin.addEventListener('change', goInput);
-    jin.addEventListener('keydown', e => { if (e.key === 'Enter') { goInput(); jin.blur(); } });
-    const apply = () => {
-      pages.forEach((p, i) => { p.style.display = i === cur ? 'block' : 'none'; p.style.zoom = zoom; });
-      jin.value = cur + 1;
+    let cur = 0, fitZoom = 1, scale = 1;   // scale 1..5 = 100%..500% of the fit-to-screen size
+    const resetScroll = () => { area.scrollTop = 0; area.scrollLeft = 0; };
+    const applyView = () => {
+      const z = fitZoom * scale;
+      pages.forEach((p, i) => { const show = i === cur; p.style.display = show ? 'block' : 'none'; if (show) p.style.transform = `scale(${z})`; });
+      stage.style.width = (A4W * z) + 'px'; stage.style.height = (A4H * z) + 'px';
+      jin.value = cur + 1; zlabel.textContent = Math.round(scale * 100) + '%';
       prevB.style.display = cur === 0 ? 'none' : 'flex';
       nextB.style.display = cur === total - 1 ? 'none' : 'flex';
-      area.scrollTop = 0; area.scrollLeft = 0;
     };
-    // fit the whole A4 page inside the screen (no top/bottom cut), largest that fits
+    // prev / next — fixed on screen, do NOT scroll with the paper
+    const edge = (txt, fn, side) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt;
+      b.style.cssText = `position:absolute;${side}:8px;top:56%;transform:translateY(-50%);width:42px;height:42px;border:none;border-radius:50%;background:rgba(0,0,0,0.5);color:#fff;font-size:24px;line-height:1;cursor:pointer;z-index:8;display:flex;align-items:center;justify-content:center;`;
+      b.addEventListener('click', fn); return b; };
+    const prevB = edge('‹', () => { cur = Math.max(0, cur - 1); applyView(); resetScroll(); }, 'left');
+    const nextB = edge('›', () => { cur = Math.min(total - 1, cur + 1); applyView(); resetScroll(); }, 'right');
+    ov.appendChild(prevB); ov.appendChild(nextB);
+    const goInput = () => { const v = parseInt(jin.value, 10); if (!isNaN(v)) { cur = Math.max(0, Math.min(total - 1, v - 1)); applyView(); resetScroll(); } };
+    jin.addEventListener('change', goInput);
+    jin.addEventListener('keydown', e => { if (e.key === 'Enter') { goInput(); jin.blur(); } });
+    // fit = 100%: the largest size that shows the whole page with no top/bottom cut
     const fit = () => {
       if (!document.body.contains(ov)) { window.removeEventListener('resize', onResize); return; }
-      const ah = area.clientHeight - 20, aw = area.clientWidth - 20;
-      if (ah > 0 && aw > 0) zoom = Math.max(0.2, Math.min(ah / A4H, aw / A4W));
-      apply();
+      const ah = area.clientHeight - 16, aw = area.clientWidth - 16;
+      if (ah > 0 && aw > 0) fitZoom = Math.max(0.15, Math.min(ah / A4H, aw / A4W));
+      applyView();
     };
     const onResize = () => fit();
     window.addEventListener('resize', onResize);
-    this._attachPinchZoom(area, () => zoom, z => { zoom = z; apply(); });
+    this._attachPinchZoom(area, () => scale, s => { scale = Math.max(1, Math.min(5, s)); applyView(); });
     setTimeout(fit, 60);
   }
   libBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
@@ -9576,7 +9583,7 @@ class Component extends DCLogic {
       sw.addEventListener('click', () => exec('foreColor', c));
       bar.appendChild(sw);
     });
-    btn('🖼 រូប', () => { const url = window.prompt('Link រូបភាព (https://…)'); if (url && url.trim()) exec('insertHTML', `<img src="${url.trim().replace(/"/g, '&quot;')}" style="max-width:100%;height:auto;border-radius:6px;display:block;margin:8px auto;">`); }, 'បញ្ចូលរូបភាព');
+    btn('🖼 រូប', () => { const url = normalizeImgUrl(window.prompt('Link រូបភាព (https://…)') || ''); if (url) exec('insertHTML', `<img src="${url.replace(/"/g, '&quot;')}" style="max-width:100%;height:auto;border-radius:6px;display:block;margin:8px auto;">`); }, 'បញ្ចូលរូបភាព');
     btn('― បន្ទាត់', () => exec('insertHorizontalRule'), 'បន្ទាត់');
     btn('➕ ទំព័រ', () => exec('insertHTML', '<div class="pgbrk" contenteditable="false" style="height:0;border-top:2px dashed #c8a24a;margin:26px 0;position:relative;break-after:page;page-break-after:always;"><span style="position:absolute;left:50%;top:-11px;transform:translateX(-50%);background:#fff;color:#b6810f;font-size:11px;padding:0 8px;">▬ ទំព័រថ្មី ▬</span></div><p><br></p>'), 'បន្ថែមទំព័រថ្មី');
     root.appendChild(bar);
@@ -9621,7 +9628,7 @@ class Component extends DCLogic {
     canvas.appendChild(ed);
     root.appendChild(canvas);
     applyMode();
-    this._attachPinchZoom(canvas, () => zoom, z => { zoom = Math.round(z * 20) / 20; applyZoom(); });
+    this._attachPinchZoom(canvas, () => zoom, z => { zoom = Math.max(0.3, Math.min(3, Math.round(z * 20) / 20)); applyZoom(); });
     // error + hint
     const err = document.createElement('div');
     err.id = 'lib-err'; err.style.cssText = 'display:none;color:#c0342c;font-size:12px;margin-top:8px;';
