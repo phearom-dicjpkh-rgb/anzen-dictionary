@@ -9455,7 +9455,9 @@ class Component extends DCLogic {
     }
     let pages = [...stage.querySelectorAll('.a4page')];
     if (!pages.length) { const p = mkPage(); p.innerHTML = '<p style="opacity:0.5;">(សៀវភៅទទេ)</p>'; pages = [p]; }
-    pages.forEach(p => this._wrapBookWords(p));
+    // wrap tap-to-translate words lazily — only the page(s) actually shown, so
+    // opening a long book is instant instead of pre-scanning every page up front
+    const wrapOne = p => { if (p && !p._bwWrapped) { p._bwWrapped = true; this._wrapBookWords(p); } };
     // fix Google-Drive share links so the pictures actually load
     pages.forEach(p => p.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; }));
     // page number in the bottom margin, centred, auto-incrementing from the start
@@ -9469,6 +9471,7 @@ class Component extends DCLogic {
     const resetScroll = () => { area.scrollTop = 0; area.scrollLeft = 0; };
     const applyView = () => {
       const z = fitZoom * scale;
+      wrapOne(pages[cur]); wrapOne(pages[cur + 1]);   // wrap the shown page + look one ahead
       pages.forEach((p, i) => { const show = i === cur; p.style.display = show ? 'block' : 'none'; if (show) p.style.transform = `scale(${z})`; });
       const ph = pages[cur] ? pages[cur].offsetHeight : A4H;   // real height (grows for tall pages)
       stage.style.width = (A4W * z) + 'px'; stage.style.height = (ph * z) + 'px';
