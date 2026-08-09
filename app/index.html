@@ -9532,11 +9532,15 @@ class Component extends DCLogic {
   }
   async saveBook(){
     this._deselectEditorImage();   // drop the selection outline so it isn't saved
-    const titleEl = document.getElementById('lib-title'), edEl = document.getElementById('lib-editor');
+    const titleEl = document.getElementById('lib-title');
     const errEl = document.getElementById('lib-err'), btn = document.getElementById('lib-save');
     const title = (titleEl ? titleEl.value : '').trim();
     const meta = `<div data-bookmeta="1" data-margin="${this._libMargin || 64}" data-start="${this._libStartPage || 1}" style="display:none"></div>`;
-    const content = meta + this._sanitizeBookHtml(edEl ? edEl.innerHTML : '');
+    // join every sheet with a hidden page-break marker so the reader reproduces
+    // exactly the same page-by-page layout (true WYSIWYG)
+    const brk = '<div class="pgbrk" style="display:none"></div>';
+    const body = (this._edPages || []).map(p => this._sanitizeBookHtml(p.innerHTML)).join(brk);
+    const content = meta + (body || '');
     const showErr = m => { if (errEl) { errEl.textContent = m; errEl.style.display = 'block'; } };
     if (!title) { showErr('សូមបញ្ចូលចំណងជើងសៀវភៅ'); return; }
     if (btn) { btn.disabled = true; btn.textContent = 'កំពុងរក្សាទុក…'; }
@@ -9550,12 +9554,13 @@ class Component extends DCLogic {
   }
   // keep the editor's selection alive across toolbar clicks (esp. dropdowns,
   // which steal focus) so a format command still lands on the chosen text
-  _saveLibSel(){ try { const s = window.getSelection(); if (!s.rangeCount) return; const r = s.getRangeAt(0); const ed = document.getElementById('lib-editor'); if (ed && ed.contains(r.commonAncestorContainer)) this._libRange = r.cloneRange(); } catch(e){} }
-  _restoreLibSel(){ try { const ed = document.getElementById('lib-editor'); if (ed) ed.focus(); if (!this._libRange) return; const s = window.getSelection(); s.removeAllRanges(); s.addRange(this._libRange); } catch(e){} }
+  _edCurPage(){ return (this._edPages && this._edPages[this._edCur]) || null; }
+  _saveLibSel(){ try { const s = window.getSelection(); if (!s.rangeCount) return; const r = s.getRangeAt(0); const ed = this._edCurPage(); if (ed && ed.contains(r.commonAncestorContainer)) this._libRange = r.cloneRange(); } catch(e){} }
+  _restoreLibSel(){ try { const ed = this._edCurPage(); if (ed) ed.focus(); if (!this._libRange) return; const s = window.getSelection(); s.removeAllRanges(); s.addRange(this._libRange); } catch(e){} }
   // set an exact pixel font size on the selection (execCommand only knows 1–7)
   _setFontSize(px){
     this._restoreLibSel();
-    const ed = document.getElementById('lib-editor'); if (!ed) return;
+    const ed = this._edCurPage(); if (!ed) return;
     // the <font size=7> tag-swap trick needs styleWithCSS off, else fontSize
     // produces a css span we can't retarget to an exact px value
     try { document.execCommand('styleWithCSS', false, false); } catch(e){}
@@ -9580,11 +9585,11 @@ class Component extends DCLogic {
     const old = document.getElementById('lib-img-bar'); if (old) old.remove();
     const bar = document.createElement('div'); bar.id = 'lib-img-bar';
     bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:130;background:var(--color-surface);border-top:1px solid var(--color-divider);box-shadow:0 -4px 20px rgba(0,0,0,0.3);padding:10px 12px calc(10px + env(safe-area-inset-bottom, 0px));display:flex;flex-wrap:wrap;gap:7px;align-items:center;justify-content:center;';
-    const ed = document.getElementById('lib-editor');
+    const ed = this._edCurPage();
     const mk = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.style.cssText = 'height:38px;padding:0 12px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:14px;'; b.addEventListener('click', fn); return b; };
     const getPct = () => img.dataset.w ? +img.dataset.w : Math.max(10, Math.min(100, Math.round(img.offsetWidth / ((ed && ed.clientWidth) || img.offsetWidth) * 100)));
-    const setPct = p => { p = Math.max(10, Math.min(100, p)); img.style.width = p + '%'; img.style.maxWidth = '100%'; img.style.height = 'auto'; img.dataset.w = p; };
-    const align = m => { img.style.display = 'block'; img.style.margin = m; };
+    const setPct = p => { p = Math.max(10, Math.min(100, p)); img.style.width = p + '%'; img.style.maxWidth = '100%'; img.style.height = 'auto'; img.dataset.w = p; this._edScheduleReflow(this._edCur); };
+    const align = m => { img.style.display = 'block'; img.style.margin = m; this._edScheduleReflow(this._edCur); };
     bar.appendChild(mk('− តូច', () => setPct(getPct() - 10)));
     bar.appendChild(mk('+ ធំ', () => setPct(getPct() + 10)));
     bar.appendChild(mk('⬅', () => align('8px 0')));
@@ -9594,6 +9599,11 @@ class Component extends DCLogic {
     bar.appendChild(mk('✕', () => this._deselectEditorImage()));
     host.appendChild(bar);
   }
+  // — Book editor: a paginated, book-style writer. One A4 sheet is shown at a
+  // time (exactly like the reader); ‹ › / a page box move between sheets; a
+  // "new sheet" button adds pages; and writing or pasting past the bottom of a
+  // sheet automatically flows onto a fresh sheet. What you write on a sheet is
+  // shown identically when reading (same width/margins/breaks = true WYSIWYG).
   _buildBookEditor(book, root){
     root.innerHTML = '';
     const A4W = 794, A4H = 1123;
@@ -9601,6 +9611,8 @@ class Component extends DCLogic {
     const bmeta = this._parseBookMeta(book.content || '');
     let PAD = bmeta.margin;
     this._libMargin = bmeta.margin; this._libStartPage = bmeta.startPage;
+    this._edPages = []; this._edCur = 0; this._edA4W = A4W; this._edA4H = A4H;
+    this._edPAD = PAD; this._edFitZoom = 1; this._edScale = 1;
     // top bar: back + save
     const top = document.createElement('div');
     top.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;';
@@ -9618,27 +9630,16 @@ class Component extends DCLogic {
     title.id = 'lib-title'; title.className = 'input'; title.placeholder = 'ចំណងជើងសៀវភៅ'; title.value = book.title || '';
     title.style.cssText = 'margin-bottom:10px;font-size:18px;font-weight:600;';
     root.appendChild(title);
-    // the A4 sheet (the editable area)
-    const ed = document.createElement('div');
-    ed.id = 'lib-editor'; ed.contentEditable = 'true';
-    ed.style.cssText = `position:relative;width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px;margin:0 auto;box-shadow:0 2px 16px rgba(0,0,0,0.28);font-size:16px;line-height:1.8;overflow-wrap:break-word;word-break:break-word;box-sizing:border-box;outline:none;`;
-    ed.innerHTML = bmeta.html;
-    // a dashed guide showing the writable area (its own margin); stripped on save
-    const guide = document.createElement('div'); guide.className = 'lib-guide'; guide.contentEditable = 'false';
-    const applyMargin = () => { ed.style.padding = PAD + 'px'; guide.style.cssText = `position:absolute;top:${PAD}px;left:${PAD}px;right:${PAD}px;bottom:${PAD}px;border:1px dashed #b9c4d6;pointer-events:none;z-index:0;`; };
-    applyMargin(); ed.insertBefore(guide, ed.firstChild);
     try { document.execCommand('styleWithCSS', false, true); } catch(e){}
-    // buttons keep the editor's live selection (mousedown preventDefault), so
-    // just run the command on it; only the size dropdown, which steals focus,
-    // needs the save/restore helpers
-    const exec = (cmd, val) => { document.execCommand(cmd, false, val == null ? null : val); ed.focus(); };
+    // toolbar commands run on whichever sheet has focus (only one is shown)
+    const exec = (cmd, val) => { const p = this._edCurPage(); if (p) p.focus(); document.execCommand(cmd, false, val == null ? null : val); if (p) p.focus(); this._edScheduleReflow(this._edCur); };
     // toolbar row 1: formatting
     const bar = document.createElement('div');
     bar.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px;border:1px solid var(--color-divider);border-radius:10px;margin-bottom:8px;background:var(--color-surface);';
     const btn = (label, fn, tip, extra) => {
       const b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (tip) b.title = tip;
       b.style.cssText = 'min-width:34px;height:34px;padding:0 9px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:14px;' + (extra || '');
-      b.addEventListener('mousedown', e => e.preventDefault());   // keep the editor's selection
+      b.addEventListener('mousedown', e => e.preventDefault());   // keep the sheet's selection
       b.addEventListener('click', fn);
       bar.appendChild(b); return b;
     };
@@ -9655,7 +9656,7 @@ class Component extends DCLogic {
     sizeSel.style.cssText = 'height:34px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:13px;padding:0 6px;';
     [10,12,14,16,18,20,24,28,32,36,48,64].forEach(px => { const o = document.createElement('option'); o.value = px; o.textContent = px + 'px'; if (px === 16) o.selected = true; sizeSel.appendChild(o); });
     sizeSel.addEventListener('mousedown', () => this._saveLibSel());
-    sizeSel.addEventListener('change', () => this._setFontSize(sizeSel.value));
+    sizeSel.addEventListener('change', () => { this._setFontSize(sizeSel.value); this._edScheduleReflow(this._edCur); });
     bar.appendChild(sizeSel);
     // colours
     ['#201f1d', '#c0342c', '#1558b0', '#2f8f57', '#b6810f'].forEach(c => {
@@ -9665,90 +9666,191 @@ class Component extends DCLogic {
       sw.addEventListener('click', () => exec('foreColor', c));
       bar.appendChild(sw);
     });
-    btn('🖼 រូប', () => { const url = normalizeImgUrl(window.prompt('Link រូបភាព (https://…)') || ''); if (url) exec('insertHTML', `<img src="${url.replace(/"/g, '&quot;')}" style="max-width:100%;height:auto;border-radius:6px;display:block;margin:8px auto;">`); }, 'បញ្ចូលរូបភាព');
+    btn('🖼 រូប', () => {
+      const url = normalizeImgUrl(window.prompt('Link រូបភាព (https://…)') || '');
+      if (!url) return;
+      exec('insertHTML', `<img src="${url.replace(/"/g, '&quot;')}" style="max-width:100%;height:auto;border-radius:6px;display:block;margin:8px auto;">`);
+      const p = this._edCurPage();
+      if (p) p.querySelectorAll('img').forEach(im => { if (!im._edHooked) { im._edHooked = 1; im.addEventListener('load', () => this._edScheduleReflow(this._edCur)); } });
+    }, 'បញ្ចូលរូបភាព');
     btn('― បន្ទាត់', () => exec('insertHorizontalRule'), 'បន្ទាត់');
-    btn('➕ ទំព័រ', () => exec('insertHTML', '<div class="pgbrk" contenteditable="false" style="height:0;border-top:2px dashed #c8a24a;margin:26px 0;position:relative;break-after:page;page-break-after:always;"><span style="position:absolute;left:50%;top:-11px;transform:translateX(-50%);background:#fff;color:#b6810f;font-size:11px;padding:0 8px;">▬ ទំព័រថ្មី ▬</span></div><p><br></p>'), 'បន្ថែមទំព័រថ្មី');
     root.appendChild(bar);
-    // toolbar row 2: paper zoom + page mode
+    // toolbar row 2: page navigation + new sheet + zoom + margin + start page
     const barB = document.createElement('div');
-    barB.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:8px;font-size:12px;';
-    let zoom = 0.6;
-    const zlabel = document.createElement('span'); zlabel.style.cssText = 'min-width:38px;text-align:center;font-weight:600;';
-    const applyZoom = () => { ed.style.zoom = zoom; zlabel.textContent = Math.round(zoom * 100) + '%'; };
+    barB.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:8px;font-size:12px;';
     const zbtn = (t, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.style.cssText = 'width:30px;height:30px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:16px;'; b.addEventListener('click', fn); return b; };
+    // page jump box
+    const navWrap = document.createElement('div'); navWrap.style.cssText = 'display:flex;align-items:center;gap:6px;';
+    const nl = document.createElement('span'); nl.textContent = 'ទំព័រ'; nl.style.opacity = '0.7'; navWrap.appendChild(nl);
+    const jin = document.createElement('input'); jin.type = 'number'; jin.min = '1';
+    jin.style.cssText = 'width:52px;height:32px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);text-align:center;font-size:14px;';
+    const jtot = document.createElement('span'); jtot.style.cssText = 'opacity:0.7;';
+    this._edJin = jin; this._edLabelTot = jtot;
+    const goInput = () => { const v = parseInt(jin.value, 10); if (!isNaN(v)) this._edShowPage(v - 1); };
+    jin.addEventListener('change', goInput);
+    jin.addEventListener('keydown', e => { if (e.key === 'Enter') { goInput(); jin.blur(); } });
+    navWrap.appendChild(jin); navWrap.appendChild(jtot);
+    barB.appendChild(navWrap);
+    // add a new blank sheet after the current one
+    const addBtn = document.createElement('button'); addBtn.type = 'button'; addBtn.textContent = '➕ ក្រដាស់ថ្មី';
+    addBtn.style.cssText = 'height:32px;padding:0 12px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:13px;font-weight:600;color:var(--color-accent-700);';
+    addBtn.addEventListener('click', () => this._edNewPage());
+    barB.appendChild(addBtn);
+    // zoom
     const zoomWrap = document.createElement('div'); zoomWrap.style.cssText = 'display:flex;align-items:center;gap:6px;';
-    const zl = document.createElement('span'); zl.textContent = 'ទំហំក្រដាស់'; zl.style.opacity = '0.7';
-    zoomWrap.appendChild(zl);
-    zoomWrap.appendChild(zbtn('−', () => { zoom = Math.max(0.3, Math.round((zoom - 0.1) * 10) / 10); applyZoom(); }));
+    const zl2 = document.createElement('span'); zl2.textContent = 'ទំហំ'; zl2.style.opacity = '0.7'; zoomWrap.appendChild(zl2);
+    zoomWrap.appendChild(zbtn('−', () => { this._edScale = Math.max(1, Math.round((this._edScale - 0.25) * 4) / 4); this._edApplyView(); }));
+    const zlabel = document.createElement('span'); zlabel.style.cssText = 'min-width:42px;text-align:center;font-weight:600;'; this._edZlabel = zlabel;
     zoomWrap.appendChild(zlabel);
-    zoomWrap.appendChild(zbtn('+', () => { zoom = Math.min(1.8, Math.round((zoom + 0.1) * 10) / 10); applyZoom(); }));
+    zoomWrap.appendChild(zbtn('+', () => { this._edScale = Math.min(4, Math.round((this._edScale + 0.25) * 4) / 4); this._edApplyView(); }));
     barB.appendChild(zoomWrap);
-    let pageMode = 'a4';
-    const modeWrap = document.createElement('div'); modeWrap.style.cssText = 'display:flex;align-items:center;gap:6px;';
-    const ml = document.createElement('span'); ml.textContent = 'ទំព័រ'; ml.style.opacity = '0.7'; modeWrap.appendChild(ml);
-    const modeBtn = document.createElement('button'); modeBtn.type = 'button';
-    modeBtn.style.cssText = 'height:30px;padding:0 14px;border:1px solid var(--color-divider);border-radius:99px;background:var(--color-bg);cursor:pointer;font-size:12px;';
-    const GAP = 22;   // grey gap drawn between the stacked A4 sheets
-    const applyMode = () => {
-      if (pageMode === 'a4') {
-        ed.style.minHeight = A4H + 'px';
-        ed.style.backgroundColor = '#7f7f7f';   // shows through the gaps
-        // white sheet · thin shadow line · grey gap · repeat → looks like stacked pages
-        ed.style.backgroundImage = `repeating-linear-gradient(to bottom, #ffffff 0px, #ffffff ${A4H - GAP - 3}px, #c9c9c9 ${A4H - GAP - 3}px, #c9c9c9 ${A4H - GAP}px, #7f7f7f ${A4H - GAP}px, #7f7f7f ${A4H}px)`;
-        modeBtn.textContent = 'A4 ដាក់ៗគ្នា';
-      } else {
-        ed.style.minHeight = '480px'; ed.style.backgroundColor = '#fff'; ed.style.backgroundImage = 'none';
-        modeBtn.textContent = 'គ្មានកំណត់';
-      }
-    };
-    modeBtn.addEventListener('click', () => { pageMode = pageMode === 'a4' ? 'free' : 'a4'; applyMode(); });
-    modeWrap.appendChild(modeBtn); barB.appendChild(modeWrap);
-    // margin (រឹម) control
+    // margin (រឹម)
     const marWrap = document.createElement('div'); marWrap.style.cssText = 'display:flex;align-items:center;gap:6px;';
     const mrl = document.createElement('span'); mrl.textContent = 'រឹម'; mrl.style.opacity = '0.7'; marWrap.appendChild(mrl);
     const mlabel = document.createElement('span'); mlabel.style.cssText = 'min-width:42px;text-align:center;';
-    const setMargin = m => { PAD = Math.max(16, Math.min(160, m)); this._libMargin = PAD; applyMargin(); mlabel.textContent = PAD + 'px'; };
+    const setMargin = m => { PAD = Math.max(16, Math.min(160, m)); this._edPAD = PAD; this._libMargin = PAD; this._edPages.forEach(p => { p.style.padding = `${PAD}px ${PAD}px ${PAD + 24}px`; }); mlabel.textContent = PAD + 'px'; this._edScheduleReflow(0); };
     marWrap.appendChild(zbtn('−', () => setMargin(PAD - 8)));
     marWrap.appendChild(mlabel);
     marWrap.appendChild(zbtn('+', () => setMargin(PAD + 8)));
     barB.appendChild(marWrap);
-    setMargin(PAD);
-    root.appendChild(barB);
-    // grey canvas that the A4 sheet floats on (its own scroll, keeps toolbar in view)
-    const canvas = document.createElement('div');
-    canvas.style.cssText = 'overflow:auto;background:#7f7f7f;padding:16px;border-radius:10px;max-height:560px;-webkit-overflow-scrolling:touch;';
-    canvas.appendChild(ed);
-    root.appendChild(canvas);
-    applyMode();
-    this._attachPinchZoom(canvas, () => zoom, z => { zoom = Math.max(0.3, Math.min(3, Math.round(z * 20) / 20)); applyZoom(); });
-    // page-number footer (centred, below the sheet) — sets the first page number,
-    // the reader then numbers each following page automatically
-    const pnWrap = document.createElement('div');
-    pnWrap.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;font-size:13px;';
-    const pnl = document.createElement('span'); pnl.textContent = 'លេខទំព័រចាប់ផ្ដើម'; pnl.style.opacity = '0.7';
+    // starting page number
+    const pnWrap = document.createElement('div'); pnWrap.style.cssText = 'display:flex;align-items:center;gap:6px;';
+    const pnl = document.createElement('span'); pnl.textContent = 'លេខចាប់ផ្ដើម'; pnl.style.opacity = '0.7';
     const pnInput = document.createElement('input'); pnInput.type = 'number'; pnInput.min = '1'; pnInput.value = String(this._libStartPage || 1);
-    pnInput.style.cssText = 'width:64px;height:34px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);text-align:center;font-size:14px;';
+    pnInput.style.cssText = 'width:56px;height:32px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);text-align:center;font-size:14px;';
     pnInput.addEventListener('change', () => { const v = parseInt(pnInput.value, 10); this._libStartPage = (!isNaN(v) && v >= 1) ? v : 1; pnInput.value = String(this._libStartPage); });
     pnWrap.appendChild(pnl); pnWrap.appendChild(pnInput);
-    root.appendChild(pnWrap);
+    barB.appendChild(pnWrap);
+    root.appendChild(barB);
+    // grey canvas the sheet floats on, with fixed ‹ › nav buttons on the sides
+    const canvasWrap = document.createElement('div'); canvasWrap.style.cssText = 'position:relative;';
+    const canvas = document.createElement('div');
+    canvas.style.cssText = 'overflow:auto;background:#7f7f7f;padding:16px;border-radius:10px;max-height:60vh;-webkit-overflow-scrolling:touch;display:flex;';
+    const stage = document.createElement('div'); stage.style.cssText = 'margin:auto;flex:none;position:relative;';
+    canvas.appendChild(stage); canvasWrap.appendChild(canvas);
+    this._edStage = stage; this._edCanvas = canvas;
+    const edge = (txt, fn, side) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt;
+      b.style.cssText = `position:absolute;${side}:6px;top:50%;transform:translateY(-50%);width:40px;height:40px;border:none;border-radius:50%;background:rgba(0,0,0,0.5);color:#fff;font-size:24px;line-height:1;cursor:pointer;z-index:8;display:flex;align-items:center;justify-content:center;`;
+      b.addEventListener('click', fn); return b; };
+    const prevB = edge('‹', () => this._edShowPage(this._edCur - 1), 'left');
+    const nextB = edge('›', () => this._edShowPage(this._edCur + 1), 'right');
+    canvasWrap.appendChild(prevB); canvasWrap.appendChild(nextB);
+    this._edPrevB = prevB; this._edNextB = nextB;
+    root.appendChild(canvasWrap);
+    // two-finger pinch to zoom the sheet
+    this._attachPinchZoom(canvas, () => this._edScale, (s) => { this._edScale = Math.max(1, Math.min(4, s)); this._edApplyView(); });
     // error + hint
-    const err = document.createElement('div');
-    err.id = 'lib-err'; err.style.cssText = 'display:none;color:#c0342c;font-size:12px;margin-top:8px;';
+    const err = document.createElement('div'); err.id = 'lib-err'; err.style.cssText = 'display:none;color:#c0342c;font-size:12px;margin-top:8px;';
     root.appendChild(err);
-    const hint = document.createElement('div');
-    hint.style.cssText = 'font-size:11px;opacity:0.5;margin-top:8px;line-height:1.7;';
-    hint.textContent = 'ក្រដាស់ A4 · "A4 ដាក់ៗគ្នា" បង្ហាញទំព័រដាក់ជាន់គ្នា (ដូចពេលអាន), "គ្មានកំណត់" ក្រដាស់វែងតែមួយ · "➕ ទំព័រ" ចាប់ទំព័រថ្មីស្អាត · ពង្រីក/បង្រួម −/+ · រូបភាពដាក់ជា Link។';
+    const hint = document.createElement('div'); hint.style.cssText = 'font-size:11px;opacity:0.5;margin-top:8px;line-height:1.7;';
+    hint.textContent = 'ក្រដាស់ A4 មួយសន្លឹកម្ដង · ‹ › ឬ វាយលេខទំព័រ ដើម្បីប្ដូរទំព័រ · "➕ ក្រដាស់ថ្មី" បន្ថែមទំព័រ · បើសរសេរ ឬ Paste អក្សរច្រើនហួសទំព័រ វាបង្កើតទំព័រថ្មីដោយស្វ័យប្រវត្តិ · អ្វីដែលសរសេរ បង្ហាញដូចគ្នាពេលអាន។';
     root.appendChild(hint);
-    // fit the sheet to the canvas width, track selection, focus
-    ed.addEventListener('keyup', () => this._saveLibSel());
-    ed.addEventListener('mouseup', () => this._saveLibSel());
-    // tap an image → its resize/align bar; tap elsewhere closes it
-    ed.addEventListener('click', e => { if (e.target && e.target.tagName === 'IMG') this._selectEditorImage(e.target); else this._deselectEditorImage(); });
+    // build the sheets from the stored content (split at saved page breaks)
+    const segs = this._edSplitSegments(bmeta.html);
+    segs.forEach(h => this._edMakePage(h));
+    if (!this._edPages.length) this._edMakePage('<p><br></p>');
+    setMargin(PAD);   // apply padding to the sheets
+    // reflow (auto-paginate long/legacy content), fit to width, show first sheet
     setTimeout(() => {
+      this._edReflow(0);
       const cw = canvas.clientWidth - 32;
-      if (cw > 0) zoom = Math.min(1, Math.max(0.3, Math.round((cw / A4W) * 20) / 20));
-      applyZoom(); ed.focus(); this._saveLibSel();
+      this._edFitZoom = cw > 0 ? Math.max(0.2, Math.min(1, cw / A4W)) : 0.6;
+      this._edShowPage(0);
     }, 60);
+  }
+  // split saved content into per-sheet HTML at the hidden .pgbrk markers
+  _edSplitSegments(html){
+    const src = document.createElement('div'); src.innerHTML = html || '';
+    const segs = []; let cur = document.createElement('div');
+    [...src.childNodes].forEach(n => {
+      if (n.nodeType === 1 && n.classList && n.classList.contains('pgbrk')) { segs.push(cur.innerHTML); cur = document.createElement('div'); return; }
+      cur.appendChild(n.cloneNode(true));
+    });
+    segs.push(cur.innerHTML);
+    return segs;
+  }
+  // create one editable A4 sheet (same look/metrics as a reader page) and add it
+  _edMakePage(html){
+    const A4W = this._edA4W, A4H = this._edA4H, PAD = this._edPAD;
+    const p = document.createElement('div');
+    p.className = 'lib-epage report'; p.contentEditable = 'true';
+    p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;outline:none;display:none;`;
+    p.innerHTML = (html && html.trim()) ? html : '<p><br></p>';
+    p.addEventListener('input', () => this._edScheduleReflow(this._edPages.indexOf(p)));
+    p.addEventListener('keyup', () => this._saveLibSel());
+    p.addEventListener('mouseup', () => this._saveLibSel());
+    p.addEventListener('click', e => { if (e.target && e.target.tagName === 'IMG') this._selectEditorImage(e.target); else this._deselectEditorImage(); });
+    // load Google-Drive / remote images and reflow once their height is known
+    p.querySelectorAll('img').forEach(im => { im._edHooked = 1; im.addEventListener('load', () => this._edScheduleReflow(this._edPages.indexOf(p))); const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; });
+    this._edStage.appendChild(p); this._edPages.push(p);
+    return p;
+  }
+  // add a blank sheet right after the current one and jump to it
+  _edNewPage(){
+    const np = this._edMakePage('<p><br></p>');   // appended at the end
+    this._edPages.pop();
+    const idx = Math.min(this._edCur + 1, this._edPages.length);
+    this._edPages.splice(idx, 0, np);
+    this._edShowPage(idx);
+  }
+  // show one sheet (hide the rest), update nav, focus it for writing
+  _edShowPage(idx){
+    if (!this._edPages || !this._edPages.length) return;
+    idx = Math.max(0, Math.min(this._edPages.length - 1, idx));
+    this._edCur = idx;
+    this._edApplyView();
+    const p = this._edPages[idx]; if (p) setTimeout(() => { try { p.focus(); } catch(e){} }, 0);
+  }
+  // apply the current page + zoom: only the current sheet is visible & scaled,
+  // and the stage is sized to the scaled sheet so scrolling reaches both edges
+  _edApplyView(){
+    const pages = this._edPages; if (!pages || !pages.length) return;
+    const A4W = this._edA4W, A4H = this._edA4H;
+    const z = (this._edFitZoom || 1) * (this._edScale || 1);
+    pages.forEach((p, i) => { const show = i === this._edCur; p.style.display = show ? 'block' : 'none'; if (show) p.style.transform = `scale(${z})`; });
+    const ph = pages[this._edCur] ? pages[this._edCur].offsetHeight : A4H;
+    this._edStage.style.width = (A4W * z) + 'px'; this._edStage.style.height = (ph * z) + 'px';
+    if (this._edJin) { this._edJin.value = this._edCur + 1; this._edJin.max = String(pages.length); }
+    if (this._edLabelTot) this._edLabelTot.textContent = '/ ' + pages.length;
+    if (this._edZlabel) this._edZlabel.textContent = Math.round((this._edScale || 1) * 100) + '%';
+    if (this._edPrevB) this._edPrevB.style.display = this._edCur === 0 ? 'none' : 'flex';
+    if (this._edNextB) this._edNextB.style.display = this._edCur === pages.length - 1 ? 'none' : 'flex';
+  }
+  _edIsEmpty(p){ return !(p.textContent || '').trim() && !p.querySelector('img,hr'); }
+  _edScheduleReflow(fromIdx){ clearTimeout(this._edReflowT); this._edReflowT = setTimeout(() => this._edReflow(fromIdx), 160); }
+  // auto-pagination: whatever overflows the bottom of a sheet is pushed onto the
+  // next one (a new sheet is created when needed), so writing or pasting a lot of
+  // text flows onward sheet by sheet, like a book — and nothing is ever clipped
+  // or lost. It only ever moves content FORWARD, so a sheet the writer started on
+  // purpose (＋ new sheet) is never pulled back into the previous one. The caret
+  // is tracked across the shuffle so typing/pasting continues seamlessly.
+  _edReflow(fromIdx){
+    const pages = this._edPages; if (!pages || !pages.length) return;
+    const A4H = this._edA4H;
+    const sel = window.getSelection();
+    let cn = null, co = 0;
+    if (sel && sel.rangeCount) { const r = sel.getRangeAt(0); cn = r.startContainer; co = r.startOffset; }
+    // every sheet must be laid out (not display:none) to measure its height
+    pages.forEach(p => { p.style.display = 'block'; p.style.transform = 'none'; });
+    const start = Math.max(0, fromIdx | 0);
+    // push overflow forward, sheet after sheet
+    for (let i = start; i < pages.length; i++) {
+      const p = pages[i]; let guard = 0;
+      while (p.scrollHeight > A4H && p.childNodes.length > 1 && guard++ < 4000) {
+        let next = pages[i + 1];
+        if (!next) { next = this._edMakePage(''); next.style.display = 'block'; next.style.transform = 'none'; }   // new sheet must be laid out so it's measurable
+        next.insertBefore(p.lastChild, next.firstChild);
+      }
+    }
+    // land the caret on whichever sheet its node ended up on
+    let targetIdx = this._edCur;
+    if (cn) { const pi = pages.findIndex(p => p === cn || p.contains(cn)); if (pi >= 0) targetIdx = pi; }
+    this._edCur = Math.max(0, Math.min(pages.length - 1, targetIdx));
+    this._edApplyView();
+    if (cn) {
+      const tp = pages[this._edCur]; if (tp) { try { tp.focus(); } catch(e){} }
+      try { const r = document.createRange(); const max = cn.nodeType === 3 ? cn.length : cn.childNodes.length; r.setStart(cn, Math.min(co, max)); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); } catch(e){}
+    }
   }
   async saveBookVis(book, patch){
     const cur = BOOK_VIS.get(book) || { locked: false, allSchools: true, schools: new Set() };
