@@ -521,6 +521,8 @@ textarea.input { min-height: 90px; resize: vertical; }
 .report ruby { ruby-align:center; }
 .report rt { font-size:0.58em; color:#555; font-weight:400; line-height:1; }
 .report .qcell { line-height:2.1; }
+.report .bookword { cursor:pointer; border-bottom:1px dotted rgba(21,88,176,0.55); }
+.report .bookword:active { background:rgba(21,88,176,0.12); }
 #print-mount { display:none; }
 @media print {
   @page { size:A4; margin:12mm; }
@@ -9324,6 +9326,61 @@ class Component extends DCLogic {
     const run = t => { const root = document.getElementById('lib-read-root'); if (!root) { if (t > 0) setTimeout(() => run(t - 1), 30); return; } this._buildReadView(this._libReadData || {}, root); };
     setTimeout(() => run(6), 16);
   }
+  // dictionary words (with kanji) → their reading + Khmer meaning, for tap-to-translate
+  _bookWordMap(){
+    if (this._bwMap) return this._bwMap;
+    this._bwMap = new Map(); this._bwMax = 0;
+    for (const w of WORDS) {
+      if (!w || !w.jp || !HAS_KANJI.test(w.jp)) continue;
+      if (!this._bwMap.has(w.jp)) { this._bwMap.set(w.jp, { kana: w.kana || '', km: w.km || '' }); if (w.jp.length > this._bwMax) this._bwMax = w.jp.length; }
+    }
+    return this._bwMap;
+  }
+  // wrap every dictionary word inside the rendered book in a tappable span
+  _wrapBookWords(container){
+    const map = this._bookWordMap(), max = Math.min(this._bwMax || 1, 16);
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+    const targets = []; let node;
+    while ((node = walker.nextNode())) { if (node.parentNode && node.parentNode.classList && node.parentNode.classList.contains('bookword')) continue; if (HAS_KANJI.test(node.textContent)) targets.push(node); }
+    for (const tn of targets) {
+      const text = tn.textContent, frag = document.createDocumentFragment();
+      let i = 0, buf = '';
+      const flush = () => { if (buf) { frag.appendChild(document.createTextNode(buf)); buf = ''; } };
+      while (i < text.length) {
+        let hit = 0;
+        if (HAS_KANJI.test(text[i])) {
+          for (let L = Math.min(max, text.length - i); L >= 1; L--) {
+            const sub = text.slice(i, i + L);
+            if (map.has(sub)) { flush(); const s = document.createElement('span'); s.className = 'bookword'; s.dataset.jp = sub; s.textContent = sub; frag.appendChild(s); i += L; hit = 1; break; }
+          }
+        }
+        if (hit) continue;
+        buf += text[i]; i++;
+      }
+      flush();
+      tn.parentNode.replaceChild(frag, tn);
+    }
+  }
+  // little translation card for a tapped word, over the reader
+  _showBookWordPopup(jp){
+    const info = this._bookWordMap().get(jp); if (!info) return;
+    const host = document.getElementById('lib-read-root') || document.body;
+    const old = document.getElementById('bookword-pop'); if (old) old.remove();
+    const pop = document.createElement('div'); pop.id = 'bookword-pop';
+    pop.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:130;background:var(--color-surface);color:var(--color-text);border-top:1px solid var(--color-divider);box-shadow:0 -6px 24px rgba(0,0,0,0.35);padding:16px 18px calc(18px + env(safe-area-inset-bottom, 0px));border-radius:16px 16px 0 0;';
+    pop.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div style="min-width:0;"><div style="font-size:12px;opacity:0.6;">${_escHtml(info.kana)}</div>
+        <div style="font-family:var(--font-heading);font-weight:600;font-size:26px;line-height:1.15;">${_escHtml(jp)}</div></div>
+        <div style="display:flex;gap:8px;flex:none;">
+          <button id="bwp-speak" style="width:38px;height:38px;border:1px solid var(--color-divider);border-radius:10px;background:var(--color-bg);cursor:pointer;font-size:17px;">🔊</button>
+          <button id="bwp-close" style="width:38px;height:38px;border:1px solid var(--color-divider);border-radius:10px;background:var(--color-bg);cursor:pointer;font-size:16px;">✕</button>
+        </div></div>
+      <div style="font-size:17px;margin-top:10px;line-height:1.6;">${_escHtml(info.km)}</div>`;
+    host.appendChild(pop);
+    pop.querySelector('#bwp-close').addEventListener('click', () => pop.remove());
+    pop.querySelector('#bwp-speak').addEventListener('click', () => this.playAudio(jp));
+    this.playAudio(jp);   // read it aloud on tap
+  }
   _buildReadView(book, root){
     root.innerHTML = '';
     const A4W = 794, A4H = 1123, PAD = 48;
@@ -9364,6 +9421,9 @@ class Component extends DCLogic {
     }
     let pages = [...wrap.querySelectorAll('.a4page')];
     if (!pages.length) { const p = mkPage(); p.innerHTML = '<p style="opacity:0.5;">(សៀវភៅទទេ)</p>'; pages = [p]; }
+    // make dictionary words tappable → translation card
+    pages.forEach(p => this._wrapBookWords(p));
+    area.addEventListener('click', e => { const el = e.target.closest && e.target.closest('.bookword'); if (el && el.dataset.jp) this._showBookWordPopup(el.dataset.jp); });
     const total = pages.length;
     jin.max = String(total); jtot.textContent = '/ ' + total;
     let cur = 0, zoom = 1;
@@ -9395,7 +9455,7 @@ class Component extends DCLogic {
     window.addEventListener('resize', onResize);
     setTimeout(fit, 60);
   }
-  libBackToList(){ this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
+  libBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
   async libDeleteBook(id){ if (!window.confirm('លុបសៀវភៅនេះមែនទេ?')) return; await Backend.deleteBook(id); this.loadBooks(); }
   // strip anything unsafe before a book is stored (it is shown to other users)
   _sanitizeBookHtml(html){
