@@ -9441,8 +9441,10 @@ class Component extends DCLogic {
     area.appendChild(stage); ov.appendChild(area);
     // — paginate the content into A4 sheets (absolutely stacked; only one shown) —
     const src = document.createElement('div'); src.innerHTML = html || '';
+    // min-height (not fixed height) + no clipping, so a block taller than a page
+    // is never cut off / lost — that page just grows a little
     const mkPage = () => { const p = document.createElement('div'); p.className = 'a4page report';
-      p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;height:${A4H}px;background:#fff;color:#111;padding:${PAD}px;box-sizing:border-box;overflow:hidden;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;will-change:transform;`;
+      p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;will-change:transform;`;
       stage.appendChild(p); return p; };
     let page = mkPage();
     const blocks = [...src.childNodes].filter(n => n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim()));
@@ -9468,7 +9470,8 @@ class Component extends DCLogic {
     const applyView = () => {
       const z = fitZoom * scale;
       pages.forEach((p, i) => { const show = i === cur; p.style.display = show ? 'block' : 'none'; if (show) p.style.transform = `scale(${z})`; });
-      stage.style.width = (A4W * z) + 'px'; stage.style.height = (A4H * z) + 'px';
+      const ph = pages[cur] ? pages[cur].offsetHeight : A4H;   // real height (grows for tall pages)
+      stage.style.width = (A4W * z) + 'px'; stage.style.height = (ph * z) + 'px';
       jin.value = cur + 1; zlabel.textContent = Math.round(scale * 100) + '%';
       prevB.style.display = cur === 0 ? 'none' : 'flex';
       nextB.style.display = cur === total - 1 ? 'none' : 'flex';
