@@ -9540,7 +9540,10 @@ class Component extends DCLogic {
     // fit = 100%: the largest size that shows the whole page with no top/bottom cut
     const fit = () => {
       if (!document.body.contains(ov)) { window.removeEventListener('resize', onResize); return; }
-      const ah = area.clientHeight - 16, aw = area.clientWidth - 16;
+      let ah = area.clientHeight - 16, aw = area.clientWidth - 16;
+      // before the flex layout has settled these can read 0 — fall back to the
+      // screen size so the very first paint is already fitted, not oversized
+      if (ah <= 0 || aw <= 0) { ah = window.innerHeight - 96; aw = window.innerWidth - 16; }
       if (ah > 0 && aw > 0) fitZoom = Math.max(0.15, Math.min(ah / A4H, aw / A4W));
       applyView();
     };
@@ -9555,7 +9558,9 @@ class Component extends DCLogic {
       area.scrollLeft = stage.offsetLeft + px * zNew - cx;
       area.scrollTop = stage.offsetTop + py * zNew - cy;
     });
-    setTimeout(fit, 60);
+    fit();                 // fit now so the first paint is centred and full-screen
+    setTimeout(fit, 60);   // re-fit once the real layout height is known
+    setTimeout(fit, 250);
   }
   // per-book reading bookmarks + last-read page, kept on this device (localStorage)
   _bmAll(){ try { return JSON.parse(localStorage.getItem('dict_book_bookmarks') || '{}') || {}; } catch(e){ return {}; } }
@@ -9626,6 +9631,24 @@ class Component extends DCLogic {
     try { document.execCommand('styleWithCSS', false, true); } catch(e){}
     ed.querySelectorAll('font[size="7"]').forEach(f => { f.removeAttribute('size'); f.style.fontSize = px + 'px'; });
     ed.focus(); this._saveLibSel();
+  }
+  // set line spacing on the selected paragraphs (or the whole sheet if nothing is
+  // selected). It writes an inline line-height, which is kept in the saved HTML so
+  // the reader shows the exact same spacing.
+  _setLineSpacing(lh){
+    if (!lh) return;
+    this._restoreLibSel();
+    const ed = this._edCurPage(); if (!ed) return;
+    const kids = [...ed.children].filter(n => n.nodeType === 1);
+    let blocks = kids;
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount && !sel.isCollapsed && ed.contains(sel.anchorNode)) {
+      const range = sel.getRangeAt(0);
+      const hit = kids.filter(el => { try { return range.intersectsNode(el); } catch(e){ return false; } });
+      if (hit.length) blocks = hit;
+    }
+    blocks.forEach(el => { el.style.lineHeight = String(lh); });
+    ed.focus(); this._saveLibSel(); this._edScheduleReflow(this._edCur);
   }
   // tap an image in the editor → a bar to resize / align / move / delete it
   _selectEditorImage(img){
@@ -9707,8 +9730,10 @@ class Component extends DCLogic {
     btn('H', () => exec('formatBlock', 'H2'), 'ចំណងជើង');
     btn('¶', () => exec('formatBlock', 'P'), 'អត្ថបទ');
     btn('•', () => exec('insertUnorderedList'), 'បញ្ជី');
-    btn('⬅', () => exec('justifyLeft'), 'ឆ្វេង');
-    btn('⬌', () => exec('justifyCenter'), 'កណ្ដាល');
+    btn('⬅', () => exec('justifyLeft'), 'តម្រឹមឆ្វេង');
+    btn('⬌', () => exec('justifyCenter'), 'តម្រឹមកណ្ដាល');
+    btn('➡', () => exec('justifyRight'), 'តម្រឹមស្ដាំ');
+    btn('☰', () => exec('justifyFull'), 'តម្រឹមសងខាង (justify)');
     // numeric font size
     const sizeSel = document.createElement('select'); sizeSel.title = 'ទំហំអក្សរ (px)';
     sizeSel.style.cssText = 'height:34px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:13px;padding:0 6px;';
@@ -9716,6 +9741,15 @@ class Component extends DCLogic {
     sizeSel.addEventListener('mousedown', () => this._saveLibSel());
     sizeSel.addEventListener('change', () => { this._setFontSize(sizeSel.value); this._edScheduleReflow(this._edCur); });
     bar.appendChild(sizeSel);
+    // line spacing (គម្លាតបន្ទាត់) — applies to the selected paragraphs, or the whole
+    // sheet when nothing is selected; the value is saved so the reader matches
+    const lsSel = document.createElement('select'); lsSel.title = 'គម្លាតបន្ទាត់';
+    lsSel.style.cssText = 'height:34px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:13px;padding:0 6px;';
+    const lsHint = document.createElement('option'); lsHint.value = ''; lsHint.textContent = '↕ គម្លាត'; lsHint.disabled = true; lsHint.selected = true; lsSel.appendChild(lsHint);
+    [['1.0','តូច'],['1.3',''],['1.5',''],['1.8','ធម្មតា'],['2.0',''],['2.5',''],['3.0','ធំ']].forEach(([v,t]) => { const o = document.createElement('option'); o.value = v; o.textContent = '↕ ' + v + (t ? ' · ' + t : ''); lsSel.appendChild(o); });
+    lsSel.addEventListener('mousedown', () => this._saveLibSel());
+    lsSel.addEventListener('change', () => { this._setLineSpacing(lsSel.value); lsSel.selectedIndex = 0; });
+    bar.appendChild(lsSel);
     // colours
     ['#201f1d', '#c0342c', '#1558b0', '#2f8f57', '#b6810f'].forEach(c => {
       const sw = document.createElement('button'); sw.type = 'button'; sw.title = 'ពណ៌';
