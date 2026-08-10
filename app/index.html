@@ -9905,6 +9905,44 @@ class Component extends DCLogic {
     });
     this._edDirty = true; this._edReflow(0); this._edApplyView();
   }
+  // does this line START a new paragraph? (Japanese textbooks indent new paragraphs
+  // with a full-width space; bullets / numbers / markers also start one)
+  _edStartsNewPara(raw){
+    const tmp = document.createElement('div'); tmp.innerHTML = raw; const t = tmp.textContent || '';
+    if (!t.trim()) return false;
+    if (/^　/.test(t)) return true;                              // full-width-space indent
+    const s = t.replace(/^[\s　]+/, '');
+    if (/^[◆●■□▪◎○◇★☆▲△▶▷※【「『（(・→⇒◯〇]/.test(s)) return true;   // markers / bullets
+    if (/^[0-9０-９]{1,3}\s*[．.、)）]/.test(s)) return true;            // "1." "１．" "1)"
+    if (/^[（(]\s*[0-9０-９]/.test(s)) return true;                    // "(1"
+    return false;
+  }
+  // join a PDF's per-line hard breaks into flowing paragraphs. Headings, images,
+  // shapes, lists and horizontal rules stay as-is and act as paragraph boundaries.
+  _edFlowLines(pageEl){
+    const isPlainText = el => el.nodeType === 1 && /^(P|DIV)$/.test(el.tagName) && !el.querySelector('img,hr,.lib-shape') && !(el.classList && el.classList.contains('lib-shape'));
+    const out = []; let cur = null;
+    const flush = () => { if (cur) { if ((cur.textContent || '').trim()) out.push(cur); cur = null; } };
+    const addLine = raw => {
+      const tmp = document.createElement('div'); tmp.innerHTML = raw; const text = tmp.textContent || '';
+      if (!text.trim()) { flush(); return; }                          // blank line → break
+      const heading = /^[\s　]*[◆●■□▪◎◇★☆※【〔▶▷]/.test(text);         // ◆-style subheading = stands alone
+      if (!cur || heading || this._edStartsNewPara(raw)) { flush(); cur = document.createElement('p'); cur.innerHTML = raw; if (heading) flush(); }
+      else cur.insertAdjacentHTML('beforeend', raw);                   // continuation → join (no space, CJK)
+    };
+    for (const n of [...pageEl.childNodes]) {
+      if (n.nodeType === 3) { const t = n.textContent; if (t.trim()) addLine(t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')); continue; }
+      if (!isPlainText(n)) { flush(); out.push(n); continue; }         // heading / image / shape / list → keep, boundary
+      n.innerHTML.split(/<br\s*\/?>/i).forEach(addLine);
+    }
+    flush();
+    pageEl.innerHTML = ''; out.forEach(el => pageEl.appendChild(el));
+  }
+  _edJoinLines(){
+    if (!window.confirm('ភ្ជាប់បន្ទាត់ដែល PDF កាត់ខុស ឲ្យទៅជាកថាខណ្ឌហូរធម្មតា លើគ្រប់ទំព័រ?\n(កថាខណ្ឌដែលចាប់ផ្ដើមដោយគម្លាត　 ឬ លេខ ឬ សញ្ញា នៅដដែល · រូបភាព/រូបរាង/ចំណងជើង នៅដដែល · ចុច ↶ ដើម្បីត្រឡប់)')) return;
+    (this._edPages || []).forEach(pg => this._edFlowLines(pg));
+    this._edDirty = true; this._edReflow(0); this._edApplyView();
+  }
   // — Book editor: a paginated, book-style writer. One A4 sheet is shown at a
   // time (exactly like the reader); ‹ › / a page box move between sheets; a
   // "new sheet" button adds pages; and writing or pasting past the bottom of a
@@ -9990,6 +10028,7 @@ class Component extends DCLogic {
     gadd(gBlock, '¶', () => exec('formatBlock', 'P'), 'អត្ថបទធម្មតា');
     gadd(gBlock, '•', () => exec('insertUnorderedList'), 'បញ្ជី');
     gadd(gBlock, '🧹', () => this._edFixLayout(), 'សម្អាត paste (អក្សរចង្អៀត + ដកឃ្លាជប៉ុនខុស)');
+    gadd(gBlock, '🔗', () => this._edJoinLines(), 'ភ្ជាប់បន្ទាត់ PDF ឲ្យហូរធម្មតា');
     r1.appendChild(gBlock);
     // font size + line spacing
     const gSize = grp();
