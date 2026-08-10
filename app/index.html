@@ -9671,20 +9671,70 @@ class Component extends DCLogic {
     const img = this._edSelImg, host = document.getElementById('lib-editor-root'); if (!img || !host) return;
     const old = document.getElementById('lib-img-bar'); if (old) old.remove();
     const bar = document.createElement('div'); bar.id = 'lib-img-bar';
-    bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:130;background:var(--color-surface);border-top:1px solid var(--color-divider);box-shadow:0 -4px 20px rgba(0,0,0,0.3);padding:10px 12px calc(10px + env(safe-area-inset-bottom, 0px));display:flex;flex-wrap:wrap;gap:7px;align-items:center;justify-content:center;';
+    bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:130;background:var(--color-surface);border-top:1px solid var(--color-divider);box-shadow:0 -4px 20px rgba(0,0,0,0.3);padding:8px 10px calc(8px + env(safe-area-inset-bottom, 0px));display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;';
     const ed = this._edCurPage();
-    const mk = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.style.cssText = 'height:38px;padding:0 12px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:14px;'; b.addEventListener('click', fn); return b; };
+    const mk = (label, fn, active) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.style.cssText = 'height:36px;padding:0 11px;border:1px solid var(--color-divider);border-radius:8px;background:' + (active ? 'var(--color-accent-700);color:#fff;' : 'var(--color-bg);') + 'cursor:pointer;font-size:13px;'; b.addEventListener('click', fn); return b; };
     const getPct = () => img.dataset.w ? +img.dataset.w : Math.max(10, Math.min(100, Math.round(img.offsetWidth / ((ed && ed.clientWidth) || img.offsetWidth) * 100)));
-    const setPct = p => { p = Math.max(10, Math.min(100, p)); img.style.width = p + '%'; img.style.maxWidth = '100%'; img.style.height = 'auto'; img.dataset.w = p; this._edScheduleReflow(this._edCur); };
-    const align = m => { img.style.display = 'block'; img.style.margin = m; this._edScheduleReflow(this._edCur); };
+    const setPct = p => { p = Math.max(10, Math.min(100, p)); img.style.width = p + '%'; img.style.maxWidth = '100%'; img.style.height = 'auto'; img.dataset.w = p; this._edDirty = true; this._edScheduleReflow(this._edCur); };
     bar.appendChild(mk('− តូច', () => setPct(getPct() - 10)));
     bar.appendChild(mk('+ ធំ', () => setPct(getPct() + 10)));
-    bar.appendChild(mk('⬅', () => align('8px 0')));
-    bar.appendChild(mk('⬛ កណ្ដាល', () => align('8px auto')));
-    bar.appendChild(mk('➡', () => align('8px 0 8px auto')));
-    bar.appendChild(mk('🗑 លុប', () => { img.remove(); this._deselectEditorImage(); }));
+    // text-wrap mode (the active one is highlighted)
+    const wrap = img.dataset.wrap || 'center';
+    const wbtn = (label, mode) => mk(label, () => { this._edSetImgWrap(img, mode); this._showImgBar(); }, wrap === mode);
+    bar.appendChild(wbtn('⬍ ក្នុងជួរ', 'inline'));
+    bar.appendChild(wbtn('◧ រុំឆ្វេង', 'left'));
+    bar.appendChild(wbtn('◨ រុំស្ដាំ', 'right'));
+    bar.appendChild(wbtn('▤ កណ្ដាល', 'center'));
+    bar.appendChild(wbtn('⬆ លើអក្សរ', 'front'));
+    bar.appendChild(wbtn('⬇ ក្រោមអក្សរ', 'behind'));
+    bar.appendChild(mk('🗑 លុប', () => { img.remove(); this._deselectEditorImage(); this._edDirty = true; this._edScheduleReflow(this._edCur); }));
     bar.appendChild(mk('✕', () => this._deselectEditorImage()));
+    if (wrap === 'front' || wrap === 'behind') {
+      const h = document.createElement('div'); h.style.cssText = 'flex-basis:100%;text-align:center;font-size:11px;opacity:0.6;margin-top:2px;';
+      h.textContent = '↔ អូសរូបភាពនៅលើក្រដាស់ ដើម្បីផ្លាស់ទីតាំង';
+      bar.appendChild(h);
+    }
     host.appendChild(bar);
+  }
+  // image text-wrap: in line / float-left / float-right / centred block / in front
+  // of text / behind text. The last two are taken out of flow (position:absolute)
+  // so they float over the page and can be dragged; the styles are inline so the
+  // reader reproduces the exact same placement.
+  _edSetImgWrap(img, mode){
+    const pl = img.style.left, pt = img.style.top;
+    img.dataset.wrap = mode;
+    img.style.float = ''; img.style.position = ''; img.style.zIndex = ''; img.style.display = ''; img.style.margin = ''; img.style.verticalAlign = ''; img.style.left = ''; img.style.top = '';
+    img.style.maxWidth = '100%'; img.style.height = 'auto';
+    if (mode === 'inline') { img.style.display = 'inline-block'; img.style.verticalAlign = 'middle'; img.style.margin = '2px 4px'; }
+    else if (mode === 'left') { img.style.float = 'left'; img.style.margin = '4px 12px 6px 0'; }
+    else if (mode === 'right') { img.style.float = 'right'; img.style.margin = '4px 0 6px 12px'; }
+    else if (mode === 'center') { img.style.display = 'block'; img.style.margin = '8px auto'; }
+    else if (mode === 'front' || mode === 'behind') {
+      img.style.position = 'absolute'; img.style.margin = '0';
+      img.style.zIndex = mode === 'front' ? '5' : '-1';   // -1 paints behind in-flow text but above the white page
+      img.style.left = pl || '40px'; img.style.top = pt || '70px';
+    }
+    this._edHookImage(img);
+    this._edDirty = true; this._edScheduleReflow(this._edCur);
+  }
+  // reflow when an image finishes loading + let a front/behind image be dragged
+  _edHookImage(img){
+    if (!img._edLoadHook) { img._edLoadHook = 1; img.addEventListener('load', () => this._edScheduleReflow(this._edCur)); }
+    if (img._edDragHook) return; img._edDragHook = 1;
+    img.draggable = false;
+    img.addEventListener('pointerdown', e => {
+      this._selectEditorImage(img);
+      const wrap = img.dataset.wrap;
+      if (wrap !== 'front' && wrap !== 'behind') return;   // only free-floating images drag
+      e.preventDefault();
+      const z = (this._edFitZoom || 1) * (this._edScale || 1);
+      const sx = e.clientX, sy = e.clientY;
+      const x0 = parseFloat(img.style.left) || 0, y0 = parseFloat(img.style.top) || 0;
+      let moved = false;
+      const move = ev => { moved = true; img.style.left = (x0 + (ev.clientX - sx) / z) + 'px'; img.style.top = (y0 + (ev.clientY - sy) / z) + 'px'; };
+      const up = () => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); if (moved) this._edDirty = true; };
+      document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
+    });
   }
   // — Book editor: a paginated, book-style writer. One A4 sheet is shown at a
   // time (exactly like the reader); ‹ › / a page box move between sheets; a
@@ -9799,9 +9849,9 @@ class Component extends DCLogic {
     gadd(gIns, '🖼', () => {
       const url = normalizeImgUrl(window.prompt('Link រូបភាព (https://…)') || '');
       if (!url) return;
-      exec('insertHTML', `<img src="${url.replace(/"/g, '&quot;')}" style="max-width:100%;height:auto;border-radius:6px;display:block;margin:8px auto;">`);
+      exec('insertHTML', `<img src="${url.replace(/"/g, '&quot;')}" data-wrap="center" style="max-width:100%;height:auto;border-radius:6px;display:block;margin:8px auto;">`);
       const p = this._edCurPage();
-      if (p) p.querySelectorAll('img').forEach(im => { if (!im._edHooked) { im._edHooked = 1; im.addEventListener('load', () => this._edScheduleReflow(this._edCur)); } });
+      if (p) p.querySelectorAll('img').forEach(im => this._edHookImage(im));
     }, 'បញ្ចូលរូបភាព');
     gadd(gIns, '―', () => exec('insertHorizontalRule'), 'បន្ទាត់');
     r1.appendChild(gIns);
@@ -9923,7 +9973,7 @@ class Component extends DCLogic {
     p.addEventListener('mouseup', () => this._saveLibSel());
     p.addEventListener('click', e => { if (e.target && e.target.tagName === 'IMG') this._selectEditorImage(e.target); else this._deselectEditorImage(); });
     // load Google-Drive / remote images and reflow once their height is known
-    p.querySelectorAll('img').forEach(im => { im._edHooked = 1; im.addEventListener('load', () => this._edScheduleReflow(this._edPages.indexOf(p))); const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; });
+    p.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; this._edHookImage(im); });
     this._edStage.appendChild(p); this._edPages.push(p);
     return p;
   }
