@@ -9732,88 +9732,111 @@ class Component extends DCLogic {
     tools.style.cssText = 'flex:none;display:flex;flex-direction:column;gap:6px;padding:7px 8px;background:rgba(0,0,0,0.28);';
     const row = () => { const r = document.createElement('div'); r.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:5px;'; return r; };
     const sep = () => { const s = document.createElement('span'); s.style.cssText = 'width:1px;height:22px;background:rgba(255,255,255,0.18);margin:0 2px;'; return s; };
-    // row 1 — text formatting
+    // cluster similar tools into compact pills — groups related functions and
+    // saves horizontal space (tight gaps inside a pill, one gap between pills)
+    const grp = () => { const g = document.createElement('div'); g.style.cssText = 'display:inline-flex;align-items:center;gap:2px;background:rgba(255,255,255,0.07);border-radius:9px;padding:2px 3px;'; return g; };
+    const gadd = (g, label, fn, tip, extra) => { const b = icon(label, fn, tip, true); if (extra) b.style.cssText += extra; g.appendChild(b); return b; };
+    // ── row 1: writing tools ──
     const r1 = row();
-    const addF = (label, fn, tip, extra) => { const b = icon(label, fn, tip, true); if (extra) b.style.cssText += extra; r1.appendChild(b); return b; };
-    addF('B', () => exec('bold'), 'ដិត', 'font-weight:700;');
-    addF('I', () => exec('italic'), 'ទ្រេត', 'font-style:italic;');
-    addF('U', () => exec('underline'), 'គូស', 'text-decoration:underline;');
-    r1.appendChild(sep());
-    addF('⬅', () => exec('justifyLeft'), 'តម្រឹមឆ្វេង');
-    addF('⬌', () => exec('justifyCenter'), 'តម្រឹមកណ្ដាល');
-    addF('➡', () => exec('justifyRight'), 'តម្រឹមស្ដាំ');
-    addF('☰', () => exec('justifyFull'), 'តម្រឹមសងខាង');
-    r1.appendChild(sep());
-    addF('H', () => exec('formatBlock', 'H2'), 'ចំណងជើង');
-    addF('¶', () => exec('formatBlock', 'P'), 'អត្ថបទធម្មតា');
-    addF('•', () => exec('insertUnorderedList'), 'បញ្ជី');
-    r1.appendChild(sep());
-    // font size (compact select on the dark bar)
+    // undo / redo
+    const gHist = grp();
+    gadd(gHist, '↶', () => exec('undo'), 'ថយក្រោយ (undo)');
+    gadd(gHist, '↷', () => exec('redo'), 'ទៅមុខវិញ (redo)');
+    r1.appendChild(gHist);
+    // character style
+    const gStyle = grp();
+    gadd(gStyle, 'B', () => exec('bold'), 'ដិត', 'font-weight:700;');
+    gadd(gStyle, 'I', () => exec('italic'), 'ទ្រេត', 'font-style:italic;');
+    gadd(gStyle, 'U', () => exec('underline'), 'គូស', 'text-decoration:underline;');
+    r1.appendChild(gStyle);
+    // alignment
+    const gAlign = grp();
+    gadd(gAlign, '⬅', () => exec('justifyLeft'), 'តម្រឹមឆ្វេង');
+    gadd(gAlign, '⬌', () => exec('justifyCenter'), 'តម្រឹមកណ្ដាល');
+    gadd(gAlign, '➡', () => exec('justifyRight'), 'តម្រឹមស្ដាំ');
+    gadd(gAlign, '☰', () => exec('justifyFull'), 'តម្រឹមសងខាង');
+    r1.appendChild(gAlign);
+    // block type + list
+    const gBlock = grp();
+    gadd(gBlock, 'H', () => exec('formatBlock', 'H2'), 'ចំណងជើង');
+    gadd(gBlock, '¶', () => exec('formatBlock', 'P'), 'អត្ថបទធម្មតា');
+    gadd(gBlock, '•', () => exec('insertUnorderedList'), 'បញ្ជី');
+    r1.appendChild(gBlock);
+    // font size + line spacing
+    const gSize = grp();
     const sizeSel = document.createElement('select'); sizeSel.title = 'ទំហំអក្សរ';
-    sizeSel.style.cssText = 'height:34px;border:none;border-radius:8px;background:rgba(255,255,255,0.16);color:#fff;cursor:pointer;font-size:13px;padding:0 4px;';
+    sizeSel.style.cssText = 'height:30px;border:none;border-radius:7px;background:rgba(255,255,255,0.12);color:#fff;cursor:pointer;font-size:13px;padding:0 4px;';
     [10,12,14,16,18,20,24,28,32,36,48,64].forEach(px => { const o = document.createElement('option'); o.value = px; o.textContent = px; o.style.color = '#000'; if (px === 16) o.selected = true; sizeSel.appendChild(o); });
     sizeSel.addEventListener('mousedown', () => this._saveLibSel());
     sizeSel.addEventListener('change', () => { this._setFontSize(sizeSel.value); this._edScheduleReflow(this._edCur); });
-    r1.appendChild(sizeSel);
-    // line spacing − / + (reliable on touch; applies to selection or the sheet)
+    gSize.appendChild(sizeSel);
     let lineH = 1.85; const LHS = [1.0, 1.15, 1.3, 1.5, 1.85, 2.0, 2.5, 3.0];
-    const lhLabel = icon('↕', null, 'គម្លាតបន្ទាត់', true); lhLabel.style.background = 'transparent'; lhLabel.style.cursor = 'default';
     const stepLH = dir => { let idx = LHS.reduce((bi, v, i) => Math.abs(v - lineH) < Math.abs(LHS[bi] - lineH) ? i : bi, 0); idx = Math.max(0, Math.min(LHS.length - 1, idx + dir)); lineH = LHS[idx]; this._setLineSpacing(lineH); };
-    r1.appendChild(icon('↕−', () => stepLH(-1), 'គម្លាតបន្ទាត់ តូច', true));
-    r1.appendChild(icon('↕+', () => stepLH(1), 'គម្លាតបន្ទាត់ ធំ', true));
-    r1.appendChild(sep());
-    // colours
+    gadd(gSize, '↕−', () => stepLH(-1), 'គម្លាតបន្ទាត់ តូច');
+    gadd(gSize, '↕+', () => stepLH(1), 'គម្លាតបន្ទាត់ ធំ');
+    r1.appendChild(gSize);
+    // text colour
+    const gColor = grp();
     ['#ffffff', '#201f1d', '#c0342c', '#1558b0', '#2f8f57', '#b6810f'].forEach(c => {
       const sw = document.createElement('button'); sw.type = 'button'; sw.title = 'ពណ៌អក្សរ';
-      sw.style.cssText = `width:26px;height:26px;border-radius:6px;border:1px solid rgba(255,255,255,0.35);background:${c};cursor:pointer;flex:none;`;
+      sw.style.cssText = `width:24px;height:24px;border-radius:6px;border:1px solid rgba(255,255,255,0.35);background:${c};cursor:pointer;flex:none;`;
       sw.addEventListener('mousedown', e => e.preventDefault());
       sw.addEventListener('click', () => exec('foreColor', c));
-      r1.appendChild(sw);
+      gColor.appendChild(sw);
     });
-    addF('🖼', () => {
+    r1.appendChild(gColor);
+    // insert
+    const gIns = grp();
+    gadd(gIns, '🖼', () => {
       const url = normalizeImgUrl(window.prompt('Link រូបភាព (https://…)') || '');
       if (!url) return;
       exec('insertHTML', `<img src="${url.replace(/"/g, '&quot;')}" style="max-width:100%;height:auto;border-radius:6px;display:block;margin:8px auto;">`);
       const p = this._edCurPage();
       if (p) p.querySelectorAll('img').forEach(im => { if (!im._edHooked) { im._edHooked = 1; im.addEventListener('load', () => this._edScheduleReflow(this._edCur)); } });
     }, 'បញ្ចូលរូបភាព');
-    addF('―', () => exec('insertHorizontalRule'), 'បន្ទាត់');
+    gadd(gIns, '―', () => exec('insertHorizontalRule'), 'បន្ទាត់');
+    r1.appendChild(gIns);
     tools.appendChild(r1);
-    // row 2 — page nav + view
+    // ── row 2: pages + view ──
     const r2 = row();
+    // page navigation + add / delete sheet
+    const gPage = grp();
+    gadd(gPage, '‹', () => this._edShowPage(this._edCur - 1), 'ទំព័រមុន');
     const jin = document.createElement('input'); jin.type = 'number'; jin.min = '1';
-    jin.style.cssText = 'width:44px;height:32px;border:none;border-radius:8px;background:rgba(255,255,255,0.16);color:#fff;text-align:center;font-size:14px;';
-    const jtot = document.createElement('span'); jtot.style.cssText = 'color:#fff;opacity:0.75;font-size:13px;';
+    jin.style.cssText = 'width:40px;height:30px;border:none;border-radius:7px;background:rgba(255,255,255,0.12);color:#fff;text-align:center;font-size:14px;';
+    const jtot = document.createElement('span'); jtot.style.cssText = 'color:#fff;opacity:0.75;font-size:13px;padding:0 2px;';
     this._edJin = jin; this._edLabelTot = jtot;
     const goInput = () => { const v = parseInt(jin.value, 10); if (!isNaN(v)) this._edShowPage(v - 1); };
     jin.addEventListener('change', goInput);
     jin.addEventListener('keydown', e => { if (e.key === 'Enter') { goInput(); jin.blur(); } });
-    r2.appendChild(icon('‹', () => this._edShowPage(this._edCur - 1), 'ទំព័រមុន'));
-    r2.appendChild(jin); r2.appendChild(jtot);
-    r2.appendChild(icon('›', () => this._edShowPage(this._edCur + 1), 'ទំព័របន្ទាប់'));
-    const addBtn = icon('＋', () => this._edNewPage(), 'ក្រដាស់ថ្មី'); addBtn.style.background = 'var(--color-accent-700)';
-    r2.appendChild(addBtn);
-    r2.appendChild(sep());
+    gPage.appendChild(jin); gPage.appendChild(jtot);
+    gadd(gPage, '›', () => this._edShowPage(this._edCur + 1), 'ទំព័របន្ទាប់');
+    const addBtn = gadd(gPage, '＋', () => this._edNewPage(), 'ក្រដាស់ថ្មី'); addBtn.style.background = 'var(--color-accent-700)';
+    const delBtn = gadd(gPage, '🗑', () => this._edDeletePage(), 'លុបក្រដាស់ទំព័រនេះ'); delBtn.style.background = 'rgba(192,52,44,0.85)';
+    r2.appendChild(gPage);
     // zoom
-    const zbtn = (t, fn) => icon(t, fn, null);
-    r2.appendChild(icon('🔍−', () => { this._edScale = Math.max(1, Math.round((this._edScale - 0.25) * 4) / 4); this._edApplyView(); }, 'បង្រួម'));
-    const zlabel = document.createElement('span'); zlabel.style.cssText = 'min-width:42px;text-align:center;color:#fff;font-size:12px;font-weight:600;'; this._edZlabel = zlabel;
-    r2.appendChild(zlabel);
-    r2.appendChild(icon('🔍+', () => { this._edScale = Math.min(4, Math.round((this._edScale + 0.25) * 4) / 4); this._edApplyView(); }, 'ពង្រីក'));
-    r2.appendChild(sep());
+    const gZoom = grp();
+    gadd(gZoom, '🔍−', () => { this._edScale = Math.max(1, Math.round((this._edScale - 0.25) * 4) / 4); this._edApplyView(); }, 'បង្រួម');
+    const zlabel = document.createElement('span'); zlabel.style.cssText = 'min-width:40px;text-align:center;color:#fff;font-size:12px;font-weight:600;'; this._edZlabel = zlabel;
+    gZoom.appendChild(zlabel);
+    gadd(gZoom, '🔍+', () => { this._edScale = Math.min(4, Math.round((this._edScale + 0.25) * 4) / 4); this._edApplyView(); }, 'ពង្រីក');
+    r2.appendChild(gZoom);
     // margin
+    const gMar = grp();
     const mlabel = document.createElement('span'); mlabel.style.cssText = 'min-width:40px;text-align:center;color:#fff;font-size:12px;';
     const setMargin = m => { PAD = Math.max(16, Math.min(160, m)); this._edPAD = PAD; this._libMargin = PAD; this._edPages.forEach(p => { p.style.padding = `${PAD}px ${PAD}px ${PAD + 24}px`; }); mlabel.textContent = '▭ ' + PAD; this._edScheduleReflow(0); };
-    r2.appendChild(icon('▭−', () => setMargin(PAD - 8), 'រឹមតូច'));
-    r2.appendChild(mlabel);
-    r2.appendChild(icon('▭+', () => setMargin(PAD + 8), 'រឹមធំ'));
-    r2.appendChild(sep());
+    gadd(gMar, '▭−', () => setMargin(PAD - 8), 'រឹមតូច');
+    gMar.appendChild(mlabel);
+    gadd(gMar, '▭+', () => setMargin(PAD + 8), 'រឹមធំ');
+    r2.appendChild(gMar);
     // starting page number
+    const gStart = grp();
+    const hashLbl = document.createElement('span'); hashLbl.textContent = '#'; hashLbl.style.cssText = 'color:#fff;opacity:0.7;font-size:14px;padding-left:2px;';
     const pnInput = document.createElement('input'); pnInput.type = 'number'; pnInput.min = '1'; pnInput.value = String(this._libStartPage || 1); pnInput.title = 'លេខទំព័រចាប់ផ្ដើម';
-    pnInput.style.cssText = 'width:52px;height:32px;border:none;border-radius:8px;background:rgba(255,255,255,0.16);color:#fff;text-align:center;font-size:13px;';
+    pnInput.style.cssText = 'width:46px;height:30px;border:none;border-radius:7px;background:rgba(255,255,255,0.12);color:#fff;text-align:center;font-size:13px;';
     pnInput.addEventListener('change', () => { const v = parseInt(pnInput.value, 10); this._libStartPage = (!isNaN(v) && v >= 1) ? v : 1; pnInput.value = String(this._libStartPage); });
-    const hashLbl = document.createElement('span'); hashLbl.textContent = '#'; hashLbl.style.cssText = 'color:#fff;opacity:0.7;font-size:14px;';
-    r2.appendChild(hashLbl); r2.appendChild(pnInput);
+    gStart.appendChild(hashLbl); gStart.appendChild(pnInput);
+    r2.appendChild(gStart);
     tools.appendChild(r2);
     ov.appendChild(tools);
     // ── canvas: fills the rest; the sheet floats centred, ‹ › on the edges ──
@@ -9885,6 +9908,15 @@ class Component extends DCLogic {
     const idx = Math.min(this._edCur + 1, this._edPages.length);
     this._edPages.splice(idx, 0, np);
     this._edShowPage(idx);
+  }
+  // delete the current sheet (asks first if it has content); always keep ≥1 sheet
+  _edDeletePage(){
+    const pages = this._edPages; if (!pages || !pages.length) return;
+    const idx = this._edCur, pg = pages[idx];
+    if (pg && !this._edIsEmpty(pg) && !window.confirm('លុបក្រដាស់ទំព័រនេះមែនទេ? អត្ថបទក្នុងទំព័រនេះនឹងបាត់។')) return;
+    if (pages.length === 1) { pg.innerHTML = '<p><br></p>'; this._edShowPage(0); return; }   // never drop the last sheet — just clear it
+    pg.remove(); pages.splice(idx, 1);
+    this._edShowPage(Math.min(idx, pages.length - 1));
   }
   // show one sheet (hide the rest), update nav, focus it for writing
   _edShowPage(idx){
