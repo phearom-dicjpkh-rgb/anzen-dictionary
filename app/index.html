@@ -9836,6 +9836,44 @@ class Component extends DCLogic {
     bar.appendChild(h);
     host.appendChild(bar);
   }
+  // — Paste cleanup. Text copied from a PDF/website often carries a fixed column
+  // width, multi-column layout or absolute positioning, which squeezes it into a
+  // narrow strip and stops it flowing/extending. Strip that on paste (and offer a
+  // one-tap fix for content pasted before). —
+  _edCleanPastedHtml(html){
+    const doc = new DOMParser().parseFromString(html || '', 'text/html'); const body = doc.body;
+    body.querySelectorAll('script,style,link,meta,iframe,object,embed,svg,form,input,button,noscript,title').forEach(n => n.remove());
+    // flatten tables to plain paragraphs so fixed column widths can't narrow the text
+    body.querySelectorAll('table').forEach(tb => {
+      const frag = doc.createDocumentFragment();
+      tb.querySelectorAll('tr').forEach(tr => { const p = doc.createElement('p'); p.textContent = [...tr.querySelectorAll('td,th')].map(c => c.textContent.trim()).filter(Boolean).join('   '); if (p.textContent) frag.appendChild(p); });
+      tb.replaceWith(frag);
+    });
+    // drop every attribute (style/class/width/align/…) except an image's src/alt
+    body.querySelectorAll('*').forEach(el => { const keep = el.tagName === 'IMG'; [...el.attributes].forEach(a => { const n = a.name.toLowerCase(); if (!(keep && (n === 'src' || n === 'alt'))) el.removeAttribute(a.name); }); });
+    return body.innerHTML || '';
+  }
+  _edTextToHtml(text){
+    const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const parts = (text || '').replace(/\r\n?/g, '\n').split(/\n{2,}/);
+    return parts.map(pt => '<p>' + (esc(pt).replace(/\n/g, '<br>') || '<br>') + '</p>').join('') || '<p><br></p>';
+  }
+  // strip only the layout-breaking properties (keep colour/size/alignment/spacing,
+  // and never touch images or shapes) across every sheet — rescues content that
+  // was pasted narrow before this fix existed
+  _edFixLayout(){
+    if (!window.confirm('សម្អាតទ្រង់ទ្រាយ paste លើគ្រប់ទំព័រ? (លុប width/column/position ដែលធ្វើឲ្យអក្សរចង្អៀត — ពណ៌ ទំហំ តម្រឹម រូបភាព និង រូបរាង នៅដដែល)')) return;
+    const props = ['width', 'min-width', 'max-width', 'height', 'min-height', 'max-height', 'white-space', 'position', 'float', 'left', 'top', 'right', 'bottom', 'transform', 'display', 'flex', 'flex-basis', 'columns', 'column-count', 'column-width', 'column-gap', 'writing-mode'];
+    (this._edPages || []).forEach(pg => {
+      pg.querySelectorAll('*').forEach(el => {
+        if (el.tagName === 'IMG') return;
+        if (el.classList && el.classList.contains('lib-shape')) return;
+        if (el.closest && el.closest('.lib-shape')) return;
+        props.forEach(p => { try { el.style.removeProperty(p); } catch(e){} });
+      });
+    });
+    this._edDirty = true; this._edReflow(0); this._edApplyView();
+  }
   // — Book editor: a paginated, book-style writer. One A4 sheet is shown at a
   // time (exactly like the reader); ‹ › / a page box move between sheets; a
   // "new sheet" button adds pages; and writing or pasting past the bottom of a
@@ -9920,6 +9958,7 @@ class Component extends DCLogic {
     gadd(gBlock, 'H', () => exec('formatBlock', 'H2'), 'ចំណងជើង');
     gadd(gBlock, '¶', () => exec('formatBlock', 'P'), 'អត្ថបទធម្មតា');
     gadd(gBlock, '•', () => exec('insertUnorderedList'), 'បញ្ជី');
+    gadd(gBlock, '🧹', () => this._edFixLayout(), 'សម្អាតទ្រង់ទ្រាយ paste (បើអក្សរចង្អៀត)');
     r1.appendChild(gBlock);
     // font size + line spacing
     const gSize = grp();
@@ -10077,6 +10116,16 @@ class Component extends DCLogic {
     p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;outline:none;display:none;`;
     p.innerHTML = (html && html.trim()) ? html : '<p><br></p>';
     p.addEventListener('input', () => { this._edDirty = true; this._edScheduleReflow(this._edPages.indexOf(p)); });
+    // clean paste — strip the source's layout styling so text flows the full width
+    p.addEventListener('paste', e => {
+      const cd = e.clipboardData || window.clipboardData; if (!cd) return;
+      const html = cd.getData('text/html'), text = cd.getData('text/plain');
+      if (!html && !text) return;
+      e.preventDefault();
+      const clean = html ? this._edCleanPastedHtml(html) : this._edTextToHtml(text);
+      document.execCommand('insertHTML', false, clean);
+      this._edDirty = true; this._edScheduleReflow(this._edPages.indexOf(p));
+    });
     p.addEventListener('keyup', () => this._saveLibSel());
     p.addEventListener('mouseup', () => this._saveLibSel());
     p.addEventListener('click', e => {
