@@ -9604,12 +9604,18 @@ class Component extends DCLogic {
     const brk = '<div class="pgbrk" style="display:none"></div>';
     const body = (this._edPages || []).map(p => this._sanitizeBookHtml(p.innerHTML)).join(brk);
     const content = meta + (body || '');
-    const showErr = m => { if (errEl) { errEl.textContent = m; errEl.style.display = 'block'; } };
-    if (!title) { showErr('សូមបញ្ចូលចំណងជើងសៀវភៅ'); return; }
-    if (btn) { btn.disabled = true; btn.textContent = 'កំពុងរក្សាទុក…'; }
-    const { error } = await Backend.saveBook({ id: this.state.libBookId, title, content });
-    if (error) { showErr(error); if (btn) { btn.disabled = false; btn.textContent = '💾 រក្សាទុក'; } return; }
-    this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks());
+    const showErr = m => { if (errEl) { errEl.textContent = m; errEl.style.display = 'block'; clearTimeout(this._edErrT); this._edErrT = setTimeout(() => { if (errEl) errEl.style.display = 'none'; }, 3500); } };
+    if (!title) { showErr('សូមបញ្ចូលចំណងជើងសៀវភៅ'); return false; }
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+    // save WITHOUT leaving the editor. We track the book id locally (not via
+    // setState) because a re-render would wipe the imperative editor overlay.
+    const { id, error } = await Backend.saveBook({ id: this._edBookId, title, content });
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+    if (error) { showErr(error); return false; }
+    this._edBookId = id || this._edBookId;   // remember new id so later saves update the same book
+    this._edDirty = false;
+    if (btn) { btn.textContent = '✓'; clearTimeout(this._edSaveT); this._edSaveT = setTimeout(() => { if (btn) btn.textContent = '💾'; }, 1200); }
+    return true;
   }
   _buildEditorSoon(book){
     const run = t => { const root = document.getElementById('lib-editor-root'); if (!root) { if (t > 0) setTimeout(() => run(t - 1), 30); return; } this._buildBookEditor(book || {}, root); };
@@ -9648,7 +9654,7 @@ class Component extends DCLogic {
       if (hit.length) blocks = hit;
     }
     blocks.forEach(el => { el.style.lineHeight = String(lh); });
-    ed.focus(); this._edScheduleReflow(this._edCur);
+    this._edDirty = true; ed.focus(); this._edScheduleReflow(this._edCur);
   }
   // tap an image in the editor → a bar to resize / align / move / delete it
   _selectEditorImage(img){
@@ -9698,6 +9704,8 @@ class Component extends DCLogic {
     this._libMargin = bmeta.margin; this._libStartPage = bmeta.startPage;
     this._edPages = []; this._edCur = 0; this._edA4W = A4W; this._edA4H = A4H;
     this._edPAD = PAD; this._edFitZoom = 1; this._edScale = 1;
+    this._edBookId = (book && book.id) || this.state.libBookId || null;   // tracked here, not in state (setState would wipe the overlay)
+    this._edDirty = false;
     try { document.execCommand('styleWithCSS', false, true); } catch(e){}
     // full-screen overlay
     const ov = document.createElement('div');
@@ -9716,10 +9724,11 @@ class Component extends DCLogic {
     // ── top bar: back · title · save · hide/show tools ──
     const top = document.createElement('div');
     top.style.cssText = 'flex:none;display:flex;align-items:center;gap:8px;padding:6px 10px;padding-top:calc(6px + env(safe-area-inset-top, 0px));background:rgba(0,0,0,0.4);';
-    top.appendChild(icon('←', () => this.libBackToList(), 'ត្រឡប់'));
+    top.appendChild(icon('←', () => this._edTryExit(), 'ត្រឡប់'));
     const title = document.createElement('input');
     title.id = 'lib-title'; title.placeholder = 'ចំណងជើងសៀវភៅ'; title.value = book.title || '';
     title.style.cssText = 'flex:1;min-width:0;height:34px;background:rgba(255,255,255,0.14);color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:15px;font-weight:600;';
+    title.addEventListener('input', () => { this._edDirty = true; });
     top.appendChild(title);
     const save = icon('💾', () => this.saveBook(), 'រក្សាទុក'); save.id = 'lib-save';
     save.style.background = 'var(--color-accent-700)'; top.appendChild(save);
@@ -9824,7 +9833,7 @@ class Component extends DCLogic {
     // margin
     const gMar = grp();
     const mlabel = document.createElement('span'); mlabel.style.cssText = 'min-width:40px;text-align:center;color:#fff;font-size:12px;';
-    const setMargin = m => { PAD = Math.max(16, Math.min(160, m)); this._edPAD = PAD; this._libMargin = PAD; this._edPages.forEach(p => { p.style.padding = `${PAD}px ${PAD}px ${PAD + 24}px`; }); mlabel.textContent = '▭ ' + PAD; this._edScheduleReflow(0); };
+    const setMargin = m => { PAD = Math.max(16, Math.min(160, m)); this._edPAD = PAD; this._libMargin = PAD; this._edPages.forEach(p => { p.style.padding = `${PAD}px ${PAD}px ${PAD + 24}px`; }); mlabel.textContent = '▭ ' + PAD; this._edDirty = true; this._edScheduleReflow(0); };
     gadd(gMar, '▭−', () => setMargin(PAD - 8), 'រឹមតូច');
     gMar.appendChild(mlabel);
     gadd(gMar, '▭+', () => setMargin(PAD + 8), 'រឹមធំ');
@@ -9834,7 +9843,7 @@ class Component extends DCLogic {
     const hashLbl = document.createElement('span'); hashLbl.textContent = '#'; hashLbl.style.cssText = 'color:#fff;opacity:0.7;font-size:14px;padding-left:2px;';
     const pnInput = document.createElement('input'); pnInput.type = 'number'; pnInput.min = '1'; pnInput.value = String(this._libStartPage || 1); pnInput.title = 'លេខទំព័រចាប់ផ្ដើម';
     pnInput.style.cssText = 'width:46px;height:30px;border:none;border-radius:7px;background:rgba(255,255,255,0.12);color:#fff;text-align:center;font-size:13px;';
-    pnInput.addEventListener('change', () => { const v = parseInt(pnInput.value, 10); this._libStartPage = (!isNaN(v) && v >= 1) ? v : 1; pnInput.value = String(this._libStartPage); });
+    pnInput.addEventListener('change', () => { const v = parseInt(pnInput.value, 10); this._libStartPage = (!isNaN(v) && v >= 1) ? v : 1; pnInput.value = String(this._libStartPage); this._edDirty = true; });
     gStart.appendChild(hashLbl); gStart.appendChild(pnInput);
     r2.appendChild(gStart);
     tools.appendChild(r2);
@@ -9873,6 +9882,23 @@ class Component extends DCLogic {
     this._edShowPage(0);
     setTimeout(refit, 60);
     setTimeout(refit, 250);
+    this._edDirty = false;   // building/opening is not an unsaved edit
+  }
+  // leave the editor — if there are unsaved edits, ask what to do first
+  _edTryExit(){
+    if (!this._edDirty) { this.libBackToList(); return; }
+    const host = document.getElementById('lib-editor-root'); if (!host) { this.libBackToList(); return; }
+    const old = document.getElementById('lib-exit-ask'); if (old) old.remove();
+    const wrap = document.createElement('div'); wrap.id = 'lib-exit-ask';
+    wrap.style.cssText = 'position:fixed;inset:0;z-index:140;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;padding:24px;';
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--color-surface);color:var(--color-text);border-radius:16px;padding:20px;max-width:340px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.5);';
+    card.innerHTML = '<div style="font-size:16px;font-weight:700;margin-bottom:6px;">មានការកែប្រែមិនទាន់រក្សាទុក</div><div style="font-size:13px;opacity:0.7;margin-bottom:14px;line-height:1.6;">តើអ្នកចង់រក្សាទុកមុនចាកចេញឬ?</div>';
+    const mk = (label, css, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.style.cssText = 'display:block;width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;' + css; b.addEventListener('click', fn); card.appendChild(b); };
+    mk('💾 រក្សាទុក ហើយ​ចេញ', 'background:var(--color-accent-700);color:#fff;', async () => { wrap.remove(); const ok = await this.saveBook(); if (ok !== false) this.libBackToList(); });
+    mk('ចេញ​ដោយ​មិន​រក្សាទុក', 'background:#c0342c;color:#fff;', () => { wrap.remove(); this._edDirty = false; this.libBackToList(); });
+    mk('បោះបង់ (នៅ​បន្ត)', 'background:var(--color-bg);color:var(--color-text);border:1px solid var(--color-divider);', () => wrap.remove());
+    wrap.appendChild(card); host.appendChild(wrap);
   }
   // split saved content into per-sheet HTML at the hidden .pgbrk markers
   _edSplitSegments(html){
@@ -9892,7 +9918,7 @@ class Component extends DCLogic {
     p.className = 'lib-epage report'; p.contentEditable = 'true';
     p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;outline:none;display:none;`;
     p.innerHTML = (html && html.trim()) ? html : '<p><br></p>';
-    p.addEventListener('input', () => this._edScheduleReflow(this._edPages.indexOf(p)));
+    p.addEventListener('input', () => { this._edDirty = true; this._edScheduleReflow(this._edPages.indexOf(p)); });
     p.addEventListener('keyup', () => this._saveLibSel());
     p.addEventListener('mouseup', () => this._saveLibSel());
     p.addEventListener('click', e => { if (e.target && e.target.tagName === 'IMG') this._selectEditorImage(e.target); else this._deselectEditorImage(); });
@@ -9907,6 +9933,7 @@ class Component extends DCLogic {
     this._edPages.pop();
     const idx = Math.min(this._edCur + 1, this._edPages.length);
     this._edPages.splice(idx, 0, np);
+    this._edDirty = true;
     this._edShowPage(idx);
   }
   // delete the current sheet (asks first if it has content); always keep ≥1 sheet
@@ -9914,6 +9941,7 @@ class Component extends DCLogic {
     const pages = this._edPages; if (!pages || !pages.length) return;
     const idx = this._edCur, pg = pages[idx];
     if (pg && !this._edIsEmpty(pg) && !window.confirm('លុបក្រដាស់ទំព័រនេះមែនទេ? អត្ថបទក្នុងទំព័រនេះនឹងបាត់។')) return;
+    this._edDirty = true;
     if (pages.length === 1) { pg.innerHTML = '<p><br></p>'; this._edShowPage(0); return; }   // never drop the last sheet — just clear it
     pg.remove(); pages.splice(idx, 1);
     this._edShowPage(Math.min(idx, pages.length - 1));
