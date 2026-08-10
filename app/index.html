@@ -9481,6 +9481,9 @@ class Component extends DCLogic {
     area.appendChild(stage); ov.appendChild(area);
     // — paginate the content into A4 sheets (absolutely stacked; only one shown) —
     const src = document.createElement('div'); src.innerHTML = html || '';
+    // drop PDF-style spaces sitting inside Japanese words (食 料品 → 食料品) so the
+    // reader shows them cleanly AND tap-to-translate matches the whole word (時 間 → 時間)
+    this._edStripJpSpacesIn(src);
     // min-height (not fixed height) + no clipping, so a block taller than a page
     // is never cut off / lost — that page just grows a little
     const mkPage = () => { const p = document.createElement('div'); p.className = 'a4page report';
