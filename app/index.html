@@ -523,6 +523,8 @@ textarea.input { min-height: 90px; resize: vertical; }
 .report .qcell { line-height:2.1; }
 .report .bookword { cursor:pointer; border-bottom:1px dotted rgba(21,88,176,0.55); }
 .report .bookword:active { background:rgba(21,88,176,0.12); }
+/* drawn shapes in the READER must not swallow taps meant for the text beneath */
+.a4page .lib-shape { pointer-events:none; }
 #print-mount { display:none; }
 @media print {
   @page { size:A4; margin:12mm; }
@@ -9569,7 +9571,7 @@ class Component extends DCLogic {
   _lastAll(){ try { return JSON.parse(localStorage.getItem('dict_book_lastpage') || '{}') || {}; } catch(e){ return {}; } }
   _getLastReadPage(bookId){ if (!bookId) return 0; const v = this._lastAll()[bookId]; return (typeof v === 'number' && v >= 0) ? v : 0; }
   _setLastReadPage(bookId, idx){ if (!bookId) return; try { const o = this._lastAll(); o[bookId] = idx; localStorage.setItem('dict_book_lastpage', JSON.stringify(o)); } catch(e){} }
-  libBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); const ib = document.getElementById('lib-img-bar'); if (ib) ib.remove(); this._edSelImg = null; this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
+  libBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); const ib = document.getElementById('lib-img-bar'); if (ib) ib.remove(); const sb = document.getElementById('lib-shape-bar'); if (sb) sb.remove(); this._edSelImg = null; this._edSelShape = null; this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
   async libDeleteBook(id){ if (!window.confirm('លុបសៀវភៅនេះមែនទេ?')) return; await Backend.deleteBook(id); this.loadBooks(); }
   // strip anything unsafe before a book is stored (it is shown to other users)
   _sanitizeBookHtml(html){
@@ -9594,7 +9596,7 @@ class Component extends DCLogic {
     return { margin: Math.max(16, Math.min(160, margin)), startPage: Math.max(1, startPage), html: d.innerHTML };
   }
   async saveBook(){
-    this._deselectEditorImage();   // drop the selection outline so it isn't saved
+    this._deselectEditorImage(); this._deselectShape();   // drop selection chrome so it isn't saved
     const titleEl = document.getElementById('lib-title');
     const errEl = document.getElementById('lib-err'), btn = document.getElementById('lib-save');
     const title = (titleEl ? titleEl.value : '').trim();
@@ -9736,6 +9738,104 @@ class Component extends DCLogic {
       document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
     });
   }
+  // — Shapes: draw boxes / circles / highlights / lines / arrows over the page to
+  // mark important things. Each shape is an absolutely-positioned element floated
+  // over the sheet (draggable), styled inline so the reader shows it identically. —
+  _hexToRgba(hex, a){ const m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return `rgba(246,209,74,${a})`; const n = parseInt(m[1], 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; }
+  _edMakeShapeEl(type){
+    const color = this._edShapeColor || '#c0342c', tw = 3, NS = 'http://www.w3.org/2000/svg';
+    let el;
+    if (type === 'arrow') {
+      el = document.createElementNS(NS, 'svg');
+      el.setAttribute('viewBox', '0 0 100 40'); el.setAttribute('preserveAspectRatio', 'none');
+      const ln = document.createElementNS(NS, 'line'); ln.setAttribute('x1', '3'); ln.setAttribute('y1', '20'); ln.setAttribute('x2', '80'); ln.setAttribute('y2', '20'); ln.setAttribute('stroke', color); ln.setAttribute('stroke-width', tw); ln.setAttribute('vector-effect', 'non-scaling-stroke');
+      const pg = document.createElementNS(NS, 'polygon'); pg.setAttribute('points', '80,9 99,20 80,31'); pg.setAttribute('fill', color);
+      el.appendChild(ln); el.appendChild(pg);
+      el.style.cssText = 'position:absolute;left:60px;top:90px;width:180px;height:46px;z-index:4;overflow:visible;cursor:move;';
+    } else {
+      el = document.createElement('div');
+      let s = 'position:absolute;left:60px;top:90px;box-sizing:border-box;cursor:move;';
+      if (type === 'rect') s += `width:170px;height:90px;border:${tw}px solid ${color};border-radius:6px;background:transparent;z-index:4;`;
+      else if (type === 'ellipse') s += `width:150px;height:110px;border:${tw}px solid ${color};border-radius:50%;background:transparent;z-index:4;`;
+      else if (type === 'highlight') s += `width:180px;height:26px;border:none;background:${this._hexToRgba('#f6d14a', 0.5)};border-radius:3px;z-index:-1;`;
+      else s += `width:200px;height:${tw}px;border:none;background:${color};border-radius:2px;z-index:4;`;   // line
+      el.style.cssText = s;
+    }
+    el.setAttribute('class', 'lib-shape');   // setAttribute (not .className) so it also works on the <svg> arrow
+    el.setAttribute('data-shape', type); el.setAttribute('contenteditable', 'false');
+    return el;
+  }
+  _edInsertShape(type){
+    const page = this._edCurPage(); if (!page) return;
+    const el = this._edMakeShapeEl(type);
+    page.appendChild(el);
+    this._edHookShape(el);
+    this._deselectEditorImage();
+    this._selectShape(el);
+    this._edDirty = true;
+  }
+  _edHookShape(el){
+    if (el._edShapeHook) return; el._edShapeHook = 1; el.draggable = false;
+    el.addEventListener('pointerdown', e => {
+      if (e.target && e.target.classList && e.target.classList.contains('lib-rz')) return;   // resize handle has its own logic
+      this._deselectEditorImage(); this._selectShape(el);
+      e.preventDefault();
+      const z = (this._edFitZoom || 1) * (this._edScale || 1);
+      const sx = e.clientX, sy = e.clientY, x0 = parseFloat(el.style.left) || 0, y0 = parseFloat(el.style.top) || 0;
+      let moved = false;
+      const move = ev => { moved = true; el.style.left = (x0 + (ev.clientX - sx) / z) + 'px'; el.style.top = (y0 + (ev.clientY - sy) / z) + 'px'; };
+      const up = () => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); if (moved) this._edDirty = true; };
+      document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
+    });
+  }
+  _selectShape(el){
+    if (this._edSelShape && this._edSelShape !== el) this._deselectShape();
+    this._edSelShape = el;
+    el.style.outline = '2px dashed var(--color-accent)'; el.style.outlineOffset = '3px';
+    this._showShapeBar();
+  }
+  _deselectShape(){
+    const b = document.getElementById('lib-shape-bar'); if (b) b.remove();
+    if (this._edSelShape) { this._edSelShape.style.outline = ''; this._edSelShape.style.outlineOffset = ''; this._edSelShape = null; }
+  }
+  _edSetShapeColor(el, c){
+    this._edShapeColor = c; const type = el.dataset.shape;
+    if (type === 'arrow') { const l = el.querySelector('line'), p = el.querySelector('polygon'); if (l) l.setAttribute('stroke', c); if (p) p.setAttribute('fill', c); }
+    else if (type === 'highlight') el.style.background = this._hexToRgba(c, 0.45);
+    else if (type === 'line') el.style.background = c;
+    else el.style.borderColor = c;   // rect, ellipse
+    this._edDirty = true;
+  }
+  _edSetShapeThickness(el, d){
+    const type = el.dataset.shape;
+    if (type === 'arrow') { const l = el.querySelector('line'); let t = (parseFloat(l && l.getAttribute('stroke-width')) || 3) + d; t = Math.max(1, Math.min(20, t)); if (l) l.setAttribute('stroke-width', t); }
+    else if (type === 'line' || type === 'highlight') { let h = (parseFloat(el.style.height) || 3) + d; h = Math.max(2, Math.min(80, h)); el.style.height = h + 'px'; }
+    else { let w = (parseFloat(el.style.borderWidth) || 3) + d; w = Math.max(1, Math.min(20, w)); el.style.borderWidth = w + 'px'; }
+    this._edDirty = true;
+  }
+  _showShapeBar(){
+    const el = this._edSelShape, host = document.getElementById('lib-editor-root'); if (!el || !host) return;
+    const old = document.getElementById('lib-shape-bar'); if (old) old.remove();
+    const bar = document.createElement('div'); bar.id = 'lib-shape-bar';
+    bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:130;background:var(--color-surface);border-top:1px solid var(--color-divider);box-shadow:0 -4px 20px rgba(0,0,0,0.3);padding:8px 10px calc(8px + env(safe-area-inset-bottom, 0px));display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;';
+    const mk = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.style.cssText = 'height:36px;min-width:38px;padding:0 10px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:14px;'; b.addEventListener('click', fn); return b; };
+    const rs = (dw, dh) => { el.style.width = Math.max(16, el.offsetWidth + dw) + 'px'; el.style.height = Math.max(4, el.offsetHeight + dh) + 'px'; this._edDirty = true; };
+    bar.appendChild(mk('⬌ −', () => rs(-20, 0))); bar.appendChild(mk('⬌ +', () => rs(20, 0)));
+    bar.appendChild(mk('⬍ −', () => rs(0, -20))); bar.appendChild(mk('⬍ +', () => rs(0, 20)));
+    bar.appendChild(mk('▁ −', () => this._edSetShapeThickness(el, -1))); bar.appendChild(mk('▔ +', () => this._edSetShapeThickness(el, 1)));
+    ['#c0342c', '#1558b0', '#2f8f57', '#b6810f', '#7a3fb0', '#201f1d'].forEach(c => {
+      const sw = document.createElement('button'); sw.type = 'button'; sw.title = 'ពណ៌';
+      sw.style.cssText = `width:26px;height:26px;border-radius:6px;border:1px solid rgba(0,0,0,0.2);background:${c};cursor:pointer;`;
+      sw.addEventListener('click', () => this._edSetShapeColor(el, c));
+      bar.appendChild(sw);
+    });
+    bar.appendChild(mk('🗑 លុប', () => { el.remove(); this._deselectShape(); this._edDirty = true; }));
+    bar.appendChild(mk('✕', () => this._deselectShape()));
+    const h = document.createElement('div'); h.style.cssText = 'flex-basis:100%;text-align:center;font-size:11px;opacity:0.6;margin-top:2px;';
+    h.textContent = '↔ អូសរាង​ដើម្បី​ផ្លាស់ទីតាំង';
+    bar.appendChild(h);
+    host.appendChild(bar);
+  }
   // — Book editor: a paginated, book-style writer. One A4 sheet is shown at a
   // time (exactly like the reader); ‹ › / a page box move between sheets; a
   // "new sheet" button adds pages; and writing or pasting past the bottom of a
@@ -9855,6 +9955,14 @@ class Component extends DCLogic {
     }, 'បញ្ចូលរូបភាព');
     gadd(gIns, '―', () => exec('insertHorizontalRule'), 'បន្ទាត់');
     r1.appendChild(gIns);
+    // shapes for marking important things (box / circle / highlight / line / arrow)
+    const gShape = grp();
+    gadd(gShape, '▭', () => this._edInsertShape('rect'), 'ប្រអប់​ការ៉េ');
+    gadd(gShape, '◯', () => this._edInsertShape('ellipse'), 'រង្វង់');
+    gadd(gShape, '🖍', () => this._edInsertShape('highlight'), 'គូស​ពណ៌ (highlight)');
+    gadd(gShape, '━', () => this._edInsertShape('line'), 'បន្ទាត់​គូស');
+    gadd(gShape, '➜', () => this._edInsertShape('arrow'), 'ព្រួញ');
+    r1.appendChild(gShape);
     tools.appendChild(r1);
     // ── row 2: pages + view ──
     const r2 = row();
@@ -9971,9 +10079,15 @@ class Component extends DCLogic {
     p.addEventListener('input', () => { this._edDirty = true; this._edScheduleReflow(this._edPages.indexOf(p)); });
     p.addEventListener('keyup', () => this._saveLibSel());
     p.addEventListener('mouseup', () => this._saveLibSel());
-    p.addEventListener('click', e => { if (e.target && e.target.tagName === 'IMG') this._selectEditorImage(e.target); else this._deselectEditorImage(); });
+    p.addEventListener('click', e => {
+      const shp = e.target && e.target.closest ? e.target.closest('.lib-shape') : null;
+      if (e.target && e.target.tagName === 'IMG') { this._deselectShape(); this._selectEditorImage(e.target); }
+      else if (shp) { this._deselectEditorImage(); this._selectShape(shp); }
+      else { this._deselectEditorImage(); this._deselectShape(); }
+    });
     // load Google-Drive / remote images and reflow once their height is known
     p.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; this._edHookImage(im); });
+    p.querySelectorAll('.lib-shape').forEach(sh => this._edHookShape(sh));
     this._edStage.appendChild(p); this._edPages.push(p);
     return p;
   }
