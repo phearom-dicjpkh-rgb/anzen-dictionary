@@ -9490,6 +9490,12 @@ class Component extends DCLogic {
     const bmListBtn = icon('☰', () => { const show = bmPanel.style.display === 'none'; if (show) renderBmPanel(); bmPanel.style.display = show ? 'block' : 'none'; }, 'font-size:15px;');
     bmListBtn.title = 'បញ្ជីចំណាំ';
     leftBar.appendChild(bmBtn); leftBar.appendChild(bmListBtn);
+    // ✏️ (admin) — jump straight into the editor on the page being read, to fix a typo
+    if (this.state.role === 'admin' && bookId) {
+      const editBtn = icon('✏️', () => { const p = document.getElementById('bookword-pop'); if (p) p.remove(); this._edOpenAtPage = cur; this.libEditBook(bookId); }, 'font-size:15px;');
+      editBtn.title = 'កែសៀវភៅ';
+      leftBar.appendChild(editBtn);
+    }
     bar.appendChild(leftBar);
     const rightBar = document.createElement('div'); rightBar.style.cssText = 'display:flex;align-items:center;gap:6px;';
     const jin = document.createElement('input'); jin.type = 'number'; jin.min = '1';
@@ -10179,7 +10185,8 @@ class Component extends DCLogic {
     const refit = () => { const cw = (this._edCanvas.clientWidth || window.innerWidth) - 28; if (cw > 0) this._edFitZoom = Math.max(0.2, Math.min(1.2, cw / A4W)); this._edApplyView(); };
     this._edReflow(0);
     refit();
-    this._edShowPage(0);
+    this._edShowPage(this._edOpenAtPage || 0);   // e.g. jump to the page just read, when opened via ✏️
+    this._edOpenAtPage = 0;
     setTimeout(refit, 60);
     setTimeout(refit, 250);
     this._edDirty = false;   // building/opening is not an unsaved edit
