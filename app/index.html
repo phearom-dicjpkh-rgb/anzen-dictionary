@@ -9706,6 +9706,22 @@ class Component extends DCLogic {
     ed.querySelectorAll('font[size="7"]').forEach(f => { f.removeAttribute('size'); f.style.fontSize = px + 'px'; });
     ed.focus(); this._saveLibSel();
   }
+  // reflect the real font size at the caret in the size dropdown (adds the exact
+  // value if it isn't one of the presets)
+  _edSyncFontSize(){
+    const sel = this._edSizeSel; if (!sel) return;
+    const s = window.getSelection(); if (!s || !s.rangeCount) return;
+    let node = s.focusNode; if (node && node.nodeType === 3) node = node.parentElement;
+    const ed = this._edCurPage(); if (!ed || !node || !ed.contains(node)) return;
+    const px = Math.round(parseFloat(getComputedStyle(node).fontSize || '16')); if (!px) return;
+    [...sel.options].forEach(o => { if (o.dataset.temp) o.remove(); });   // clear a stale exact-value option
+    if (![...sel.options].some(o => +o.value === px)) {
+      const opt = document.createElement('option'); opt.value = px; opt.textContent = px; opt.style.color = '#000'; opt.dataset.temp = '1';
+      const after = [...sel.options].find(o => +o.value > px);
+      if (after) sel.insertBefore(opt, after); else sel.appendChild(opt);
+    }
+    sel.value = String(px);
+  }
   // set line spacing on the selected paragraphs (or the whole sheet if nothing is
   // selected). It writes an inline line-height, which is kept in the saved HTML so
   // the reader shows the exact same spacing.
@@ -10092,6 +10108,7 @@ class Component extends DCLogic {
     [10,12,14,16,18,20,24,28,32,36,48,64].forEach(px => { const o = document.createElement('option'); o.value = px; o.textContent = px; o.style.color = '#000'; if (px === 16) o.selected = true; sizeSel.appendChild(o); });
     sizeSel.addEventListener('mousedown', () => this._saveLibSel());
     sizeSel.addEventListener('change', () => { this._setFontSize(sizeSel.value); this._edScheduleReflow(this._edCur); });
+    this._edSizeSel = sizeSel;   // kept so the caret can drive it to the real size
     gSize.appendChild(sizeSel);
     let lineH = 1.85; const LHS = [1.0, 1.15, 1.3, 1.5, 1.85, 2.0, 2.5, 3.0];
     const stepLH = dir => { let idx = LHS.reduce((bi, v, i) => Math.abs(v - lineH) < Math.abs(LHS[bi] - lineH) ? i : bi, 0); idx = Math.max(0, Math.min(LHS.length - 1, idx + dir)); lineH = LHS[idx]; this._setLineSpacing(lineH); };
@@ -10252,8 +10269,8 @@ class Component extends DCLogic {
       document.execCommand('insertHTML', false, clean);
       this._edDirty = true; this._edScheduleReflow(this._edPages.indexOf(p));
     });
-    p.addEventListener('keyup', () => this._saveLibSel());
-    p.addEventListener('mouseup', () => this._saveLibSel());
+    p.addEventListener('keyup', () => { this._saveLibSel(); this._edSyncFontSize(); });
+    p.addEventListener('mouseup', () => { this._saveLibSel(); this._edSyncFontSize(); });
     p.addEventListener('click', e => {
       const shp = e.target && e.target.closest ? e.target.closest('.lib-shape') : null;
       if (e.target && e.target.tagName === 'IMG') { this._deselectShape(); this._selectEditorImage(e.target); }
