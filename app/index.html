@@ -9935,7 +9935,10 @@ class Component extends DCLogic {
   // was pasted narrow before this fix existed
   _edFixLayout(){
     if (!window.confirm('សម្អាត paste លើគ្រប់ទំព័រ?\n• លុប width/column/position ដែលធ្វើឲ្យអក្សរចង្អៀត\n• លុបការដកឃ្លាខុសក្នុងអក្សរជប៉ុន (直 進 → 直進)\n(ពណ៌ ទំហំ តម្រឹម រូបភាព និង រូបរាង នៅដដែល)')) return;
-    const props = ['width', 'min-width', 'max-width', 'height', 'min-height', 'max-height', 'white-space', 'position', 'float', 'left', 'top', 'right', 'bottom', 'transform', 'display', 'flex', 'flex-basis', 'columns', 'column-count', 'column-width', 'column-gap', 'writing-mode'];
+    const props = ['width', 'min-width', 'max-width', 'height', 'min-height', 'max-height', 'white-space', 'position', 'float', 'left', 'top', 'right', 'bottom', 'transform', 'display', 'flex', 'flex-basis', 'columns', 'column-count', 'column-width', 'column-gap', 'writing-mode',
+      // per-glyph spacing / fonts a PDF paste embeds — these make letters look cramped
+      // or overlapping and stop the standard Japanese font from applying
+      'letter-spacing', 'word-spacing', 'text-indent', 'font-family', 'font', 'font-stretch', 'font-kerning', 'text-orientation'];
     (this._edPages || []).forEach(pg => {
       pg.querySelectorAll('*').forEach(el => {
         if (el.tagName === 'IMG') return;
