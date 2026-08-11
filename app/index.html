@@ -9349,8 +9349,8 @@ class Component extends DCLogic {
   }
   // dictionary words (with kanji) → their reading + Khmer meaning, for tap-to-translate
   _bookWordMap(){
-    if (this._bwMap) return this._bwMap;
-    this._bwMap = new Map(); this._bwMax = 0;
+    if (this._bwMap && this._bwMapLen === WORDS.length) return this._bwMap;   // rebuild when new (custom) words are added
+    this._bwMap = new Map(); this._bwMax = 0; this._bwMapLen = WORDS.length;
     for (const w of WORDS) {
       if (!w || !w.jp) continue;
       const jp = w.jp;
@@ -9362,33 +9362,63 @@ class Component extends DCLogic {
     }
     return this._bwMap;
   }
-  // wrap every dictionary word inside the rendered book in a tappable span
+  // wrap every dictionary word inside the rendered book in a tappable span.
+  // Matches across element boundaries — so a word split by furigana (<ruby>運転
+  // <rt>うんてん</rt></ruby>者) is still found whole — and ignores the furigana
+  // readings (<rt>/<rp>) themselves when matching.
   _wrapBookWords(container){
     const map = this._bookWordMap(), max = Math.min(this._bwMax || 1, 20);
-    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
-    const targets = []; let node;
-    while ((node = walker.nextNode())) { if (node.parentNode && node.parentNode.classList && node.parentNode.classList.contains('bookword')) continue; if (HAS_JP.test(node.textContent)) targets.push(node); }
-    for (const tn of targets) {
-      const text = tn.textContent, frag = document.createDocumentFragment();
-      let i = 0, buf = '';
-      const flush = () => { if (buf) { frag.appendChild(document.createTextNode(buf)); buf = ''; } };
-      while (i < text.length) {
-        let hit = 0;
-        // longest dictionary word starting here (kana or kanji); a lone hiragana is
-        // almost always a particle, so never wrap a 1-char hiragana match
-        if (HAS_JP.test(text[i])) {
-          for (let L = Math.min(max, text.length - i); L >= 1; L--) {
-            const sub = text.slice(i, i + L);
-            if (!map.has(sub)) continue;
-            if (L === 1 && HIRAGANA_ONE.test(sub)) break;
-            flush(); const s = document.createElement('span'); s.className = 'bookword'; s.dataset.jp = sub; s.textContent = sub; frag.appendChild(s); i += L; hit = 1; break;
-          }
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+      acceptNode(n){
+        if (!n.textContent) return NodeFilter.FILTER_REJECT;
+        for (let p = n.parentNode; p && p !== container; p = p.parentNode) {
+          const tag = p.nodeName;
+          if (tag === 'RT' || tag === 'RP') return NodeFilter.FILTER_REJECT;   // furigana reading — not real text
+          if (p.classList && p.classList.contains('bookword')) return NodeFilter.FILTER_REJECT;
         }
-        if (hit) continue;
-        buf += text[i]; i++;
+        return NodeFilter.FILTER_ACCEPT;
       }
-      flush();
-      tn.parentNode.replaceChild(frag, tn);
+    });
+    const nodes = []; let n; while ((n = walker.nextNode())) nodes.push(n);
+    if (!nodes.length) return;
+    // one flat "base text" string + a lookup from each char → its (node, offset)
+    let combined = ''; const at = [];
+    for (const node of nodes) { const t = node.textContent; for (let k = 0; k < t.length; k++) { combined += t[k]; at.push([node, k]); } }
+    // longest-match, left to right, across the flat string; record matches per node
+    const perNode = new Map();   // node → [{ s, e, jp }] (offsets within that node)
+    let i = 0;
+    while (i < combined.length) {
+      let L = 0;
+      if (HAS_JP.test(combined[i])) {
+        for (let l = Math.min(max, combined.length - i); l >= 1; l--) {
+          const sub = combined.slice(i, i + l);
+          if (!map.has(sub)) continue;
+          if (l === 1 && HIRAGANA_ONE.test(sub)) break;   // a lone hiragana is almost always a particle
+          L = l; break;
+        }
+      }
+      if (!L) { i++; continue; }
+      const jp = combined.slice(i, i + L);
+      for (let k = i; k < i + L; ) {   // split the match into runs that fall in one node each
+        const node = at[k][0]; let e = k;
+        while (e < i + L && at[e][0] === node) e++;
+        (perNode.get(node) || perNode.set(node, []).get(node)).push({ s: at[k][1], e: at[e - 1][1] + 1, jp });
+        k = e;
+      }
+      i += L;
+    }
+    // rewrite each affected text node, wrapping its matched slices in .bookword spans
+    for (const [node, ranges] of perNode) {
+      ranges.sort((a, b) => a.s - b.s);
+      const text = node.textContent, frag = document.createDocumentFragment();
+      let pos = 0;
+      for (const r of ranges) {
+        if (r.s > pos) frag.appendChild(document.createTextNode(text.slice(pos, r.s)));
+        const s = document.createElement('span'); s.className = 'bookword'; s.dataset.jp = r.jp; s.textContent = text.slice(r.s, r.e);
+        frag.appendChild(s); pos = r.e;
+      }
+      if (pos < text.length) frag.appendChild(document.createTextNode(text.slice(pos)));
+      node.parentNode.replaceChild(frag, node);
     }
   }
   // little translation card for a tapped word, over the reader
