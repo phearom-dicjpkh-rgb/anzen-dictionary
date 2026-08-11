@@ -9339,8 +9339,11 @@ class Component extends DCLogic {
   //   built imperatively so dc-runtime re-renders never wipe what's being typed. —
   goLibrary(){ this.setState({ screen: 'library', libMode: 'list', libBookId: null, libErr: '' }, () => this.loadBooks()); }
   async loadBooks(){ const { rows } = await Backend.listBooks(); this.setState({ libBooks: Array.isArray(rows) ? rows : [] }); }
-  libNewBook(){ this.setState({ libMode: 'edit', libBookId: null, libErr: '' }, () => this._buildEditorSoon(null)); }
-  async libEditBook(id){ const { book } = await Backend.getBook(id); this.setState({ libMode: 'edit', libBookId: id, libErr: '' }, () => this._buildEditorSoon(book || {})); }
+  libNewBook(){ this._edReturnToRead = null; this.setState({ libMode: 'edit', libBookId: null, libErr: '' }, () => this._buildEditorSoon(null)); }
+  async libEditBook(id, keepReturn){ if (!keepReturn) this._edReturnToRead = null; const { book } = await Backend.getBook(id); this.setState({ libMode: 'edit', libBookId: id, libErr: '' }, () => this._buildEditorSoon(book || {})); }
+  // leave the editor back to wherever it was opened from: the reader (if opened
+  // via ✏️) or the book list
+  _edLeave(){ const ret = this._edReturnToRead; this._edReturnToRead = null; const p = document.getElementById('bookword-pop'); if (p) p.remove(); if (ret && ret.id) { if (typeof ret.page === 'number') this._setLastReadPage(ret.id, ret.page); this.libReadBook(ret.id); } else this.libBackToList(); }
   // read-only view: the finished book, no editor chrome
   async libReadBook(id){ const { book } = await Backend.getBook(id); this._libReadData = book || {}; this.setState({ libMode: 'read', libBookId: id }, () => this._buildReadSoon()); }
   _buildReadSoon(){
@@ -9492,7 +9495,7 @@ class Component extends DCLogic {
     leftBar.appendChild(bmBtn); leftBar.appendChild(bmListBtn);
     // ✏️ (admin) — jump straight into the editor on the page being read, to fix a typo
     if (this.state.role === 'admin' && bookId) {
-      const editBtn = icon('✏️', () => { const p = document.getElementById('bookword-pop'); if (p) p.remove(); this._edOpenAtPage = cur; this.libEditBook(bookId); }, 'font-size:15px;');
+      const editBtn = icon('✏️', () => { const p = document.getElementById('bookword-pop'); if (p) p.remove(); this._edOpenAtPage = cur; this._edReturnToRead = { id: bookId, page: cur }; this.libEditBook(bookId, true); }, 'font-size:15px;');
       editBtn.title = 'កែសៀវភៅ';
       leftBar.appendChild(editBtn);
     }
@@ -9523,7 +9526,7 @@ class Component extends DCLogic {
     // min-height (not fixed height) + no clipping, so a block taller than a page
     // is never cut off / lost — that page just grows a little
     const mkPage = () => { const p = document.createElement('div'); p.className = 'a4page report';
-      p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;will-change:transform;`;
+      p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-family:var(--font-jp),system-ui,sans-serif;letter-spacing:normal;font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;will-change:transform;`;
       stage.appendChild(p); return p; };
     let page = mkPage();
     const blocks = [...src.childNodes].filter(n => n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim()));
@@ -10026,7 +10029,8 @@ class Component extends DCLogic {
     title.style.cssText = 'flex:1;min-width:0;height:34px;background:rgba(255,255,255,0.14);color:#fff;border:none;border-radius:8px;padding:0 12px;font-size:15px;font-weight:600;';
     title.addEventListener('input', () => { this._edDirty = true; });
     top.appendChild(title);
-    const save = icon('💾', () => this.saveBook(), 'រក្សាទុក'); save.id = 'lib-save';
+    // save; if we came in from the reader (✏️), go back to reading afterwards
+    const save = icon('💾', async () => { const ok = await this.saveBook(); if (ok !== false && this._edReturnToRead) this._edLeave(); }, 'រក្សាទុក'); save.id = 'lib-save';
     save.style.background = 'var(--color-accent-700)'; top.appendChild(save);
     const toolsBtn = icon('▴', () => { toolsOpen = !toolsOpen; tools.style.display = toolsOpen ? 'flex' : 'none'; toolsBtn.textContent = toolsOpen ? '▴' : '▾'; setTimeout(refit, 30); }, 'លាក់/បង្ហាញ ឧបករណ៍');
     top.appendChild(toolsBtn);
@@ -10193,8 +10197,8 @@ class Component extends DCLogic {
   }
   // leave the editor — if there are unsaved edits, ask what to do first
   _edTryExit(){
-    if (!this._edDirty) { this.libBackToList(); return; }
-    const host = document.getElementById('lib-editor-root'); if (!host) { this.libBackToList(); return; }
+    if (!this._edDirty) { this._edLeave(); return; }
+    const host = document.getElementById('lib-editor-root'); if (!host) { this._edLeave(); return; }
     const old = document.getElementById('lib-exit-ask'); if (old) old.remove();
     const wrap = document.createElement('div'); wrap.id = 'lib-exit-ask';
     wrap.style.cssText = 'position:fixed;inset:0;z-index:140;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;padding:24px;';
@@ -10202,8 +10206,8 @@ class Component extends DCLogic {
     card.style.cssText = 'background:var(--color-surface);color:var(--color-text);border-radius:16px;padding:20px;max-width:340px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.5);';
     card.innerHTML = '<div style="font-size:16px;font-weight:700;margin-bottom:6px;">មានការកែប្រែមិនទាន់រក្សាទុក</div><div style="font-size:13px;opacity:0.7;margin-bottom:14px;line-height:1.6;">តើអ្នកចង់រក្សាទុកមុនចាកចេញឬ?</div>';
     const mk = (label, css, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.style.cssText = 'display:block;width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;' + css; b.addEventListener('click', fn); card.appendChild(b); };
-    mk('💾 រក្សាទុក ហើយ​ចេញ', 'background:var(--color-accent-700);color:#fff;', async () => { wrap.remove(); const ok = await this.saveBook(); if (ok !== false) this.libBackToList(); });
-    mk('ចេញ​ដោយ​មិន​រក្សាទុក', 'background:#c0342c;color:#fff;', () => { wrap.remove(); this._edDirty = false; this.libBackToList(); });
+    mk('💾 រក្សាទុក ហើយ​ចេញ', 'background:var(--color-accent-700);color:#fff;', async () => { wrap.remove(); const ok = await this.saveBook(); if (ok !== false) this._edLeave(); });
+    mk('ចេញ​ដោយ​មិន​រក្សាទុក', 'background:#c0342c;color:#fff;', () => { wrap.remove(); this._edDirty = false; this._edLeave(); });
     mk('បោះបង់ (នៅ​បន្ត)', 'background:var(--color-bg);color:var(--color-text);border:1px solid var(--color-divider);', () => wrap.remove());
     wrap.appendChild(card); host.appendChild(wrap);
   }
@@ -10223,7 +10227,7 @@ class Component extends DCLogic {
     const A4W = this._edA4W, A4H = this._edA4H, PAD = this._edPAD;
     const p = document.createElement('div');
     p.className = 'lib-epage report'; p.contentEditable = 'true';
-    p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;outline:none;display:none;`;
+    p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-family:var(--font-jp),system-ui,sans-serif;letter-spacing:normal;font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;outline:none;display:none;`;
     p.innerHTML = (html && html.trim()) ? html : '<p><br></p>';
     p.addEventListener('input', () => { this._edDirty = true; this._edScheduleReflow(this._edPages.indexOf(p)); });
     // clean paste — strip the source's layout styling so text flows the full width
