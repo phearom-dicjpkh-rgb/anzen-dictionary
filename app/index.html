@@ -9361,7 +9361,8 @@ class Component extends DCLogic {
       // placeholders (〜…) and multi-token / sentence entries that never appear verbatim
       if (jp.length > 20 || jp.indexOf('〜') >= 0 || /[（）()\s\/、。，,！!？?・「」]/.test(jp)) continue;
       if (!HAS_JP.test(jp)) continue;
-      if (!this._bwMap.has(jp)) { this._bwMap.set(jp, { kana: w.kana || '', km: w.km || '' }); if (jp.length > this._bwMax) this._bwMax = jp.length; }
+      if (!this._bwMap.has(jp)) { this._bwMap.set(jp, { kana: w.kana || '', km: w.km || '', img: w.img || '' }); if (jp.length > this._bwMax) this._bwMax = jp.length; }
+      else if (w.img && !this._bwMap.get(jp).img) this._bwMap.get(jp).img = w.img;   // fill an image in from a later duplicate row
     }
     return this._bwMap;
   }
@@ -9430,7 +9431,7 @@ class Component extends DCLogic {
     const host = document.getElementById('lib-read-root') || document.body;
     const old = document.getElementById('bookword-pop'); if (old) old.remove();
     const pop = document.createElement('div'); pop.id = 'bookword-pop';
-    pop.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:130;background:var(--color-surface);color:var(--color-text);border-top:1px solid var(--color-divider);box-shadow:0 -6px 24px rgba(0,0,0,0.35);padding:16px 18px calc(18px + env(safe-area-inset-bottom, 0px));border-radius:16px 16px 0 0;';
+    pop.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:130;background:var(--color-surface);color:var(--color-text);border-top:1px solid var(--color-divider);box-shadow:0 -6px 24px rgba(0,0,0,0.35);padding:16px 18px calc(18px + env(safe-area-inset-bottom, 0px));border-radius:16px 16px 0 0;max-height:80vh;overflow:auto;-webkit-overflow-scrolling:touch;';
     pop.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
         <div style="min-width:0;"><div style="font-size:12px;opacity:0.6;">${_escHtml(info.kana)}</div>
         <div style="font-family:var(--font-heading);font-weight:600;font-size:26px;line-height:1.15;">${_escHtml(jp)}</div></div>
@@ -9439,6 +9440,14 @@ class Component extends DCLogic {
           <button id="bwp-close" style="width:38px;height:38px;border:1px solid var(--color-divider);border-radius:10px;background:var(--color-bg);cursor:pointer;font-size:16px;">✕</button>
         </div></div>
       <div style="font-size:17px;margin-top:10px;line-height:1.6;">${_escHtml(info.km)}</div>`;
+    // if the dictionary word has a picture, show it under the translation
+    if (info.img) {
+      const im = document.createElement('img');
+      im.src = normalizeImgUrl(info.img); im.alt = '';
+      im.style.cssText = 'display:block;max-width:100%;max-height:44vh;margin:12px auto 0;border-radius:12px;object-fit:contain;';
+      im.addEventListener('error', () => im.remove());   // drop it silently if the link is broken
+      pop.appendChild(im);
+    }
     host.appendChild(pop);
     pop.querySelector('#bwp-close').addEventListener('click', () => pop.remove());
     pop.querySelector('#bwp-speak').addEventListener('click', () => this.playAudio(jp));
