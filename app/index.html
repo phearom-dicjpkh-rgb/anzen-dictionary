@@ -1842,16 +1842,18 @@ textarea.input { min-height: 90px; resize: vertical; }
             <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">ជ្រើសរើសសៀវភៅ ដើម្បីចាប់ផ្ដើមអាន</div>
             <sc-if value="{{ rbBusy }}"><div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">កំពុងផ្ទុក…</div></sc-if>
             <sc-if value="{{ rbHasBooks }}">
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;">
-              <sc-for list="{{ rbBooks }}" as="b" hint-placeholder-count="4">
-                <div class="card elev-sm" style="flex-direction:column;gap:0;padding:0;overflow:hidden;cursor:pointer;" sc-camel-on-click="{{ b.onRead }}">
-                  <div style="position:relative;width:100%;aspect-ratio:3/4;background:{{ b.coverBg }};display:flex;align-items:center;justify-content:center;overflow:hidden;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:12px;">
+              <sc-for list="{{ rbBooks }}" as="b" hint-placeholder-count="6">
+                <div class="card elev-sm" style="position:relative;flex-direction:column;gap:0;padding:0;overflow:hidden;{{ b.dimStyle }}">
+                  <div style="position:relative;width:100%;aspect-ratio:3/4;background:{{ b.coverBg }};display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;" sc-camel-on-click="{{ b.onRead }}">
                     <sc-if value="{{ b.hasCover }}"><img src="{{ b.cover }}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;"></sc-if>
-                    <sc-if value="{{ b.noCover }}"><span style="font-size:40px;opacity:0.85;">📖</span></sc-if>
+                    <sc-if value="{{ b.noCover }}"><span style="font-size:28px;opacity:0.85;">📖</span></sc-if>
+                    <sc-if value="{{ b.locked }}"><div style="position:absolute;inset:0;background:rgba(0,0,0,0.28);display:flex;align-items:center;justify-content:center;font-size:26px;pointer-events:none;">🔒</div></sc-if>
                   </div>
-                  <div style="padding:9px 11px 11px;">
-                    <div class="card-title" style="font-size:13px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ b.title }}</div>
+                  <div style="padding:6px 8px 8px;cursor:pointer;" sc-camel-on-click="{{ b.onRead }}">
+                    <div class="card-title" style="font-size:11px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ b.title }}</div>
                   </div>
+                  <sc-if value="{{ b.isAdmin }}"><button sc-camel-on-click="{{ b.onToggleLock }}" title="ចាក់សោ / ដោះសោ" style="position:absolute;top:4px;right:4px;width:28px;height:28px;border:none;border-radius:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3;">{{ b.lockGlyph }}</button></sc-if>
                 </div>
               </sc-for>
             </div>
@@ -8362,8 +8364,13 @@ function makeSupabaseBackend(){
     async getBookSettings(){ const { data } = await client.from('book_settings').select('book,locked,all_schools,schools'); return { rows: data || [] }; },
     async saveBookSetting(row){ const { error } = await client.from('book_settings').upsert(row, { onConflict: 'book' }); return { error: error ? error.message : null }; },
     // — authored books (បណ្ណាល័យ, Admin) —
-    async listBooks(){ const { data } = await client.from('books').select('id,title,sort,updated_at').order('sort').order('updated_at', { ascending: false }); return { rows: data || [] }; },
+    async listBooks(){
+      let { data, error } = await client.from('books').select('id,title,sort,updated_at,locked').order('sort').order('updated_at', { ascending: false });
+      if (error) { const r = await client.from('books').select('id,title,sort,updated_at').order('sort').order('updated_at', { ascending: false }); data = r.data; }   // 'locked' column not migrated yet
+      return { rows: data || [] };
+    },
     async getBook(id){ const { data, error } = await client.from('books').select('*').eq('id', id).single(); return { book: data || null, error: error ? error.message : null }; },
+    async setBookLock(id, locked){ const { error } = await client.from('books').update({ locked: !!locked }).eq('id', id); return { error: error ? error.message : null }; },
     async saveBook(row){
       if (row.id) { const { error } = await client.from('books').update({ title: row.title, content: row.content, updated_at: new Date().toISOString() }).eq('id', row.id); return { id: row.id, error: error ? error.message : null }; }
       const { data, error } = await client.from('books').insert({ title: row.title, content: row.content }).select('id').single(); return { id: data && data.id, error: error ? error.message : null };
@@ -8509,6 +8516,7 @@ function makeDemoBackend(){
     _books(){ try { return JSON.parse(localStorage.getItem('dict_demo_books') || '[]'); } catch(e){ return []; } },
     async listBooks(){ return { rows: this._books().map(({ content, ...r }) => r) }; },
     async getBook(id){ return { book: this._books().find(x => x.id === id) || null, error: null }; },
+    async setBookLock(id, locked){ const b = this._books(); const x = b.find(y => y.id === id); if (x) { x.locked = !!locked; localStorage.setItem('dict_demo_books', JSON.stringify(b)); } return { error: null }; },
     async saveBook(row){
       const b = this._books();
       if (row.id) { const x = b.find(y => y.id === row.id); if (x) { x.title = row.title; x.content = row.content; x.updated_at = new Date().toISOString(); } localStorage.setItem('dict_demo_books', JSON.stringify(b)); return { id: row.id, error: null }; }
@@ -9523,7 +9531,7 @@ class Component extends DCLogic {
     const withCovers = await Promise.all(list.map(async b => {
       let cover = '';
       try { const { book } = await Backend.getBook(b.id); cover = this._firstBookImage((book && book.content) || ''); } catch(e){}
-      return { id: b.id, title: b.title, updated_at: b.updated_at, cover };
+      return { id: b.id, title: b.title, updated_at: b.updated_at, cover, locked: !!b.locked };
     }));
     this._rbCache = withCovers;
     if (this.state.screen === 'readbooks') this.setState({ rbBooks: withCovers, rbBusy: false });
@@ -9532,8 +9540,19 @@ class Component extends DCLogic {
   _firstBookImage(content){
     try { const meta = this._parseBookMeta(content || ''); const d = document.createElement('div'); d.innerHTML = meta.html || ''; const im = d.querySelector('img'); return im ? normalizeImgUrl(im.getAttribute('src') || '') : ''; } catch(e){ return ''; }
   }
+  // students can't open a locked book; admins may still open it to preview
+  rbOpen(id){ const b = (this.state.rbBooks || []).find(x => x.id === id); if (b && b.locked && this.state.role !== 'admin') { this.showToast('សៀវភៅនេះត្រូវបានចាក់សោ'); return; } this.rbReadBook(id); }
   async rbReadBook(id){ const { book } = await Backend.getBook(id); this._libReadData = book || {}; this._readRootId = 'rb-read-root'; this._readerBack = () => this.rbBackToList(); this.setState({ screen: 'readbooks', rbMode: 'read', libBookId: id }, () => this._buildReadSoon()); }
   rbBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); this.setState({ rbMode: 'list', libBookId: null }, () => this.loadReadBooks()); }
+  // admin locks / unlocks an authored book (locked = students see the cover but can't read)
+  async rbToggleLock(id, e){ if (e && e.stopPropagation) e.stopPropagation(); if (this.state.role !== 'admin') return;
+    const books = (this.state.rbBooks || []).map(b => b.id === id ? { ...b, locked: !b.locked } : b);
+    const now = books.find(b => b.id === id);
+    this._rbCache = books; this.setState({ rbBooks: books });
+    const { error } = await Backend.setBookLock(id, now.locked);
+    if (error) { this.showToast('រក្សាទុកមិនបាន — ' + error); const revert = books.map(b => b.id === id ? { ...b, locked: !b.locked } : b); this._rbCache = revert; this.setState({ rbBooks: revert }); }
+    else this.showToast(now.locked ? '🔒 បានចាក់សោ (សិស្សអានមិនបាន)' : '🔓 បានដោះសោ (សិស្សអានបាន)');
+  }
   libNewBook(){ this._edReturnToRead = null; this.setState({ libMode: 'edit', libBookId: null, libErr: '' }, () => this._buildEditorSoon(null)); }
   async libEditBook(id, keepReturn){ if (!keepReturn) this._edReturnToRead = null; const { book } = await Backend.getBook(id); this.setState({ libMode: 'edit', libBookId: id, libErr: '' }, () => this._buildEditorSoon(book || {})); }
   // leave the editor back to wherever it was opened from: the reader (if opened
@@ -11868,7 +11887,12 @@ class Component extends DCLogic {
         title: b.title || '(គ្មានចំណងជើង)',
         hasCover: !!b.cover, noCover: !b.cover, cover: b.cover || '',
         coverBg: b.cover ? '#e9e6df' : 'linear-gradient(135deg,var(--color-accent-700),color-mix(in srgb, var(--color-accent-700) 55%, #000))',
-        onRead: () => this.rbReadBook(b.id),
+        locked: !!b.locked,
+        dimStyle: (b.locked && s.role !== 'admin') ? 'opacity:0.55;' : '',
+        isAdmin: s.role === 'admin',
+        lockGlyph: b.locked ? '🔒' : '🔓',
+        onRead: () => this.rbOpen(b.id),
+        onToggleLock: (e) => this.rbToggleLock(b.id, e),
       })),
       goReadBooks: () => this.goReadBooks(),
       goMonitor: () => this.goMonitor(),
