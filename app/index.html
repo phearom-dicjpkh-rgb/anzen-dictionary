@@ -1379,104 +1379,135 @@ textarea.input { min-height: 90px; resize: vertical; }
         </sc-if>
 
         <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
-        <div style="padding:18px 20px 30px;">
-          <h1 style="font-size:26px;margin:0 0 16px;">ប្រវត្តិរូប</h1>
+        <div style="padding:16px 20px 44px;">
+          <h1 style="font-size:27px;letter-spacing:-0.02em;margin:0 0 18px;">ប្រវត្តិរូប</h1>
 
-          <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;margin-bottom:18px;">
-            <div style="width:52px;height:52px;flex:none;border-radius:50%;background:var(--color-accent);color:#f3f2f2;display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:23px;">{{ profileInitial }}</div>
+          <!-- identity: avatar (zodiac + colour) + name + role -->
+          <div style="display:flex;align-items:center;gap:14px;padding-bottom:18px;border-bottom:1px solid var(--color-divider);">
+            <div style="width:56px;height:56px;flex:none;border-radius:50%;background:{{ avatarColor }};color:{{ avatarTextColor }};display:flex;align-items:center;justify-content:center;font-size:29px;font-family:var(--font-heading);{{ avatarRing }}">{{ avatarGlyph }}</div>
             <div style="min-width:0;">
-              <div style="font-family:var(--font-heading);font-weight:600;font-size:18px;">{{ profileName }}</div>
-              <div style="font-size:12px;opacity:0.6;overflow:hidden;text-overflow:ellipsis;">{{ profileEmail }}</div>
-              <div style="font-size:12px;color:var(--color-accent-700);margin-top:2px;">{{ profileRoleLabel }}</div>
-              <sc-if value="{{ hasBranch }}">
-                <div style="font-size:12px;opacity:0.55;">{{ profileBranch }}</div>
-              </sc-if>
+              <div style="font-family:var(--font-heading);font-weight:700;font-size:18px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;">{{ profileDisplayName }}</div>
+              <div style="font-size:12.5px;opacity:0.5;margin-top:4px;">{{ profileRoleLabel }}</div>
+              <sc-if value="{{ hasBranch }}"><div style="font-size:12px;opacity:0.45;margin-top:1px;">{{ profileBranch }}</div></sc-if>
             </div>
           </div>
 
-          <h4 style="font-size:15px;margin:0 0 10px;">វឌ្ឍនភាពតាមសៀវភៅ</h4>
-          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:22px;">
-            <sc-for list="{{ bookStats }}" as="b" hint-placeholder-count="2">
-              <div>
-                <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:13px;margin-bottom:5px;">
-                  <span>{{ b.book }}</span>
-                  <span style="opacity:0.65;font-size:12px;">{{ b.countLabel }} · {{ b.pctLabel }}</span>
+          <!-- 1 · usage (always shown) -->
+          <div style="padding:18px 0;border-bottom:1px solid var(--color-divider);">
+            <div style="font-size:11px;letter-spacing:0.1em;opacity:0.5;margin-bottom:14px;">រយៈពេលប្រើប្រាស់</div>
+            <div style="display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:16px;">
+              <span style="font-size:24px;font-weight:800;letter-spacing:-0.02em;">{{ usageTodayLabel }}</span>
+              <span style="font-size:11.5px;opacity:0.5;">ថ្ងៃនេះ · ៧ ថ្ងៃ {{ usageWeekLabel }}</span>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:9px;height:92px;">
+              <sc-for list="{{ usageDays }}" as="d" hint-placeholder-count="7">
+                <div style="flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px;">
+                  <div style="width:5px;height:{{ d.barHeight }};background:{{ d.barColor }};border-radius:99px;"></div>
+                  <div style="font-size:10px;opacity:0.5;">{{ d.label }}</div>
                 </div>
-                <div style="height:8px;background:var(--color-neutral-200);border-radius:99px;overflow:hidden;">
-                  <div style="height:100%;width:{{ b.barWidth }};background:var(--color-accent);border-radius:99px;"></div>
-                </div>
-              </div>
-            </sc-for>
+              </sc-for>
+            </div>
           </div>
 
-          <h4 style="font-size:15px;margin:0 0 10px;">លទ្ធផលតេស្ត</h4>
-          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:22px;">
-            <sc-for list="{{ myLessonSummary }}" as="t" hint-placeholder-count="3">
-              <div class="card elev-sm" style="gap:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:13px;">
-                  <span>{{ t.label }}</span>
-                  <span style="opacity:0.65;font-size:12px;">{{ t.passedLabel }}</span>
-                </div>
-                <sc-if value="{{ t.hasAny }}">
-                  <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                    <sc-for list="{{ t.chips }}" as="c" hint-placeholder-count="4">
-                      <span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}">{{ c.text }}</span>
+          <!-- 2 · book progress (collapsible) -->
+          <div style="border-bottom:1px solid var(--color-divider);">
+            <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:16px 0;" sc-camel-on-click="{{ toggleProfProgress }}">
+              <span style="font-size:11px;letter-spacing:0.1em;opacity:0.5;">វឌ្ឍនភាពតាមសៀវភៅ</span>
+              <span style="opacity:0.4;font-size:12px;">{{ profProgressChevron }}</span>
+            </div>
+            <sc-if value="{{ profProgressOpen }}">
+              <div style="padding-bottom:18px;">
+                <sc-for list="{{ bookStats }}" as="b" hint-placeholder-count="2">
+                  <div style="margin-bottom:16px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px;">
+                      <span style="font-size:14px;">{{ b.book }} <small style="opacity:0.45;font-size:11px;">{{ b.countLabel }}</small></span>
+                      <span style="font-size:20px;font-weight:800;letter-spacing:-0.02em;">{{ b.pctLabel }}</span>
+                    </div>
+                    <div style="height:3px;background:var(--color-neutral-200);border-radius:99px;overflow:hidden;">
+                      <div style="height:100%;width:{{ b.barWidth }};background:var(--color-accent);"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+
+          <!-- 3 · test results (collapsible) -->
+          <div style="border-bottom:1px solid var(--color-divider);">
+            <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:16px 0;" sc-camel-on-click="{{ toggleProfTests }}">
+              <span style="font-size:11px;letter-spacing:0.1em;opacity:0.5;">លទ្ធផលតេស្ត</span>
+              <span style="opacity:0.4;font-size:12px;">{{ profTestsChevron }}</span>
+            </div>
+            <sc-if value="{{ profTestsOpen }}">
+              <div style="padding-bottom:12px;">
+                <sc-for list="{{ myLessonSummary }}" as="t" hint-placeholder-count="2">
+                  <div style="padding:11px 0;border-top:1px solid var(--color-divider);">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                      <span style="font-size:14px;">{{ t.label }}</span>
+                      <span style="font-size:12.5px;opacity:0.5;">{{ t.passedLabel }}</span>
+                    </div>
+                    <sc-if value="{{ t.hasAny }}">
+                      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+                        <sc-for list="{{ t.chips }}" as="c" hint-placeholder-count="4">
+                          <span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}">{{ c.text }}</span>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ hasMyQuiz }}">
+                  <div style="padding:11px 0;border-top:1px solid var(--color-divider);">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="font-size:14px;">លំហាត់</span><span style="font-size:12.5px;opacity:0.5;">{{ myQuizSummary.passedLabel }}</span></div>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+                      <sc-for list="{{ myQuizSummary.chips }}" as="c" hint-placeholder-count="4"><span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}">{{ c.text }}</span></sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ hasMyImgQuiz }}">
+                  <div style="padding:11px 0;border-top:1px solid var(--color-divider);">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="font-size:14px;">លំហាត់រូបភាព</span><span style="font-size:12.5px;opacity:0.5;">{{ myImgQuizSummary.passedLabel }}</span></div>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+                      <sc-for list="{{ myImgQuizSummary.chips }}" as="c" hint-placeholder-count="4"><span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}">{{ c.text }}</span></sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ hasMyExam }}">
+                  <div style="padding:11px 0;border-top:1px solid var(--color-divider);">
+                    <div style="font-size:14px;margin-bottom:6px;">ប្រឡងសាកល្បង</div>
+                    <sc-for list="{{ myExamLog }}" as="a" hint-placeholder-count="3">
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0;font-size:13px;">
+                        <span>{{ a.label }}</span>
+                        <span style="display:flex;gap:10px;align-items:center;"><span style="opacity:0.6;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+                      </div>
                     </sc-for>
                   </div>
                 </sc-if>
               </div>
-            </sc-for>
+            </sc-if>
           </div>
 
-          <sc-if value="{{ hasMyQuiz }}">
-          <h4 style="font-size:15px;margin:0 0 10px;">លំហាត់</h4>
-          <div class="card elev-sm" style="gap:8px;margin-bottom:22px;">
-            <div style="display:flex;justify-content:flex-end;font-size:12px;opacity:0.65;">{{ myQuizSummary.passedLabel }}</div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;">
-              <sc-for list="{{ myQuizSummary.chips }}" as="c" hint-placeholder-count="4">
-                <span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}">{{ c.text }}</span>
-              </sc-for>
+          <!-- 4 · avatar & colour (collapsible) -->
+          <div style="border-bottom:1px solid var(--color-divider);">
+            <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:16px 0;" sc-camel-on-click="{{ toggleProfAvatar }}">
+              <span style="font-size:11px;letter-spacing:0.1em;opacity:0.5;">រូបតំណាង & ពណ៌</span>
+              <span style="opacity:0.4;font-size:12px;">{{ profAvatarChevron }}</span>
             </div>
-          </div>
-          </sc-if>
-
-          <sc-if value="{{ hasMyImgQuiz }}">
-          <h4 style="font-size:15px;margin:0 0 10px;">លំហាត់រូបភាព</h4>
-          <div class="card elev-sm" style="gap:8px;margin-bottom:22px;">
-            <div style="display:flex;justify-content:flex-end;font-size:12px;opacity:0.65;">{{ myImgQuizSummary.passedLabel }}</div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;">
-              <sc-for list="{{ myImgQuizSummary.chips }}" as="c" hint-placeholder-count="4">
-                <span style="font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--color-divider);{{ c.style }}">{{ c.text }}</span>
-              </sc-for>
-            </div>
-          </div>
-          </sc-if>
-
-          <sc-if value="{{ hasMyExam }}">
-          <h4 style="font-size:15px;margin:0 0 10px;">ប្រឡងសាកល្បង</h4>
-          <div class="card elev-sm" style="gap:6px;margin-bottom:22px;">
-            <sc-for list="{{ myExamLog }}" as="a" hint-placeholder-count="3">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--color-divider);font-size:13px;">
-                <span>{{ a.label }}</span>
-                <span style="display:flex;gap:10px;align-items:center;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
-              </div>
-            </sc-for>
-          </div>
-          </sc-if>
-
-          <h4 style="font-size:15px;margin:0 0 4px;">រយៈពេលប្រើប្រាស់</h4>
-          <div style="font-size:12px;opacity:0.6;margin-bottom:12px;">ថ្ងៃនេះ {{ usageTodayLabel }} · ៧ ថ្ងៃ {{ usageWeekLabel }}</div>
-          <div class="card elev-sm" style="padding:14px 12px 10px;">
-            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:6px;height:120px;">
-              <sc-for list="{{ usageDays }}" as="d" hint-placeholder-count="7">
-                <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;">
-                  <div style="font-size:10px;opacity:0.6;">{{ d.minsLabel }}</div>
-                  <div style="width:100%;height:{{ d.barHeight }};background:{{ d.barColor }};border-radius:5px 5px 0 0;"></div>
-                  <div style="font-size:11px;opacity:0.7;">{{ d.label }}</div>
+            <sc-if value="{{ profAvatarOpen }}">
+              <div style="padding-bottom:20px;">
+                <div style="font-size:11px;opacity:0.5;margin-bottom:10px;">សត្វទាំង ១២ នៃឆ្នាំ</div>
+                <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;">
+                  <sc-for list="{{ avatarAnimals }}" as="a" hint-placeholder-count="12">
+                    <button title="{{ a.title }}" style="aspect-ratio:1;border:1px solid var(--color-divider);background:var(--color-surface);border-radius:50%;font-size:19px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;{{ a.style }}" sc-camel-on-click="{{ a.onSelect }}">{{ a.emoji }}</button>
+                  </sc-for>
                 </div>
-              </sc-for>
-            </div>
-            <div style="text-align:center;font-size:10px;opacity:0.45;margin-top:6px;">នាទី ក្នុងមួយថ្ងៃ</div>
+                <div style="font-size:11px;opacity:0.5;margin:16px 0 10px;">ពណ៌ផ្ទៃ</div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                  <sc-for list="{{ avatarColors }}" as="c" hint-placeholder-count="9">
+                    <button aria-label="ពណ៌" style="width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;padding:0;background:{{ c.color }};{{ c.style }}" sc-camel-on-click="{{ c.onSelect }}"></button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
           </div>
         </div>
         </sc-if>
@@ -8550,6 +8581,7 @@ class Component extends DCLogic {
     email: '', password: '', authError: '', authBusy: false,
     userId: null, role: null, profileName: '', mySchoolId: null,
     profileEmail: '', usage: {},
+    profOpen: { progress: true, tests: true, avatar: false },   // collapsible profile sections
     expandedSchools: [],
     monCollapsed: [],   // branches an admin has folded away on the leaderboard
     // admin (create accounts)
@@ -8768,6 +8800,11 @@ class Component extends DCLogic {
     });
   }
   goProfile(){ this.stopSpeech(); this.setState({ screen: 'profile', playerPlaying: false }); }
+  // collapse / reveal a profile section (progress · tests · avatar)
+  toggleProfSection(k){ const o = { ...this.state.profOpen }; o[k] = !o[k]; this.setState({ profOpen: o }); }
+  // the learner's chosen avatar: a zodiac animal + a background colour, saved in settings
+  setAvatarAnimal(a){ const settings = { ...this.state.settings, avatarAnimal: a }; this.setState({ settings }, () => this.persist()); }
+  setAvatarColor(c){ const settings = { ...this.state.settings, avatarColor: c }; this.setState({ settings }, () => this.persist()); }
   async loadLeaderboard(){ const r = await Backend.leaderboard(); this.setState({ leaderboard: r.rows || [] }); }
 
   async componentDidMount(){
@@ -12016,6 +12053,8 @@ class Component extends DCLogic {
       goProfile: () => this.goProfile(),
       profileColor: s.screen === 'profile' ? 'var(--color-accent-700)' : 'var(--color-text)',
       profileEmail: s.profileEmail,
+      // show the NAME (not the email): a real full name, else the email's local part
+      profileDisplayName: ((s.profileName || '').includes('@') ? (s.profileName || '').split('@')[0] : (s.profileName || '')) || '—',
       profileRoleLabel: ({ admin:'អ្នកគ្រប់គ្រង', school:'សាលា/សាខា', teacher:'គ្រូ', student:'សិស្ស' })[s.role] || '',
       // only admins and branches load the school list, so others have no name
       profileBranch: schoolName(s.mySchoolId),
@@ -12025,6 +12064,35 @@ class Component extends DCLogic {
       myImgQuizSummary, hasMyImgQuiz: myImgQuizSummary.hasAny,
       myExamLog, hasMyExam: myExamLog.length > 0,
       profileInitial: (s.profileName || '?').trim().charAt(0),
+      // avatar: chosen zodiac animal on a chosen colour (saved in settings)
+      ...(() => {
+        const appAccent = (() => { try { const v = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim(); return v || '#2f6fb0'; } catch(e) { return '#2f6fb0'; } })();
+        const st = s.settings || {};
+        const color = st.avatarColor || appAccent;
+        const animal = st.avatarAnimal || '';
+        const lum = (h => { h = (h || '').replace('#',''); if (h.length===3) h = h.split('').map(c=>c+c).join(''); const n = parseInt(h||'0',16); return (0.299*(n>>16&255) + 0.587*(n>>8&255) + 0.114*(n&255))/255; })(color);
+        const isLight = lum > 0.72;
+        const ZODIAC = [['🐭','ជូត'],['🐮','ឆ្លូវ'],['🐯','ខាល'],['🐰','ថោះ'],['🐲','រោង'],['🐍','ម្សាញ់'],['🐴','មមី'],['🐐','មមែ'],['🐵','វក'],['🐔','រកា'],['🐶','ច'],['🐷','កុរ']];
+        const AV_COLORS = ['#ffffff','#2f6fb0','#0f7d78','#2f8f57','#7a5cc0','#e0653c','#d14d72','#c98a2e','#1c1a17'];
+        return {
+          avatarColor: color,
+          avatarGlyph: animal || (s.profileName || '?').trim().charAt(0),
+          avatarTextColor: isLight ? 'var(--color-text)' : '#ffffff',
+          avatarRing: isLight ? 'box-shadow:inset 0 0 0 1px var(--color-divider);' : '',
+          avatarAnimals: ZODIAC.map(([em, km]) => ({ emoji: em, title: km,
+            onSelect: () => this.setAvatarAnimal(em),
+            style: (animal === em) ? 'border-color:var(--color-accent);box-shadow:0 0 0 2px color-mix(in srgb, var(--color-accent) 35%, transparent);' : '' })),
+          avatarColors: AV_COLORS.map(c => ({ color: c,
+            onSelect: () => this.setAvatarColor(c),
+            style: (c.toLowerCase() === color.toLowerCase()) ? 'box-shadow:0 0 0 2px var(--color-bg),0 0 0 4px var(--color-text);' : 'box-shadow:0 0 0 1px var(--color-divider);' })),
+        };
+      })(),
+      // collapsible profile sections
+      profProgressOpen: !!s.profOpen.progress, profTestsOpen: !!s.profOpen.tests, profAvatarOpen: !!s.profOpen.avatar,
+      profProgressChevron: s.profOpen.progress ? '▾' : '▸', profTestsChevron: s.profOpen.tests ? '▾' : '▸', profAvatarChevron: s.profOpen.avatar ? '▾' : '▸',
+      toggleProfProgress: () => this.toggleProfSection('progress'),
+      toggleProfTests: () => this.toggleProfSection('tests'),
+      toggleProfAvatar: () => this.toggleProfSection('avatar'),
       // — leaderboard (its own screen, students only) —
       isRanking: s.screen === 'ranking',
       goRanking: () => this.goRanking(),
