@@ -2443,10 +2443,13 @@ textarea.input { min-height: 90px; resize: vertical; }
           <div style="border:1px solid var(--color-divider);border-radius:var(--radius-md);padding:10px;margin-bottom:10px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
               <span style="font-size:11px;opacity:0.55;">{{ ex.num }}</span>
-              <a href="#" style="font-size:12px;color:#c0392b;" sc-camel-on-click="{{ ex.onRemove }}">លុប</a>
+              <div style="display:flex;gap:12px;">
+                <a href="#" style="font-size:12px;color:var(--color-accent-700);" sc-camel-on-click="{{ ex.onTranslate }}">{{ ex.transLabel }}</a>
+                <a href="#" style="font-size:12px;color:#c0392b;" sc-camel-on-click="{{ ex.onRemove }}">លុប</a>
+              </div>
             </div>
             <input class="input" type="text" placeholder="ប្រយោគជប៉ុន" value="{{ ex.jp }}" sc-camel-on-change="{{ ex.onJp }}" style="margin-bottom:6px;">
-            <input class="input" type="text" placeholder="ការបកប្រែខ្មែរ" value="{{ ex.km }}" sc-camel-on-change="{{ ex.onKm }}">
+            <input class="input" type="text" placeholder="ការបកប្រែខ្មែរ (ចុច 🌐 បកប្រែ ស្វ័យ)" value="{{ ex.km }}" sc-camel-on-change="{{ ex.onKm }}">
           </div>
         </sc-for>
         <button class="btn btn-secondary btn-block" style="margin-bottom:16px;" sc-camel-on-click="{{ addEdExample }}">+ បន្ថែមឧទាហរណ៍</button>
@@ -8315,6 +8318,7 @@ function makeSupabaseBackend(){
       }
       return { row: res.data, error: res.error ? res.error.message : null };
     },
+    async updateCustomWord(id, patch){ const { error } = await client.from('custom_words').update(patch).eq('id', id); return { error: error ? error.message : null }; },
     async getBookSettings(){ const { data } = await client.from('book_settings').select('book,locked,all_schools,schools'); return { rows: data || [] }; },
     async saveBookSetting(row){ const { error } = await client.from('book_settings').upsert(row, { onConflict: 'book' }); return { error: error ? error.message : null }; },
     // — authored books (បណ្ណាល័យ, Admin) —
@@ -8455,6 +8459,7 @@ function makeDemoBackend(){
       rows.push(rec); localStorage.setItem('dict_demo_customwords', JSON.stringify(rows));
       return { row: rec, error: null };
     },
+    async updateCustomWord(id, patch){ const rows = (await this.listCustomWords()).rows; const r = rows.find(x => x.id === id); if (r) Object.assign(r, patch); localStorage.setItem('dict_demo_customwords', JSON.stringify(rows)); return { error: null }; },
     async getBookSettings(){ try { return { rows: JSON.parse(localStorage.getItem('dict_demo_booksettings') || '[]') }; } catch(e){ return { rows: [] }; } },
     async saveBookSetting(row){
       const rows = (await this.getBookSettings()).rows.filter(r => r.book !== row.book);
@@ -8513,7 +8518,7 @@ class Component extends DCLogic {
     syncBusy: false, syncMsg: '', syncError: '',
     // admin word editor
     editSearch: '', editWordId: null,
-    edJp: '', edKana: '', edPos: '', edKm: '', edImg: '', edExamples: [],
+    edJp: '', edKana: '', edPos: '', edKm: '', edImg: '', edExamples: [], edConj: null,
     edBusy: false, edMsg: '', edError: '', overridesRev: 0,
     // admin: add a new word / grammar
     awBook: '', awBookMenuOpen: false, awNewBook: '', awCat: 'vocab', awPage: '',
@@ -9262,7 +9267,7 @@ class Component extends DCLogic {
   pickEditWord(id){
     const w = WORDS.find(x => x.id === id);
     if (!w) return;
-    this.setState({ editWordId: id, edJp: w.jp, edKana: w.kana, edPos: w.pos, edKm: w.km, edImg: w.img || '',
+    this.setState({ editWordId: id, edConj: null, edJp: w.jp, edKana: w.kana, edPos: w.pos, edKm: w.km, edImg: w.img || '',
       edExamples: w.examples.map(e => ({ jp: e.jp, km: e.km })), edMsg: '', edError: '' });
   }
   // Straight from the word sheet, so an admin who spots a mistake while
@@ -9289,6 +9294,20 @@ class Component extends DCLogic {
   onEdExampleKm(i, e){ const v = e.target.value; this.setState(s => ({ edExamples: s.edExamples.map((x, k) => k === i ? { ...x, km: v } : x) })); }
   addEdExample(){ this.setState(s => ({ edExamples: [...s.edExamples, { jp: '', km: '' }] })); }
   removeEdExample(i){ this.setState(s => ({ edExamples: s.edExamples.filter((_, k) => k !== i) })); }
+  async translateEdExample(i){
+    const ex = this.state.edExamples[i]; if (!ex || !(ex.jp || '').trim()) return;
+    this.setState(s => ({ edExamples: s.edExamples.map((x, k) => k === i ? { ...x, translating: true } : x), edMsg: '', edError: '' }));
+    const km = await mmTranslate(ex.jp);
+    this.setState(s => ({ edExamples: s.edExamples.map((x, k) => k === i ? { ...x, km: km || x.km, translating: false } : x),
+      edMsg: km ? 'បកប្រែ​រួច ✓ — សូម​ពិនិត្យ/កែ' : '', edError: km ? '' : 'បកប្រែ​ស្វ័យ​មិន​បាន (អស់​កូតា ឬ​បណ្ដាញ) — សូម​វាយ​ដោយ​ដៃ' }));
+  }
+  // open the normal កែពាក្យ dialog for a conjugation (from a search result); saving
+  // writes back to its base word's related list rather than a word override
+  openConjugationEdit(w){
+    this.setState({ editWordId: w.id, edConj: { baseId: w._baseId, jp: w.jp },
+      edJp: w.jp, edKana: w.kana || '', edPos: w.pos || '', edKm: w.km || '', edImg: '',
+      edExamples: (Array.isArray(w.examples) ? w.examples : []).map(e => ({ jp: e.jp, km: e.km })), edMsg: '', edError: '' });
+  }
   async saveEditWord(){
     if (this.state.edBusy) return;
     const id = this.state.editWordId;
@@ -9299,6 +9318,19 @@ class Component extends DCLogic {
     const examples = this.state.edExamples
       .map(x => ({ jp: (x.jp || '').trim(), km: (x.km || '').trim() }))
       .filter(x => x.jp);
+    // editing a conjugation → write back into its base word's related list
+    const conj = this.state.edConj;
+    if (conj) {
+      const base = WORDS.find(w => w.id === conj.baseId);
+      if (!base) { this.setState({ edBusy: false, edError: 'រកមិនឃើញពាក្យដើម' }); return; }
+      const rel = (base.related || []).map(f => (f.jp === conj.jp ? { jp, km, examples } : f));
+      const rowId = conj.baseId.replace(/^c-/, '');
+      const { error } = await Backend.updateCustomWord(rowId, { related: rel });
+      if (error) { this.setState({ edBusy: false, edError: error }); return; }
+      base.related = rel; this._bwMap = null; rebuildIndexes();
+      this.setState(s => ({ edBusy: false, edMsg: 'រក្សាទុករួចរាល់ ✓', overridesRev: s.overridesRev + 1 }));
+      return;
+    }
     const row = { word_id: id, jp, kana: (this.state.edKana || '').trim(), pos: (this.state.edPos || '').trim(), km, examples, img: normalizeImgUrl(this.state.edImg) };
     const { error } = await Backend.saveOverride(row);
     if (error) { this.setState({ edBusy: false, edError: error }); return; }
@@ -9316,15 +9348,6 @@ class Component extends DCLogic {
 
   // — Admin: add a new word / grammar —
   goAddWord(){ this.setState({ screen: 'addword', awMsg: '', awError: '', awIsConj: false }); }
-  // open the add/edit form pre-filled with a conjugation (from a search result) so
-  // the admin can give it examples (with 🌐 translate) and save it as its own entry
-  openConjugationEdit(w){
-    this.setState({ screen: 'addword', awCat: 'vocab', awIsConj: true,
-      awJp: w.jp, awKana: w.kana || '', awPos: w.pos || '', awKm: w.km || '',
-      awBook: w.book || '', awNewBook: '', awPage: w.page ? String(w.page) : '',
-      awImg: '', awStar: false, awExamples: [{ jp: '', km: '' }], awRelated: [], awLevel: '', awLink: '',
-      awMsg: `កែ «${w.jp}» — បន្ថែម​ឧទាហរណ៍ រួច​រក្សាទុក`, awError: '' });
-  }
   onAwCatVocab(){ this.setState({ awCat: 'vocab' }); }
   onAwCatGrammar(){ this.setState({ awCat: 'grammar' }); }
   onAwPage(e){ this.setState({ awPage: e.target.value }); }
@@ -11857,9 +11880,9 @@ class Component extends DCLogic {
       edKm: s.edKm, onEdKm: e => this.onEdKm(e),
       edImg: s.edImg, onEdImg: e => this.onEdImg(e),
       edExamples: s.edExamples.map((x, i) => ({
-        jp: x.jp, km: x.km, num: `ឧទាហរណ៍ ${i + 1}`,
+        jp: x.jp, km: x.km, num: `ឧទាហរណ៍ ${i + 1}`, transLabel: x.translating ? '…' : '🌐 បកប្រែ',
         onJp: e => this.onEdExampleJp(i, e), onKm: e => this.onEdExampleKm(i, e),
-        onRemove: () => this.removeEdExample(i) })),
+        onTranslate: () => this.translateEdExample(i), onRemove: () => this.removeEdExample(i) })),
       addEdExample: () => this.addEdExample(),
       saveEditWord: () => this.saveEditWord(), resetEditWord: () => this.resetEditWord(),
       edSaveLabel: s.edBusy ? 'កំពុងរក្សាទុក…' : 'រក្សាទុក',
