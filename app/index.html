@@ -1903,6 +1903,16 @@ textarea.input { min-height: 90px; resize: vertical; }
               <button style="padding:7px 14px;border-radius:99px;border:1.5px solid;font-size:13px;cursor:pointer;{{ c.style }}" sc-camel-on-click="{{ c.onSelect }}">{{ c.label }}</button>
             </sc-for>
           </div>
+          <div style="font-size:12px;opacity:0.6;margin-bottom:7px;">ពណ៌</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
+            <sc-for list="{{ shareColorChips }}" as="c" hint-placeholder-count="6">
+              <button title="{{ c.title }}" style="width:30px;height:30px;border-radius:50%;cursor:pointer;padding:0;background:{{ c.color }};{{ c.style }}" sc-camel-on-click="{{ c.onSelect }}"></button>
+            </sc-for>
+            <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;opacity:0.75;cursor:pointer;">
+              <input type="color" value="{{ shareCustomColor }}" sc-camel-on-change="{{ onShareCustomColor }}" style="width:30px;height:30px;border:none;background:none;cursor:pointer;padding:0;">
+              ផ្សេង
+            </label>
+          </div>
 
           <sc-if value="{{ shareBusy }}"><div style="text-align:center;padding:40px 0;opacity:0.6;font-size:13px;">កំពុងបង្កើត…</div></sc-if>
           <sc-if value="{{ shareHasImg }}">
@@ -2349,7 +2359,7 @@ textarea.input { min-height: 90px; resize: vertical; }
         <div id="print-sheet" class="report" style="width:100%;max-width:780px;background:#fff;padding:28px 30px;box-shadow:0 8px 30px rgba(0,0,0,0.35);box-sizing:border-box;">
           <div style="display:flex;align-items:center;gap:14px;border-bottom:3px solid #1a4b8c;padding-bottom:12px;">
             <sc-if value="{{ prHasLogo }}"><img src="{{ pr.logo }}" alt="" style="width:56px;height:56px;border-radius:8px;object-fit:cover;flex:none;"></sc-if>
-            <sc-if value="{{ prNoLogo }}"><div style="width:56px;height:56px;border-radius:8px;background:#b68235;color:#fff8ec;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:32px;flex:none;">辞</div></sc-if>
+            <sc-if value="{{ prNoLogo }}"><div style="width:56px;height:56px;border-radius:8px;background:#1a4b8c;color:#fff8ec;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:32px;flex:none;">辞</div></sc-if>
             <div style="flex:1;min-width:0;">
               <div style="font-size:21px;font-weight:700;color:#1a4b8c;line-height:1.2;">{{ pr.school }}</div>
               <div style="font-size:11px;color:#777;margin-top:2px;">{{ pr.appName }} · SSW</div>
@@ -8587,7 +8597,7 @@ class Component extends DCLogic {
     playerSrc: 'book', playerBook: '', playerLesson: 1, playerBookOpen: false, playerLessonOpen: false,
     playerList: [], playerIdx: 0, playerPlaying: false, playerRepeat: false, playerRate: 0.95,
     // admin: share-image maker
-    shareSearch: '', shareWordId: null, shareSize: 'square', shareStyle: 'refined', shareImgData: '', shareBusy: false, shareErr: '',
+    shareSearch: '', shareWordId: null, shareSize: 'square', shareStyle: 'refined', shareColor: '', shareImgData: '', shareBusy: false, shareErr: '',
     // admin: A4 results preview / print
     printOpen: false, printReport: null,
     testMode: null, testKind: 'mc_jp', testLesson: 1, testMix: false,
@@ -8985,6 +8995,8 @@ class Component extends DCLogic {
   pickShareWord(id){ this.setState({ shareWordId: id, shareSearch: '' }, () => this.drawShareCard()); }
   setShareSize(sz){ this.setState({ shareSize: sz }, () => this.drawShareCard()); }
   setShareStyle(st){ this.setState({ shareStyle: st }, () => this.drawShareCard()); }
+  setShareColor(c){ this.setState({ shareColor: c || '' }, () => this.drawShareCard()); }
+  onShareCustomColor(e){ this.setShareColor(e.target.value); }
   _loadImg(url){ return new Promise(res => { if (!url) return res(null); const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => res(null); im.src = url; }); }
   // a Drive thumbnail link taints the canvas, but its googleusercontent form
   // sends CORS headers, so rewrite to that for drawing
@@ -9048,6 +9060,21 @@ class Component extends DCLogic {
   _paintShareCard(ctx, S, word, wordImg, logoImg){
     const fn = { refined: this._paintRefined, bold: this._paintBold, hero: this._paintHero }[this.state.shareStyle] || this._paintRefined;
     fn.call(this, ctx, S, word, wordImg, logoImg);
+  }
+  // ── share-card colour: every style derives its whole palette from one base
+  // colour, so the user can tint the picture to the logo (default) or anything ──
+  _hex2rgb(h){ h = (h || '').replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h || '0', 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+  _rgb2hex(a){ return '#' + a.map(x => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, '0')).join(''); }
+  _mix(a, b, t){ const A = this._hex2rgb(a), B = this._hex2rgb(b); return this._rgb2hex([0, 1, 2].map(i => A[i] + (B[i] - A[i]) * t)); }
+  _lighten(c, t){ return this._mix(c, '#ffffff', t); }
+  _darken(c, t){ return this._mix(c, '#000000', t); }
+  _rgba(c, a){ const r = this._hex2rgb(c); return `rgba(${r[0]},${r[1]},${r[2]},${a})`; }
+  // the effective base colour: the user's pick, else the app accent (the logo)
+  _shareBase(){
+    const c = this.state.shareColor;
+    if (c && /^#[0-9a-fA-F]{3,6}$/.test(c)) return c;
+    try { const v = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim(); if (v) return v; } catch(e) {}
+    return '#2f6fb0';
   }
   // draw the WHOLE image fit inside a box (object-fit:contain — never cropped)
   _containImg(ctx, img, x, y, w, h){
@@ -9119,44 +9146,47 @@ class Component extends DCLogic {
   }
   _paintRefined(ctx, S, word, wordImg, logoImg){
     const W = S.w, H = S.h, pad = Math.round(W * 0.08), ms = Math.round(W * 0.10);
-    ctx.fillStyle = '#faf7f1'; ctx.fillRect(0, 0, W, H);
-    this._header(ctx, W, pad, ms, logoImg, '#b68235', '#fff8ec', '#8a5f22', word.id || '', '#fbf1df', '#8a5f22');
+    const base = this._shareBase(), dark = this._darken(base, 0.42), kana = this._mix(this._darken(base, 0.3), '#8a8a8a', 0.4);
+    ctx.fillStyle = this._lighten(base, 0.945); ctx.fillRect(0, 0, W, H);
+    this._header(ctx, W, pad, ms, logoImg, base, '#fff8ec', dark, word.id || '', this._lighten(base, 0.9), dark);
     this._paintBody(ctx, W, H, W / 2, W - 2 * pad, pad + ms, H - Math.round(H * 0.075), word, wordImg,
-      { kana: '#9a8560', jp: '#1c1a17', km: '#8a5f22', divider: '#b68235', imgBorder: '#ecdcbd', imgBg: '#f4ead6' });
-    this._footer(ctx, W, H, '#c3b39a');
+      { kana, jp: '#1c1a17', km: dark, divider: base, imgBorder: this._lighten(base, 0.78), imgBg: this._lighten(base, 0.86) });
+    this._footer(ctx, W, H, this._mix(base, '#b8b8b8', 0.6));
   }
   _paintBold(ctx, S, word, wordImg, logoImg){
-    const W = S.w, H = S.h, pad = Math.round(W * 0.08), ms = Math.round(W * 0.10), GOLD = '#b68235', GOLDL = '#e7c98d';
+    const W = S.w, H = S.h, pad = Math.round(W * 0.08), ms = Math.round(W * 0.10);
+    const base = this._shareBase(), light = this._lighten(base, 0.5), deep = this._darken(base, 0.88);
     const g = ctx.createRadialGradient(W * 0.28, 0, 0, W * 0.28, 0, H * 1.15);
-    g.addColorStop(0, '#2b221a'); g.addColorStop(0.6, '#1a1512'); g.addColorStop(1, '#100c09');
+    g.addColorStop(0, this._darken(base, 0.8)); g.addColorStop(0.6, this._darken(base, 0.9)); g.addColorStop(1, this._darken(base, 0.95));
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    this._header(ctx, W, pad, ms, logoImg, GOLD, '#fff8ec', GOLDL, word.id || '', 'rgba(231,201,141,0.14)', GOLDL);
+    this._header(ctx, W, pad, ms, logoImg, base, '#fff8ec', light, word.id || '', this._rgba(light, 0.14), light);
     this._paintBody(ctx, W, H, W / 2, W - 2 * pad, pad + ms, H - Math.round(H * 0.075), word, wordImg,
-      { kana: GOLDL, jp: '#ffffff', km: '#1c1512', kmPill: GOLD, kmSize: 0.048, imgBg: '#221b14', imgBorder: GOLD });
-    this._footer(ctx, W, H, 'rgba(231,201,141,0.5)');
+      { kana: light, jp: '#ffffff', km: deep, kmPill: base, kmSize: 0.048, imgBg: this._darken(base, 0.8), imgBorder: base });
+    this._footer(ctx, W, H, this._rgba(light, 0.5));
   }
   _paintHero(ctx, S, word, wordImg, logoImg){
-    const W = S.w, H = S.h, pad = Math.round(W * 0.06), ms = Math.round(W * 0.09), GOLDD = '#8a5f22';
+    const W = S.w, H = S.h, pad = Math.round(W * 0.06), ms = Math.round(W * 0.09);
+    const base = this._shareBase(), dark = this._darken(base, 0.42), kana = this._mix(this._darken(base, 0.3), '#8a8a8a', 0.4);
     const heroH = Math.round(H * 0.52);
-    ctx.fillStyle = '#faf7f1'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = this._lighten(base, 0.945); ctx.fillRect(0, 0, W, H);
     if (wordImg) {
       // dark backdrop so the whole (uncropped) image sits cleanly with letterboxing
-      ctx.fillStyle = '#241d16'; ctx.fillRect(0, 0, W, heroH);
+      ctx.fillStyle = this._darken(base, 0.85); ctx.fillRect(0, 0, W, heroH);
       this._containImg(ctx, wordImg, 0, Math.round(H * 0.01), W, heroH - Math.round(H * 0.02));
       const sc = ctx.createLinearGradient(0, 0, 0, heroH * 0.42); sc.addColorStop(0, 'rgba(0,0,0,0.45)'); sc.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = sc; ctx.fillRect(0, 0, W, heroH * 0.42);
     } else {
-      const g = ctx.createLinearGradient(0, 0, W, heroH); g.addColorStop(0, '#caa059'); g.addColorStop(1, GOLDD);
+      const g = ctx.createLinearGradient(0, 0, W, heroH); g.addColorStop(0, this._lighten(base, 0.28)); g.addColorStop(1, dark);
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, heroH);
-      this._drawMark(ctx, W / 2 - W * 0.12, heroH / 2 - W * 0.12, W * 0.24, 'rgba(255,255,255,0.9)', GOLDD);
+      this._drawMark(ctx, W / 2 - W * 0.12, heroH / 2 - W * 0.12, W * 0.24, 'rgba(255,255,255,0.9)', dark);
     }
     // header over the hero
-    if (logoImg) this._coverImg(ctx, logoImg, pad, pad, ms, ms, ms * 0.24); else this._drawMark(ctx, pad, pad, ms, 'rgba(255,255,255,0.92)', GOLDD);
+    if (logoImg) this._coverImg(ctx, logoImg, pad, pad, ms, ms, ms * 0.24); else this._drawMark(ctx, pad, pad, ms, 'rgba(255,255,255,0.92)', dark);
     this._idPill(ctx, word.id || '', W - pad, pad + ms * 0.18, Math.round(W * 0.058), 'rgba(0,0,0,0.32)', '#ffffff', 'right');
     // bottom text panel
     this._paintBody(ctx, W, H, W / 2, W - 2 * Math.round(W * 0.08), heroH, H - Math.round(H * 0.06), word, null,
-      { kana: '#9a8560', jp: '#1c1a17', km: '#8a5f22', divider: '#e6d6bb' });
-    this._footer(ctx, W, H, '#c3b39a');
+      { kana, jp: '#1c1a17', km: dark, divider: this._lighten(base, 0.7) });
+    this._footer(ctx, W, H, this._mix(base, '#b8b8b8', 0.6));
   }
   downloadShare(){
     const data = this.state.shareImgData; if (!data) return;
@@ -11522,6 +11552,24 @@ class Component extends DCLogic {
     const shareSizeChips = Object.keys(SHARE_SIZES).map(k => ({ label: SHARE_SIZES[k].label, onSelect: () => this.setShareSize(k), style: chipStyle(s.shareSize === k) }));
     const SHARE_STYLES = [{ k: 'refined', label: 'ស្អាតទន់ភ្លន់' }, { k: 'bold', label: 'ខ្មៅដិត' }, { k: 'hero', label: 'រូបភាពពេញ' }];
     const shareStyleChips = SHARE_STYLES.map(x => ({ label: x.label, onSelect: () => this.setShareStyle(x.k), style: chipStyle(s.shareStyle === x.k) }));
+    // colour of the share picture — first swatch follows the logo (app accent),
+    // then a few presets; a custom picker sits after them
+    const appAccent = (() => { try { const v = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim(); return v || '#2f6fb0'; } catch(e) { return '#2f6fb0'; } })();
+    const shareBase = (s.shareColor && /^#/.test(s.shareColor)) ? s.shareColor.toLowerCase() : appAccent.toLowerCase();
+    const SHARE_COLORS = [
+      { c: appAccent, v: '', label: 'តាម Logo' },
+      { c: '#b68235', v: '#b68235', label: 'មាស' },
+      { c: '#2f8f57', v: '#2f8f57', label: 'បៃតង' },
+      { c: '#c0453c', v: '#c0453c', label: 'ក្រហម' },
+      { c: '#7a5cc0', v: '#7a5cc0', label: 'ស្វាយ' },
+      { c: '#0f7d78', v: '#0f7d78', label: 'បៃតងសមុទ្រ' },
+      { c: '#1c1a17', v: '#1c1a17', label: 'ខ្មៅ' },
+    ];
+    const shareColorChips = SHARE_COLORS.map(x => ({
+      color: x.c, title: x.label,
+      onSelect: () => this.setShareColor(x.v),
+      style: (x.c.toLowerCase() === shareBase) ? 'box-shadow:0 0 0 3px color-mix(in srgb, var(--color-text) 55%, transparent);border:2px solid var(--color-bg);' : 'border:2px solid var(--color-divider);',
+    }));
 
     const viewingSet = s.viewingViewed;
     const multiBook = BOOKS.length > 1;
@@ -12291,7 +12339,7 @@ class Component extends DCLogic {
       shareSearch: s.shareSearch, onShareSearch: e => this.onShareSearch(e),
       shareResults, shareHasResults: shareResults.length > 0,
       shareHasWord: !!shareWord, shareWordLabel: shareWord ? `${shareWord.jp} — ${shareWord.km}` : '',
-      shareSizeChips, shareStyleChips, shareBusy: s.shareBusy,
+      shareSizeChips, shareStyleChips, shareColorChips, shareCustomColor: shareBase, onShareCustomColor: (e) => this.onShareCustomColor(e), shareBusy: s.shareBusy,
       shareHasImg: !!s.shareImgData && !s.shareBusy, shareImgData: s.shareImgData,
       downloadShare: () => this.downloadShare(),
       shareHasErr: !!s.shareErr, shareErr: s.shareErr,
