@@ -1526,6 +1526,14 @@ textarea.input { min-height: 90px; resize: vertical; }
               <span style="opacity:0.4;">›</span>
             </div>
             </sc-if>
+            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goReadBooks }}">
+              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"></path><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"></path></svg>
+              <div style="flex:1;min-width:0;">
+                <div class="card-title" style="font-size:15px;">អានសៀវភៅ</div>
+                <div class="card-body" style="font-size:11px;">សៀវភៅសិក្សា — ចុចដើម្បីអាន</div>
+              </div>
+              <span style="opacity:0.4;">›</span>
+            </div>
             <sc-if value="{{ isAdmin }}">
             <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goAddWord }}">
               <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
@@ -1822,6 +1830,38 @@ textarea.input { min-height: 90px; resize: vertical; }
           <sc-if value="{{ libIsRead }}">
           <div style="padding:14px 18px 40px;">
             <div id="lib-read-root"></div>
+          </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ isReadBooks }}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{ rbIsList }}">
+          <div style="padding:18px 20px 40px;">
+            <button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ goMenu }}">← ម៉ីនុយ</button>
+            <h1 style="font-size:24px;margin:0 0 4px;">អានសៀវភៅ</h1>
+            <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">ជ្រើសរើសសៀវភៅ ដើម្បីចាប់ផ្ដើមអាន</div>
+            <sc-if value="{{ rbBusy }}"><div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">កំពុងផ្ទុក…</div></sc-if>
+            <sc-if value="{{ rbHasBooks }}">
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;">
+              <sc-for list="{{ rbBooks }}" as="b" hint-placeholder-count="4">
+                <div class="card elev-sm" style="flex-direction:column;gap:0;padding:0;overflow:hidden;cursor:pointer;" sc-camel-on-click="{{ b.onRead }}">
+                  <div style="position:relative;width:100%;aspect-ratio:3/4;background:{{ b.coverBg }};display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                    <sc-if value="{{ b.hasCover }}"><img src="{{ b.cover }}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;"></sc-if>
+                    <sc-if value="{{ b.noCover }}"><span style="font-size:40px;opacity:0.85;">📖</span></sc-if>
+                  </div>
+                  <div style="padding:9px 11px 11px;">
+                    <div class="card-title" style="font-size:13px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ b.title }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            </sc-if>
+            <sc-if value="{{ rbEmpty }}"><div style="text-align:center;padding:50px 20px;opacity:0.55;font-size:13px;line-height:1.9;">មិនទាន់មានសៀវភៅ</div></sc-if>
+          </div>
+          </sc-if>
+          <sc-if value="{{ rbIsRead }}">
+          <div style="padding:14px 18px 40px;">
+            <div id="rb-read-root"></div>
           </div>
           </sc-if>
         </sc-if>
@@ -8555,6 +8595,8 @@ class Component extends DCLogic {
     pageQuizOpen: false, pageQuizQuestions: [], pageQuizIdx: 0, pageQuizScore: 0, pageQuizSelected: null, pageQuizAnswered: false, pageQuizDone: false,
     // authored books (បណ្ណាល័យ, Admin)
     libBooks: [], libMode: 'list', libBookId: null, libBusy: false, libErr: '',
+    // reader library (អានសៀវភៅ, everyone) — book covers + read-only reading
+    rbBooks: [], rbMode: 'list', rbBusy: false,
   };
 
   // — "Add to home screen" helper: Android can prompt, iOS must be told how —
@@ -9469,16 +9511,39 @@ class Component extends DCLogic {
   // — បណ្ណាល័យ: admin-authored books (rich text + image links). The editor is
   //   built imperatively so dc-runtime re-renders never wipe what's being typed. —
   goLibrary(){ this.setState({ screen: 'library', libMode: 'list', libBookId: null, libErr: '' }, () => this.loadBooks()); }
-  async loadBooks(){ const { rows } = await Backend.listBooks(); this.setState({ libBooks: Array.isArray(rows) ? rows : [] }); }
+  async loadBooks(){ this._rbCache = null; const { rows } = await Backend.listBooks(); this.setState({ libBooks: Array.isArray(rows) ? rows : [] }); }
+  // ── អានសៀវភៅ (everyone): browse book covers, then read (read-only) ──
+  goReadBooks(){ this.setState({ screen: 'readbooks', rbMode: 'list', libBookId: null }, () => this.loadReadBooks()); }
+  async loadReadBooks(){
+    if (Array.isArray(this._rbCache)) { this.setState({ rbBooks: this._rbCache, rbBusy: false }); return; }
+    this.setState({ rbBusy: true });
+    const { rows } = await Backend.listBooks();
+    const list = Array.isArray(rows) ? rows : [];
+    // fetch each book to pull out its first picture as the cover thumbnail
+    const withCovers = await Promise.all(list.map(async b => {
+      let cover = '';
+      try { const { book } = await Backend.getBook(b.id); cover = this._firstBookImage((book && book.content) || ''); } catch(e){}
+      return { id: b.id, title: b.title, updated_at: b.updated_at, cover };
+    }));
+    this._rbCache = withCovers;
+    if (this.state.screen === 'readbooks') this.setState({ rbBooks: withCovers, rbBusy: false });
+  }
+  // pull the first <img> out of a book's stored HTML (its cover / first-page picture)
+  _firstBookImage(content){
+    try { const meta = this._parseBookMeta(content || ''); const d = document.createElement('div'); d.innerHTML = meta.html || ''; const im = d.querySelector('img'); return im ? normalizeImgUrl(im.getAttribute('src') || '') : ''; } catch(e){ return ''; }
+  }
+  async rbReadBook(id){ const { book } = await Backend.getBook(id); this._libReadData = book || {}; this._readRootId = 'rb-read-root'; this._readerBack = () => this.rbBackToList(); this.setState({ screen: 'readbooks', rbMode: 'read', libBookId: id }, () => this._buildReadSoon()); }
+  rbBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); this.setState({ rbMode: 'list', libBookId: null }, () => this.loadReadBooks()); }
   libNewBook(){ this._edReturnToRead = null; this.setState({ libMode: 'edit', libBookId: null, libErr: '' }, () => this._buildEditorSoon(null)); }
   async libEditBook(id, keepReturn){ if (!keepReturn) this._edReturnToRead = null; const { book } = await Backend.getBook(id); this.setState({ libMode: 'edit', libBookId: id, libErr: '' }, () => this._buildEditorSoon(book || {})); }
   // leave the editor back to wherever it was opened from: the reader (if opened
   // via ✏️) or the book list
-  _edLeave(){ const ret = this._edReturnToRead; this._edReturnToRead = null; const p = document.getElementById('bookword-pop'); if (p) p.remove(); if (ret && ret.id) { if (typeof ret.page === 'number') this._setLastReadPage(ret.id, ret.page); this.libReadBook(ret.id); } else this.libBackToList(); }
+  _edLeave(){ const ret = this._edReturnToRead; this._edReturnToRead = null; const p = document.getElementById('bookword-pop'); if (p) p.remove(); if (ret && ret.id) { if (typeof ret.page === 'number') this._setLastReadPage(ret.id, ret.page); if (ret.origin === 'readbooks') { this._rbCache = null; this.rbReadBook(ret.id); } else this.libReadBook(ret.id); } else this.libBackToList(); }
   // read-only view: the finished book, no editor chrome
-  async libReadBook(id){ const { book } = await Backend.getBook(id); this._libReadData = book || {}; this.setState({ libMode: 'read', libBookId: id }, () => this._buildReadSoon()); }
+  async libReadBook(id){ const { book } = await Backend.getBook(id); this._libReadData = book || {}; this._readRootId = 'lib-read-root'; this._readerBack = () => this.libBackToList(); this.setState({ screen: 'library', libMode: 'read', libBookId: id }, () => this._buildReadSoon()); }
   _buildReadSoon(){
-    const run = t => { const root = document.getElementById('lib-read-root'); if (!root) { if (t > 0) setTimeout(() => run(t - 1), 30); return; } this._buildReadView(this._libReadData || {}, root); };
+    const rootId = this._readRootId || 'lib-read-root';
+    const run = t => { const root = document.getElementById(rootId); if (!root) { if (t > 0) setTimeout(() => run(t - 1), 30); return; } this._buildReadView(this._libReadData || {}, root); };
     setTimeout(() => run(6), 16);
   }
   // dictionary words (with kanji) → their reading + Khmer meaning, for tap-to-translate
@@ -9631,7 +9696,7 @@ class Component extends DCLogic {
     const bar = document.createElement('div');
     bar.style.cssText = 'flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;padding-top:calc(6px + env(safe-area-inset-top, 0px));background:rgba(0,0,0,0.35);';
     const leftBar = document.createElement('div'); leftBar.style.cssText = 'display:flex;align-items:center;gap:6px;';
-    leftBar.appendChild(icon('✕', () => this.libBackToList()));
+    leftBar.appendChild(icon('✕', () => (this._readerBack || (() => this.libBackToList()))()));
     // 🔖 toggles a bookmark on the current page; ☰ opens the bookmark list
     const bmBtn = icon('🔖', () => { if (marks.has(cur)) marks.delete(cur); else marks.add(cur); this._setBookmarks(bookId, [...marks]); applyView(); if (bmPanel.style.display !== 'none') renderBmPanel(); });
     bmBtn.title = 'ចំណាំ / ដកចំណាំទំព័រនេះ';
@@ -9640,7 +9705,7 @@ class Component extends DCLogic {
     leftBar.appendChild(bmBtn); leftBar.appendChild(bmListBtn);
     // ✏️ (admin) — jump straight into the editor on the page being read, to fix a typo
     if (this.state.role === 'admin' && bookId) {
-      const editBtn = icon('✏️', () => { const p = document.getElementById('bookword-pop'); if (p) p.remove(); this._edOpenAtPage = cur; this._edReturnToRead = { id: bookId, page: cur }; this.libEditBook(bookId, true); }, 'font-size:15px;');
+      const editBtn = icon('✏️', () => { const p = document.getElementById('bookword-pop'); if (p) p.remove(); this._edOpenAtPage = cur; this._edReturnToRead = { id: bookId, page: cur, origin: this._readRootId === 'rb-read-root' ? 'readbooks' : 'library' }; this.libEditBook(bookId, true); }, 'font-size:15px;');
       editBtn.title = 'កែសៀវភៅ';
       leftBar.appendChild(editBtn);
     }
@@ -11793,6 +11858,19 @@ class Component extends DCLogic {
         onDelete: () => this.libDeleteBook(b.id),
       })),
       goLibrary: () => this.goLibrary(), libNewBook: () => this.libNewBook(),
+      // អានសៀវភៅ (everyone): book-cover grid + read-only reading
+      isReadBooks: s.screen === 'readbooks',
+      rbIsList: s.rbMode === 'list', rbIsRead: s.rbMode === 'read',
+      rbBusy: !!s.rbBusy,
+      rbHasBooks: !s.rbBusy && (s.rbBooks || []).length > 0,
+      rbEmpty: !s.rbBusy && (s.rbBooks || []).length === 0,
+      rbBooks: (s.rbBooks || []).map(b => ({
+        title: b.title || '(គ្មានចំណងជើង)',
+        hasCover: !!b.cover, noCover: !b.cover, cover: b.cover || '',
+        coverBg: b.cover ? '#e9e6df' : 'linear-gradient(135deg,var(--color-accent-700),color-mix(in srgb, var(--color-accent-700) 55%, #000))',
+        onRead: () => this.rbReadBook(b.id),
+      })),
+      goReadBooks: () => this.goReadBooks(),
       goMonitor: () => this.goMonitor(),
       monitorColor: s.screen === 'monitor' ? 'var(--color-accent-700)' : 'var(--color-text)',
       monitorPageProgress, monitorOverallViewed, monitorOverallPct, overallTotal: monitorTotal,
