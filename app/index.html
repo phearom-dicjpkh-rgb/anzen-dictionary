@@ -536,7 +536,8 @@ textarea.input { min-height: 90px; resize: vertical; }
      a flex row gets cut. The flex layout is kept for the on-screen preview. */
   .report .rtbl { display:table !important; width:100% !important; border-collapse:collapse !important; table-layout:fixed !important; }
   .report .rhead, .report .prow { display:table-row !important; }
-  .report .rhead > div, .report .prow > div { display:table-cell !important; vertical-align:top !important; }
+  .report .rhead > div { display:table-cell !important; vertical-align:top !important; }
+  .report .prow > div { display:table-cell !important; vertical-align:middle !important; }
   .report .rhead > div:nth-child(1), .report .prow > div:nth-child(1) { width:32px !important; }
   .report .rhead > div:nth-child(2), .report .prow > div:nth-child(2) { width:auto !important; }
   .report .rhead > div:nth-child(3), .report .prow > div:nth-child(3),
@@ -2372,15 +2373,15 @@ textarea.input { min-height: 90px; resize: vertical; }
               <div style="width:38px;padding:6px 7px;text-align:center;">ផល</div>
             </div>
             <sc-for list="{{ prItems }}" as="it" hint-placeholder-count="8">
-              <div class="prow" style="display:flex;font-size:12px;border-top:1px solid #d7deea;">
-                <div style="width:36px;padding:6px 7px;text-align:center;color:#555;border-right:1px solid #eef1f6;">{{ it.n }}</div>
-                <div style="flex:2;padding:6px 7px;border-right:1px solid #eef1f6;color:#111;line-height:1.5;">
+              <div class="prow" style="display:flex;align-items:stretch;font-size:12px;border-top:1px solid #d7deea;">
+                <div style="width:36px;padding:6px 7px;color:#555;border-right:1px solid #eef1f6;display:flex;align-items:center;justify-content:center;">{{ it.n }}</div>
+                <div style="flex:2;padding:6px 7px;border-right:1px solid #eef1f6;color:#111;line-height:1.5;display:flex;flex-direction:column;justify-content:center;">
                   <div class="qcell">{{ it.q }}</div>
                   <sc-if value="{{ it.hasImg }}"><img src="{{ it.img }}" alt="" style="margin-top:5px;max-width:150px;max-height:110px;border-radius:6px;border:1px solid #d7deea;object-fit:contain;display:block;"></sc-if>
                 </div>
-                <div style="flex:1.5;padding:6px 7px;border-right:1px solid #eef1f6;font-weight:600;{{ it.pickedColor }}">{{ it.picked }}</div>
-                <div style="flex:1.5;padding:6px 7px;border-right:1px solid #eef1f6;font-weight:600;color:#1558b0;">{{ it.correct }}</div>
-                <div style="width:38px;padding:6px 7px;text-align:center;font-weight:700;{{ it.markColor }}">{{ it.mark }}</div>
+                <div style="flex:1.5;padding:6px 7px;border-right:1px solid #eef1f6;font-weight:600;display:flex;align-items:center;{{ it.pickedColor }}">{{ it.picked }}</div>
+                <div style="flex:1.5;padding:6px 7px;border-right:1px solid #eef1f6;font-weight:600;color:#1558b0;display:flex;align-items:center;">{{ it.correct }}</div>
+                <div style="width:38px;padding:6px 7px;font-weight:700;display:flex;align-items:center;justify-content:center;{{ it.markColor }}">{{ it.mark }}</div>
               </div>
             </sc-for>
           </div>
@@ -10696,6 +10697,10 @@ class Component extends DCLogic {
   // — Admin: download a student's results as an A4 PDF (via the print dialog) —
   _esc(v){ return String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
   _fmtDate(d){ if (!d) return ''; const x = new Date(d); if (isNaN(x)) return ''; const p = n => String(n).padStart(2, '0'); return `${p(x.getDate())}/${p(x.getMonth() + 1)}/${x.getFullYear()} ${p(x.getHours())}:${p(x.getMinutes())}`; }
+  // seconds spent on the attempt in progress (from the start stamp set when it began)
+  _attemptDur(){ return (this._attemptStart != null) ? Math.max(0, Math.round((Date.now() - this._attemptStart) / 1000)) : null; }
+  // seconds → HH:MM:SS (for the PDF "រយៈពេលធ្វើ")
+  _fmtDuration(sec){ if (sec == null || isNaN(sec)) return ''; sec = Math.max(0, Math.round(sec)); const p = n => String(n).padStart(2, '0'); return `${p(Math.floor(sec / 3600))}:${p(Math.floor((sec % 3600) / 60))}:${p(sec % 60)}`; }
   // Show an in-app A4 preview of one exercise the student did, laid out like a
   // record sheet. The user then taps "រក្សាទុក PDF" → the browser print dialog
   // (Save as PDF) — reliable on phones, unlike opening a written window. The
@@ -10716,7 +10721,7 @@ class Component extends DCLogic {
     this.setState({ printOpen: true, printReport: {
       appName: this.state.appName || 'វចនានុក្រម', logo: this.state.appLogo || '',
       school, student: s.selectedStudentName || '', title: sec.title || '',
-      dateLabel: this._fmtDate(sec.date) || '—', scoreLabel: sec.scoreLabel || '—',
+      dateLabel: (this._fmtDate(sec.date) || '—') + (sec.dur != null ? '   ·   រយៈពេល ' + this._fmtDuration(sec.dur) : ''), scoreLabel: sec.scoreLabel || '—',
       count: items.length, items,
     } }, () => this._paginatePreviewSoon());
   }
@@ -10831,17 +10836,18 @@ class Component extends DCLogic {
     const s = this.state, key = s.monExpandedChip;
     if (!key) { this.showToast('សូមចុចលើលំហាត់មួយសិន'); return; }
     const i = key.lastIndexOf('-'), pre = key.slice(0, i), n = parseInt(key.slice(i + 1), 10);
-    const dateFor = mode => { const hs = (s.viewingHistory || []).filter(h => h.mode === mode && h.lesson === n); return hs.length ? hs[hs.length - 1].date : ''; };
+    const histFor = mode => { const hs = (s.viewingHistory || []).filter(h => h.mode === mode && h.lesson === n); return hs.length ? hs[hs.length - 1] : null; };
     let det, title, mode, score;
     if (pre === 'quiz') { det = (s.viewingQuizDetails || {})[n]; title = `លំហាត់ · លំហាត់ទី ${n}`; mode = 'quiz'; score = (s.viewingQuizzes || {})[n]; }
     else if (pre === 'imgquiz') { det = (s.viewingImgQuizDetails || {})[n]; title = `លំហាត់រូបភាព · លំហាត់ទី ${n}`; mode = 'imgquiz'; score = (s.viewingImgQuizzes || {})[n]; }
     else { const dir = pre === 'mc_km' ? 'ខ្មែរ → ជប៉ុន' : 'ជប៉ុន → ខ្មែរ'; det = ((s.viewingLessonDetails || {})[pre] || {})[n]; title = `ជ្រើសរើសពាក្យត្រូវ · ${dir} · លំហាត់ទី ${n}`; mode = pre; score = ((s.viewingLessons || {})[pre] || {})[n]; }
-    this._printReport({ title, date: dateFor(mode), scoreLabel: score != null ? score + '%' : '', items: det });
+    const hh = histFor(mode);
+    this._printReport({ title, date: hh ? hh.date : '', scoreLabel: score != null ? score + '%' : '', items: det, dur: hh ? hh.dur : null });
   }
   downloadExamPdf(){
     const er = this.state.viewingExamReport;
     if (!er || !er.items) { this.showToast('គ្មានទិន្នន័យប្រឡង'); return; }
-    this._printReport({ title: `ប្រឡងសាកល្បង · ឈុតទី ${er.block}`, date: er.date, scoreLabel: `${er.score} / ${er.total}`, items: er.items });
+    this._printReport({ title: `ប្រឡងសាកល្បង · ឈុតទី ${er.block}`, date: er.date, scoreLabel: `${er.score} / ${er.total}`, items: er.items, dur: er.dur });
   }
   // open one specific attempt (by its index in the viewed student's history) as
   // an A4 PDF — this is how every single run, pass or fail, is reviewed/downloaded
@@ -10861,7 +10867,7 @@ class Component extends DCLogic {
       : h.mode === 'imgquiz' ? `លំហាត់រូបភាព · ${lessonLabel}`
       : `ជ្រើសរើសពាក្យត្រូវ · ${dir} · ${h.mix ? 'ច្របល់' : 'មេរៀនទី ' + h.lesson}`;
     const scoreLabel = h.mode === 'exam' ? `${h.score} / ${h.total} · ${pct}%` : `${pct}%`;
-    this._printReport({ title, date: h.date, scoreLabel, items });
+    this._printReport({ title, date: h.date, scoreLabel, items, dur: h.dur });
   }
 
   reloadPage(){ this.stopSpeech(); try { location.reload(); } catch(e) { location.href = location.href; } }
@@ -10938,6 +10944,7 @@ class Component extends DCLogic {
   startLesson(n){
     const words = shuffle(this.lessonWords(n));
     if (!words.length) return;
+    this._attemptStart = Date.now();
     this.setState({ testMode: 'mc', testMix: false,
       testLesson: n, testWords: words, testIdx: 0, testScore: 0, testResults: [], testPicks: [],
       mcSelected: null, mcAnswered: false, mcOptions: this.buildMcOptions(words[0]) });
@@ -10949,6 +10956,7 @@ class Component extends DCLogic {
     const pool = this.testPool();
     const words = sample(pool, Math.min(LESSON_SIZE * 2, pool.length));
     if (!words.length) return;
+    this._attemptStart = Date.now();
     this.setState({ testMode: 'mc', testMix: true,
       testLesson: 0, testWords: words, testIdx: 0, testScore: 0, testResults: [], testPicks: [],
       mcSelected: null, mcAnswered: false, mcOptions: this.buildMcOptions(words[0]) });
@@ -10970,6 +10978,7 @@ class Component extends DCLogic {
   startQuiz(n){
     const qs = this.quizSlice(n);
     if (!qs.length) return;
+    this._attemptStart = Date.now();
     this.setState({ testMode: 'quiz', quizLesson: n, quizMix: false, quizQuestions: qs,
       quizIdx: 0, quizScore: 0, quizResults: [], quizPicks: [], quizAnswered: false, quizPicked: null });
   }
@@ -10980,6 +10989,7 @@ class Component extends DCLogic {
     const c = this.qDeck();
     const qs = sample(c.data, Math.min(c.mixSize || c.size, c.data.length));
     if (!qs.length) return;
+    this._attemptStart = Date.now();
     this.setState({ testMode: 'quiz', quizLesson: 0, quizMix: true, quizQuestions: qs,
       quizIdx: 0, quizScore: 0, quizResults: [], quizPicks: [], quizAnswered: false, quizPicked: null });
   }
@@ -11028,7 +11038,7 @@ class Component extends DCLogic {
       }
     }
     // log every attempt with its full detail, so a teacher can open any single run
-    const entry = { mode: this.state.quizDeck === 'img' ? 'imgquiz' : 'quiz', lesson: quizMix ? 0 : quizLesson, mix: !!quizMix, score: quizScore, total, date: new Date().toISOString(), items: attemptItems };
+    const entry = { mode: this.state.quizDeck === 'img' ? 'imgquiz' : 'quiz', lesson: quizMix ? 0 : quizLesson, mix: !!quizMix, score: quizScore, total, date: new Date().toISOString(), items: attemptItems, dur: this._attemptDur() };
     this.setState({ settings, history: [...this.state.history, entry].slice(-HISTORY_MAX), testMode: 'quizresults' }, () => this.persist());
   }
   retryQuiz(){ this.state.quizMix ? this.startQuizMix() : this.startQuiz(this.state.quizLesson); }
@@ -11044,6 +11054,7 @@ class Component extends DCLogic {
     const qs = RAW_EXAM.slice((n - 1) * EXAM_SIZE, n * EXAM_SIZE);
     if (!qs.length) return;
     const deadline = Date.now() + EXAM_MINUTES * 60 * 1000;
+    this._attemptStart = Date.now();
     this.setState({ testMode: 'exam', examBlock: n, examQuestions: qs, examIdx: 0,
       examAnswers: [], examDeadline: deadline, examRemain: EXAM_MINUTES * 60 }, () => this.runExamTimer());
   }
@@ -11091,9 +11102,9 @@ class Component extends DCLogic {
     settings.examLog = [...(settings.examLog || []), { block: examBlock, score, total, pct, passed, date: now }].slice(-50);
     // the latest attempt's full per-question record, for the admin PDF
     const attemptItems = results.map((r, i) => ({ q: r.q, ok: r.ok, picked: r.pickedFull, correct: r.correctFull, img: examQuestions[i].img || '' }));
-    settings.examReport = { block: examBlock, score, total, date: now, items: attemptItems };
+    settings.examReport = { block: examBlock, score, total, date: now, items: attemptItems, dur: this._attemptDur() };
     // log every exam attempt with its full detail, so any single run is openable
-    const entry = { mode: 'exam', lesson: examBlock, score, total, date: now, items: attemptItems };
+    const entry = { mode: 'exam', lesson: examBlock, score, total, date: now, items: attemptItems, dur: this._attemptDur() };
     this.setState({ settings, history: [...this.state.history, entry].slice(-HISTORY_MAX), examScore: score,
       examResults: results, examTimeUp: !!timeUp, testMode: 'examreview' }, () => this.persist());
   }
@@ -11127,7 +11138,7 @@ class Component extends DCLogic {
       }
     }
     // log every attempt with its full detail, so a teacher can open any single run
-    const entry = { mode: testKind, lesson: testMix ? 0 : testLesson, mix: !!testMix, score: testScore, total, date: new Date().toISOString(), items: attemptItems };
+    const entry = { mode: testKind, lesson: testMix ? 0 : testLesson, mix: !!testMix, score: testScore, total, date: new Date().toISOString(), items: attemptItems, dur: this._attemptDur() };
     this.setState({ settings, history: [...this.state.history, entry].slice(-HISTORY_MAX), testMode: 'results' }, () => this.persist());
   }
 
