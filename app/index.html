@@ -299,18 +299,19 @@ document.addEventListener('wheel', function(e){ if(e.ctrlKey) e.preventDefault()
      Cormorant nor Lora carries kana or kanji, so these only ever apply to the
      Japanese. */
   --font-jp: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", "Noto Sans JP", "Noto Sans CJK JP", Meiryo, "MS PGothic";
-  --font-heading: "DictNum", "Cormorant Garamond", var(--font-jp), system-ui, sans-serif;
+  --font-heading: "DictNum", var(--font-jp), system-ui, sans-serif;   /* ចំណងជើង Gothic ជប៉ុន (Cormorant Garamond serif retired) */
   --font-heading-weight: 600; /* review round 3: bold retired — semibold is the
      interface headings' ceiling (they need the weight at small sizes); display
      text goes lighter still, to the normal cut (see the deck) */
   --font-body: "DictNum", "Lora", var(--font-jp), system-ui, sans-serif;
 
-  --space-1: 4.6px;
-  --space-2: 9.2px;
-  --space-3: 13.8px;
-  --space-4: 18.4px;
-  --space-6: 27.6px;
-  --space-8: 36.8px;
+  /* density ×0.85 — spacing scale tightened one step */
+  --space-1: 3.9px;
+  --space-2: 7.8px;
+  --space-3: 11.7px;
+  --space-4: 15.6px;
+  --space-6: 23.5px;
+  --space-8: 31.3px;
 
   --radius-sm: 6px;
   --radius-md: 14px;
