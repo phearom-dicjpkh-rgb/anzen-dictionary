@@ -7572,7 +7572,7 @@ function applyCustomWords(rows){
       examples: (Array.isArray(r.examples) ? r.examples : []).filter(e => e && e.jp).map(e => ({ jp: e.jp, km: e.km || '' })),
       cat: r.cat || 'vocab', page: r.page || 1, book: r.book || DEFAULT_BOOK,
       img: r.img || '', starred: !!r.starred, _custom: true,
-      related: (Array.isArray(r.related) ? r.related : []).filter(e => e && e.jp).map(e => ({ jp: e.jp, km: e.km || '' })),
+      related: (Array.isArray(r.related) ? r.related : []).filter(e => e && e.jp).map(e => ({ jp: e.jp, km: e.km || '', examples: Array.isArray(e.examples) ? e.examples.filter(x => x && x.jp).map(x => ({ jp: x.jp, km: x.km || '' })) : [] })),
       level: r.level || '', link: r.link || '',
     };
     const at = WORDS.findIndex(x => x.id === id);
@@ -9276,6 +9276,12 @@ class Component extends DCLogic {
     const id = this.state.detailWordId;
     if (!id) return;
     this.setState({ detailWordId: null });
+    if (id.indexOf('::') >= 0) {   // a conjugation → edit it (saves back to the base word)
+      const bid = id.slice(0, id.indexOf('::')), fjp = id.slice(id.indexOf('::') + 2);
+      const base = WORDS.find(w => w.id === bid), f = base && (base.related || []).find(r => r.jp === fjp);
+      if (base && f) this.openConjugationEdit({ id, _baseId: bid, jp: fjp, kana: '', pos: base.pos, km: f.km || base.km, book: base.book, page: base.page, examples: Array.isArray(f.examples) ? f.examples : [] });
+      return;
+    }
     this.pickEditWord(id);
   }
   // jump straight from the word popup to the share-image maker, for this word
@@ -10786,9 +10792,10 @@ class Component extends DCLogic {
   openDetail(id){
     this.setState({ detailWordId: id });
     const w = WORDS.find(x => x.id === id);
+    const jp = w ? w.jp : (id && id.indexOf('::') >= 0 ? id.slice(id.indexOf('::') + 2) : null);   // conjugation form
     // Speak straight away, not on a timer: iOS only allows speech that is still
     // inside the tap that triggered it.
-    if (w && this.state.settings.autoAudio) this.playAudio(w.jp);
+    if (jp && this.state.settings.autoAudio) this.playAudio(jp);
   }
   closeDetail(){ this.setState({ detailWordId: null }); }
   stopProp(e){ e.stopPropagation(); }
@@ -11134,12 +11141,12 @@ class Component extends DCLogic {
     this.setState({ settings }, () => this.persist());
   }
   toggleDetailFavorite(){ if (this.state.detailWordId) this.toggleFavorite(this.state.detailWordId); }
-  playDetailAudio(){ const w = WORDS.find(x => x.id === this.state.detailWordId); if (w) this.playAudio(w.jp); }
+  playDetailAudio(){ const id = this.state.detailWordId; const w = WORDS.find(x => x.id === id); const jp = w ? w.jp : (id && id.indexOf('::') >= 0 ? id.slice(id.indexOf('::') + 2) : null); if (jp) this.playAudio(jp); }
 
   renderVals(){
     const s = this.state;
     // star: '★' for important words, '' otherwise — an empty span renders nothing
-    const decorate = w => { const isViewed = s.viewed.includes(w.id); return { ...w, tagClass: tagClassFor(w.pos), isFav: s.favorites.includes(w.id), isViewed, viewedBg: isViewed ? 'var(--color-neutral-500)' : 'transparent', star: w.starred ? '★' : '', onOpen: w._relatedOf && s.role === 'admin' ? () => this.openConjugationEdit(w) : () => this.openDetail(w._baseId || w.id), onToggleViewed: e => this.toggleViewed(w._baseId || w.id, e) }; };
+    const decorate = w => { const isViewed = s.viewed.includes(w.id); return { ...w, tagClass: tagClassFor(w.pos), isFav: s.favorites.includes(w.id), isViewed, viewedBg: isViewed ? 'var(--color-neutral-500)' : 'transparent', star: w.starred ? '★' : '', onOpen: () => this.openDetail(w.id), onToggleViewed: e => this.toggleViewed(w._baseId || w.id, e) }; };
 
     const pool = this.wordsForCat(s.catFilter);
     const q = s.search.trim().toLowerCase();
@@ -11215,13 +11222,19 @@ class Component extends DCLogic {
       return { jp: opt.jp, style, onSelect: () => this.selectPageQuizOption(opt) };
     }) : [];
 
-    const detailW = WORDS.find(w => w.id === s.detailWordId);
+    let detailW = WORDS.find(w => w.id === s.detailWordId);
+    // a conjugation (id "baseId::食べない") has no standalone row — build it from the base
+    if (!detailW && s.detailWordId && s.detailWordId.indexOf('::') >= 0) {
+      const bid = s.detailWordId.slice(0, s.detailWordId.indexOf('::')), fjp = s.detailWordId.slice(s.detailWordId.indexOf('::') + 2);
+      const base = WORDS.find(w => w.id === bid), f = base && (base.related || []).find(r => r.jp === fjp);
+      if (base && f) detailW = { id: s.detailWordId, _baseId: bid, _relatedOf: base.jp, jp: fjp, kana: '', pos: base.pos, km: f.km || base.km, book: base.book, page: base.page, examples: Array.isArray(f.examples) ? f.examples : [], starred: false, img: '', romaji: '', romajiNorm: '', cat: 'vocab' };
+    }
     const detailWord = detailW ? { ...detailW, tagClass: tagClassFor(detailW.pos), favFill: s.favorites.includes(detailW.id) ? 'var(--color-accent-700)' : 'transparent',
           // admins get a tappable star; everyone else just sees the mark
           starGlyph: detailW.starred ? '★' : '☆',
           starColor: detailW.starred ? '#d0342c' : 'var(--color-neutral-400)',
           showStarBadge: detailW.starred && s.role !== 'admin',
-          sourceLabel: `${detailW.book} · ទំព័រ ${[...new Set(WORDS.filter(w => w.jp === detailW.jp && w.kana === detailW.kana && w.book === detailW.book).map(w => w.page))].sort((a,b)=>a-b).join(', ')}`,
+          sourceLabel: detailW._relatedOf ? `${detailW.book} · ទម្រង់នៃ ${detailW._relatedOf}` : `${detailW.book} · ទំព័រ ${[...new Set(WORDS.filter(w => w.jp === detailW.jp && w.kana === detailW.kana && w.book === detailW.book).map(w => w.page))].sort((a,b)=>a-b).join(', ')}`,
           examples: detailW.examples.map(ex => ({ ...ex,
             onPlay: () => this.playAudio(ex.jp),
             segments: linkSegments(ex.jp).map(sg => ({
