@@ -8518,7 +8518,7 @@ class Component extends DCLogic {
     // admin: add a new word / grammar
     awBook: '', awBookMenuOpen: false, awNewBook: '', awCat: 'vocab', awPage: '',
     awJp: '', awKana: '', awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [],
-    awRelated: [], awLevel: '', awLink: '',
+    awRelated: [], awLevel: '', awLink: '', awIsConj: false,
     awBusy: false, awMsg: '', awError: '',
     screen: 'home', search: '', catFilter: 'all', searchMode: 'general', pageFilter: null, pageInput: '',
     bookFilter: BOOKS[0] || DEFAULT_BOOK,
@@ -9315,7 +9315,16 @@ class Component extends DCLogic {
   }
 
   // — Admin: add a new word / grammar —
-  goAddWord(){ this.setState({ screen: 'addword', awMsg: '', awError: '' }); }
+  goAddWord(){ this.setState({ screen: 'addword', awMsg: '', awError: '', awIsConj: false }); }
+  // open the add/edit form pre-filled with a conjugation (from a search result) so
+  // the admin can give it examples (with 🌐 translate) and save it as its own entry
+  openConjugationEdit(w){
+    this.setState({ screen: 'addword', awCat: 'vocab', awIsConj: true,
+      awJp: w.jp, awKana: w.kana || '', awPos: w.pos || '', awKm: w.km || '',
+      awBook: w.book || '', awNewBook: '', awPage: w.page ? String(w.page) : '',
+      awImg: '', awStar: false, awExamples: [{ jp: '', km: '' }], awRelated: [], awLevel: '', awLink: '',
+      awMsg: `កែ «${w.jp}» — បន្ថែម​ឧទាហរណ៍ រួច​រក្សាទុក`, awError: '' });
+  }
   onAwCatVocab(){ this.setState({ awCat: 'vocab' }); }
   onAwCatGrammar(){ this.setState({ awCat: 'grammar' }); }
   onAwPage(e){ this.setState({ awPage: e.target.value }); }
@@ -9335,9 +9344,10 @@ class Component extends DCLogic {
   // machine-translate one example's Japanese into Khmer (editable after)
   async translateAwExample(i){
     const ex = this.state.awExamples[i]; if (!ex || !(ex.jp || '').trim()) return;
-    this.setState(s => ({ awExamples: s.awExamples.map((x, k) => k === i ? { ...x, translating: true } : x) }));
+    this.setState(s => ({ awExamples: s.awExamples.map((x, k) => k === i ? { ...x, translating: true } : x), awMsg: '', awError: '' }));
     const km = await mmTranslate(ex.jp);
-    this.setState(s => ({ awExamples: s.awExamples.map((x, k) => k === i ? { ...x, km: km || x.km, translating: false } : x) }));
+    this.setState(s => ({ awExamples: s.awExamples.map((x, k) => k === i ? { ...x, km: km || x.km, translating: false } : x),
+      awMsg: km ? 'បកប្រែ​រួច ✓ — សូម​ពិនិត្យ/កែ' : '', awError: km ? '' : 'បកប្រែ​ស្វ័យ​មិន​បាន (អស់​កូតា​ថ្ងៃ​នេះ ឬ​បណ្ដាញ) — សូម​វាយ​ខ្មែរ​ដោយ​ដៃ' }));
   }
   onAwNewBook(e){ this.setState({ awNewBook: e.target.value, awBook: '' }); }
   toggleAwStar(){ this.setState(s => ({ awStar: !s.awStar })); }
@@ -9359,7 +9369,7 @@ class Component extends DCLogic {
     const page = parseInt(s.awPage, 10);
     // related conjugations: use the reviewed list, or auto-generate for a vocab verb/adj
     let related = (s.awRelated || []).map(x => ({ jp: (x.jp || '').trim(), km: (x.km || '').trim() })).filter(x => x.jp);
-    if (!related.length && s.awCat === 'vocab') related = jpConjugate(jp, km).forms.map(f => ({ jp: f.jp, km: f.km }));
+    if (!related.length && s.awCat === 'vocab' && !s.awIsConj) related = jpConjugate(jp, km).forms.map(f => ({ jp: f.jp, km: f.km }));
     const row = { book, page: isNaN(page) ? null : page, cat: s.awCat, jp,
       kana: (s.awKana || '').trim(), pos: (s.awPos || '').trim(), km, starred: s.awStar, examples, img: normalizeImgUrl(s.awImg),
       related, level: s.awCat === 'grammar' ? (s.awLevel || '') : '', link: s.awCat === 'grammar' ? (s.awLink || '').trim() : '' };
@@ -9369,7 +9379,7 @@ class Component extends DCLogic {
     rebuildIndexes();
     // keep the book, category and page so the admin can add the next word fast
     this.setState(st => ({ awBusy: false, awMsg: `បន្ថែម «${jp}»${related.length ? ` + ${related.length} ពាក្យពាក់ព័ន្ធ` : ''} រួចរាល់ ✓`, overridesRev: st.overridesRev + 1,
-      awJp: '', awKana: '', awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [], awRelated: [], awLevel: '', awLink: '' }));
+      awJp: '', awKana: '', awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [], awRelated: [], awLevel: '', awLink: '', awIsConj: false }));
   }
   // copy text to the clipboard, with an execCommand fallback for embedded browsers
   copyText(text){
@@ -11106,7 +11116,7 @@ class Component extends DCLogic {
   renderVals(){
     const s = this.state;
     // star: '★' for important words, '' otherwise — an empty span renders nothing
-    const decorate = w => { const isViewed = s.viewed.includes(w.id); return { ...w, tagClass: tagClassFor(w.pos), isFav: s.favorites.includes(w.id), isViewed, viewedBg: isViewed ? 'var(--color-neutral-500)' : 'transparent', star: w.starred ? '★' : '', onOpen: () => this.openDetail(w._baseId || w.id), onToggleViewed: e => this.toggleViewed(w._baseId || w.id, e) }; };
+    const decorate = w => { const isViewed = s.viewed.includes(w.id); return { ...w, tagClass: tagClassFor(w.pos), isFav: s.favorites.includes(w.id), isViewed, viewedBg: isViewed ? 'var(--color-neutral-500)' : 'transparent', star: w.starred ? '★' : '', onOpen: w._relatedOf && s.role === 'admin' ? () => this.openConjugationEdit(w) : () => this.openDetail(w._baseId || w.id), onToggleViewed: e => this.toggleViewed(w._baseId || w.id, e) }; };
 
     const pool = this.wordsForCat(s.catFilter);
     const q = s.search.trim().toLowerCase();
