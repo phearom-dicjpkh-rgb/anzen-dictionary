@@ -11106,15 +11106,30 @@ class Component extends DCLogic {
   renderVals(){
     const s = this.state;
     // star: '★' for important words, '' otherwise — an empty span renders nothing
-    const decorate = w => { const isViewed = s.viewed.includes(w.id); return { ...w, tagClass: tagClassFor(w.pos), isFav: s.favorites.includes(w.id), isViewed, viewedBg: isViewed ? 'var(--color-neutral-500)' : 'transparent', star: w.starred ? '★' : '', onOpen: () => this.openDetail(w.id), onToggleViewed: e => this.toggleViewed(w.id, e) }; };
+    const decorate = w => { const isViewed = s.viewed.includes(w.id); return { ...w, tagClass: tagClassFor(w.pos), isFav: s.favorites.includes(w.id), isViewed, viewedBg: isViewed ? 'var(--color-neutral-500)' : 'transparent', star: w.starred ? '★' : '', onOpen: () => this.openDetail(w._baseId || w.id), onToggleViewed: e => this.toggleViewed(w._baseId || w.id, e) }; };
 
     const pool = this.wordsForCat(s.catFilter);
     const q = s.search.trim().toLowerCase();
     const qr = /^[a-z\s-]+$/.test(q) ? normRomaji(q.replace(/[\s-]/g,'')) : '';
-    const matches = q ? pool.filter(w =>
+    let matches = q ? pool.filter(w =>
       w.jp.includes(s.search) || w.kana.includes(s.search) || w.km.toLowerCase().includes(q)
       || (qr && (w.romaji.includes(qr) || w.romajiNorm.includes(qr)))
     ) : pool;
+    // also search the auto-generated conjugations attached to a word (食べない → 食べます)
+    if (q) {
+      const seen = new Set(matches.map(w => w.jp)), rel = [];
+      for (const w of pool) {
+        if (!Array.isArray(w.related)) continue;
+        for (const f of w.related) {
+          const fj = (f.jp || '').trim(); if (!fj || seen.has(fj)) continue;
+          if (fj.includes(s.search) || (f.km || '').toLowerCase().includes(q)) {
+            seen.add(fj);
+            rel.push({ ...w, id: w.id + '::' + fj, _baseId: w.id, jp: fj, kana: '', km: f.km || w.km, starred: false, related: [], _relatedOf: w.jp });
+          }
+        }
+      }
+      matches = matches.concat(rel);
+    }
     const MAX_RESULTS = 60;
     // Browsing (no query) works as a study queue: ticked words drop out and new
     // unseen ones take their place. While searching, keep showing everything —
