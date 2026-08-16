@@ -1641,10 +1641,44 @@ textarea.input { min-height: 90px; resize: vertical; }
 
           <div class="field" style="margin-bottom:10px;"><label>របៀបអាន (かな)</label>
             <input class="input" type="text" value="{{ awKana }}" sc-camel-on-change="{{ onAwKana }}"></div>
-          <div class="field" style="margin-bottom:10px;"><label>ថ្នាក់ពាក្យ (ន. · កិ. · គុណ.)</label>
+          <sc-if value="{{ awIsVocab }}">
+          <div class="field" style="margin-bottom:10px;"><label>ថ្នាក់ពាក្យ (ន. · កិ. · គុណ. · បំពេញស្វ័យ)</label>
             <input class="input" type="text" value="{{ awPos }}" sc-camel-on-change="{{ onAwPos }}"></div>
+          </sc-if>
           <div class="field" style="margin-bottom:12px;"><label>ន័យខ្មែរ</label>
             <input class="input" type="text" value="{{ awKm }}" sc-camel-on-change="{{ onAwKm }}"></div>
+
+          <sc-if value="{{ awIsGrammar }}">
+            <div class="field" style="margin-bottom:10px;"><label>កំរិត</label>
+              <select class="input" sc-camel-on-change="{{ onAwLevel }}" style="cursor:pointer;">
+                <option value="" selected="{{ awLevelNone }}">— ជ្រើសកំរិត —</option>
+                <option value="N5" selected="{{ awLevelN5 }}">N5</option>
+                <option value="N4" selected="{{ awLevelN4 }}">N4</option>
+                <option value="N3" selected="{{ awLevelN3 }}">N3</option>
+                <option value="N2" selected="{{ awLevelN2 }}">N2</option>
+                <option value="N1" selected="{{ awLevelN1 }}">N1</option>
+              </select></div>
+            <div class="field" style="margin-bottom:10px;"><label>តំណភ្ជាប់ (វេយ្យាករណ៍ពាក់ព័ន្ធ ឬ URL)</label>
+              <input class="input" type="text" value="{{ awLink }}" sc-camel-on-change="{{ onAwLink }}" placeholder="ឧ. 〜てもいい ឬ https://…"></div>
+          </sc-if>
+
+          <sc-if value="{{ awIsVocab }}">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;margin-top:4px;">
+              <span style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.55;">{{ awRelatedCount }}</span>
+              <div style="display:flex;gap:12px;">
+                <a href="#" style="font-size:12px;color:var(--color-accent-700);" sc-camel-on-click="{{ genRelated }}">⚙️ បង្កើតស្វ័យ</a>
+                <sc-if value="{{ hasAwRelated }}"><a href="#" style="font-size:12px;color:#c0392b;" sc-camel-on-click="{{ clearAwRelated }}">សម្អាត</a></sc-if>
+              </div>
+            </div>
+            <div style="font-size:11px;opacity:0.55;line-height:1.6;margin-bottom:8px;">ចុច «បង្កើតស្វ័យ» → conjugations (食べない、食べた…) ជាមួយខ្មែរដោយក្បួន (កែបាន)។ ភ្ជាប់នឹងពាក្យដើម ហើយអាចចុចអានក្នុងសៀវភៅ។</div>
+            <sc-for list="{{ awRelated }}" as="rl" hint-placeholder-count="1">
+              <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+                <input class="input" type="text" value="{{ rl.jp }}" sc-camel-on-change="{{ rl.onJp }}" style="flex:1;min-width:0;">
+                <input class="input" type="text" value="{{ rl.km }}" sc-camel-on-change="{{ rl.onKm }}" style="flex:1;min-width:0;">
+                <a href="#" style="font-size:12px;color:#c0392b;flex:none;" sc-camel-on-click="{{ rl.onRemove }}">✕</a>
+              </div>
+            </sc-for>
+          </sc-if>
           <div class="field" style="margin-bottom:12px;"><label>តំណភ្ជាប់រូបភាព (ស្រេចចិត្ត · Drive ក៏បាន)</label>
             <input class="input" type="text" value="{{ awImg }}" sc-camel-on-change="{{ onAwImg }}" placeholder="https://…"></div>
 
@@ -1658,10 +1692,13 @@ textarea.input { min-height: 90px; resize: vertical; }
             <div style="border:1px solid var(--color-divider);border-radius:var(--radius-md);padding:10px;margin-bottom:10px;">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
                 <span style="font-size:11px;opacity:0.55;">{{ ex.num }}</span>
-                <a href="#" style="font-size:12px;color:#c0392b;" sc-camel-on-click="{{ ex.onRemove }}">លុប</a>
+                <div style="display:flex;gap:12px;">
+                  <a href="#" style="font-size:12px;color:var(--color-accent-700);" sc-camel-on-click="{{ ex.onTranslate }}">{{ ex.transLabel }}</a>
+                  <a href="#" style="font-size:12px;color:#c0392b;" sc-camel-on-click="{{ ex.onRemove }}">លុប</a>
+                </div>
               </div>
               <input class="input" type="text" placeholder="ប្រយោគជប៉ុន" value="{{ ex.jp }}" sc-camel-on-change="{{ ex.onJp }}" style="margin-bottom:6px;">
-              <input class="input" type="text" placeholder="ការបកប្រែខ្មែរ" value="{{ ex.km }}" sc-camel-on-change="{{ ex.onKm }}">
+              <input class="input" type="text" placeholder="ការបកប្រែខ្មែរ (ចុច 🌐 បកប្រែ ស្វ័យ)" value="{{ ex.km }}" sc-camel-on-change="{{ ex.onKm }}">
             </div>
           </sc-for>
           <button class="btn btn-secondary btn-block" style="margin-bottom:16px;" sc-camel-on-click="{{ addAwExample }}">+ បន្ថែមឧទាហរណ៍</button>
@@ -7293,6 +7330,74 @@ function normRomaji(r){
     .replace(/fu/g,'hu').replace(/([aiueo])\1+/g,'$1');
 }
 
+// ── Japanese conjugation + part-of-speech helpers (for the បញ្ចូលពាក្យ form) ──
+const JP_UROW='うくぐすつぬぶむる', JP_AROW='わかがさたなばまら', JP_IROW='いきぎしちにびみり', JP_EROW='えけげせてねべめれ', JP_OROW='おこごそとのぼもろ';
+const JP_GODAN_RU=['帰る','入る','走る','知る','切る','要る','限る','減る','蹴る','喋る','滑る','握る','練る','照る','散る','茂る','捻る','参る','交じる'];
+function jpDetectType(dict){
+  dict=(dict||'').trim();
+  if(dict.endsWith('する')) return 'suru';
+  if(dict.endsWith('来る')||dict==='くる'||dict.endsWith('てくる')) return 'kuru';
+  const last=dict.slice(-1);
+  if(last==='い'&&dict.length>=2) return 'iadj';
+  if(last==='る'){ const prev=dict.slice(-2,-1); if(JP_GODAN_RU.includes(dict)) return 'godan'; return (JP_EROW.includes(prev)||JP_IROW.includes(prev))?'ichidan':'godan'; }
+  if(JP_UROW.includes(last)) return 'godan';
+  return 'noun';
+}
+function jpDetectPos(jp){ const t=jpDetectType((jpToDict((jp||'').trim()))); if(t==='iadj') return 'គុណ.'; if(t==='noun') return ''; return 'កិ.'; }
+function jpGodanTe(dict,past){ const last=dict.slice(-1),s=dict.slice(0,-1);
+  if(dict==='行く') return s+(past?'った':'って');
+  if('うつる'.includes(last)) return s+(past?'った':'って');
+  if('むぶぬ'.includes(last)) return s+(past?'んだ':'んで');
+  if(last==='く') return s+(past?'いた':'いて');
+  if(last==='ぐ') return s+(past?'いだ':'いで');
+  if(last==='す') return s+(past?'した':'して');
+  return s+(past?'た':'て'); }
+function jpKhmer(base,form){ const M=(base||'').trim()||'…';
+  switch(form){
+    case 'dict': case 'masu': return M;
+    case 'neg': case 'masu_neg': return 'មិន'+M+' (ទេ)';
+    case 'past': case 'masu_past': return 'បាន'+M;
+    case 'past_neg': case 'masu_past_neg': return 'មិនបាន'+M+' (ទេ)';
+    case 'te': return M+' (ហើយ…)';
+    case 'potential': return 'អាច'+M+' (បាន)';
+    case 'passive': return 'ត្រូវបាន'+M;
+    case 'causative': return 'ឲ្យ'+M;
+    case 'imperative': return 'ចូរ'+M;
+    case 'volitional': case 'volitional_polite': return 'តោះ '+M;
+    case 'tai': return 'ចង់'+M;
+    case 'ba': return 'បើ'+M;
+    default: return M; } }
+function jpToDict(jp){ jp=(jp||'').trim(); if(jp.endsWith('ます')){ const stem=jp.slice(0,-2), ls=stem.slice(-1);
+    if(JP_IROW.includes(ls)) return stem.slice(0,-1)+JP_UROW[JP_IROW.indexOf(ls)]; return stem+'る'; } return jp; }
+// related conjugation forms (with a rough, editable Khmer draft) for a verb/adjective
+function jpConjugate(jpIn,baseKm){
+  const jp=(jpIn||'').trim(); if(!jp) return {type:'',forms:[]};
+  const dict=jpToDict(jp); const type=jpDetectType(dict); const out=[]; const IDX=c=>JP_UROW.indexOf(c);
+  const add=(f,w)=>{ if(w) out.push({form:f,jp:w,km:jpKhmer(baseKm,f)}); };
+  if(type==='iadj'){ const s=dict.slice(0,-1);
+    add('dict',dict); add('neg',s+'くない'); add('past',s+'かった'); add('past_neg',s+'くなかった'); add('te',s+'くて'); add('ba',s+'ければ');
+    out.push({form:'masu',jp:dict+'です',km:jpKhmer(baseKm,'masu')}); out.push({form:'masu_neg',jp:s+'くないです',km:jpKhmer(baseKm,'neg')}); return {type,forms:out}; }
+  if(type==='noun') return {type,forms:[]};
+  let ms='';
+  if(type==='ichidan'){ const s=dict.slice(0,-1); ms=s;
+    add('dict',dict); add('neg',s+'ない'); add('past',s+'た'); add('past_neg',s+'なかった'); add('te',s+'て'); add('potential',s+'られる'); add('passive',s+'られる'); add('causative',s+'させる'); add('imperative',s+'ろ'); add('volitional',s+'よう'); add('ba',s+'れば'); add('tai',s+'たい');
+  } else if(type==='godan'){ const last=dict.slice(-1),s=dict.slice(0,-1); ms=s+JP_IROW[IDX(last)];
+    add('dict',dict); add('neg',s+JP_AROW[IDX(last)]+'ない'); add('past',jpGodanTe(dict,true)); add('past_neg',s+JP_AROW[IDX(last)]+'なかった'); add('te',jpGodanTe(dict,false)); add('potential',s+JP_EROW[IDX(last)]+'る'); add('passive',s+JP_AROW[IDX(last)]+'れる'); add('causative',s+JP_AROW[IDX(last)]+'せる'); add('imperative',s+JP_EROW[IDX(last)]); add('volitional',s+JP_OROW[IDX(last)]+'う'); add('ba',s+JP_EROW[IDX(last)]+'ば'); add('tai',ms+'たい');
+  } else if(type==='suru'){ const p=dict.slice(0,-2); ms=p+'し';
+    add('dict',dict); add('neg',p+'しない'); add('past',p+'した'); add('past_neg',p+'しなかった'); add('te',p+'して'); add('potential',p+'できる'); add('passive',p+'される'); add('causative',p+'させる'); add('imperative',p+'しろ'); add('volitional',p+'しよう'); add('ba',p+'すれば'); add('tai',p+'したい');
+  } else if(type==='kuru'){ const p=dict.slice(0,-2), k=dict.slice(-2)==='来る'; ms=p+(k?'来':'き');
+    add('dict',dict); add('neg',p+(k?'来ない':'こない')); add('past',p+(k?'来た':'きた')); add('past_neg',p+(k?'来なかった':'こなかった')); add('te',p+(k?'来て':'きて')); add('potential',p+(k?'来られる':'こられる')); add('passive',p+(k?'来られる':'こられる')); add('causative',p+(k?'来させる':'こさせる')); add('imperative',p+(k?'来い':'こい')); add('volitional',p+(k?'来よう':'こよう')); add('ba',p+(k?'来れば':'くれば')); add('tai',p+(k?'来たい':'きたい'));
+  }
+  if(ms){ out.push({form:'masu',jp:ms+'ます',km:jpKhmer(baseKm,'masu')}); out.push({form:'masu_neg',jp:ms+'ません',km:jpKhmer(baseKm,'masu_neg')}); out.push({form:'masu_past',jp:ms+'ました',km:jpKhmer(baseKm,'masu_past')}); out.push({form:'masu_past_neg',jp:ms+'ませんでした',km:jpKhmer(baseKm,'masu_past_neg')}); out.push({form:'volitional_polite',jp:ms+'ましょう',km:jpKhmer(baseKm,'volitional_polite')}); }
+  return {type,forms:out}; }
+// free ja→km machine translation for example sentences (sends text to MyMemory; editable after)
+async function mmTranslate(text){
+  const q=(text||'').trim(); if(!q) return '';
+  try{ const r=await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(q)+'&langpair=ja|km');
+    const d=await r.json(); const t=d&&d.responseData&&d.responseData.translatedText;
+    if(t&&!/MYMEMORY WARNING|INVALID|QUERY LENGTH/i.test(t)) return t;
+  }catch(e){} return ''; }
+
 // — automatic furigana for the results PDF —
 // There is no morphological analyser in this offline app, so readings come from
 // two sources: (1) readings already written inline as 漢字（かな）/漢字(かな) in
@@ -7464,6 +7569,8 @@ function applyCustomWords(rows){
       examples: (Array.isArray(r.examples) ? r.examples : []).filter(e => e && e.jp).map(e => ({ jp: e.jp, km: e.km || '' })),
       cat: r.cat || 'vocab', page: r.page || 1, book: r.book || DEFAULT_BOOK,
       img: r.img || '', starred: !!r.starred, _custom: true,
+      related: (Array.isArray(r.related) ? r.related : []).filter(e => e && e.jp).map(e => ({ jp: e.jp, km: e.km || '' })),
+      level: r.level || '', link: r.link || '',
     };
     const at = WORDS.findIndex(x => x.id === id);
     if (at >= 0) WORDS[at] = w; else WORDS.push(w);
@@ -8199,7 +8306,15 @@ function makeSupabaseBackend(){
     async deleteOverride(id){ const { error } = await client.from('word_overrides').delete().eq('word_id', id); return { error: error ? error.message : null }; },
     // admin-typed words + per-book visibility
     async listCustomWords(){ const { data } = await client.from('custom_words').select('*').order('created_at'); return { rows: data || [] }; },
-    async addCustomWord(row){ const { data, error } = await client.from('custom_words').insert(row).select().single(); return { row: data, error: error ? error.message : null }; },
+    async addCustomWord(row){
+      let res = await client.from('custom_words').insert(row).select().single();
+      if (res.error && /column|schema cache|does not exist/i.test(res.error.message || '')) {
+        // the related/level/link columns aren't migrated yet — save the core word so it still works
+        const { related, level, link, ...core } = row;
+        res = await client.from('custom_words').insert(core).select().single();
+      }
+      return { row: res.data, error: res.error ? res.error.message : null };
+    },
     async getBookSettings(){ const { data } = await client.from('book_settings').select('book,locked,all_schools,schools'); return { rows: data || [] }; },
     async saveBookSetting(row){ const { error } = await client.from('book_settings').upsert(row, { onConflict: 'book' }); return { error: error ? error.message : null }; },
     // — authored books (បណ្ណាល័យ, Admin) —
@@ -8403,6 +8518,7 @@ class Component extends DCLogic {
     // admin: add a new word / grammar
     awBook: '', awBookMenuOpen: false, awNewBook: '', awCat: 'vocab', awPage: '',
     awJp: '', awKana: '', awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [],
+    awRelated: [], awLevel: '', awLink: '',
     awBusy: false, awMsg: '', awError: '',
     screen: 'home', search: '', catFilter: 'all', searchMode: 'general', pageFilter: null, pageInput: '',
     bookFilter: BOOKS[0] || DEFAULT_BOOK,
@@ -9203,11 +9319,26 @@ class Component extends DCLogic {
   onAwCatVocab(){ this.setState({ awCat: 'vocab' }); }
   onAwCatGrammar(){ this.setState({ awCat: 'grammar' }); }
   onAwPage(e){ this.setState({ awPage: e.target.value }); }
-  onAwJp(e){ this.setState({ awJp: e.target.value }); }
+  onAwJp(e){ const v = e.target.value; this.setState(s => ({ awJp: v, awPos: (s.awPos || '').trim() ? s.awPos : (s.awCat === 'vocab' ? jpDetectPos(v) : s.awPos) })); }
   onAwKana(e){ this.setState({ awKana: e.target.value }); }
   onAwPos(e){ this.setState({ awPos: e.target.value }); }
   onAwKm(e){ this.setState({ awKm: e.target.value }); }
   onAwImg(e){ this.setState({ awImg: e.target.value }); }
+  onAwLevel(e){ this.setState({ awLevel: e.target.value }); }
+  onAwLink(e){ this.setState({ awLink: e.target.value }); }
+  // — related words (auto-generated conjugations, editable) —
+  genRelated(){ const s = this.state; const r = jpConjugate(s.awJp, s.awKm); this.setState({ awRelated: r.forms.map(f => ({ jp: f.jp, km: f.km })), awMsg: r.forms.length ? `បង្កើត ${r.forms.length} ពាក្យពាក់ព័ន្ធ (${r.type}) ✓ — កែបាន` : 'ពាក្យនេះមិនមែនកិរិយាស័ព្ទ/គុណនាម', awError: '' }); }
+  onAwRelatedJp(i, e){ const v = e.target.value; this.setState(s => ({ awRelated: s.awRelated.map((x, k) => k === i ? { ...x, jp: v } : x) })); }
+  onAwRelatedKm(i, e){ const v = e.target.value; this.setState(s => ({ awRelated: s.awRelated.map((x, k) => k === i ? { ...x, km: v } : x) })); }
+  removeAwRelated(i){ this.setState(s => ({ awRelated: s.awRelated.filter((_, k) => k !== i) })); }
+  clearAwRelated(){ this.setState({ awRelated: [] }); }
+  // machine-translate one example's Japanese into Khmer (editable after)
+  async translateAwExample(i){
+    const ex = this.state.awExamples[i]; if (!ex || !(ex.jp || '').trim()) return;
+    this.setState(s => ({ awExamples: s.awExamples.map((x, k) => k === i ? { ...x, translating: true } : x) }));
+    const km = await mmTranslate(ex.jp);
+    this.setState(s => ({ awExamples: s.awExamples.map((x, k) => k === i ? { ...x, km: km || x.km, translating: false } : x) }));
+  }
   onAwNewBook(e){ this.setState({ awNewBook: e.target.value, awBook: '' }); }
   toggleAwStar(){ this.setState(s => ({ awStar: !s.awStar })); }
   toggleAwBookMenu(){ this.setState(s => ({ awBookMenuOpen: !s.awBookMenuOpen })); }
@@ -9226,15 +9357,19 @@ class Component extends DCLogic {
     this.setState({ awBusy: true, awError: '', awMsg: '' });
     const examples = s.awExamples.map(x => ({ jp: (x.jp || '').trim(), km: (x.km || '').trim() })).filter(x => x.jp);
     const page = parseInt(s.awPage, 10);
+    // related conjugations: use the reviewed list, or auto-generate for a vocab verb/adj
+    let related = (s.awRelated || []).map(x => ({ jp: (x.jp || '').trim(), km: (x.km || '').trim() })).filter(x => x.jp);
+    if (!related.length && s.awCat === 'vocab') related = jpConjugate(jp, km).forms.map(f => ({ jp: f.jp, km: f.km }));
     const row = { book, page: isNaN(page) ? null : page, cat: s.awCat, jp,
-      kana: (s.awKana || '').trim(), pos: (s.awPos || '').trim(), km, starred: s.awStar, examples, img: normalizeImgUrl(s.awImg) };
+      kana: (s.awKana || '').trim(), pos: (s.awPos || '').trim(), km, starred: s.awStar, examples, img: normalizeImgUrl(s.awImg),
+      related, level: s.awCat === 'grammar' ? (s.awLevel || '') : '', link: s.awCat === 'grammar' ? (s.awLink || '').trim() : '' };
     const { row: saved, error } = await Backend.addCustomWord(row);
     if (error) { this.setState({ awBusy: false, awError: error }); return; }
     applyCustomWords([saved || { id: 'c-' + Date.now(), ...row }]);
     rebuildIndexes();
     // keep the book, category and page so the admin can add the next word fast
-    this.setState(st => ({ awBusy: false, awMsg: `បន្ថែម «${jp}» រួចរាល់ ✓`, overridesRev: st.overridesRev + 1,
-      awJp: '', awKana: '', awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [] }));
+    this.setState(st => ({ awBusy: false, awMsg: `បន្ថែម «${jp}»${related.length ? ` + ${related.length} ពាក្យពាក់ព័ន្ធ` : ''} រួចរាល់ ✓`, overridesRev: st.overridesRev + 1,
+      awJp: '', awKana: '', awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [], awRelated: [], awLevel: '', awLink: '' }));
   }
   // copy text to the clipboard, with an execCommand fallback for embedded browsers
   copyText(text){
@@ -9320,6 +9455,11 @@ class Component extends DCLogic {
       if (!HAS_JP.test(jp)) continue;
       if (!this._bwMap.has(jp)) { this._bwMap.set(jp, { kana: w.kana || '', km: w.km || '', img: w.img || '' }); if (jp.length > this._bwMax) this._bwMax = jp.length; }
       else if (w.img && !this._bwMap.get(jp).img) this._bwMap.get(jp).img = w.img;   // fill an image in from a later duplicate row
+      // related conjugation forms (食べない, 食べた…) attached to the word are tappable too
+      if (Array.isArray(w.related)) for (const f of w.related) {
+        const fj = f && (f.jp || '').trim(); if (!fj || fj.length > 20 || this._bwMap.has(fj) || !HAS_JP.test(fj) || /[（）()\s\/、。，,！!？?・「」]/.test(fj)) continue;
+        this._bwMap.set(fj, { kana: '', km: f.km || w.km || '', img: w.img || '' }); if (fj.length > this._bwMax) this._bwMax = fj.length;
+      }
     }
     return this._bwMap;
   }
@@ -11717,8 +11857,16 @@ class Component extends DCLogic {
       awImg: s.awImg, onAwImg: e => this.onAwImg(e),
       awStar: s.awStar, toggleAwStar: () => this.toggleAwStar(),
       awStarGlyph: s.awStar ? '★' : '☆', awStarColor: s.awStar ? '#d0342c' : 'var(--color-text)',
+      awLevel: s.awLevel, onAwLevel: e => this.onAwLevel(e), awLink: s.awLink, onAwLink: e => this.onAwLink(e),
+      awLevelNone: !s.awLevel, awLevelN5: s.awLevel === 'N5', awLevelN4: s.awLevel === 'N4', awLevelN3: s.awLevel === 'N3', awLevelN2: s.awLevel === 'N2', awLevelN1: s.awLevel === 'N1',
+      // related conjugations (vocab)
+      awRelated: s.awRelated.map((x, i) => ({ jp: x.jp, km: x.km, num: `#${i + 1}`,
+        onJp: e => this.onAwRelatedJp(i, e), onKm: e => this.onAwRelatedKm(i, e), onRemove: () => this.removeAwRelated(i) })),
+      hasAwRelated: s.awRelated.length > 0, awRelatedCount: `ពាក្យពាក់ព័ន្ធ (${s.awRelated.length})`,
+      genRelated: () => this.genRelated(), clearAwRelated: () => this.clearAwRelated(),
       awExamples: s.awExamples.map((x, i) => ({ jp: x.jp, km: x.km, num: `ឧទាហរណ៍ ${i + 1}`,
-        onJp: e => this.onAwExampleJp(i, e), onKm: e => this.onAwExampleKm(i, e), onRemove: () => this.removeAwExample(i) })),
+        transLabel: x.translating ? '…' : '🌐 បកប្រែ',
+        onJp: e => this.onAwExampleJp(i, e), onKm: e => this.onAwExampleKm(i, e), onRemove: () => this.removeAwExample(i), onTranslate: () => this.translateAwExample(i) })),
       addAwExample: () => this.addAwExample(),
       saveAddWord: () => this.saveAddWord(),
       exportCustomWords: () => this.exportCustomWords(),
