@@ -1361,8 +1361,8 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <sc-for list="{{ podium }}" as="p" hint-placeholder-count="3">
                   <div style="flex:1;max-width:96px;display:flex;flex-direction:column;align-items:center;">
                     <div style="font-size:22px;line-height:1;margin-bottom:4px;">{{ p.medal }}</div>
-                    <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:19px;border:2px solid rgba(255,255,255,0.6);">{{ p.initial }}</div>
-                    <div style="font-size:11px;margin-top:5px;text-align:center;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;">{{ p.name }}</div>
+                    <div style="width:{{ p.avSize }};height:{{ p.avSize }};border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:{{ p.avFont }};line-height:1;border:2px solid rgba(255,255,255,0.6);">{{ p.avatarGlyph }}</div>
+                    <div style="font-size:11px;margin-top:6px;text-align:center;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;">{{ p.name }}</div>
                     <sc-if value="{{ p.hasStars }}"><div style="font-size:10px;margin-top:1px;">{{ p.stars }}</div></sc-if>
                     <div style="font-size:10px;opacity:0.85;">{{ p.levelLabel }}</div>
                     <div style="width:100%;height:{{ p.podiumHeight }};background:{{ p.podiumBg }};border-radius:6px 6px 0 0;margin-top:6px;display:flex;align-items:flex-start;justify-content:center;padding-top:4px;font-family:var(--font-heading);font-size:15px;color:#f3f2f2;">{{ p.rank }}</div>
@@ -1374,7 +1374,8 @@ textarea.input { min-height: 90px; resize: vertical; }
             <div style="background:var(--color-surface);padding:8px;display:flex;flex-direction:column;gap:6px;">
               <sc-for list="{{ rankRows }}" as="r" hint-placeholder-count="5">
                 <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid transparent;border-radius:10px;{{ r.rowStyle }}">
-                  <div style="flex:none;width:26px;text-align:center;{{ r.badgeStyle }}">{{ r.badge }}</div>
+                  <div style="flex:none;width:22px;text-align:center;{{ r.badgeStyle }}">{{ r.badge }}</div>
+                  <div style="flex:none;width:30px;height:30px;border-radius:50%;background:{{ r.avatarBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);">{{ r.avatarGlyph }}</div>
                   <div style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</div>
                   <sc-if value="{{ r.hasStars }}"><div style="flex:none;font-size:12px;">{{ r.stars }}</div></sc-if>
                   <div style="flex:none;font-size:12px;color:var(--color-accent-700);">{{ r.levelLabel }}</div>
@@ -8556,7 +8557,8 @@ function makeDemoBackend(){
       const schoolName=sch?(sch.full_name||sch.email||''):'';
       const rows=all.filter(x=>x.role==='student' && x.school_id && x.school_id===me.school_id).map(u=>({
         full_name: u.full_name||'', level: computeLevel(u.settings||{}), stars: examStars(u.settings||{}),
-        progress: Array.isArray(u.viewed)?u.viewed.length:0, is_me: u.id===me.id, school_name:schoolName }));
+        progress: Array.isArray(u.viewed)?u.viewed.length:0, is_me: u.id===me.id, school_name:schoolName,
+        avatar: (u.settings && u.settings.avatarAnimal) || '', avatar_color: (u.settings && u.settings.avatarColor) || '' }));
       return { rows }; },
     async listTeachers(){ const me=this._me(); const all=load().filter(x=>x.role==='teacher');
       return { rows: me && me.role==='school' ? all.filter(t=>t.school_id===me.id) : all }; },
@@ -11808,6 +11810,8 @@ class Component extends DCLogic {
       levelLabel: `កម្រិត ${r.level}`,
       stars: starLabel(r.stars || 0), hasStars: (r.stars || 0) > 0,
       isMe: !!r.is_me,
+      avatarGlyph: r.avatar || ((r.full_name || '?').trim().charAt(0).toUpperCase()),
+      avatarBg: r.avatar_color || 'var(--color-accent)',
       rowStyle: r.is_me
         ? 'background:color-mix(in srgb, var(--color-accent) 14%, transparent);border-color:var(--color-accent);'
         : '',
@@ -11822,7 +11826,8 @@ class Component extends DCLogic {
       ...r,
       podiumHeight: r.rank === 1 ? '78px' : r.rank === 2 ? '58px' : '46px',
       podiumBg: r.rank === 1 ? 'var(--color-accent)' : 'var(--color-neutral-300)',
-      initial: (r.name || '?').trim().charAt(0),
+      avSize: r.rank === 1 ? '56px' : '44px',
+      avFont: r.rank === 1 ? (r.avatarGlyph && r.avatarGlyph.length > 1 ? '30px' : '24px') : (r.avatarGlyph && r.avatarGlyph.length > 1 ? '25px' : '19px'),
     }));
 
     // the same two panels again, for whichever student is being followed
