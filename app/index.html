@@ -1290,8 +1290,8 @@ textarea.input { min-height: 90px; resize: vertical; }
                   <sc-for list="{{ monPodium }}" as="p" hint-placeholder-count="3">
                     <div style="flex:1;max-width:96px;display:flex;flex-direction:column;align-items:center;cursor:pointer;" sc-camel-on-click="{{ p.onSelect }}">
                       <div style="font-size:22px;line-height:1;margin-bottom:4px;">{{ p.medal }}</div>
-                      <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:19px;border:2px solid rgba(255,255,255,0.6);">{{ p.initial }}</div>
-                      <div style="font-size:11px;margin-top:5px;text-align:center;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;">{{ p.name }}</div>
+                      <div style="width:{{ p.avSize }};height:{{ p.avSize }};border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:{{ p.avFont }};line-height:1;border:2px solid rgba(255,255,255,0.6);">{{ p.avatarGlyph }}</div>
+                      <div style="font-size:11px;margin-top:6px;text-align:center;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;">{{ p.name }}</div>
                     <sc-if value="{{ p.hasStars }}"><div style="font-size:10px;margin-top:1px;">{{ p.stars }}</div></sc-if>
                       <div style="font-size:10px;opacity:0.85;">{{ p.levelLabel }}</div>
                       <div style="width:100%;height:{{ p.podiumHeight }};background:{{ p.podiumBg }};border-radius:6px 6px 0 0;margin-top:6px;display:flex;align-items:flex-start;justify-content:center;padding-top:4px;font-family:var(--font-heading);font-size:15px;color:#f3f2f2;">{{ p.rank }}</div>
@@ -11980,6 +11980,8 @@ class Component extends DCLogic {
         level: computeLevel(st.settings || {}),
         stars: examStars(st.settings || {}),
         words: keys.size,
+        avatar: (st.settings && st.settings.avatarAnimal) || '',
+        avatarColor: (st.settings && st.settings.avatarColor) || '',
         st,
       };
     }).sort((a, b) => (b.level - a.level) || (b.words - a.words) || a.name.localeCompare(b.name));
@@ -11994,12 +11996,13 @@ class Component extends DCLogic {
       name: e.name,
       levelLabel: `កម្រិត ${e.level} · ${e.words} ពាក្យ`,
       stars: starLabel(e.stars || 0), hasStars: (e.stars || 0) > 0,
+      avatar: e.avatar || '', avatarColor: e.avatarColor || '',
       onSelect: () => this.selectStudentToView(e.st),
     });
 
     const monSchoolIds = [...new Set(monEntries.map(e => e.schoolId))];
     const monGrouped = monSchoolIds.length > 1;     // only an admin sees several branches
-    let monRows = [], monGroups = [], monPodium = [];
+    let monRows = [], monGroups = [];
     if (monGrouped) {
       monGroups = monSchoolIds
         .map(id => {
@@ -12016,14 +12019,18 @@ class Component extends DCLogic {
         .sort((a, b) => a.name.localeCompare(b.name));
     } else {
       monRows = monEntries.map(monRowOf);
-      monPodium = [1, 0, 2].map(i => monRows[i]).filter(Boolean).map(r => ({
-        ...r,
-        podiumHeight: r.rank === 1 ? '78px' : r.rank === 2 ? '58px' : '46px',
-        podiumBg: r.rank === 1 ? 'var(--color-accent)' : 'var(--color-neutral-300)',
-        initial: (r.name || '?').trim().charAt(0),
-      }));
     }
-    const monShowPodium = !monGrouped && monPodium.length > 0;
+    // the top-3 podium is shown for everyone now (admins included), on the overall ranking
+    const monTop3 = monEntries.slice(0, 3).map((e, i) => monRowOf(e, i));
+    const monPodium = [1, 0, 2].map(i => monTop3[i]).filter(Boolean).map(r => ({
+      ...r,
+      podiumHeight: r.rank === 1 ? '78px' : r.rank === 2 ? '58px' : '46px',
+      podiumBg: r.rank === 1 ? 'var(--color-accent)' : 'var(--color-neutral-300)',
+      avatarGlyph: r.avatar || (r.name || '?').trim().charAt(0),
+      avSize: r.rank === 1 ? '56px' : '46px',
+      avFont: r.rank === 1 ? (r.avatar ? '30px' : '24px') : (r.avatar ? '25px' : '19px'),
+    }));
+    const monShowPodium = monPodium.length > 0;
     const monTitle = s.role === 'admin' ? 'សិស្សទាំងអស់'
       : s.role === 'school' ? (s.profileName || 'សិស្សក្នុងសាលា/សាខារបស់អ្នក')   // a branch is its own name
       : (schoolName(s.mySchoolId) || 'សិស្សក្នុងសាលា/សាខារបស់អ្នក');
