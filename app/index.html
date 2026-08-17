@@ -2097,10 +2097,29 @@ textarea.input { min-height: 90px; resize: vertical; }
           <h1 style="font-size:26px;margin:0 0 4px;">គ្រប់គ្រងគណនី</h1>
           <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">បង្កើតគណនី គ្រូ ឬ សិស្ស</div>
 
-          <div class="card elev-sm" style="margin-bottom:22px;gap:12px;">
+          <button class="btn btn-block" style="background:var(--color-accent);color:#fff;border:none;margin-bottom:8px;" sc-camel-on-click="{{ openCreateDialog }}">＋ ចុះឈ្មោះ</button>
+          <sc-if value="{{ hasAdminMsg }}"><div style="font-size:12px;color:var(--color-accent-700);margin-bottom:16px;">{{ adminMsg }}</div></sc-if>
+
+          <sc-if value="{{ createDialogOpen }}">
+          <div style="position:fixed;inset:0;z-index:60;background:color-mix(in srgb, var(--color-neutral-900) 45%, transparent);display:flex;align-items:flex-end;" sc-camel-on-click="{{ closeCreateDialog }}">
+          <div style="background:var(--color-bg);width:100%;border-radius:20px 20px 0 0;padding:20px 20px 26px;box-shadow:var(--shadow-lg);max-height:90%;overflow-y:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:13px;" sc-camel-on-click="{{ stopProp }}">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <h2 style="font-size:19px;margin:0;font-family:var(--font-heading);">បង្កើតគណនី គ្រូ ឬ សិស្ស</h2>
+              <button class="btn btn-icon btn-ghost" sc-camel-on-click="{{ closeCreateDialog }}" aria-label="បិទ" style="font-size:16px;">✕</button>
+            </div>
             <div class="field"><label>ឈ្មោះ</label><input class="input" type="text" value="{{ adminFullName }}" sc-camel-on-change="{{ onAdminFullName }}"></div>
             <div class="field"><label>អ៊ីមែល</label><input class="input" type="email" value="{{ adminEmail }}" sc-camel-on-change="{{ onAdminEmail }}"></div>
             <div class="field"><label>ពាក្យសម្ងាត់</label><input class="input" type="text" value="{{ adminPassword }}" sc-camel-on-change="{{ onAdminPassword }}"></div>
+            <div class="field"><label>ភេទ</label>
+              <div class="seg">
+                <label class="seg-opt"><input type="radio" name="agender" checked="{{ isGenderMale }}" sc-camel-on-change="{{ setGenderMale }}"><span>ប្រុស</span></label>
+                <label class="seg-opt"><input type="radio" name="agender" checked="{{ isGenderFemale }}" sc-camel-on-change="{{ setGenderFemale }}"><span>ស្រី</span></label>
+              </div>
+            </div>
+            <div class="field"><label>ថ្ងៃខែឆ្នាំកំណើត</label>
+              <input class="input" type="date" value="{{ adminBirthDate }}" sc-camel-on-change="{{ onAdminBirthDate }}">
+              <sc-if value="{{ hasBirthZodiac }}"><div style="font-size:12px;opacity:0.75;margin-top:7px;">អាវ៉ាតាតាមឆ្នាំកំណើត៖ <span style="font-size:19px;vertical-align:middle;">{{ birthZodiac }}</span></div></sc-if>
+            </div>
             <div class="field"><label>ប្រភេទគណនី</label>
               <div class="seg">
                 <label class="seg-opt"><input type="radio" name="arole" checked="{{ isAdminRoleStudent }}" sc-camel-on-change="{{ setAdminRoleStudent }}"><span>សិស្ស</span></label>
@@ -2131,9 +2150,10 @@ textarea.input { min-height: 90px; resize: vertical; }
             </sc-if>
             
             <sc-if value="{{ hasAdminError }}"><div style="font-size:12px;color:#c0392b;">{{ adminError }}</div></sc-if>
-            <sc-if value="{{ hasAdminMsg }}"><div style="font-size:12px;color:var(--color-accent-700);">{{ adminMsg }}</div></sc-if>
-            <button class="btn btn-primary btn-block" sc-camel-on-click="{{ createAccount }}">{{ createBtnLabel }}</button>
+            <button class="btn btn-block" style="background:var(--color-accent);color:#fff;border:none;margin-top:2px;" sc-camel-on-click="{{ createAccount }}">{{ createBtnLabel }}</button>
           </div>
+          </div>
+          </sc-if>
 
           <sc-if value="{{ isSchoolRole }}">
           <div class="card elev-sm" style="margin-bottom:18px;gap:10px;">
@@ -7710,6 +7730,12 @@ function shortWordCode(w){
   const tail = id.replace(/[^0-9a-f]/gi, '').slice(-4);
   return [pg, tail].filter(Boolean).join('-') || 'word';
 }
+// birth year → its 12-year-cycle animal emoji (Monkey when year%12==0, matching
+// the zodiac picker order). Used to auto-pick a new account's avatar.
+function zodiacFromYear(y){
+  y = parseInt(y, 10); if (!y || isNaN(y)) return '';
+  return ['🐵','🐔','🐶','🐷','🐭','🐮','🐯','🐰','🐲','🐍','🐴','🐐'][((y % 12) + 12) % 12];
+}
 function applyCustomWords(rows){
   let changed = false;
   for (const r of (rows || [])) {
@@ -8637,7 +8663,7 @@ function makeDemoBackend(){
       const id = 'b-' + Date.now(); b.push({ id, title: row.title, content: row.content, sort: b.length, updated_at: new Date().toISOString() }); localStorage.setItem('dict_demo_books', JSON.stringify(b)); return { id, error: null };
     },
     async deleteBook(id){ localStorage.setItem('dict_demo_books', JSON.stringify(this._books().filter(x => x.id !== id))); return { error: null }; },
-    async createAccount(p){ const us=load(); const email=String(p.email).trim().toLowerCase(); if(us.find(x=>x.email===email)) return { error:'អ៊ីមែលនេះមានរួចហើយ' }; us.push({ id:'u-'+Date.now(), email, password:p.password, full_name:p.full_name||'', role:p.role, teacher_id:p.role==='student'?(p.teacher_id||null):null, school_id:p.role==='school'?null:(p.school_id||null), viewed:[], favorites:[], history:[], settings:{} }); save(us); return { error:null }; },
+    async createAccount(p){ const us=load(); const email=String(p.email).trim().toLowerCase(); if(us.find(x=>x.email===email)) return { error:'អ៊ីមែលនេះមានរួចហើយ' }; us.push({ id:'u-'+Date.now(), email, password:p.password, full_name:p.full_name||'', role:p.role, teacher_id:p.role==='student'?(p.teacher_id||null):null, school_id:p.role==='school'?null:(p.school_id||null), viewed:[], favorites:[], history:[], settings:(p.settings && typeof p.settings==='object')?p.settings:{} }); save(us); return { error:null }; },
     async updateAccount(id, patch){ const us=load(); const u=us.find(x=>x.id===id); if(!u) return { error:'not found' }; if(patch.full_name!=null) u.full_name=patch.full_name; if(patch.role!=null) u.role=patch.role; if(patch.teacher_id!==undefined) u.teacher_id=u.role==='student'?(patch.teacher_id||null):null; if(patch.school_id!==undefined) u.school_id=u.role==='school'?null:(patch.school_id||null); if(patch.password) u.password=patch.password; save(us); return { error:null }; },
     async deleteAccount(id){ let us=load(); us=us.filter(x=>x.id!==id); save(us); return { error:null }; },
   };
@@ -8659,6 +8685,7 @@ class Component extends DCLogic {
     monCollapsed: [],   // branches an admin has folded away on the leaderboard
     // admin (create accounts)
     adminFullName: '', adminEmail: '', adminPassword: '', adminRole: 'student', adminTeacherId: '', adminSchoolId: '',
+    adminGender: '', adminBirthDate: '', createDialogOpen: false,
     adminBusy: false, adminMsg: '', adminError: '', teachers: [], accounts: [], schools: [],
     // admin (edit account dialog)
     editingId: null, editFullName: '', editRole: 'student', editTeacherId: '', editSchoolId: '', editPassword: '',
@@ -9363,17 +9390,35 @@ class Component extends DCLogic {
   setAdminRoleStudent(){ this.setState({ adminRole: 'student' }); }
   setAdminRoleTeacher(){ this.setState({ adminRole: 'teacher' }); }
   onAdminTeacher(e){ this.setState({ adminTeacherId: e.target.value }); }
+  openCreateDialog(){ this.setState({ createDialogOpen: true, adminError: '', adminMsg: '' }); }
+  closeCreateDialog(){ this.setState({ createDialogOpen: false }); }
+  setAdminGender(g){ this.setState({ adminGender: g }); }
+  onAdminBirthDate(e){ this.setState({ adminBirthDate: e.target.value }); }
   async createAccount(){
     if (this.state.adminBusy) return;
-    const { adminEmail, adminPassword, adminFullName, adminRole, adminTeacherId, adminSchoolId } = this.state;
+    const { adminEmail, adminPassword, adminFullName, adminRole, adminSchoolId, adminGender, adminBirthDate } = this.state;
     if (!adminEmail.trim() || !adminPassword) { this.setState({ adminError: 'សូមបញ្ចូលអ៊ីមែល និង ពាក្យសម្ងាត់', adminMsg: '' }); return; }
     // an admin picks the branch; a school account always creates inside its own
     const schoolId = this.state.role === 'school' ? this.state.userId : adminSchoolId;
     if (adminRole !== 'school' && !schoolId) { this.setState({ adminError: 'សូមជ្រើសរើសសាលា/សាខា', adminMsg: '' }); return; }
+    // auto-pick the avatar from the birth year's zodiac animal
+    const year = adminBirthDate ? new Date(adminBirthDate).getFullYear() : 0;
+    const avatarAnimal = zodiacFromYear(year);
+    const settings = {};
+    if (avatarAnimal) { settings.avatarAnimal = avatarAnimal; settings.avatarColor = '#2f6fb0'; }
+    if (adminGender) settings.gender = adminGender;
+    if (adminBirthDate) settings.dob = adminBirthDate;
     this.setState({ adminBusy: true, adminError: '', adminMsg: '' });
-    const { error } = await Backend.createAccount({ email: adminEmail.trim(), password: adminPassword, full_name: adminFullName.trim(), role: adminRole, teacher_id: null, school_id: adminRole === 'school' ? null : schoolId });
+    const email = adminEmail.trim();
+    const { error } = await Backend.createAccount({ email, password: adminPassword, full_name: adminFullName.trim(), role: adminRole, teacher_id: null, school_id: adminRole === 'school' ? null : schoolId, settings });
     if (error) { this.setState({ adminBusy: false, adminError: error }); return; }
-    this.setState({ adminBusy: false, adminMsg: 'បង្កើតគណនីជោគជ័យ ✓', adminEmail: '', adminPassword: '', adminFullName: '' }, () => this.loadAdminData());
+    // On the real backend the Edge Function doesn't store settings, so stamp the
+    // avatar / DOB / gender onto the fresh profile in a follow-up write (admins may).
+    if (!Backend.demo && Object.keys(settings).length && Backend.updateAccount) {
+      try { const { rows } = await Backend.listAccounts(); const made = (rows || []).find(a => (a.email || '').toLowerCase() === email.toLowerCase());
+        if (made && made.id) await Backend.updateAccount(made.id, { settings }); } catch(e) {}
+    }
+    this.setState({ adminBusy: false, createDialogOpen: false, adminMsg: 'បង្កើតគណនីជោគជ័យ ✓', adminEmail: '', adminPassword: '', adminFullName: '', adminGender: '', adminBirthDate: '' }, () => this.loadAdminData());
   }
   goAdmin(){ this.setState({ screen: 'admin', adminMsg:'', adminError:'' }, () => { this.loadAdminData(); this.loadInviteLink(); }); }
 
@@ -12370,6 +12415,14 @@ class Component extends DCLogic {
       adminFullName: s.adminFullName, onAdminFullName: e => this.onAdminFullName(e),
       adminEmail: s.adminEmail, onAdminEmail: e => this.onAdminEmail(e),
       adminPassword: s.adminPassword, onAdminPassword: e => this.onAdminPassword(e),
+      // create-account dialog + new fields (gender, DOB → zodiac avatar)
+      createDialogOpen: s.createDialogOpen,
+      openCreateDialog: () => this.openCreateDialog(), closeCreateDialog: () => this.closeCreateDialog(),
+      adminGender: s.adminGender, isGenderMale: s.adminGender === 'male', isGenderFemale: s.adminGender === 'female',
+      setGenderMale: () => this.setAdminGender('male'), setGenderFemale: () => this.setAdminGender('female'),
+      adminBirthDate: s.adminBirthDate, onAdminBirthDate: e => this.onAdminBirthDate(e),
+      birthZodiac: s.adminBirthDate ? zodiacFromYear(new Date(s.adminBirthDate).getFullYear()) : '',
+      hasBirthZodiac: !!(s.adminBirthDate && zodiacFromYear(new Date(s.adminBirthDate).getFullYear())),
       isAdminRoleStudent: s.adminRole === 'student', isAdminRoleTeacher: s.adminRole === 'teacher',
       setAdminRoleStudent: () => this.setAdminRoleStudent(), setAdminRoleTeacher: () => this.setAdminRoleTeacher(),
       adminTeacherId: s.adminTeacherId, onAdminTeacher: e => this.onAdminTeacher(e),
