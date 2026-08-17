@@ -2516,6 +2516,11 @@ textarea.input { min-height: 90px; resize: vertical; }
             បង្កើតរូបភាព
           </button>
           </sc-if>
+          <sc-if value="{{ detailWord.canDelete }}">
+          <button class="btn btn-secondary" sc-camel-on-click="{{ deleteDetailWord }}" aria-label="លុបពាក្យ" title="លុបពាក្យ" style="flex:none;padding:9px 11px;color:#c0342c;border-color:color-mix(in srgb, #c0342c 32%, var(--color-divider));">
+            <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"></path></svg>
+          </button>
+          </sc-if>
         </div>
         <div class="hr"></div>
         <sc-if value="{{ detailWord.hasImg }}">
@@ -7690,6 +7695,18 @@ function normalizeImgUrl(url){
   const m = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#]*&)?id=|thumbnail\?(?:[^#]*&)?id=)([\w-]{20,})/);
   return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000` : url;
 }
+// A short, human code for a word — used on the share picture and as the
+// download filename. Synced words already carry a tidy code (p120_04); a
+// custom word's id is a long UUID (c-7f01a6c6-…), so we shorten it to the
+// page + a 4-char tail (e.g. p12-a6c6).
+function shortWordCode(w){
+  if (!w) return 'word';
+  const id = w.id || '';
+  if (!/^c/.test(id)) return id || 'word';
+  const pg = w.page ? ('p' + w.page) : '';
+  const tail = id.replace(/[^0-9a-f]/gi, '').slice(-4);
+  return [pg, tail].filter(Boolean).join('-') || 'word';
+}
 function applyCustomWords(rows){
   let changed = false;
   for (const r of (rows || [])) {
@@ -8452,6 +8469,7 @@ function makeSupabaseBackend(){
       return { row: res.data, error: res.error ? res.error.message : null };
     },
     async updateCustomWord(id, patch){ const { error } = await client.from('custom_words').update(patch).eq('id', id); return { error: error ? error.message : null }; },
+    async deleteCustomWord(id){ const { error } = await client.from('custom_words').delete().eq('id', id); return { error: error ? error.message : null }; },
     async getBookSettings(){ const { data } = await client.from('book_settings').select('book,locked,all_schools,schools'); return { rows: data || [] }; },
     async saveBookSetting(row){ const { error } = await client.from('book_settings').upsert(row, { onConflict: 'book' }); return { error: error ? error.message : null }; },
     // — authored books (បណ្ណាល័យ, Admin) —
@@ -8598,6 +8616,7 @@ function makeDemoBackend(){
       return { row: rec, error: null };
     },
     async updateCustomWord(id, patch){ const rows = (await this.listCustomWords()).rows; const r = rows.find(x => x.id === id); if (r) Object.assign(r, patch); localStorage.setItem('dict_demo_customwords', JSON.stringify(rows)); return { error: null }; },
+    async deleteCustomWord(id){ const rows = (await this.listCustomWords()).rows.filter(x => x.id !== id); localStorage.setItem('dict_demo_customwords', JSON.stringify(rows)); return { error: null }; },
     async getBookSettings(){ try { return { rows: JSON.parse(localStorage.getItem('dict_demo_booksettings') || '[]') }; } catch(e){ return { rows: [] }; } },
     async saveBookSetting(row){
       const rows = (await this.getBookSettings()).rows.filter(r => r.book !== row.book);
@@ -9245,7 +9264,7 @@ class Component extends DCLogic {
     const W = S.w, H = S.h, pad = Math.round(W * 0.08), ms = Math.round(W * 0.10);
     const base = this._shareBase(), dark = this._darken(base, 0.42), kana = this._mix(this._darken(base, 0.3), '#8a8a8a', 0.4);
     ctx.fillStyle = this._lighten(base, 0.945); ctx.fillRect(0, 0, W, H);
-    this._header(ctx, W, pad, ms, logoImg, base, '#fff8ec', dark, word.id || '', this._lighten(base, 0.9), dark);
+    this._header(ctx, W, pad, ms, logoImg, base, '#fff8ec', dark, shortWordCode(word), this._lighten(base, 0.9), dark);
     this._paintBody(ctx, W, H, W / 2, W - 2 * pad, pad + ms, H - Math.round(H * 0.075), word, wordImg,
       { kana, jp: '#1c1a17', km: dark, divider: base, imgBorder: this._lighten(base, 0.78), imgBg: this._lighten(base, 0.86) });
     this._footer(ctx, W, H, this._mix(base, '#b8b8b8', 0.6));
@@ -9256,7 +9275,7 @@ class Component extends DCLogic {
     const g = ctx.createRadialGradient(W * 0.28, 0, 0, W * 0.28, 0, H * 1.15);
     g.addColorStop(0, this._darken(base, 0.8)); g.addColorStop(0.6, this._darken(base, 0.9)); g.addColorStop(1, this._darken(base, 0.95));
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    this._header(ctx, W, pad, ms, logoImg, base, '#fff8ec', light, word.id || '', this._rgba(light, 0.14), light);
+    this._header(ctx, W, pad, ms, logoImg, base, '#fff8ec', light, shortWordCode(word), this._rgba(light, 0.14), light);
     this._paintBody(ctx, W, H, W / 2, W - 2 * pad, pad + ms, H - Math.round(H * 0.075), word, wordImg,
       { kana: light, jp: '#ffffff', km: deep, kmPill: base, kmSize: 0.048, imgBg: this._darken(base, 0.8), imgBorder: base });
     this._footer(ctx, W, H, this._rgba(light, 0.5));
@@ -9279,7 +9298,7 @@ class Component extends DCLogic {
     }
     // header over the hero
     if (logoImg) this._coverImg(ctx, logoImg, pad, pad, ms, ms, ms * 0.24); else this._drawMark(ctx, pad, pad, ms, 'rgba(255,255,255,0.92)', dark);
-    this._idPill(ctx, word.id || '', W - pad, pad + ms * 0.18, Math.round(W * 0.058), 'rgba(0,0,0,0.32)', '#ffffff', 'right');
+    this._idPill(ctx, shortWordCode(word), W - pad, pad + ms * 0.18, Math.round(W * 0.058), 'rgba(0,0,0,0.32)', '#ffffff', 'right');
     // bottom text panel
     this._paintBody(ctx, W, H, W / 2, W - 2 * Math.round(W * 0.08), heroH, H - Math.round(H * 0.06), word, null,
       { kana, jp: '#1c1a17', km: dark, divider: this._lighten(base, 0.7) });
@@ -9289,7 +9308,7 @@ class Component extends DCLogic {
     const data = this.state.shareImgData; if (!data) return;
     const word = WORDS.find(x => x.id === this.state.shareWordId);
     const a = document.createElement('a'); a.href = data;
-    a.download = `${(word && word.id) || 'word'}.png`;
+    a.download = `${((word && (word.jp || shortWordCode(word))) || 'word').replace(/[\\/:*?"<>|]/g, '')}.png`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   }
 
@@ -9462,6 +9481,19 @@ class Component extends DCLogic {
       return;
     }
     this.pickEditWord(id);
+  }
+  // delete a custom (admin-added) word — admin only, with a confirm first
+  async deleteDetailWord(){
+    const id = this.state.detailWordId;
+    const w = WORDS.find(x => x.id === id);
+    if (!w || !w._custom || this.state.role !== 'admin') return;
+    if (!window.confirm(`លុបពាក្យ « ${w.jp} » ?\n\nសកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`)) return;
+    const { error } = await Backend.deleteCustomWord(id.replace(/^c-/, ''));
+    if (error) { this.showToast('លុបមិនបាន — ' + error); return; }
+    const at = WORDS.findIndex(x => x.id === id); if (at >= 0) WORDS.splice(at, 1);
+    this._bwMap = null; rebuildIndexes();
+    this.setState({ detailWordId: null });
+    this.showToast('បានលុបពាក្យ ✓');
   }
   // jump straight from the word popup to the share-image maker, for this word
   shareDetailWord(){
@@ -11459,6 +11491,8 @@ class Component extends DCLogic {
       if (base && f) detailW = { id: s.detailWordId, _baseId: bid, _relatedOf: base.jp, jp: fjp, kana: '', pos: base.pos, km: f.km || base.km, book: base.book, page: base.page, examples: Array.isArray(f.examples) ? f.examples : [], starred: false, img: '', romaji: '', romajiNorm: '', cat: 'vocab' };
     }
     const detailWord = detailW ? { ...detailW, tagClass: tagClassFor(detailW.pos), favFill: s.favorites.includes(detailW.id) ? 'var(--color-accent-700)' : 'transparent',
+          // only an admin may delete, and only a custom (admin-added) word — never a synced word or a conjugation
+          canDelete: s.role === 'admin' && !!detailW._custom && !detailW._relatedOf,
           // admins get a tappable star; everyone else just sees the mark
           starGlyph: detailW.starred ? '★' : '☆',
           starColor: detailW.starred ? '#d0342c' : 'var(--color-neutral-400)',
@@ -12258,6 +12292,7 @@ class Component extends DCLogic {
       isEditingWord: !!s.editWordId, closeEditWord: () => this.closeEditWord(),
       editDetailWord: () => this.editDetailWord(),
       shareDetailWord: () => this.shareDetailWord(),
+      deleteDetailWord: () => this.deleteDetailWord(),
       edJp: s.edJp, onEdJp: e => this.onEdJp(e),
       edKana: s.edKana, onEdKana: e => this.onEdKana(e),
       edPos: s.edPos, onEdPos: e => this.onEdPos(e),
