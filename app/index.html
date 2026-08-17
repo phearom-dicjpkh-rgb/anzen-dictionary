@@ -1694,7 +1694,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isAddWord }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;">
-          <button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ goMenu }}">← ម៉ីនុយ</button>
+          <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
           <h1 style="font-size:26px;margin:0 0 14px;">បញ្ចូលពាក្យថ្មី</h1>
 
           <div class="field" style="margin-bottom:10px;"><label>សៀវភៅ</label>
@@ -1806,7 +1806,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isPlayer }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 20px;min-height:660px;display:flex;flex-direction:column;box-sizing:border-box;">
-          <button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ leavePlayer }}">← ម៉ីនុយ</button>
+          <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ leavePlayer }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
           <h1 style="font-size:26px;margin:0 0 14px;">ចាក់ពាក្យ 🎧</h1>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
             <sc-for list="{{ playerSrcChips }}" as="c" hint-placeholder-count="4">
@@ -1882,7 +1882,7 @@ textarea.input { min-height: 90px; resize: vertical; }
         <sc-if value="{{ isLibrary }}" hint-placeholder-val="{{ false }}">
           <sc-if value="{{ libIsList }}">
           <div style="padding:18px 20px 40px;">
-            <button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ goMenu }}">← ម៉ីនុយ</button>
+            <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px;">
               <h1 style="font-size:24px;margin:0;">បណ្ណាល័យសៀវភៅ</h1>
               <button class="btn btn-primary" style="padding:9px 14px;font-size:13px;" sc-camel-on-click="{{ libNewBook }}">+ សៀវភៅថ្មី</button>
@@ -1919,7 +1919,7 @@ textarea.input { min-height: 90px; resize: vertical; }
         <sc-if value="{{ isReadBooks }}" hint-placeholder-val="{{ false }}">
           <sc-if value="{{ rbIsList }}">
           <div style="padding:18px 20px 40px;">
-            <button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ goMenu }}">← ម៉ីនុយ</button>
+            <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
             <h1 style="font-size:24px;margin:0 0 4px;">អានសៀវភៅ</h1>
             <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">ជ្រើសរើសសៀវភៅ ដើម្បីចាប់ផ្ដើមអាន</div>
             <sc-if value="{{ rbBusy }}"><div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">កំពុងផ្ទុក…</div></sc-if>
@@ -1952,7 +1952,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isShare }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 40px;">
-          <button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ goMenu }}">← ម៉ីនុយ</button>
+          <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
           <h1 style="font-size:26px;margin:0 0 4px;">រូបភាពចែករំលែក</h1>
           <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">បង្កើត​រូបភាព​ពាក្យ​ស្អាតៗ សម្រាប់​ចែក​រំលែក​លើ​បណ្ដាញ​សង្គម</div>
           <div class="field" style="margin-bottom:10px;"><label>ជ្រើសរើសពាក្យ</label>
@@ -2008,7 +2008,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isBooks }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;">
-          <button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ goMenu }}">← ម៉ីនុយ</button>
+          <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
           <h1 style="font-size:26px;margin:0 0 4px;">សៀវភៅ</h1>
           <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">ចាក់សោសៀវភៅ ដើម្បីមិនទាន់បង្ហាញទៅសាលា ឬ ជ្រើសរើសសាលាដែលអាចមើលបាន</div>
           <div class="card elev-sm" style="gap:8px;margin-bottom:16px;">
@@ -2093,7 +2093,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isAdminScreen }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;">
-          <sc-if value="{{ hasMenuTab }}"><button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ goMenu }}">← ម៉ីនុយ</button></sc-if>
+          <sc-if value="{{ hasMenuTab }}"><button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button></sc-if>
           <h1 style="font-size:26px;margin:0 0 4px;">គ្រប់គ្រងគណនី</h1>
           <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">បង្កើតគណនី គ្រូ ឬ សិស្ស</div>
 
@@ -2107,9 +2107,18 @@ textarea.input { min-height: 90px; resize: vertical; }
               <h2 style="font-size:19px;margin:0;font-family:var(--font-heading);">បង្កើតគណនី គ្រូ ឬ សិស្ស</h2>
               <button class="btn btn-icon btn-ghost" sc-camel-on-click="{{ closeCreateDialog }}" aria-label="បិទ" style="font-size:16px;">✕</button>
             </div>
-            <div class="field"><label>ឈ្មោះ</label><input class="input" type="text" value="{{ adminFullName }}" sc-camel-on-change="{{ onAdminFullName }}"></div>
-            <div class="field"><label>អ៊ីមែល</label><input class="input" type="email" value="{{ adminEmail }}" sc-camel-on-change="{{ onAdminEmail }}"></div>
-            <div class="field"><label>ពាក្យសម្ងាត់</label><input class="input" type="text" value="{{ adminPassword }}" sc-camel-on-change="{{ onAdminPassword }}"></div>
+            <div class="field"><label>ប្រភេទគណនី</label>
+              <div class="seg">
+                <label class="seg-opt"><input type="radio" name="arole" checked="{{ isAdminRoleStudent }}" sc-camel-on-change="{{ setAdminRoleStudent }}"><span>សិស្ស</span></label>
+                <label class="seg-opt"><input type="radio" name="arole" checked="{{ isAdminRoleTeacher }}" sc-camel-on-change="{{ setAdminRoleTeacher }}"><span>គ្រូ</span></label>
+                <sc-if value="{{ canCreateSchool }}">
+                <label class="seg-opt"><input type="radio" name="arole" checked="{{ isAdminRoleSchool }}" sc-camel-on-change="{{ setAdminRoleSchool }}"><span>សាលា/សាខា</span></label>
+                </sc-if>
+              </div>
+            </div>
+            <sc-if value="{{ createRoleSchool }}">
+            <div class="field"><label>ឈ្មោះម្ចាស់ (សាលា/សាខា)</label><input class="input" type="text" value="{{ adminOwnerName }}" sc-camel-on-change="{{ onAdminOwnerName }}"></div>
+            </sc-if>
             <div class="field"><label>ភេទ</label>
               <div class="seg">
                 <label class="seg-opt"><input type="radio" name="agender" checked="{{ isGenderMale }}" sc-camel-on-change="{{ setGenderMale }}"><span>ប្រុស</span></label>
@@ -2120,15 +2129,26 @@ textarea.input { min-height: 90px; resize: vertical; }
               <input class="input" type="date" value="{{ adminBirthDate }}" sc-camel-on-change="{{ onAdminBirthDate }}">
               <sc-if value="{{ hasBirthZodiac }}"><div style="font-size:12px;opacity:0.75;margin-top:7px;">អាវ៉ាតាតាមឆ្នាំកំណើត៖ <span style="font-size:19px;vertical-align:middle;">{{ birthZodiac }}</span></div></sc-if>
             </div>
-            <div class="field"><label>ប្រភេទគណនី</label>
-              <div class="seg">
-                <label class="seg-opt"><input type="radio" name="arole" checked="{{ isAdminRoleStudent }}" sc-camel-on-change="{{ setAdminRoleStudent }}"><span>សិស្ស</span></label>
-                <label class="seg-opt"><input type="radio" name="arole" checked="{{ isAdminRoleTeacher }}" sc-camel-on-change="{{ setAdminRoleTeacher }}"><span>គ្រូ</span></label>
-                <sc-if value="{{ canCreateSchool }}">
-                <label class="seg-opt"><input type="radio" name="arole" checked="{{ isAdminRoleSchool }}" sc-camel-on-change="{{ setAdminRoleSchool }}"><span>សាលា/សាខា</span></label>
-                </sc-if>
+            <sc-if value="{{ createRoleSchool }}"><div class="field"><label>ឈ្មោះសាលា/សាខា</label><input class="input" type="text" value="{{ adminFullName }}" sc-camel-on-change="{{ onAdminFullName }}"></div></sc-if>
+            <sc-if value="{{ createRoleNotSchool }}"><div class="field"><label>ឈ្មោះ</label><input class="input" type="text" value="{{ adminFullName }}" sc-camel-on-change="{{ onAdminFullName }}"></div></sc-if>
+            <div class="field"><label>អ៊ីមែល</label><input class="input" type="email" value="{{ adminEmail }}" sc-camel-on-change="{{ onAdminEmail }}"></div>
+            <div class="field"><label>ពាក្យសម្ងាត់</label><input class="input" type="text" value="{{ adminPassword }}" sc-camel-on-change="{{ onAdminPassword }}"></div>
+            <sc-if value="{{ createRoleSchool }}">
+            <div class="field"><label>និមិត្តសញ្ញាសាលា/សាខា</label>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <sc-if value="{{ hasAdminLogo }}"><img src="{{ adminLogo }}" alt="" style="width:52px;height:52px;border-radius:10px;object-fit:cover;border:1px solid var(--color-divider);flex:none;"></sc-if>
+                <sc-if value="{{ noAdminLogo }}"><div style="width:52px;height:52px;border-radius:10px;background:var(--color-surface);border:1px dashed var(--color-divider);display:flex;align-items:center;justify-content:center;font-size:20px;flex:none;">🏫</div></sc-if>
+                <input type="file" accept="image/*" sc-camel-on-change="{{ onAdminLogoFile }}" style="font-size:12px;flex:1;min-width:0;">
+                <sc-if value="{{ hasAdminLogo }}"><button class="btn btn-ghost" style="flex:none;font-size:12px;color:#c0342c;padding:4px 6px;" sc-camel-on-click="{{ clearAdminLogo }}">លុប</button></sc-if>
               </div>
             </div>
+            <div class="field"><label>ពណ៌តំណាងសាលា/សាខា</label>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <input type="color" value="{{ adminColor }}" sc-camel-on-change="{{ onAdminColor }}" style="width:46px;height:36px;border:1px solid var(--color-divider);border-radius:8px;background:none;cursor:pointer;padding:2px;">
+                <span style="font-size:12px;opacity:0.6;font-family:monospace;">{{ adminColor }}</span>
+              </div>
+            </div>
+            </sc-if>
             <sc-if value="{{ showSchoolPickCreate }}">
             <div class="field">
               <label>សាលា/សាខា</label>
@@ -2321,7 +2341,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;">
-          <sc-if value="{{ hasMenuTab }}"><button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ goMenu }}">← ម៉ីនុយ</button></sc-if>
+          <sc-if value="{{ hasMenuTab }}"><button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button></sc-if>
           <h1 style="font-size:26px;margin:0 0 4px;">ការកំណត់</h1>
           <div style="font-size:12px;opacity:0.6;margin-bottom:6px;">{{ roleLabel }} · {{ profileName }} · <a href="#" sc-camel-on-click="{{ switchRole }}">ចេញពីគណនី</a></div>
           <div style="font-size:12px;margin-bottom:16px;"><a href="install.html" target="_blank" rel="noopener">ទំព័រ QR សម្រាប់ចែករំលែក និងដំឡើង →</a></div>
@@ -8475,6 +8495,15 @@ function makeSupabaseBackend(){
       return { url: data.publicUrl + '?v=' + Date.now() };   // cache-bust so the new logo shows
     },
     async deleteLogo(){ try { await client.storage.from('logos').remove(['logo.png']); } catch(e){} return { error:null }; },
+    // a per-branch logo goes to its own file in the same bucket (unique name so branches don't overwrite each other)
+    async uploadSchoolLogo(blob){
+      const path = 'school-' + Date.now() + '.png';
+      const { error } = await client.storage.from('logos').upload(path, blob, { upsert:true, contentType:'image/png', cacheControl:'3600' });
+      if (error) return { error: error.message };
+      const { data } = client.storage.from('logos').getPublicUrl(path);
+      if (!data || !data.publicUrl) return { error:'មិនអាចយក URL របស់និមិត្តសញ្ញាបានទេ' };
+      return { url: data.publicUrl };
+    },
     async getOverrides(){ const { data } = await client.from('word_overrides').select('word_id,jp,kana,pos,km,examples,starred,img'); return { rows: data || [] }; },
     // only touches the starred column, so it never clobbers a correction
     async setStar(word_id, starred){
@@ -8618,6 +8647,7 @@ function makeDemoBackend(){
     async saveExerciseLock(patch){ const cur=(await this.getAppSettings()); const cols=LOCK_COLS[patch.kind||'quiz']; cur[cols[0]]=!!patch.locked; cur[cols[1]]=patch.schools||[]; localStorage.setItem('dict_app_settings', JSON.stringify(cur)); return { error:null }; },
     // No Storage in demo mode — keep the image inline as a data URI.
     async uploadLogo(blob){ const url = await new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); }); return { url }; },
+    async uploadSchoolLogo(blob){ const url = await new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); }); return { url }; },
     async deleteLogo(){ return { error:null }; },
     async syncWords(){ return { error: 'Demo mode — គ្មានការភ្ជាប់ទៅ GitHub ទេ' }; },
     async getOverrides(){ try { return { rows: JSON.parse(localStorage.getItem('dict_demo_overrides') || '[]') }; } catch(e) { return { rows: [] }; } },
@@ -8686,6 +8716,7 @@ class Component extends DCLogic {
     // admin (create accounts)
     adminFullName: '', adminEmail: '', adminPassword: '', adminRole: 'student', adminTeacherId: '', adminSchoolId: '',
     adminGender: '', adminBirthDate: '', createDialogOpen: false,
+    adminOwnerName: '', adminColor: '#2f6fb0', adminLogo: '', adminLogoBlob: null,   // school/branch: owner name, colour, logo
     adminBusy: false, adminMsg: '', adminError: '', teachers: [], accounts: [], schools: [],
     // admin (edit account dialog)
     editingId: null, editFullName: '', editRole: 'student', editTeacherId: '', editSchoolId: '', editPassword: '',
@@ -9394,23 +9425,55 @@ class Component extends DCLogic {
   closeCreateDialog(){ this.setState({ createDialogOpen: false }); }
   setAdminGender(g){ this.setState({ adminGender: g }); }
   onAdminBirthDate(e){ this.setState({ adminBirthDate: e.target.value }); }
+  onAdminOwnerName(e){ this.setState({ adminOwnerName: e.target.value }); }
+  onAdminColor(e){ this.setState({ adminColor: e.target.value }); }
+  clearAdminLogo(){ this.setState({ adminLogo: '', adminLogoBlob: null }); }
+  onAdminLogoFile(e){
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    if (!/^image\//.test(f.type)) { this.setState({ adminError: 'សូមជ្រើសរើសរូបភាព' }); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 192; let w = img.width, h = img.height;
+        const scale = Math.min(1, max / Math.max(w, h));
+        w = Math.max(1, Math.round(w * scale)); h = Math.max(1, Math.round(h * scale));
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        const preview = c.toDataURL('image/png');
+        c.toBlob(blob => this.setState({ adminLogo: preview, adminLogoBlob: blob, adminError:'' }), 'image/png');
+      };
+      img.onerror = () => this.setState({ adminError: 'អានរូបភាពមិនបាន' });
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(f);
+  }
   async createAccount(){
     if (this.state.adminBusy) return;
-    const { adminEmail, adminPassword, adminFullName, adminRole, adminSchoolId, adminGender, adminBirthDate } = this.state;
+    const { adminEmail, adminPassword, adminFullName, adminRole, adminSchoolId, adminGender, adminBirthDate, adminOwnerName, adminColor, adminLogoBlob } = this.state;
     if (!adminEmail.trim() || !adminPassword) { this.setState({ adminError: 'សូមបញ្ចូលអ៊ីមែល និង ពាក្យសម្ងាត់', adminMsg: '' }); return; }
+    const isSchool = adminRole === 'school';
     // an admin picks the branch; a school account always creates inside its own
     const schoolId = this.state.role === 'school' ? this.state.userId : adminSchoolId;
-    if (adminRole !== 'school' && !schoolId) { this.setState({ adminError: 'សូមជ្រើសរើសសាលា/សាខា', adminMsg: '' }); return; }
-    // auto-pick the avatar from the birth year's zodiac animal
+    if (!isSchool && !schoolId) { this.setState({ adminError: 'សូមជ្រើសរើសសាលា/សាខា', adminMsg: '' }); return; }
+    if (isSchool && !adminFullName.trim()) { this.setState({ adminError: 'សូមបញ្ចូលឈ្មោះសាលា/សាខា', adminMsg: '' }); return; }
+    this.setState({ adminBusy: true, adminError: '', adminMsg: '' });
+    // the account owner's birth year (school = owner) picks the zodiac avatar
     const year = adminBirthDate ? new Date(adminBirthDate).getFullYear() : 0;
     const avatarAnimal = zodiacFromYear(year);
     const settings = {};
-    if (avatarAnimal) { settings.avatarAnimal = avatarAnimal; settings.avatarColor = '#2f6fb0'; }
+    if (avatarAnimal) settings.avatarAnimal = avatarAnimal;
+    settings.avatarColor = isSchool ? (adminColor || '#2f6fb0') : '#2f6fb0';
     if (adminGender) settings.gender = adminGender;
     if (adminBirthDate) settings.dob = adminBirthDate;
-    this.setState({ adminBusy: true, adminError: '', adminMsg: '' });
+    if (isSchool) {
+      if (adminOwnerName.trim()) settings.ownerName = adminOwnerName.trim();
+      settings.color = adminColor || '#2f6fb0';
+      if (adminLogoBlob) { const up = await Backend.uploadSchoolLogo(adminLogoBlob); if (up.error) { this.setState({ adminBusy: false, adminError: up.error }); return; } if (up.url) settings.logo = up.url; }
+    }
     const email = adminEmail.trim();
-    const { error } = await Backend.createAccount({ email, password: adminPassword, full_name: adminFullName.trim(), role: adminRole, teacher_id: null, school_id: adminRole === 'school' ? null : schoolId, settings });
+    const { error } = await Backend.createAccount({ email, password: adminPassword, full_name: adminFullName.trim(), role: adminRole, teacher_id: null, school_id: isSchool ? null : schoolId, settings });
     if (error) { this.setState({ adminBusy: false, adminError: error }); return; }
     // On the real backend the Edge Function doesn't store settings, so stamp the
     // avatar / DOB / gender onto the fresh profile in a follow-up write (admins may).
@@ -9418,7 +9481,7 @@ class Component extends DCLogic {
       try { const { rows } = await Backend.listAccounts(); const made = (rows || []).find(a => (a.email || '').toLowerCase() === email.toLowerCase());
         if (made && made.id) await Backend.updateAccount(made.id, { settings }); } catch(e) {}
     }
-    this.setState({ adminBusy: false, createDialogOpen: false, adminMsg: 'បង្កើតគណនីជោគជ័យ ✓', adminEmail: '', adminPassword: '', adminFullName: '', adminGender: '', adminBirthDate: '' }, () => this.loadAdminData());
+    this.setState({ adminBusy: false, createDialogOpen: false, adminMsg: 'បង្កើតគណនីជោគជ័យ ✓', adminEmail: '', adminPassword: '', adminFullName: '', adminGender: '', adminBirthDate: '', adminOwnerName: '', adminLogo: '', adminLogoBlob: null, adminColor: '#2f6fb0' }, () => this.loadAdminData());
   }
   goAdmin(){ this.setState({ screen: 'admin', adminMsg:'', adminError:'' }, () => { this.loadAdminData(); this.loadInviteLink(); }); }
 
@@ -12423,6 +12486,12 @@ class Component extends DCLogic {
       adminBirthDate: s.adminBirthDate, onAdminBirthDate: e => this.onAdminBirthDate(e),
       birthZodiac: s.adminBirthDate ? zodiacFromYear(new Date(s.adminBirthDate).getFullYear()) : '',
       hasBirthZodiac: !!(s.adminBirthDate && zodiacFromYear(new Date(s.adminBirthDate).getFullYear())),
+      // school/branch-only fields (owner name, colour, logo)
+      createRoleSchool: s.adminRole === 'school', createRoleNotSchool: s.adminRole !== 'school',
+      adminOwnerName: s.adminOwnerName, onAdminOwnerName: e => this.onAdminOwnerName(e),
+      adminColor: s.adminColor || '#2f6fb0', onAdminColor: e => this.onAdminColor(e),
+      adminLogo: s.adminLogo, hasAdminLogo: !!s.adminLogo, noAdminLogo: !s.adminLogo,
+      onAdminLogoFile: e => this.onAdminLogoFile(e), clearAdminLogo: () => this.clearAdminLogo(),
       isAdminRoleStudent: s.adminRole === 'student', isAdminRoleTeacher: s.adminRole === 'teacher',
       setAdminRoleStudent: () => this.setAdminRoleStudent(), setAdminRoleTeacher: () => this.setAdminRoleTeacher(),
       adminTeacherId: s.adminTeacherId, onAdminTeacher: e => this.onAdminTeacher(e),
