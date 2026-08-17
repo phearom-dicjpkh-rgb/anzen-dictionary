@@ -1305,7 +1305,8 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <sc-if value="{{ monFlat }}">
                   <sc-for list="{{ monRows }}" as="r" hint-placeholder-count="5">
                     <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid transparent;border-radius:10px;cursor:pointer;" sc-camel-on-click="{{ r.onSelect }}">
-                      <div style="flex:none;width:26px;text-align:center;{{ r.badgeStyle }}">{{ r.badge }}</div>
+                      <div style="flex:none;width:22px;text-align:center;{{ r.badgeStyle }}">{{ r.badge }}</div>
+                      <div style="flex:none;width:30px;height:30px;border-radius:50%;background:{{ r.avatarBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);">{{ r.avatarGlyph }}</div>
                       <div style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</div>
                       <sc-if value="{{ r.hasStars }}"><div style="flex:none;font-size:12px;">{{ r.stars }}</div></sc-if>
                       <div style="flex:none;font-size:12px;color:var(--color-accent-700);">{{ r.levelLabel }}</div>
@@ -1323,7 +1324,8 @@ textarea.input { min-height: 90px; resize: vertical; }
                     <sc-if value="{{ g.open }}">
                       <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
                         <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid transparent;border-radius:10px;cursor:pointer;" sc-camel-on-click="{{ r.onSelect }}">
-                          <div style="flex:none;width:26px;text-align:center;{{ r.badgeStyle }}">{{ r.badge }}</div>
+                          <div style="flex:none;width:22px;text-align:center;{{ r.badgeStyle }}">{{ r.badge }}</div>
+                          <div style="flex:none;width:30px;height:30px;border-radius:50%;background:{{ r.avatarBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);">{{ r.avatarGlyph }}</div>
                           <div style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</div>
                           <sc-if value="{{ r.hasStars }}"><div style="flex:none;font-size:12px;">{{ r.stars }}</div></sc-if>
                           <div style="flex:none;font-size:12px;color:var(--color-accent-700);">{{ r.levelLabel }}</div>
@@ -11997,6 +11999,8 @@ class Component extends DCLogic {
       levelLabel: `កម្រិត ${e.level} · ${e.words} ពាក្យ`,
       stars: starLabel(e.stars || 0), hasStars: (e.stars || 0) > 0,
       avatar: e.avatar || '', avatarColor: e.avatarColor || '',
+      avatarGlyph: e.avatar || (e.name || '?').trim().charAt(0).toUpperCase(),
+      avatarBg: e.avatarColor || 'var(--color-accent)',
       onSelect: () => this.selectStudentToView(e.st),
     });
 
