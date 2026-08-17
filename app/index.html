@@ -457,6 +457,18 @@ textarea.input { min-height: 90px; resize: vertical; }
 .elev-md { box-shadow: var(--shadow-md); }
 .elev-lg { box-shadow: var(--shadow-lg); }
 
+/* — ការកំណត់សិទ្ធ permission matrix — */
+.pm-corner { position: sticky; left: 0; z-index: 2; background: var(--color-surface-2, #f3f4f6); border-right: 1px solid var(--color-divider); border-bottom: 1px solid var(--color-divider); padding: 10px 12px; font-size: 11px; font-weight: 700; opacity: 0.7; display: flex; align-items: flex-end; }
+.pm-head { background: var(--color-surface-2, #f3f4f6); border-bottom: 1px solid var(--color-divider); border-left: 1px solid var(--color-divider); padding: 8px 6px; text-align: center; }
+.pm-head-name { font-size: 12px; font-weight: 700; line-height: 1.3; word-break: break-word; }
+.pm-head-sub { font-size: 10px; opacity: 0.55; margin-top: 2px; }
+.pm-group { grid-column: 1 / -1; background: var(--color-accent); color: #fff; font-size: 12px; font-weight: 700; padding: 6px 12px; border-top: 1px solid var(--color-divider); }
+.pm-rowlabel { position: sticky; left: 0; z-index: 1; background: var(--color-surface); border-right: 1px solid var(--color-divider); border-bottom: 1px solid var(--color-divider); padding: 10px 12px; font-size: 13px; display: flex; align-items: center; word-break: break-word; }
+.pm-cell { border: none; border-left: 1px solid var(--color-divider); border-bottom: 1px solid var(--color-divider); background: transparent; font-size: 17px; cursor: pointer; padding: 10px 0; display: flex; align-items: center; justify-content: center; transition: background 0.12s; }
+.pm-cell.pm-locked { background: rgba(214, 48, 49, 0.12); }
+.pm-cell.pm-open { background: rgba(39, 174, 96, 0.12); }
+.pm-cell:active { filter: brightness(0.94); }
+
 /* — tags — */
 .tag {
   display: inline-flex; align-items: center; font-size: 11px;
@@ -1626,10 +1638,10 @@ textarea.input { min-height: 90px; resize: vertical; }
               <span style="opacity:0.4;">›</span>
             </div>
             <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goBooks }}">
-              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"></path></svg>
+              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
               <div style="flex:1;min-width:0;">
-                <div class="card-title" style="font-size:15px;">សៀវភៅ</div>
-                <div class="card-body" style="font-size:11px;">ចាក់សោ ឬ បង្ហាញសៀវភៅទៅសាលា</div>
+                <div class="card-title" style="font-size:15px;">ការកំណត់សិទ្ធ</div>
+                <div class="card-body" style="font-size:11px;">ចាក់សោ ឬ ដោះសោ ធនធានតាមសាលា</div>
               </div>
               <span style="opacity:0.4;">›</span>
             </div>
@@ -2009,85 +2021,30 @@ textarea.input { min-height: 90px; resize: vertical; }
         <sc-if value="{{ isBooks }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;">
           <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
-          <h1 style="font-size:26px;margin:0 0 4px;">សៀវភៅ</h1>
-          <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">ចាក់សោសៀវភៅ ដើម្បីមិនទាន់បង្ហាញទៅសាលា ឬ ជ្រើសរើសសាលាដែលអាចមើលបាន</div>
-          <div class="card elev-sm" style="gap:8px;margin-bottom:16px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;">លំហាត់</div>
-              <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" sc-camel-on-click="{{ toggleExercisesLockAll }}">{{ exLockAllLabel }}</button>
-            </div>
-            <div style="font-size:12px;opacity:0.7;">{{ exLockStatus }}</div>
-            <sc-if value="{{ exLockPerSchool }}">
-              <div style="font-size:11px;opacity:0.55;margin-top:2px;">ឬ ជ្រើសរើសសាលាដែលចង់ចាក់សោ៖</div>
-              <div style="display:flex;flex-direction:column;gap:6px;">
-                <sc-for list="{{ exLockSchools }}" as="sc" hint-placeholder-count="2">
-                  <div style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;" sc-camel-on-click="{{ sc.onToggle }}">
-                    <span style="font-size:16px;">{{ sc.mark }}</span><span>{{ sc.name }}</span>
-                  </div>
+          <h1 style="font-size:26px;margin:0 0 4px;">ការកំណត់សិទ្ធ</h1>
+          <div style="font-size:12px;opacity:0.6;margin-bottom:6px;line-height:1.6;">ជួរឈរ = សាលា/សាខា (រួមទាំងសិស្សក្នុងសាលា) · ជួរដេក = ធនធាន។ ចុចលើប្រអប់ដើម្បីចាក់សោ 🔒 ក្រហម ឬ ដោះសោ 🔓 បៃតង។ ចាក់សោលើសាលា គឺចាក់សោលើសិស្សក្នុងសាលាដូចគ្នា។</div>
+          <sc-if value="{{ permNoSchools }}">
+            <div style="text-align:center;padding:40px 20px;opacity:0.5;font-size:13px;">មិនទាន់មានសាលា/សាខា ដើម្បីកំណត់សិទ្ធ</div>
+          </sc-if>
+          <sc-if value="{{ permHasSchools }}">
+          <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--color-divider);border-radius:var(--radius-md);margin-top:12px;">
+            <div style="display:grid;grid-template-columns:{{ permGridCols }};min-width:max-content;">
+              <div class="pm-corner">ធនធាន</div>
+              <sc-for list="{{ permCols }}" as="c" hint-placeholder-count="2">
+                <div class="pm-head"><div class="pm-head-name">{{ c.name }}</div><div class="pm-head-sub">សិស្ស {{ c.count }}</div></div>
+              </sc-for>
+              <sc-for list="{{ permGroups }}" as="g" hint-placeholder-count="3">
+                <div class="pm-group">{{ g.title }}</div>
+                <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
+                  <div class="pm-rowlabel">{{ r.label }}</div>
+                  <sc-for list="{{ r.cells }}" as="cell" hint-placeholder-count="2">
+                    <button class="pm-cell {{ cell.cls }}" sc-camel-on-click="{{ cell.onToggle }}" title="{{ cell.title }}">{{ cell.glyph }}</button>
+                  </sc-for>
                 </sc-for>
-              </div>
-            </sc-if>
-          </div>
-          <div class="card elev-sm" style="gap:8px;margin-bottom:16px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;">លំហាត់រូបភាព</div>
-              <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" sc-camel-on-click="{{ toggleImgLockAll }}">{{ imgLockAllLabel }}</button>
+              </sc-for>
             </div>
-            <div style="font-size:12px;opacity:0.7;">{{ imgLockStatus }}</div>
-            <sc-if value="{{ imgLockPerSchool }}">
-              <div style="font-size:11px;opacity:0.55;margin-top:2px;">ឬ ជ្រើសរើសសាលាដែលចង់ចាក់សោ៖</div>
-              <div style="display:flex;flex-direction:column;gap:6px;">
-                <sc-for list="{{ imgLockSchools }}" as="sc" hint-placeholder-count="2">
-                  <div style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;" sc-camel-on-click="{{ sc.onToggle }}">
-                    <span style="font-size:16px;">{{ sc.mark }}</span><span>{{ sc.name }}</span>
-                  </div>
-                </sc-for>
-              </div>
-            </sc-if>
           </div>
-          <div class="card elev-sm" style="gap:8px;margin-bottom:16px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;">ប្រឡងសាកល្បង</div>
-              <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" sc-camel-on-click="{{ toggleExamLockAll }}">{{ examLockAllLabel }}</button>
-            </div>
-            <div style="font-size:12px;opacity:0.7;">{{ examLockStatus }}</div>
-            <sc-if value="{{ examLockPerSchool }}">
-              <div style="font-size:11px;opacity:0.55;margin-top:2px;">ឬ ជ្រើសរើសសាលាដែលចង់ចាក់សោ៖</div>
-              <div style="display:flex;flex-direction:column;gap:6px;">
-                <sc-for list="{{ examLockSchools }}" as="sc" hint-placeholder-count="2">
-                  <div style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;" sc-camel-on-click="{{ sc.onToggle }}">
-                    <span style="font-size:16px;">{{ sc.mark }}</span><span>{{ sc.name }}</span>
-                  </div>
-                </sc-for>
-              </div>
-            </sc-if>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:12px;">
-            <sc-for list="{{ bookVisItems }}" as="bk" hint-placeholder-count="2">
-              <div class="card elev-sm" style="gap:10px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;">{{ bk.book }}{{ bk.lockGlyph }}</div>
-                  <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" sc-camel-on-click="{{ bk.onToggleLock }}">{{ bk.lockLabel }}</button>
-                </div>
-                <div style="font-size:12px;opacity:0.7;">{{ bk.status }}</div>
-                <sc-if value="{{ bk.unlocked }}">
-                  <div class="seg" style="margin-top:2px;">
-                    <label class="seg-opt"><input type="radio" checked="{{ bk.isAll }}" sc-camel-on-change="{{ bk.onAll }}"><span>គ្រប់សាលា</span></label>
-                    <label class="seg-opt"><input type="radio" checked="{{ bk.isPick }}" sc-camel-on-change="{{ bk.onPick }}"><span>ជ្រើសរើសសាលា</span></label>
-                  </div>
-                  <sc-if value="{{ bk.isPick }}">
-                    <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
-                      <sc-for list="{{ bk.schools }}" as="sc" hint-placeholder-count="2">
-                        <div style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;" sc-camel-on-click="{{ sc.onToggle }}">
-                          <span style="font-size:16px;">{{ sc.mark }}</span><span>{{ sc.name }}</span>
-                        </div>
-                      </sc-for>
-                    </div>
-                  </sc-if>
-                </sc-if>
-              </div>
-            </sc-for>
-          </div>
+          </sc-if>
         </div>
         </sc-if>
 
@@ -8483,9 +8440,10 @@ function makeSupabaseBackend(){
     },
     async setApproved(id, approved){ const { error } = await client.from('profiles').update({ approved }).eq('id', id); return { error: error ? error.message : null }; },
     async listAccounts(){ const { data } = await client.from('profiles').select('id,email,full_name,role,teacher_id,school_id,approved').order('role'); return { rows:data||[] }; },
-    async getAppSettings(){ const { data } = await client.from('app_settings').select('app_name,logo,exercises_locked,exercises_locked_schools,img_exercises_locked,img_exercises_locked_schools,exam_locked,exam_locked_schools').eq('id',1).single(); const d=data||{}; return { app_name:d.app_name||DEFAULT_APP_NAME, logo:d.logo||'', exercises_locked:!!d.exercises_locked, exercises_locked_schools:d.exercises_locked_schools||[], img_exercises_locked:!!d.img_exercises_locked, img_exercises_locked_schools:d.img_exercises_locked_schools||[], exam_locked:!!d.exam_locked, exam_locked_schools:d.exam_locked_schools||[] }; },
+    async getAppSettings(){ let { data, error } = await client.from('app_settings').select('app_name,logo,exercises_locked,exercises_locked_schools,img_exercises_locked,img_exercises_locked_schools,exam_locked,exam_locked_schools,feature_locks').eq('id',1).single(); if (error) { const r = await client.from('app_settings').select('app_name,logo,exercises_locked,exercises_locked_schools,img_exercises_locked,img_exercises_locked_schools,exam_locked,exam_locked_schools').eq('id',1).single(); data = r.data; } const d=data||{}; return { app_name:d.app_name||DEFAULT_APP_NAME, logo:d.logo||'', exercises_locked:!!d.exercises_locked, exercises_locked_schools:d.exercises_locked_schools||[], img_exercises_locked:!!d.img_exercises_locked, img_exercises_locked_schools:d.img_exercises_locked_schools||[], exam_locked:!!d.exam_locked, exam_locked_schools:d.exam_locked_schools||[], feature_locks:(d.feature_locks && typeof d.feature_locks==='object')?d.feature_locks:{} }; },
     async saveAppSettings(patch){ const { error } = await client.from('app_settings').update({ app_name:patch.app_name, logo:patch.logo, updated_at:new Date().toISOString() }).eq('id',1); return { error: error ? error.message : null }; },
     async saveExerciseLock(patch){ const cols=LOCK_COLS[patch.kind||'quiz']; const upd={ updated_at:new Date().toISOString() }; upd[cols[0]]=!!patch.locked; upd[cols[1]]=patch.schools||[]; const { error } = await client.from('app_settings').update(upd).eq('id',1); return { error: error ? error.message : null }; },
+    async saveFeatureLocks(map){ const { error } = await client.from('app_settings').update({ feature_locks: map || {}, updated_at:new Date().toISOString() }).eq('id',1); return { error: error ? error.message : null }; },
     // Logo file goes to Storage (bucket "logos"); only its URL is kept in the DB.
     async uploadLogo(blob){
       const { error } = await client.storage.from('logos').upload('logo.png', blob, { upsert:true, contentType:'image/png', cacheControl:'3600' });
@@ -8642,7 +8600,8 @@ function makeDemoBackend(){
         : all.filter(u=>u.id===me.id);
       return { rows: visible.map(({id,email,full_name,role,teacher_id,school_id,approved})=>({id,email,full_name,role,teacher_id,school_id,approved})) };
     },
-    async getAppSettings(){ const d={ app_name:DEFAULT_APP_NAME, logo:'', exercises_locked:false, exercises_locked_schools:[], img_exercises_locked:false, img_exercises_locked_schools:[], exam_locked:false, exam_locked_schools:[] }; try { const s=JSON.parse(localStorage.getItem('dict_app_settings')||'null'); if(s) Object.assign(d, s); } catch(e){} return d; },
+    async getAppSettings(){ const d={ app_name:DEFAULT_APP_NAME, logo:'', exercises_locked:false, exercises_locked_schools:[], img_exercises_locked:false, img_exercises_locked_schools:[], exam_locked:false, exam_locked_schools:[], feature_locks:{} }; try { const s=JSON.parse(localStorage.getItem('dict_app_settings')||'null'); if(s) Object.assign(d, s); } catch(e){} if(!d.feature_locks||typeof d.feature_locks!=='object') d.feature_locks={}; return d; },
+    async saveFeatureLocks(map){ const cur=(await this.getAppSettings()); cur.feature_locks=map||{}; localStorage.setItem('dict_app_settings', JSON.stringify(cur)); return { error:null }; },
     async saveAppSettings(patch){ const cur=(await this.getAppSettings()); localStorage.setItem('dict_app_settings', JSON.stringify({ ...cur, app_name:patch.app_name, logo:patch.logo })); return { error:null }; },
     async saveExerciseLock(patch){ const cur=(await this.getAppSettings()); const cols=LOCK_COLS[patch.kind||'quiz']; cur[cols[0]]=!!patch.locked; cur[cols[1]]=patch.schools||[]; localStorage.setItem('dict_app_settings', JSON.stringify(cur)); return { error:null }; },
     // No Storage in demo mode — keep the image inline as a data URI.
@@ -8771,6 +8730,7 @@ class Component extends DCLogic {
     exercisesLocked: false, exercisesLockedSchools: [],
     imgExercisesLocked: false, imgExercisesLockedSchools: [],
     examLocked: false, examLockedSchools: [],
+    featureLocks: {},
     // ប្រឡងសាកល្បង (mock exam)
     examBlock: 1, examQuestions: [], examIdx: 0, examAnswers: [], examDeadline: 0, examRemain: 0,
     examScore: 0, examResults: [], examTimeUp: false,
@@ -9493,7 +9453,8 @@ class Component extends DCLogic {
       this.setState({ appName: s.app_name || DEFAULT_APP_NAME, appLogo: s.logo || '',
         exercisesLocked: !!s.exercises_locked, exercisesLockedSchools: arr(s.exercises_locked_schools),
         imgExercisesLocked: !!s.img_exercises_locked, imgExercisesLockedSchools: arr(s.img_exercises_locked_schools),
-        examLocked: !!s.exam_locked, examLockedSchools: arr(s.exam_locked_schools) });
+        examLocked: !!s.exam_locked, examLockedSchools: arr(s.exam_locked_schools),
+        featureLocks: (s.feature_locks && typeof s.feature_locks === 'object') ? s.feature_locks : {} });
     } catch(e) {}
   }
   // Is this viewer barred from a section? Admin never is; everyone else is if
@@ -9503,6 +9464,15 @@ class Component extends DCLogic {
     if (all) return true;
     const myKey = this.state.role === 'school' ? this.state.userId : this.state.mySchoolId;
     return !!myKey && (schools || []).includes(myKey);
+  }
+  // Prepared for future per-branch feature locks: pass a feature key and this
+  // tells whether the current viewer is barred (admin never is).
+  featureLockedForMe(key){
+    if (this.state.role === 'admin') return false;
+    const list = (this.state.featureLocks || {})[key];
+    if (!Array.isArray(list) || !list.length) return false;
+    const myKey = this.state.role === 'school' ? this.state.userId : this.state.mySchoolId;
+    return !!myKey && list.includes(myKey);
   }
   exercisesLockedForMe(){ return this.lockedForMe(this.state.exercisesLocked, this.state.exercisesLockedSchools); }
   imgExercisesLockedForMe(){ return this.lockedForMe(this.state.imgExercisesLocked, this.state.imgExercisesLockedSchools); }
@@ -10872,6 +10842,46 @@ class Component extends DCLogic {
     this.saveBookVis(book, { schools: [...set] });
   }
 
+  // ── ការកំណត់សិទ្ធ (permission matrix) ─────────────────────────────
+  // Every toggle is per-school. Because a global lock (all schools) and a
+  // per-school list are two different shapes, toggling one cell first
+  // normalises the rule into an explicit per-school list, then flips this
+  // one school — so the matrix always shows a clean lock/unlock per column.
+  permSchoolIds(){ return (this.state.schools || []).map(sc => sc.id); }
+  async togglePermExercise(kind, id){
+    const [lk, sk] = this.lockState(kind);
+    let list;
+    if (this.state[lk]) {                        // was locked for everyone
+      list = this.permSchoolIds().filter(x => x !== id);   // → all but this one
+    } else {
+      const cur = this.state[sk] || [];
+      list = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id];
+    }
+    this.setState({ [lk]: false, [sk]: list });
+    await Backend.saveExerciseLock({ kind, locked: false, schools: list });
+  }
+  async togglePermBook(book, id){
+    const v = BOOK_VIS.get(book) || { locked: false, allSchools: true, schools: new Set() };
+    let allowed;
+    if (v.locked) {                              // barred for everyone → allow just this one
+      allowed = [id];
+    } else if (v.allSchools) {                   // allowed for everyone → bar just this one
+      allowed = this.permSchoolIds().filter(x => x !== id);
+    } else {
+      const set = new Set(v.schools);
+      if (set.has(id)) set.delete(id); else set.add(id);
+      allowed = [...set];
+    }
+    await this.saveBookVis(book, { locked: false, allSchools: false, schools: allowed });
+  }
+  async togglePermFeature(key, id){
+    const map = Object.assign({}, this.state.featureLocks || {});
+    const cur = Array.isArray(map[key]) ? map[key].slice() : [];
+    map[key] = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id];
+    this.setState({ featureLocks: map });
+    await Backend.saveFeatureLocks(map);
+  }
+
   async syncWords(){
     if (this.state.syncBusy) return;
     this.setState({ syncBusy: true, syncMsg: '', syncError: '' });
@@ -12193,27 +12203,58 @@ class Component extends DCLogic {
       rowStyle: b === s.awBook ? 'color:var(--color-accent-700);font-weight:600;' : '' }));
     const awBookLabel = (s.awNewBook || '').trim() || s.awBook || 'ជ្រើសរើសសៀវភៅ';
 
-    // — books visibility screen — one card per book with its rule + branch picks
-    const schoolAccounts = (s.schools || []);
-    const bookVisItems = BOOKS.map(b => {
-      const v = BOOK_VIS.get(b) || { locked: false, allSchools: true, schools: new Set() };
-      const status = v.locked ? 'ជាប់សោ (លាក់ពីសាលា)' : v.allSchools ? 'បង្ហាញគ្រប់សាលា' : `បង្ហាញ ${v.schools.size} សាលា`;
-      return {
-        book: b, status, lockGlyph: v.locked ? ' 🔒' : '',
-        locked: v.locked, unlocked: !v.locked,
-        lockLabel: v.locked ? 'ដោះសោ' : 'ចាក់សោ',
-        isAll: !v.locked && v.allSchools, isPick: !v.locked && !v.allSchools,
-        onToggleLock: () => this.toggleBookLock(b),
-        onAll: () => this.setBookAllSchools(b, true),
-        onPick: () => this.setBookAllSchools(b, false),
-        schools: schoolAccounts.map(sc => ({
-          name: sc.full_name || sc.email,
-          on: v.schools.has(sc.id),
-          mark: v.schools.has(sc.id) ? '☑' : '☐',
-          onToggle: () => this.toggleBookSchool(b, sc.id),
-        })),
-      };
+    // — ការកំណត់សិទ្ធ (permission matrix) — columns = schools, rows = resources.
+    //   Each cell is one branch's lock on one resource; a red 🔒 = barred, a
+    //   green 🔓 = open. Locking a school locks its students by the same rule.
+    const permSchools = (s.schools || []);
+    const permCols = permSchools.map(sc => ({
+      id: sc.id,
+      name: sc.full_name || sc.email,
+      count: s.accounts.filter(a => a.role === 'student' && a.school_id === sc.id).length,
+    }));
+    const permGridCols = `minmax(120px,1.5fr) repeat(${permCols.length || 1},minmax(64px,1fr))`;
+    const permCell = (locked, onToggle) => ({
+      locked, cls: locked ? 'pm-locked' : 'pm-open',
+      glyph: locked ? '🔒' : '🔓',
+      title: locked ? 'ជាប់សោ — ចុចដើម្បីដោះ' : 'ដោះសោ — ចុចដើម្បីចាក់',
+      onToggle,
     });
+    const permExRows = [
+      { kind: 'quiz', label: 'លំហាត់' },
+      { kind: 'img',  label: 'លំហាត់រូបភាព' },
+      { kind: 'exam', label: 'ប្រឡងសាកល្បង' },
+    ].map(r => {
+      const [lk, sk] = this.lockState(r.kind);
+      const on = !!s[lk]; const list = s[sk] || [];
+      return { label: r.label, cells: permCols.map(c => permCell(on || list.includes(c.id), () => this.togglePermExercise(r.kind, c.id))) };
+    });
+    const permBookRows = BOOKS.map(b => {
+      const v = BOOK_VIS.get(b) || { locked: false, allSchools: true, schools: new Set() };
+      return { label: b, cells: permCols.map(c => {
+        const barred = v.locked || (!v.allSchools && !v.schools.has(c.id));
+        return permCell(barred, () => this.togglePermBook(b, c.id));
+      }) };
+    });
+    // Admin-only features prepared for future locking — add a key here + a
+    // gate at the feature's entry point and it joins the matrix, no schema change.
+    const PERM_FEATURES = [
+      { key: 'pdf',       label: 'ទាញយក PDF' },
+      { key: 'addword',   label: 'បញ្ចូលពាក្យ' },
+      { key: 'editword',  label: 'កែពាក្យ' },
+      { key: 'readbooks', label: 'អានសៀវភៅ' },
+      { key: 'share',     label: 'រូបភាពចែករំលែក' },
+    ];
+    const permFeatureLocks = s.featureLocks || {};
+    const permFeatRows = PERM_FEATURES.map(f => {
+      const list = Array.isArray(permFeatureLocks[f.key]) ? permFeatureLocks[f.key] : [];
+      return { label: f.label, cells: permCols.map(c => permCell(list.includes(c.id), () => this.togglePermFeature(f.key, c.id))) };
+    });
+    const permGroups = [
+      { title: 'លំហាត់', rows: permExRows },
+      { title: 'សៀវភៅ', rows: permBookRows },
+      { title: 'មុខងារ Admin (ត្រៀមទុក)', rows: permFeatRows },
+    ];
+    const permHasSchools = permCols.length > 0;
 
     return {
       isHome: s.screen === 'home', isFavorites: s.screen === 'favorites', isSettings: s.screen === 'settings',
@@ -12469,7 +12510,8 @@ class Component extends DCLogic {
       awDupLabel: awDupHit ? `${awDupHit.jp}${awDupHit.kana ? ' ('+awDupHit.kana+')' : ''} · ${awDupHit.km} · ${awDupHit.book}` : '',
 
       // — Admin: book visibility —
-      isBooks: s.screen === 'books', goBooks: () => this.goBooks(), bookVisItems,
+      isBooks: s.screen === 'books', goBooks: () => this.goBooks(),
+      permCols, permGridCols, permGroups, permHasSchools, permNoSchools: !permHasSchools,
 
       // — Admin —
       isAdmin: s.role === 'admin', isAdminScreen: s.screen === 'admin',

@@ -1,0 +1,12 @@
+-- ============================================================================
+--  Anzen Dictionary — generic per-branch feature locks (ការកំណត់សិទ្ធ)
+--  Run this after 22. Safe to re-run.
+--
+--  A single jsonb map on app_settings holds "which branches are locked out of
+--  which feature", so new lockable places can be added later WITHOUT a schema
+--  change — just a new key:
+--    feature_locks = { "pdf": ["school-id-a", ...], "addword": [...], ... }
+--  The existing exercise / book locks keep their own columns; this is only for
+--  the extra admin features the permission matrix will grow into.
+-- ============================================================================
+alter table public.app_settings add column if not exists feature_locks jsonb not null default '{}'::jsonb;
