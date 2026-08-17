@@ -1402,70 +1402,7 @@ textarea.input { min-height: 90px; resize: vertical; }
             </div>
           </div>
 
-          <!-- 1 · usage (always shown) -->
-          <div style="padding:18px 0;border-bottom:1px solid var(--color-divider);">
-            <div style="font-size:11px;letter-spacing:0.1em;opacity:0.5;margin-bottom:14px;">រយៈពេលប្រើប្រាស់</div>
-            <div style="display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:16px;">
-              <span style="font-size:24px;font-weight:800;letter-spacing:-0.02em;">{{ usageTodayLabel }}</span>
-              <span style="font-size:11.5px;opacity:0.5;">ថ្ងៃនេះ · ៧ ថ្ងៃ {{ usageWeekLabel }}</span>
-            </div>
-            <div style="font-size:10.5px;opacity:0.45;margin-bottom:9px;">ចុចលើថ្ងៃ ដើម្បីមើលតាមម៉ោង</div>
-            <div style="display:flex;align-items:flex-end;gap:9px;height:92px;">
-              <sc-for list="{{ usageDays }}" as="d" hint-placeholder-count="7">
-                <div style="flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px;cursor:pointer;" sc-camel-on-click="{{ d.onTap }}">
-                  <div style="width:5px;height:{{ d.barHeight }};background:{{ d.barColor }};border-radius:99px;{{ d.selectedStyle }}"></div>
-                  <div style="font-size:10px;opacity:0.5;">{{ d.label }}</div>
-                </div>
-              </sc-for>
-            </div>
-            <sc-if value="{{ profHourOpen }}">
-            <div style="margin-top:14px;border:1px solid var(--color-accent);border-radius:12px;padding:12px 12px 10px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
-                <span style="font-size:12.5px;font-weight:700;">ថ្ងៃ {{ profHourTitle }} · {{ profHourTotalLabel }}</span>
-                <button sc-camel-on-click="{{ closeProfHour }}" aria-label="បិទ" style="width:26px;height:26px;border:none;border-radius:7px;background:var(--color-neutral-200);color:var(--color-text);font-size:13px;cursor:pointer;">✕</button>
-              </div>
-              <sc-if value="{{ profHourHasData }}">
-                <div style="display:flex;align-items:flex-end;gap:2px;height:80px;">
-                  <sc-for list="{{ profHourBars }}" as="h" hint-placeholder-count="24">
-                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px;">
-                      <div style="width:72%;height:{{ h.barHeight }};background:{{ h.barColor }};border-radius:2px 2px 0 0;"></div>
-                      <div style="font-size:8px;opacity:0.5;">{{ h.label }}</div>
-                    </div>
-                  </sc-for>
-                </div>
-                <div style="text-align:center;font-size:9.5px;opacity:0.45;margin-top:5px;">តាមម៉ោង (0–23)</div>
-              </sc-if>
-              <sc-if value="{{ profHourNoData }}">
-                <div style="font-size:12px;opacity:0.6;text-align:center;padding:12px 0;line-height:1.7;">ថ្ងៃនេះមិនមានទិន្នន័យតាមម៉ោង<br><span style="font-size:11px;opacity:0.8;">(ការកត់ត្រាតាមម៉ោងចាប់ផ្ដើមពេលថ្មីៗ)</span></div>
-              </sc-if>
-            </div>
-            </sc-if>
-          </div>
-
-          <!-- 2 · book progress (collapsible) -->
-          <div style="border-bottom:1px solid var(--color-divider);">
-            <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:16px 0;" sc-camel-on-click="{{ toggleProfProgress }}">
-              <span style="font-size:11px;letter-spacing:0.1em;opacity:0.5;">វឌ្ឍនភាពតាមសៀវភៅ</span>
-              <span style="opacity:0.4;font-size:12px;">{{ profProgressChevron }}</span>
-            </div>
-            <sc-if value="{{ profProgressOpen }}">
-              <div style="padding-bottom:18px;">
-                <sc-for list="{{ bookStats }}" as="b" hint-placeholder-count="2">
-                  <div style="margin-bottom:16px;">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px;">
-                      <span style="font-size:14px;">{{ b.book }} <small style="opacity:0.45;font-size:11px;">{{ b.countLabel }}</small></span>
-                      <span style="font-size:20px;font-weight:800;letter-spacing:-0.02em;">{{ b.pctLabel }}</span>
-                    </div>
-                    <div style="height:3px;background:var(--color-neutral-200);border-radius:99px;overflow:hidden;">
-                      <div style="height:100%;width:{{ b.barWidth }};background:var(--color-accent);"></div>
-                    </div>
-                  </div>
-                </sc-for>
-              </div>
-            </sc-if>
-          </div>
-
-          <!-- 3 · test results (collapsible) -->
+          <!-- 1 · test results (collapsible) -->
           <div style="border-bottom:1px solid var(--color-divider);">
             <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:16px 0;" sc-camel-on-click="{{ toggleProfTests }}">
               <span style="font-size:11px;letter-spacing:0.1em;opacity:0.5;">លទ្ធផលតេស្ត</span>
@@ -1528,6 +1465,69 @@ textarea.input { min-height: 90px; resize: vertical; }
                   </sc-for>
                 </div>
                 </sc-if>
+              </div>
+            </sc-if>
+          </div>
+
+          <!-- 2 · usage (always shown) -->
+          <div style="padding:18px 0;border-bottom:1px solid var(--color-divider);">
+            <div style="font-size:11px;letter-spacing:0.1em;opacity:0.5;margin-bottom:14px;">រយៈពេលប្រើប្រាស់</div>
+            <div style="display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:16px;">
+              <span style="font-size:24px;font-weight:800;letter-spacing:-0.02em;">{{ usageTodayLabel }}</span>
+              <span style="font-size:11.5px;opacity:0.5;">ថ្ងៃនេះ · ៧ ថ្ងៃ {{ usageWeekLabel }}</span>
+            </div>
+            <div style="font-size:10.5px;opacity:0.45;margin-bottom:9px;">ចុចលើថ្ងៃ ដើម្បីមើលតាមម៉ោង</div>
+            <div style="display:flex;align-items:flex-end;gap:9px;height:92px;">
+              <sc-for list="{{ usageDays }}" as="d" hint-placeholder-count="7">
+                <div style="flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px;cursor:pointer;" sc-camel-on-click="{{ d.onTap }}">
+                  <div style="width:5px;height:{{ d.barHeight }};background:{{ d.barColor }};border-radius:99px;{{ d.selectedStyle }}"></div>
+                  <div style="font-size:10px;opacity:0.5;">{{ d.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ profHourOpen }}">
+            <div style="margin-top:14px;border:1px solid var(--color-accent);border-radius:12px;padding:12px 12px 10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
+                <span style="font-size:12.5px;font-weight:700;">ថ្ងៃ {{ profHourTitle }} · {{ profHourTotalLabel }}</span>
+                <button sc-camel-on-click="{{ closeProfHour }}" aria-label="បិទ" style="width:26px;height:26px;border:none;border-radius:7px;background:var(--color-neutral-200);color:var(--color-text);font-size:13px;cursor:pointer;">✕</button>
+              </div>
+              <sc-if value="{{ profHourHasData }}">
+                <div style="display:flex;align-items:flex-end;gap:2px;height:80px;">
+                  <sc-for list="{{ profHourBars }}" as="h" hint-placeholder-count="24">
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px;">
+                      <div style="width:72%;height:{{ h.barHeight }};background:{{ h.barColor }};border-radius:2px 2px 0 0;"></div>
+                      <div style="font-size:8px;opacity:0.5;">{{ h.label }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="text-align:center;font-size:9.5px;opacity:0.45;margin-top:5px;">តាមម៉ោង (0–23)</div>
+              </sc-if>
+              <sc-if value="{{ profHourNoData }}">
+                <div style="font-size:12px;opacity:0.6;text-align:center;padding:12px 0;line-height:1.7;">ថ្ងៃនេះមិនមានទិន្នន័យតាមម៉ោង<br><span style="font-size:11px;opacity:0.8;">(ការកត់ត្រាតាមម៉ោងចាប់ផ្ដើមពេលថ្មីៗ)</span></div>
+              </sc-if>
+            </div>
+            </sc-if>
+          </div>
+
+          <!-- 2 · book progress (collapsible) -->
+          <div style="border-bottom:1px solid var(--color-divider);">
+            <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:16px 0;" sc-camel-on-click="{{ toggleProfProgress }}">
+              <span style="font-size:11px;letter-spacing:0.1em;opacity:0.5;">វឌ្ឍនភាពតាមសៀវភៅ</span>
+              <span style="opacity:0.4;font-size:12px;">{{ profProgressChevron }}</span>
+            </div>
+            <sc-if value="{{ profProgressOpen }}">
+              <div style="padding-bottom:18px;">
+                <sc-for list="{{ bookStats }}" as="b" hint-placeholder-count="2">
+                  <div style="margin-bottom:16px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px;">
+                      <span style="font-size:14px;">{{ b.book }} <small style="opacity:0.45;font-size:11px;">{{ b.countLabel }}</small></span>
+                      <span style="font-size:20px;font-weight:800;letter-spacing:-0.02em;">{{ b.pctLabel }}</span>
+                    </div>
+                    <div style="height:3px;background:var(--color-neutral-200);border-radius:99px;overflow:hidden;">
+                      <div style="height:100%;width:{{ b.barWidth }};background:var(--color-accent);"></div>
+                    </div>
+                  </div>
+                </sc-for>
               </div>
             </sc-if>
           </div>
