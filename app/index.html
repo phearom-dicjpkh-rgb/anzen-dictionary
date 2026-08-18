@@ -8425,6 +8425,7 @@ function makeSupabaseBackend(){
     },
     async listTeachers(){ const { data } = await client.from('profiles').select('id,full_name,email,school_id').eq('role','teacher').order('full_name'); return { rows:data||[] }; },
     async listSchools(){ const { data } = await client.from('profiles').select('id,full_name,email,settings').eq('role','school').order('full_name'); return { rows:data||[] }; },
+    async schoolBrand(id){ if(!id) return null; const { data } = await client.rpc('school_brand', { sid: id }); const r = (data && data[0]) || null; return r ? { full_name: r.full_name || '', logo: r.logo || '', color: r.color || '' } : null; },
     // The student leaderboard: a SECURITY DEFINER function returns only name +
     // level + a tiebreak, never a classmate's email or word list, so RLS still
     // hides the details that only a teacher may see.
@@ -8577,6 +8578,7 @@ function makeDemoBackend(){
     async listTeachers(){ const me=this._me(); const all=load().filter(x=>x.role==='teacher');
       return { rows: me && me.role==='school' ? all.filter(t=>t.school_id===me.id) : all }; },
     async listSchools(){ return { rows:load().filter(x=>x.role==='school') }; },
+    async schoolBrand(id){ const u=load().find(x=>x.id===id&&x.role==='school'); return u ? { full_name:u.full_name||'', logo:(u.settings&&u.settings.logo)||'', color:(u.settings&&(u.settings.color||u.settings.avatarColor))||'' } : null; },
     async schoolByToken(token){
       const s=load().find(x=>x.role==='school' && (x.token_student===token || x.token_teacher===token));
       return { school: s ? { id:s.id, full_name:s.full_name, role: s.token_teacher===token ? 'teacher' : 'student' } : null };
@@ -8685,7 +8687,7 @@ class Component extends DCLogic {
     // teacher monitor
     students: [], selectedStudent: null, selectedStudentName: '', viewingViewed: [],
     viewingUsage: {}, viewingListen: {}, viewingUsageHours: {}, monHourDay: null, viewingAvatarAnimal: '', viewingAvatarColor: '', monUsageFrom: '', monUsageTo: '', viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {},
-    viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingExamReport: null, viewingSchoolId: null, viewingHistory: [], monExpandedChip: null, monOpenSections: [],
+    viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingExamReport: null, viewingSchoolId: null, viewingSchoolName: '', viewingSchoolLogo: '', viewingHistory: [], monExpandedChip: null, monOpenSections: [],
     leaderboard: [],   // student standings, name + level only
 
     // self sign-up through a branch invite link
@@ -10990,10 +10992,24 @@ class Component extends DCLogic {
       viewingImgQuizDetails: (st.settings && st.settings.imgQuizDetails) || {},
       viewingExamLog: (st.settings && Array.isArray(st.settings.examLog)) ? st.settings.examLog : [],
       viewingExamReport: (st.settings && st.settings.examReport) || null,
-      viewingSchoolId: st.school_id || null, viewingHistory: Array.isArray(st.history) ? st.history : [],
+      viewingSchoolId: st.school_id || null, viewingSchoolName: '', viewingSchoolLogo: '', viewingHistory: Array.isArray(st.history) ? st.history : [],
       monExpandedChip: null, monOpenSections: [] });
+    this._resolveViewingBrand(st.school_id || null);
   }
-  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingListen: {}, viewingUsageHours: {}, monHourDay: null, viewingAvatarAnimal: '', viewingAvatarColor: '', monUsageFrom: '', monUsageTo: '', viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], monExpandedChip: null, monOpenSections: [] }); }
+  // Resolve the student's branch name + logo for the results PDF header. Admin
+  // and a branch-viewing-its-own-student resolve locally in _printReport; a
+  // teacher cannot read the school row via RLS, so fetch its public branding.
+  _resolveViewingBrand(schoolId){
+    if (!schoolId) return;
+    const s = this.state;
+    const localAdmin = (s.schools || []).some(x => x.id === schoolId);
+    const localSelf = s.role === 'school' && schoolId === s.userId;
+    if (localAdmin || localSelf) return;
+    Backend.schoolBrand(schoolId)
+      .then(b => { if (b && this.state.viewingSchoolId === schoolId) this.setState({ viewingSchoolName: b.full_name || '', viewingSchoolLogo: b.logo || '' }); })
+      .catch(() => {});
+  }
+  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingListen: {}, viewingUsageHours: {}, monHourDay: null, viewingAvatarAnimal: '', viewingAvatarColor: '', monUsageFrom: '', monUsageTo: '', viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingSchoolName: '', viewingSchoolLogo: '', monExpandedChip: null, monOpenSections: [] }); }
   // tap a day in the weekly bar chart → reveal that day's hour-by-hour breakdown (toggles)
   openHourDetail(dayK){ this.setState({ monHourDay: this.state.monHourDay === dayK ? null : dayK }); }
   onMonUsageFrom(e){ this.setState({ monUsageFrom: e.target.value }); }
@@ -11023,6 +11039,8 @@ class Component extends DCLogic {
     let brandName = '', brandLogo = '';
     if (schoolRec) { brandName = schoolRec.full_name || schoolRec.email || ''; brandLogo = (schoolRec.settings && schoolRec.settings.logo) || ''; }
     else if (s.role === 'school') { brandName = s.profileName || ''; brandLogo = (s.settings && s.settings.logo) || ''; }
+    if (!brandName) brandName = s.viewingSchoolName || '';   // teacher: fetched at select time via school_brand()
+    if (!brandLogo) brandLogo = s.viewingSchoolLogo || '';
     const school = brandName || this.state.appName || '';
     const brandedLogo = brandLogo || this.state.appLogo || '';
     const items = sec.items.map((it, i) => ({
