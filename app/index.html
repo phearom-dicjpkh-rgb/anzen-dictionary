@@ -1233,6 +1233,9 @@ textarea.input { min-height: 90px; resize: vertical; }
                 </sc-for>
               </div>
               <div style="text-align:center;font-size:10px;opacity:0.45;margin-top:6px;">នាទី ក្នុងមួយថ្ងៃ</div>
+              <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;font-size:10px;opacity:0.7;margin-top:8px;border-top:1px solid var(--color-divider);padding-top:8px;">
+                <span>🔴 ក្រោម ១ម៉/ថ្ងៃ</span><span>🟡 ១–២ម៉</span><span>🟢 ២–៤ម៉</span><span>⚫ លើស ៤ម៉</span>
+              </div>
             </div>
 
             <!-- hour-by-hour drill-down for the tapped day -->
@@ -1243,15 +1246,19 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <button sc-camel-on-click="{{ closeHourDetail }}" aria-label="បិទ" style="width:26px;height:26px;border:none;border-radius:7px;background:var(--color-neutral-200);color:var(--color-text);font-size:13px;cursor:pointer;">✕</button>
               </div>
               <sc-if value="{{ monHourHasData }}">
-                <div style="display:flex;align-items:flex-end;gap:2px;height:84px;">
+                <div style="display:flex;align-items:flex-end;gap:2px;height:84px;border-bottom:1px solid var(--color-divider);">
                   <sc-for list="{{ monHourBars }}" as="h" hint-placeholder-count="24">
-                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px;">
+                    <div style="flex:1;display:flex;align-items:flex-end;justify-content:center;height:100%;">
                       <div style="width:72%;height:{{ h.barHeight }};background:{{ h.barColor }};border-radius:2px 2px 0 0;"></div>
-                      <div style="font-size:8px;opacity:0.5;">{{ h.label }}</div>
                     </div>
                   </sc-for>
                 </div>
-                <div style="text-align:center;font-size:9.5px;opacity:0.45;margin-top:5px;">តាមម៉ោង (0–23)</div>
+                <div style="display:flex;gap:2px;margin-top:3px;">
+                  <sc-for list="{{ monHourBars }}" as="h" hint-placeholder-count="24">
+                    <div style="flex:1;text-align:center;font-size:8px;opacity:0.5;">{{ h.label }}</div>
+                  </sc-for>
+                </div>
+                <div style="text-align:center;font-size:9.5px;opacity:0.45;margin-top:4px;">តាមម៉ោង (0–23)</div>
               </sc-if>
               <sc-if value="{{ monHourNoData }}">
                 <div style="font-size:12px;opacity:0.6;text-align:center;padding:14px 0;line-height:1.7;">ថ្ងៃនេះមិនមានទិន្នន័យតាមម៉ោង<br><span style="font-size:11px;opacity:0.8;">(ការកត់ត្រាតាមម៉ោងចាប់ផ្ដើមពេលថ្មីៗ)</span></div>
@@ -1522,6 +1529,9 @@ textarea.input { min-height: 90px; resize: vertical; }
                 </div>
               </sc-for>
             </div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px 12px;font-size:10px;opacity:0.7;margin-top:10px;">
+              <span>🔴 ក្រោម ១ម៉/ថ្ងៃ</span><span>🟡 ១–២ម៉</span><span>🟢 ២–៤ម៉</span><span>⚫ លើស ៤ម៉</span>
+            </div>
             <sc-if value="{{ profHourOpen }}">
             <div style="margin-top:14px;border:1px solid var(--color-accent);border-radius:12px;padding:12px 12px 10px;">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
@@ -1529,15 +1539,19 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <button sc-camel-on-click="{{ closeProfHour }}" aria-label="បិទ" style="width:26px;height:26px;border:none;border-radius:7px;background:var(--color-neutral-200);color:var(--color-text);font-size:13px;cursor:pointer;">✕</button>
               </div>
               <sc-if value="{{ profHourHasData }}">
-                <div style="display:flex;align-items:flex-end;gap:2px;height:80px;">
+                <div style="display:flex;align-items:flex-end;gap:2px;height:80px;border-bottom:1px solid var(--color-divider);">
                   <sc-for list="{{ profHourBars }}" as="h" hint-placeholder-count="24">
-                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px;">
+                    <div style="flex:1;display:flex;align-items:flex-end;justify-content:center;height:100%;">
                       <div style="width:72%;height:{{ h.barHeight }};background:{{ h.barColor }};border-radius:2px 2px 0 0;"></div>
-                      <div style="font-size:8px;opacity:0.5;">{{ h.label }}</div>
                     </div>
                   </sc-for>
                 </div>
-                <div style="text-align:center;font-size:9.5px;opacity:0.45;margin-top:5px;">តាមម៉ោង (0–23)</div>
+                <div style="display:flex;gap:2px;margin-top:3px;">
+                  <sc-for list="{{ profHourBars }}" as="h" hint-placeholder-count="24">
+                    <div style="flex:1;text-align:center;font-size:8px;opacity:0.5;">{{ h.label }}</div>
+                  </sc-for>
+                </div>
+                <div style="text-align:center;font-size:9.5px;opacity:0.45;margin-top:4px;">តាមម៉ោង (0–23)</div>
               </sc-if>
               <sc-if value="{{ profHourNoData }}">
                 <div style="font-size:12px;opacity:0.6;text-align:center;padding:12px 0;line-height:1.7;">ថ្ងៃនេះមិនមានទិន្នន័យតាមម៉ោង<br><span style="font-size:11px;opacity:0.8;">(ការកត់ត្រាតាមម៉ោងចាប់ផ្ដើមពេលថ្មីៗ)</span></div>
@@ -8372,7 +8386,43 @@ function buildUsageChart(usage){
     d.barColor = d.isToday ? 'var(--color-accent)' : 'var(--color-neutral-400)';
     d.minsLabel = d.mins > 0 ? String(d.mins) : '';
   });
+  days.forEach(d => { d.barColor = usageDayColor(d.secs); });   // colour by how long they studied that day
   return { days, todayLabel: fmtDuration((usage && usage[dayKey(new Date())]) || 0), weekLabel: fmtDuration(week) };
+}
+
+// — Study-intensity colours (a shared heat scale for the usage charts) —
+const USAGE_BLACK = '#2d2b2b', USAGE_GREEN = '#2e9e5b', USAGE_YELLOW = '#e0a11b', USAGE_RED = '#d0453c', USAGE_ZERO = 'var(--color-neutral-300)';
+// One day's total time → colour: red <1h, yellow 1–2h, green 2–4h, black >4h.
+function usageDayColor(secs){
+  if (!(secs > 0)) return USAGE_ZERO;
+  const h = secs / 3600;
+  if (h > 4)  return USAGE_BLACK;
+  if (h >= 2) return USAGE_GREEN;
+  if (h >= 1) return USAGE_YELLOW;
+  return USAGE_RED;
+}
+// One hour bar, coloured by the whole consecutive sitting it belongs to:
+// red <30m, yellow >30m, green >1h30, black >2h of unbroken study.
+function usageHourColor(runSecs, sec){
+  if (!(sec > 0)) return USAGE_ZERO;
+  if (runSecs > 7200) return USAGE_BLACK;
+  if (runSecs > 5400) return USAGE_GREEN;
+  if (runSecs > 1800) return USAGE_YELLOW;
+  return USAGE_RED;
+}
+// For an array of 24 hourly seconds, return each hour's consecutive-run total
+// (the sum of the unbroken block of active hours that hour sits in).
+function hourRunTotals(secByHour){
+  const run = new Array(24).fill(0);
+  let i = 0;
+  while (i < 24) {
+    if (!((secByHour[i] || 0) > 0)) { i++; continue; }
+    let j = i, sum = 0;
+    while (j < 24 && (secByHour[j] || 0) > 0) { sum += secByHour[j] || 0; j++; }
+    for (let k = i; k < j; k++) run[k] = sum;
+    i = j;
+  }
+  return run;
 }
 
 // A learner's "level": how many lessons they have passed across every ladder.
@@ -11971,8 +12021,9 @@ class Component extends DCLogic {
       const rec = ((s.settings && s.settings.usageHours) || {})[dk] || {};
       let peak = 60, total = 0; const raw = [];
       for (let h = 0; h < 24; h++) { const sec = rec[h] || rec[String(h)] || 0; total += sec; if (sec > peak) peak = sec; raw.push({ h, sec }); }
+      const runs = hourRunTotals(raw.map(x => x.sec));
       const bars = raw.map(x => ({ barHeight: Math.max(x.sec > 0 ? 8 : 2, Math.round(x.sec / peak * 100)) + '%',
-        barColor: x.sec > 0 ? 'var(--color-accent)' : 'var(--color-neutral-300)', label: (x.h % 6 === 0) ? String(x.h) : '' }));
+        barColor: usageHourColor(runs[x.h], x.sec), label: (x.h % 6 === 0) ? String(x.h) : '' }));
       const d = new Date(dk);
       return { profHourOpen: true, profHourBars: bars, profHourHasData: total > 0, profHourNoData: total === 0,
         profHourTitle: `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`, profHourTotalLabel: fmtDuration(total) };
@@ -12432,9 +12483,10 @@ class Component extends DCLogic {
         const rec = (s.viewingUsageHours || {})[dk] || {};
         let peak = 60, total = 0; const raw = [];
         for (let h = 0; h < 24; h++) { const sec = rec[h] || rec[String(h)] || 0; total += sec; if (sec > peak) peak = sec; raw.push({ h, sec }); }
+        const runs = hourRunTotals(raw.map(x => x.sec));
         const bars = raw.map(x => ({
           barHeight: Math.max(x.sec > 0 ? 8 : 2, Math.round(x.sec / peak * 100)) + '%',
-          barColor: x.sec > 0 ? 'var(--color-accent)' : 'var(--color-neutral-300)',
+          barColor: usageHourColor(runs[x.h], x.sec),
           label: (x.h % 6 === 0) ? String(x.h) : '',
           minsLabel: x.sec >= 30 ? String(Math.round(x.sec / 60)) : '',
         }));
