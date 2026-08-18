@@ -1234,7 +1234,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               </div>
               <div style="text-align:center;font-size:10px;opacity:0.45;margin-top:6px;">នាទី ក្នុងមួយថ្ងៃ</div>
               <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;font-size:10px;opacity:0.7;margin-top:8px;border-top:1px solid var(--color-divider);padding-top:8px;">
-                <span>🔴 ក្រោម ១ម៉/ថ្ងៃ</span><span>🟡 ១–២ម៉</span><span>🟢 ២–៤ម៉</span><span>⚫ លើស ៤ម៉</span>
+                <span>🔴 ក្រោម ១ម៉</span><span>🟡 ១–២ម៉</span><span>🟢 ២–៤ម៉</span><span>⚫ លើស ៤ម៉</span>
               </div>
             </div>
 
@@ -1530,7 +1530,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               </sc-for>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:4px 12px;font-size:10px;opacity:0.7;margin-top:10px;">
-              <span>🔴 ក្រោម ១ម៉/ថ្ងៃ</span><span>🟡 ១–២ម៉</span><span>🟢 ២–៤ម៉</span><span>⚫ លើស ៤ម៉</span>
+              <span>🔴 ក្រោម ១ម៉</span><span>🟡 ១–២ម៉</span><span>🟢 ២–៤ម៉</span><span>⚫ លើស ៤ម៉</span>
             </div>
             <sc-if value="{{ profHourOpen }}">
             <div style="margin-top:14px;border:1px solid var(--color-accent);border-radius:12px;padding:12px 12px 10px;">
@@ -8402,11 +8402,11 @@ function usageDayColor(secs){
   return USAGE_RED;
 }
 // One hour bar, coloured by the whole consecutive sitting it belongs to:
-// red <30m, yellow >30m, green >1h30, black >2h of unbroken study.
+// red <30m, yellow >30m, green >1h, black >2h of unbroken study.
 function usageHourColor(runSecs, sec){
   if (!(sec > 0)) return USAGE_ZERO;
   if (runSecs > 7200) return USAGE_BLACK;
-  if (runSecs > 5400) return USAGE_GREEN;
+  if (runSecs > 3600) return USAGE_GREEN;
   if (runSecs > 1800) return USAGE_YELLOW;
   return USAGE_RED;
 }
