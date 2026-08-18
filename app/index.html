@@ -9465,10 +9465,11 @@ class Component extends DCLogic {
     const myKey = this.state.role === 'school' ? this.state.userId : this.state.mySchoolId;
     return !!myKey && (schools || []).includes(myKey);
   }
-  // Prepared for future per-branch feature locks: pass a feature key and this
-  // tells whether the current viewer is barred (admin never is).
-  featureLockedForMe(key){
-    if (this.state.role === 'admin') return false;
+  // The "មុខងារ Admin" group is admin-only by default; unlocking a cell adds
+  // that branch to feature_locks[key] as a GRANT. So this returns true when the
+  // viewer is the admin, or a branch/its staff that was granted the feature.
+  featureGrantedForMe(key){
+    if (this.state.role === 'admin') return true;
     const list = (this.state.featureLocks || {})[key];
     if (!Array.isArray(list) || !list.length) return false;
     const myKey = this.state.role === 'school' ? this.state.userId : this.state.mySchoolId;
@@ -12042,7 +12043,7 @@ class Component extends DCLogic {
         const er = s.viewingExamReport;
         const hasDetail = (Array.isArray(h.items) && h.items.length > 0)
           || (h.mode === 'exam' && er && Array.isArray(er.items) && er.date === h.date);
-        const canOpen = s.role === 'admin' && hasDetail;
+        const canOpen = (s.role === 'admin' || this.featureGrantedForMe('pdf')) && hasDetail;
         return {
           label: labeler(h), passed,
           scoreLabel: `${h.score}/${h.total} · ${pct}%`,
@@ -12244,15 +12245,17 @@ class Component extends DCLogic {
       { key: 'readbooks', label: 'អានសៀវភៅ' },
       { key: 'share',     label: 'រូបភាពចែករំលែក' },
     ];
-    const permFeatureLocks = s.featureLocks || {};
+    // Admin features work the other way round: locked (admin-only) by default,
+    // so a branch appears 🔒 until its id is present in the grant list.
+    const permFeatureGrants = s.featureLocks || {};
     const permFeatRows = PERM_FEATURES.map(f => {
-      const list = Array.isArray(permFeatureLocks[f.key]) ? permFeatureLocks[f.key] : [];
-      return { label: f.label, cells: permCols.map(c => permCell(list.includes(c.id), () => this.togglePermFeature(f.key, c.id))) };
+      const list = Array.isArray(permFeatureGrants[f.key]) ? permFeatureGrants[f.key] : [];
+      return { label: f.label, cells: permCols.map(c => permCell(!list.includes(c.id), () => this.togglePermFeature(f.key, c.id))) };
     });
     const permGroups = [
       { title: 'លំហាត់', rows: permExRows },
       { title: 'សៀវភៅ', rows: permBookRows },
-      { title: 'មុខងារ Admin (ត្រៀមទុក)', rows: permFeatRows },
+      { title: 'សិទ្ធិ Admin (ដោះសោ ➜ អនុញ្ញាតឲ្យសាលា)', rows: permFeatRows },
     ];
     const permHasSchools = permCols.length > 0;
 
@@ -12332,7 +12335,7 @@ class Component extends DCLogic {
       // each openable as a PDF (admin). Tap the title to hide/show the list.
       wordSec, quizSec, imgSec, examSec,
       hasAnyAttempts: wordSec.hasAny || quizSec.hasAny || imgSec.hasAny || examSec.hasAny,
-      attemptsHint: s.role === 'admin' ? 'ចុចលើការធ្វើនីមួយៗ ដើម្បីទាញយក PDF' : 'រាល់ការធ្វើរបស់សិស្ស',
+      attemptsHint: (s.role === 'admin' || this.featureGrantedForMe('pdf')) ? 'ចុចលើការធ្វើនីមួយៗ ដើម្បីទាញយក PDF' : 'រាល់ការធ្វើរបស់សិស្ស',
       monitorUsageDays: monitorChart.days.map(d => ({ ...d, selected: s.monHourDay === d.dayKey, selectedStyle: s.monHourDay === d.dayKey ? 'outline:2px solid var(--color-accent-700);outline-offset:1px;' : '', onTap: () => this.openHourDetail(d.dayKey) })),
       monitorUsageTodayLabel: monitorChart.todayLabel,
       monitorUsageWeekLabel: monitorChart.weekLabel,
