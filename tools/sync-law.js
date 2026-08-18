@@ -96,17 +96,19 @@ function toQuestions(rows) {
       console.log(`${lang}.${key}: ${data[lang][key].length} questions`);
     }
   }
-  if (check) return;
-  const block = 'const RAW_LAW = ' + JSON.stringify(data) + ';';
+  const block = 'const RAW_LAW = ' + JSON.stringify(data) + ';\nconst RAW_LAW_END = 1;';
+  const total = Object.values(data).reduce((s, lang) => s + Object.values(lang).reduce((a, arr) => a + arr.length, 0), 0);
   let html = fs.readFileSync(APP, 'utf8');
-  const re = /const RAW_LAW = [\s\S]*?\];?\s*\n?const RAW_LAW_END = 1;/;
-  const marker = block + '\nconst RAW_LAW_END = 1;';
-  if (/const RAW_LAW_END = 1;/.test(html)) {
-    html = html.replace(/const RAW_LAW = [\s\S]*?const RAW_LAW_END = 1;/, marker);
-  } else {
-    html = html.replace('const RAW_LAW_END = 1;', '');
-    html = html.replace('const QUIZ_DECKS = {', marker + '\nconst QUIZ_DECKS = {');
+  const re = /const RAW_LAW = [\s\S]*?const RAW_LAW_END = 1;/;
+  let changed;
+  if (re.test(html)) {
+    changed = html.match(re)[0] !== block;
+    if (changed && !check) { fs.writeFileSync(APP, html.replace(re, block)); }
+  } else {                       // first time — insert before QUIZ_DECKS
+    changed = true;
+    if (!check) fs.writeFileSync(APP, html.replace('const QUIZ_DECKS = {', block + '\nconst QUIZ_DECKS = {'));
   }
-  fs.writeFileSync(APP, html);
-  console.log('baked RAW_LAW into app/index.html');
+  // let the GitHub Action know whether to commit + redeploy
+  if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, `changed=${changed}\ncount=${total}\n`);
+  console.log(changed ? (check ? `would update RAW_LAW (${total} questions)` : `baked RAW_LAW (${total} questions)`) : 'no change — sheets match what is baked');
 })().catch(e => { console.error(e); process.exit(1); });

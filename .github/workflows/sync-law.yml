@@ -1,0 +1,54 @@
+name: Sync traffic-law tests from Google Sheets
+
+# Runs by itself every hour (at :15, so it never races the word sync at :00
+# or the exercise sync at :30), so editing the law sheets is enough — nothing
+# to press. Also available manually from the Actions tab. It commits only when
+# the sheets actually differ, so idle runs cost nothing.
+on:
+  schedule:
+    - cron: '15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write      # commit the refreshed law data
+  actions: write       # kick off the Pages deploy afterwards
+
+concurrency:
+  group: sync-law
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Fetch the sheets and rebuild law data
+        id: sync
+        run: node tools/sync-law.js
+
+      - name: Commit changes
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/index.html
+          git commit -m "Sync traffic-law tests from Google Sheets (${{ steps.sync.outputs.count }} questions)"
+          git pull --rebase origin main
+          git push
+
+      - name: Deploy the updated site
+        if: steps.sync.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml
+
+      - name: Nothing to do
+        if: steps.sync.outputs.changed != 'true'
+        run: echo "The sheets match what is already published — no deploy needed."
