@@ -2023,7 +2023,7 @@ textarea.input { min-height: 90px; resize: vertical; }
           <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
           <h1 style="font-size:26px;margin:0 0 4px;">ការកំណត់សិទ្ធ</h1>
           <div style="font-size:12px;opacity:0.6;margin-bottom:6px;line-height:1.6;">ជួរឈរ = សាលា/សាខា (រួមទាំងសិស្សក្នុងសាលា) · ជួរដេក = ធនធាន។ ចុចលើប្រអប់ដើម្បីចាក់សោ 🔒 ក្រហម ឬ ដោះសោ 🔓 បៃតង។ ចាក់សោលើសាលា គឺចាក់សោលើសិស្សក្នុងសាលាដូចគ្នា។</div>
-          <sc-if value="{{ permHasMsg }}"><div style="font-size:12px;line-height:1.6;margin:4px 0 8px;padding:8px 12px;border-radius:var(--radius-sm);{{ permMsgStyle }}">{{ permMsg }}</div></sc-if>
+          <sc-if value="{{ permHasMsg }}"><div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:60;"><div style="max-width:82%;font-size:13px;line-height:1.7;padding:14px 20px;border-radius:14px;text-align:center;box-shadow:0 10px 34px rgba(0,0,0,0.3);{{ permMsgStyle }}">{{ permMsg }}</div></div></sc-if>
           <sc-if value="{{ permNoSchools }}">
             <div style="text-align:center;padding:40px 20px;opacity:0.5;font-size:13px;">មិនទាន់មានសាលា/សាខា ដើម្បីកំណត់សិទ្ធ</div>
           </sc-if>
@@ -8443,8 +8443,8 @@ function makeSupabaseBackend(){
     async listAccounts(){ const { data } = await client.from('profiles').select('id,email,full_name,role,teacher_id,school_id,approved').order('role'); return { rows:data||[] }; },
     async getAppSettings(){ let { data, error } = await client.from('app_settings').select('app_name,logo,exercises_locked,exercises_locked_schools,img_exercises_locked,img_exercises_locked_schools,exam_locked,exam_locked_schools,feature_locks').eq('id',1).single(); if (error) { const r = await client.from('app_settings').select('app_name,logo,exercises_locked,exercises_locked_schools,img_exercises_locked,img_exercises_locked_schools,exam_locked,exam_locked_schools').eq('id',1).single(); data = r.data; } const d=data||{}; return { app_name:d.app_name||DEFAULT_APP_NAME, logo:d.logo||'', exercises_locked:!!d.exercises_locked, exercises_locked_schools:d.exercises_locked_schools||[], img_exercises_locked:!!d.img_exercises_locked, img_exercises_locked_schools:d.img_exercises_locked_schools||[], exam_locked:!!d.exam_locked, exam_locked_schools:d.exam_locked_schools||[], feature_locks:(d.feature_locks && typeof d.feature_locks==='object')?d.feature_locks:{} }; },
     async saveAppSettings(patch){ const { error } = await client.from('app_settings').update({ app_name:patch.app_name, logo:patch.logo, updated_at:new Date().toISOString() }).eq('id',1); return { error: error ? error.message : null }; },
-    async saveExerciseLock(patch){ const cols=LOCK_COLS[patch.kind||'quiz']; const upd={ updated_at:new Date().toISOString() }; upd[cols[0]]=!!patch.locked; upd[cols[1]]=patch.schools||[]; const { error } = await client.from('app_settings').update(upd).eq('id',1); return { error: error ? error.message : null }; },
-    async saveFeatureLocks(map){ const { error } = await client.from('app_settings').update({ feature_locks: map || {}, updated_at:new Date().toISOString() }).eq('id',1); return { error: error ? error.message : null }; },
+    async saveExerciseLock(patch){ const cols=LOCK_COLS[patch.kind||'quiz']; const upd={ updated_at:new Date().toISOString() }; upd[cols[0]]=!!patch.locked; upd[cols[1]]=patch.schools||[]; const { data, error } = await client.from('app_settings').update(upd).eq('id',1).select('id'); if (error) return { error: error.message }; if (!data || !data.length) return { error: 'row id=1 មិនបានធ្វើបច្ចុប្បន្នភាព — ពិនិត្យសិទ្ធិ Admin (is_admin/approved)' }; return { error: null }; },
+    async saveFeatureLocks(map){ const { data, error } = await client.from('app_settings').update({ feature_locks: map || {}, updated_at:new Date().toISOString() }).eq('id',1).select('id'); if (error) return { error: error.message }; if (!data || !data.length) return { error: 'row id=1 មិនបានធ្វើបច្ចុប្បន្នភាព — ពិនិត្យសិទ្ធិ Admin (is_admin/approved) ឬ migration 23' }; return { error: null }; },
     // Logo file goes to Storage (bucket "logos"); only its URL is kept in the DB.
     async uploadLogo(blob){
       const { error } = await client.storage.from('logos').upload('logo.png', blob, { upsert:true, contentType:'image/png', cacheControl:'3600' });
@@ -10887,12 +10887,18 @@ class Component extends DCLogic {
     const { error } = await Backend.saveFeatureLocks(map);
     this._permSaved(error);
   }
-  // Make a failed save visible on the matrix. A missing feature_locks column
-  // (migration 23 not run) is the usual cause — the grant looks set but never
-  // persists, so a branch never actually receives it.
+  // Make a failed save visible on the matrix. A write that changes 0 rows
+  // (RLS is_admin/approved) or a missing feature_locks column are the usual
+  // causes — the grant looks set but never persists, so a branch never gets it.
   _permSaved(error){
-    if (error) this.setState({ permMsg: 'រក្សាទុកមិនបាន — សូម run migration 23 (feature_locks) ក្នុង Supabase។ ' + error, permMsgErr: true });
-    else { this.setState({ permMsg: 'បានរក្សាទុក ✓', permMsgErr: false }); clearTimeout(this._permMsgT); this._permMsgT = setTimeout(() => this.setState({ permMsg: '' }), 1800); }
+    clearTimeout(this._permMsgT);
+    if (error) {
+      this.setState({ permMsg: 'រក្សាទុកមិនបាន៖ ' + error, permMsgErr: true });
+      this._permMsgT = setTimeout(() => this.setState({ permMsg: '' }), 6000);
+    } else {
+      this.setState({ permMsg: 'បានរក្សាទុក ✓', permMsgErr: false });
+      this._permMsgT = setTimeout(() => this.setState({ permMsg: '' }), 1600);
+    }
   }
 
   async syncWords(){
@@ -12528,7 +12534,7 @@ class Component extends DCLogic {
       isBooks: s.screen === 'books', goBooks: () => this.goBooks(),
       permCols, permGridCols, permGroups, permHasSchools, permNoSchools: !permHasSchools,
       permHasMsg: !!s.permMsg, permMsg: s.permMsg,
-      permMsgStyle: s.permMsgErr ? 'background:rgba(214,48,49,0.12);color:#b12a25;' : 'background:rgba(39,174,96,0.14);color:#1e7d47;',
+      permMsgStyle: s.permMsgErr ? 'background:#c0392b;color:#fff;' : 'background:#1e7d47;color:#fff;',
 
       // — Admin —
       isAdmin: s.role === 'admin', isAdminScreen: s.screen === 'admin',
