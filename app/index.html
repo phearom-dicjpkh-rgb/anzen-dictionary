@@ -704,7 +704,7 @@ textarea.input { min-height: 90px; resize: vertical; }
       <sc-if value="{{ noLogo }}">
         <div title="ចុចដើម្បីផ្ទុកឡើងវិញ" sc-camel-on-click="{{ reloadPage }}" style="width:34px;height:34px;flex:none;border-radius:8px;background:rgba(255,255,255,0.20);color:#fff;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:19px;line-height:1;cursor:pointer;">辞</div>
       </sc-if>
-      <div style="flex:1 1 auto;min-width:0;font-family:var(--font-heading);font-weight:600;font-size:18px;line-height:1.15;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ appName }}</div>
+      <div style="flex:1 1 auto;min-width:0;font-family:'Cormorant Garamond', var(--font-heading);font-weight:600;font-size:21px;letter-spacing:0.015em;line-height:1.15;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ appName }}</div>
       <sc-if value="{{ isHome }}">
         <select class="input" value="{{ searchMode }}" sc-camel-on-change="{{ onSearchModeChange }}" aria-label="របៀបស្វែងរក" style="flex:0 0 auto;width:auto;min-height:32px;padding-top:2px;padding-bottom:2px;color:#fff;background-color:rgba(255,255,255,0.16);border-color:rgba(255,255,255,0.35);">
           <option value="general" label="ស្វែងរកទូទៅ" style="color:#111;">ស្វែងរកទូទៅ</option>
@@ -756,7 +756,6 @@ textarea.input { min-height: 90px; resize: vertical; }
             </sc-for>
             <sc-if value="{{ noResults }}"><div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">រកមិនឃើញពាក្យទេ</div></sc-if>
             <sc-if value="{{ allViewed }}"><div style="text-align:center;padding:44px 16px;opacity:0.6;font-size:13px;line-height:1.7;">🎉 អ្នកបានមើលពាក្យទាំងអស់ហើយ!<br>ដោះគ្រីសពាក្យណាមួយ ដើម្បីមើលឡើងវិញ</div></sc-if>
-            <sc-if value="{{ resultsTruncated }}"><div style="text-align:center;padding:14px 0 4px;opacity:0.55;font-size:12px;">{{ resultInfo }} · សូមវាយបន្ថែម ឬប្រើ «តាមទំព័រ»</div></sc-if>
           </div>
           </sc-if>
 
