@@ -8424,7 +8424,7 @@ function makeSupabaseBackend(){
       return { rows:data||[], error: error?error.message:null };
     },
     async listTeachers(){ const { data } = await client.from('profiles').select('id,full_name,email,school_id').eq('role','teacher').order('full_name'); return { rows:data||[] }; },
-    async listSchools(){ const { data } = await client.from('profiles').select('id,full_name,email').eq('role','school').order('full_name'); return { rows:data||[] }; },
+    async listSchools(){ const { data } = await client.from('profiles').select('id,full_name,email,settings').eq('role','school').order('full_name'); return { rows:data||[] }; },
     // The student leaderboard: a SECURITY DEFINER function returns only name +
     // level + a tiebreak, never a classmate's email or word list, so RLS still
     // hides the details that only a teacher may see.
@@ -11015,8 +11015,16 @@ class Component extends DCLogic {
   _printReport(sec){
     const s = this.state;
     if (!sec.items || !sec.items.length) { this.showToast('គ្មានទិន្នន័យលំហាត់នេះ'); return; }
-    const sch = (s.schools || []).find(x => x.id === s.viewingSchoolId) || {};
-    const school = sch.full_name || sch.email || this.state.appName || '';
+    // Brand the report with the STUDENT'S branch — its own name + logo — so each
+    // school/branch gets its own identity on the PDF, not the shared app logo.
+    // Admin looks the branch up in the loaded list; a branch viewing its own
+    // students uses its own profile (its list is not loaded).
+    const schoolRec = (s.schools || []).find(x => x.id === s.viewingSchoolId);
+    let brandName = '', brandLogo = '';
+    if (schoolRec) { brandName = schoolRec.full_name || schoolRec.email || ''; brandLogo = (schoolRec.settings && schoolRec.settings.logo) || ''; }
+    else if (s.role === 'school') { brandName = s.profileName || ''; brandLogo = (s.settings && s.settings.logo) || ''; }
+    const school = brandName || this.state.appName || '';
+    const brandedLogo = brandLogo || this.state.appLogo || '';
     const items = sec.items.map((it, i) => ({
       n: i + 1, q: it.q || it.jp || '', mark: it.ok ? '✓' : '✗', markColor: it.ok ? 'color:#1a7f37;' : 'color:#c0392b;',
       hasPicked: it.picked != null && it.picked !== '', picked: it.picked || '', pickedColor: it.ok ? 'color:#1558b0;' : 'color:#c0392b;',
@@ -11026,7 +11034,7 @@ class Component extends DCLogic {
     this._clearPrintMount();   // drop any stale clone from a previous print
     this._printSourceHTML = null;
     this.setState({ printOpen: true, printReport: {
-      appName: this.state.appName || 'វចនានុក្រម', logo: this.state.appLogo || '',
+      appName: this.state.appName || 'វចនានុក្រម', logo: brandedLogo,
       school, student: s.selectedStudentName || '', title: sec.title || '',
       dateLabel: (this._fmtDate(sec.date) || '—') + (sec.dur != null ? '   ·   រយៈពេល ' + this._fmtDuration(sec.dur) : ''), scoreLabel: sec.scoreLabel || '—',
       count: items.length, items,
