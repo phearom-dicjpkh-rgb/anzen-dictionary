@@ -2563,29 +2563,91 @@ textarea.input { min-height: 90px; resize: vertical; }
         </div>
         <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 18px;display:flex;flex-direction:column;gap:12px;">
           <sc-if value="{{ annIsAdmin }}">
-            <div class="card elev-sm" style="gap:8px;">
-              <div style="font-weight:700;font-size:13px;">ប្រកាសថ្មី (Admin)</div>
-              <input class="input" type="text" placeholder="ចំណងជើង" value="{{ annTitle }}" sc-camel-on-change="{{ onAnnTitle }}">
-              <textarea class="input" placeholder="អត្ថបទប្រកាស…" value="{{ annBody }}" sc-camel-on-change="{{ onAnnBody }}" style="resize:vertical;min-height:66px;line-height:1.6;"></textarea>
-              <sc-if value="{{ annHasErr }}"><div style="font-size:12px;color:#c0392b;">{{ annErr }}</div></sc-if>
-              <button class="btn btn-primary btn-block" sc-camel-on-click="{{ postAnn }}">{{ annPostLabel }}</button>
-            </div>
+            <button class="btn btn-primary btn-block" sc-camel-on-click="{{ openCompose }}">✏️ សរសេរប្រកាសថ្មី</button>
           </sc-if>
           <sc-if value="{{ annEmpty }}">
             <div style="text-align:center;padding:32px 10px;opacity:0.5;font-size:13px;">មិនទាន់មានដំណឹងទេ</div>
           </sc-if>
           <sc-for list="{{ annItems }}" as="a" hint-placeholder-count="3">
-            <div class="card elev-sm" style="gap:6px;">
+            <div class="card elev-sm" style="gap:6px;{{ a.catBar }}">
               <div style="display:flex;align-items:center;gap:8px;">
-                <div style="font-size:10px;opacity:0.5;flex:1;">{{ a.dateLabel }}</div>
+                <span style="font-size:12px;">{{ a.catEmoji }}</span>
+                <div style="font-size:11px;font-weight:700;opacity:0.75;">{{ a.catLabel }}</div>
+                <div style="font-size:10px;opacity:0.45;flex:1;">{{ a.dateLabel }}</div>
                 <sc-if value="{{ a.isNew }}"><span style="font-size:9px;background:#e24b4a;color:#fff;padding:1px 7px;border-radius:99px;font-weight:700;">ថ្មី</span></sc-if>
                 <sc-if value="{{ annIsAdmin }}"><button aria-label="លុប" sc-camel-on-click="{{ a.onDelete }}" style="border:none;background:transparent;color:#c0392b;cursor:pointer;font-size:14px;padding:0 2px;">🗑</button></sc-if>
               </div>
               <sc-if value="{{ a.hasTitle }}"><div style="font-weight:700;font-size:15px;line-height:1.4;">{{ a.title }}</div></sc-if>
               <sc-if value="{{ a.hasBody }}"><div style="font-size:13px;line-height:1.65;white-space:pre-wrap;">{{ a.body }}</div></sc-if>
+              <sc-if value="{{ a.hasDue }}"><div style="font-size:11px;{{ a.dueStyle }}">⏰ {{ a.dueLabel }}</div></sc-if>
+              <sc-if value="{{ a.hasAssign }}"><button class="btn btn-primary" style="align-self:flex-start;padding:8px 16px;font-size:13px;margin-top:2px;" sc-camel-on-click="{{ a.onDo }}">{{ a.assignLabel }}</button></sc-if>
+              <sc-if value="{{ a.showAdmin }}"><div style="display:flex;gap:10px;flex-wrap:wrap;font-size:10px;opacity:0.6;border-top:1px solid var(--color-divider);padding-top:6px;margin-top:2px;"><span>🎯 {{ a.targetLabel }}</span><span>{{ a.readStat }}</span></div></sc-if>
             </div>
           </sc-for>
         </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ annComposeOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:75;background:var(--color-bg);display:flex;flex-direction:column;">
+      <div style="flex:none;display:flex;align-items:center;gap:10px;padding:13px 16px;background:var(--color-accent);color:#fff;">
+        <button aria-label="បិទ" sc-camel-on-click="{{ closeCompose }}" style="width:30px;height:30px;border:none;border-radius:8px;background:rgba(255,255,255,0.18);color:#fff;font-size:18px;cursor:pointer;">←</button>
+        <div style="flex:1;font-weight:700;font-size:17px;">សរសេរប្រកាស</div>
+      </div>
+      <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 18px 24px;display:flex;flex-direction:column;gap:16px;">
+        <div>
+          <div style="font-size:11px;opacity:0.6;margin-bottom:7px;">ប្រភេទសារ</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <sc-for list="{{ catChips }}" as="c" hint-placeholder-count="4">
+              <button style="padding:8px 14px;border-radius:99px;border:1.5px solid var(--color-divider);background:var(--color-surface);font-size:13px;cursor:pointer;{{ c.style }}" sc-camel-on-click="{{ c.onPick }}">{{ c.emoji }} {{ c.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div class="field"><label>ចំណងជើង</label><input class="input" type="text" placeholder="ចំណងជើងប្រកាស" value="{{ annTitle }}" sc-camel-on-change="{{ onAnnTitle }}"></div>
+        <div class="field"><label>អត្ថបទ</label><textarea class="input" placeholder="សរសេរអត្ថបទប្រកាសនៅទីនេះ…" value="{{ annBody }}" sc-camel-on-change="{{ onAnnBody }}" style="resize:vertical;min-height:170px;line-height:1.7;font-size:15px;"></textarea></div>
+        <div>
+          <div style="font-size:11px;opacity:0.6;margin-bottom:7px;">ផ្ញើទៅ (mention)</div>
+          <div class="seg">
+            <label class="seg-opt"><input type="radio" checked="{{ annTargetAll }}" sc-camel-on-change="{{ setTargetAll }}"><span>ទាំងអស់គ្នា</span></label>
+            <label class="seg-opt"><input type="radio" checked="{{ annTargetSchool }}" sc-camel-on-change="{{ setTargetSchool }}"><span>សាលា/សាខា</span></label>
+            <label class="seg-opt"><input type="radio" checked="{{ annTargetStudent }}" sc-camel-on-change="{{ setTargetStudent }}"><span>សិស្សម្នាក់</span></label>
+          </div>
+          <sc-if value="{{ annTargetSchool }}">
+            <select class="input" value="{{ annTargetId }}" sc-camel-on-change="{{ onAnnTargetId }}" style="margin-top:8px;">
+              <option value="" label="ជ្រើសរើសសាលា/សាខា">ជ្រើសរើសសាលា/សាខា</option>
+              <sc-for list="{{ schoolOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.id }}" label="{{ o.name }}" selected="{{ o.sel }}">{{ o.name }}</option></sc-for>
+            </select>
+          </sc-if>
+          <sc-if value="{{ annTargetStudent }}">
+            <select class="input" value="{{ annTargetId }}" sc-camel-on-change="{{ onAnnTargetId }}" style="margin-top:8px;">
+              <option value="" label="ជ្រើសរើសសិស្ស">ជ្រើសរើសសិស្ស</option>
+              <sc-for list="{{ studentOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.id }}" label="{{ o.name }}" selected="{{ o.sel }}">{{ o.name }}</option></sc-for>
+            </select>
+          </sc-if>
+        </div>
+        <div class="card elev-sm" style="gap:10px;">
+          <label class="switch-row" style="display:flex;align-items:center;gap:12px;cursor:pointer;" sc-camel-on-click="{{ toggleAnnAssign }}">
+            <div style="flex:1;"><div style="font-weight:700;font-size:14px;">ដាក់លំហាត់ឲ្យធ្វើ</div><div style="font-size:11px;opacity:0.6;">សិស្សចុចក្នុងសារ → បើកតេស្តភ្លាម</div></div>
+            <span class="switch {{ annAssignClass }}"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+          <sc-if value="{{ annAssignOn }}">
+            <div class="field"><label>ប្រភេទតេស្ត</label>
+              <select class="input" value="{{ annAssignKind }}" sc-camel-on-change="{{ setAnnAssignKind }}">
+                <option value="quiz" label="លំហាត់">លំហាត់</option>
+                <option value="img" label="លំហាត់រូបភាព">លំហាត់រូបភាព</option>
+                <option value="word" label="ជ្រើសរើសពាក្យត្រូវ">ជ្រើសរើសពាក្យត្រូវ</option>
+                <option value="exam" label="ប្រឡងសាកល្បង">ប្រឡងសាកល្បង</option>
+              </select>
+            </div>
+            <sc-if value="{{ annAssignNeedsLesson }}">
+              <div class="field"><label>លំហាត់ទី</label><input class="input" type="number" min="1" value="{{ annAssignLesson }}" sc-camel-on-change="{{ onAnnAssignLesson }}"></div>
+            </sc-if>
+            <div class="field"><label>ថ្ងៃផុតកំណត់ (ស្រេចចិត្ត)</label><input class="input" type="date" value="{{ annDue }}" sc-camel-on-change="{{ onAnnDue }}"></div>
+          </sc-if>
+        </div>
+        <sc-if value="{{ annHasErr }}"><div style="font-size:13px;color:#c0392b;">{{ annErr }}</div></sc-if>
+        <button class="btn btn-primary btn-block" style="min-height:48px;font-size:15px;" sc-camel-on-click="{{ postAnn }}">{{ annPostLabel }}</button>
       </div>
     </div>
     </sc-if>
@@ -8600,8 +8662,8 @@ function makeSupabaseBackend(){
     async listTeachers(){ const { data } = await client.from('profiles').select('id,full_name,email,school_id').eq('role','teacher').order('full_name'); return { rows:data||[] }; },
     async listSchools(){ const { data } = await client.from('profiles').select('id,full_name,email,settings').eq('role','school').order('full_name'); return { rows:data||[] }; },
     async schoolBrand(id){ if(!id) return null; const { data } = await client.rpc('school_brand', { sid: id }); const r = (data && data[0]) || null; return r ? { full_name: r.full_name || '', logo: r.logo || '', color: r.color || '' } : null; },
-    async listAnnouncements(){ const { data } = await client.from('announcements').select('id,title,body,created_at').order('created_at', { ascending: false }).limit(50); return { rows: data || [] }; },
-    async postAnnouncement(p){ const { data: sess } = await client.auth.getUser(); const uid = sess && sess.user ? sess.user.id : null; const { error } = await client.from('announcements').insert({ title: p.title || '', body: p.body || '', created_by: uid }); return { error: error ? error.message : null }; },
+    async listAnnouncements(){ let sel = 'id,title,body,created_at,category,target_type,target_id,assign_kind,assign_lesson,due_at'; let { data, error } = await client.from('announcements').select(sel).order('created_at', { ascending: false }).limit(60); if (error) { const r = await client.from('announcements').select('id,title,body,created_at').order('created_at', { ascending: false }).limit(60); data = r.data; } return { rows: data || [] }; },
+    async postAnnouncement(p){ const { data: sess } = await client.auth.getUser(); const uid = sess && sess.user ? sess.user.id : null; const row = { title: p.title || '', body: p.body || '', created_by: uid, category: p.category || 'info', target_type: p.target_type || 'all', target_id: p.target_id || null, assign_kind: p.assign_kind || null, assign_lesson: (p.assign_lesson != null ? p.assign_lesson : null), due_at: p.due_at || null }; const { error } = await client.from('announcements').insert(row); return { error: error ? error.message : null }; },
     async deleteAnnouncement(id){ const { error } = await client.from('announcements').delete().eq('id', id); return { error: error ? error.message : null }; },
     // The student leaderboard: a SECURITY DEFINER function returns only name +
     // level + a tiebreak, never a classmate's email or word list, so RLS still
@@ -8758,7 +8820,7 @@ function makeDemoBackend(){
     async schoolBrand(id){ const u=load().find(x=>x.id===id&&x.role==='school'); return u ? { full_name:u.full_name||'', logo:(u.settings&&u.settings.logo)||'', color:(u.settings&&(u.settings.color||u.settings.avatarColor))||'' } : null; },
     _anns(){ try { return JSON.parse(localStorage.getItem('dict_demo_announcements') || '[]'); } catch(e){ return []; } },
     async listAnnouncements(){ return { rows: this._anns().slice().sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||'')) }; },
-    async postAnnouncement(p){ const a=this._anns(); a.push({ id:'an-'+Date.now(), title:p.title||'', body:p.body||'', created_at:new Date().toISOString() }); localStorage.setItem('dict_demo_announcements', JSON.stringify(a)); return { error:null }; },
+    async postAnnouncement(p){ const a=this._anns(); a.push({ id:'an-'+Date.now(), title:p.title||'', body:p.body||'', created_at:new Date().toISOString(), category:p.category||'info', target_type:p.target_type||'all', target_id:p.target_id||null, assign_kind:p.assign_kind||null, assign_lesson:(p.assign_lesson!=null?p.assign_lesson:null), due_at:p.due_at||null }); localStorage.setItem('dict_demo_announcements', JSON.stringify(a)); return { error:null }; },
     async deleteAnnouncement(id){ localStorage.setItem('dict_demo_announcements', JSON.stringify(this._anns().filter(x=>x.id!==id))); return { error:null }; },
     async schoolByToken(token){
       const s=load().find(x=>x.role==='school' && (x.token_student===token || x.token_teacher===token));
@@ -8907,7 +8969,8 @@ class Component extends DCLogic {
     // admin: A4 results preview / print
     printOpen: false, printReport: null,
     levelUpShow: false, levelUpLevel: 0, levelUpMsg: '',
-    announcements: [], annOpen: false, annTitle: '', annBody: '', annBusy: false, annErr: '',
+    announcements: [], annOpen: false, annComposeOpen: false, annTitle: '', annBody: '', annBusy: false, annErr: '',
+    annCat: 'info', annTarget: 'all', annTargetId: '', annAssignOn: false, annAssignKind: 'quiz', annAssignLesson: 1, annDue: '',
     testMode: null, testKind: 'mc_jp', testLesson: 1, testMix: false,
     testWords: [], testIdx: 0, testScore: 0, testResults: [], testPicks: [],
     // exercises (លំហាត់ / លំហាត់រូបភាព)
@@ -9096,33 +9159,72 @@ class Component extends DCLogic {
 
   // — Announcements (ប្រកាស) — admin posts, everyone reads via the header bell —
   async loadAnnouncements(){ const r = await Backend.listAnnouncements(); this.setState({ announcements: r.rows || [] }); }
+  // Is this announcement addressed to the current viewer? (admin sees all.)
+  annVisibleForMe(a){
+    if (this.state.role === 'admin') return true;
+    const t = a.target_type || 'all';
+    if (t === 'all') return true;
+    if (t === 'student') return a.target_id === this.state.userId;
+    if (t === 'school') { const mine = this.state.role === 'school' ? this.state.userId : this.state.mySchoolId; return !!mine && a.target_id === mine; }
+    return true;
+  }
+  annReadSet(){ const r = this.state.settings && this.state.settings.annRead; return new Set(Array.isArray(r) ? r : []); }
   openAnn(){
     this.setState({ annOpen: true });
-    // opening marks everything read: remember the newest timestamp we have seen
-    const newest = (this.state.announcements[0] && this.state.announcements[0].created_at) || new Date().toISOString();
-    const seen = (this.state.settings && this.state.settings.annSeen) || '';
-    if (newest > seen) { const settings = { ...this.state.settings, annSeen: newest }; this.setState({ settings }, () => this.persist()); }
+    // opening marks every announcement addressed to me as read
+    const read = this.annReadSet();
+    let changed = false;
+    for (const a of (this.state.announcements || [])) if (this.annVisibleForMe(a) && !read.has(a.id)) { read.add(a.id); changed = true; }
+    if (changed) { const settings = { ...this.state.settings, annRead: [...read] }; this.setState({ settings }, () => this.persist()); }
   }
   closeAnn(){ this.setState({ annOpen: false, annErr: '' }); }
+  openCompose(){ this.setState({ annComposeOpen: true, annErr: '' }); }
+  closeCompose(){ this.setState({ annComposeOpen: false, annErr: '' }); }
   onAnnTitle(e){ this.setState({ annTitle: e.target.value }); }
   onAnnBody(e){ this.setState({ annBody: e.target.value }); }
+  setAnnCat(c){ this.setState({ annCat: c }); }
+  setAnnTarget(t){ this.setState({ annTarget: t, annTargetId: '' }); }
+  onAnnTargetId(e){ this.setState({ annTargetId: e.target.value }); }
+  toggleAnnAssign(){ this.setState(s => ({ annAssignOn: !s.annAssignOn })); }
+  setAnnAssignKind(e){ this.setState({ annAssignKind: e.target.value }); }
+  onAnnAssignLesson(e){ this.setState({ annAssignLesson: Math.max(1, parseInt(e.target.value, 10) || 1) }); }
+  onAnnDue(e){ this.setState({ annDue: e.target.value }); }
   async postAnn(){
     if (this.state.annBusy) return;
-    const title = (this.state.annTitle || '').trim(), body = (this.state.annBody || '').trim();
+    const s = this.state;
+    const title = (s.annTitle || '').trim(), body = (s.annBody || '').trim();
     if (!title && !body) { this.setState({ annErr: 'សូមបញ្ចូលអត្ថបទប្រកាស' }); return; }
+    if (s.annTarget !== 'all' && !s.annTargetId) { this.setState({ annErr: 'សូមជ្រើសរើសអ្នកទទួល' }); return; }
+    const needsLesson = s.annAssignOn && ['word', 'quiz', 'img'].includes(s.annAssignKind);
+    const patch = {
+      title, body, category: s.annCat,
+      target_type: s.annTarget, target_id: s.annTarget === 'all' ? null : s.annTargetId,
+      assign_kind: s.annAssignOn ? s.annAssignKind : null,
+      assign_lesson: needsLesson ? (s.annAssignLesson || 1) : null,
+      due_at: (s.annAssignOn && s.annDue) ? new Date(s.annDue + 'T23:59:59').toISOString() : null,
+    };
     this.setState({ annBusy: true, annErr: '' });
-    const { error } = await Backend.postAnnouncement({ title, body });
+    const { error } = await Backend.postAnnouncement(patch);
     if (error) { this.setState({ annBusy: false, annErr: error }); return; }
     await this.loadAnnouncements();
-    // the admin's own post counts as read
-    const newest = (this.state.announcements[0] && this.state.announcements[0].created_at) || new Date().toISOString();
-    const settings = { ...this.state.settings, annSeen: newest };
-    this.setState({ annBusy: false, annTitle: '', annBody: '', settings }, () => this.persist());
+    const read = this.annReadSet();
+    for (const a of (this.state.announcements || [])) read.add(a.id);   // admin's own posts are read
+    const settings = { ...this.state.settings, annRead: [...read] };
+    this.setState({ annBusy: false, annComposeOpen: false, annTitle: '', annBody: '', annCat: 'info', annTarget: 'all', annTargetId: '', annAssignOn: false, annDue: '', settings }, () => this.persist());
   }
   async deleteAnn(id){
     if (!window.confirm('លុបប្រកាសនេះមែនទេ?')) return;
     await Backend.deleteAnnouncement(id);
     this.loadAnnouncements();
+  }
+  // tap an assigned exercise inside an announcement → jump straight into it
+  doAssignment(kind, lesson){
+    this.setState({ annOpen: false });
+    const n = lesson || 1;
+    if (kind === 'exam') { this.setState({ screen: 'test' }, () => this.startExam()); return; }
+    if (kind === 'word') { this.setState({ screen: 'test', testKind: 'mc_jp' }, () => this.startLesson(n)); return; }
+    if (kind === 'img')  { this.setState({ screen: 'test', quizDeck: 'img' }, () => this.startQuiz(n)); return; }
+    this.setState({ screen: 'test', quizDeck: 'quiz' }, () => this.startQuiz(n));   // quiz (default)
   }
 
   async componentDidMount(){
@@ -12608,25 +12710,72 @@ class Component extends DCLogic {
       printOpen: s.printOpen, closePrint: () => this.closePrint(), doPrint: () => this.doPrint(),
       levelUpShow: s.levelUpShow, levelUpLevel: s.levelUpLevel, levelUpMsg: s.levelUpMsg, closeLevelUp: () => this.closeLevelUp(),
       ...(() => {
-        const seen = (s.settings && s.settings.annSeen) || '';
-        const anns = s.announcements || [];
-        const unread = anns.filter(a => (a.created_at || '') > seen).length;
+        const CATS = {
+          info:       { label: 'ព័ត៌មាន', emoji: '🔵', color: '#2f6fb0' },
+          assignment: { label: 'លំហាត់',  emoji: '🟢', color: '#2e9e5b' },
+          warning:    { label: 'ព្រមាន',  emoji: '🔴', color: '#d0453c' },
+          celebrate:  { label: 'អបអរ',    emoji: '🎉', color: '#e0a11b' },
+        };
+        const ASSIGN = { word: 'ជ្រើសរើសពាក្យត្រូវ', quiz: 'លំហាត់', img: 'លំហាត់រូបភាព', exam: 'ប្រឡងសាកល្បង' };
+        const anns = (s.announcements || []).filter(a => this.annVisibleForMe(a));
+        const read = this.annReadSet();
+        const unread = anns.filter(a => !read.has(a.id)).length;
+        const isAdmin = s.role === 'admin';
+        const students = s.students || [];
         const fmt = ts => { const d = new Date(ts); if (isNaN(d)) return ''; const z = n => String(n).padStart(2, '0'); return `${z(d.getDate())}/${z(d.getMonth()+1)}/${d.getFullYear()} ${z(d.getHours())}:${z(d.getMinutes())}`; };
-        return {
-          annOpen: s.annOpen, openAnn: () => this.openAnn(), closeAnn: () => this.closeAnn(),
-          annHasUnread: unread > 0, annBadge: unread > 9 ? '9+' : String(unread),
-          annIsAdmin: s.role === 'admin',
-          annEmpty: anns.length === 0,
-          annItems: anns.map(a => ({
+        const schName = id => { const f = (s.schools || []).find(x => x.id === id); return f ? (f.full_name || f.email) : ''; };
+        const stuName = id => { const f = students.find(x => x.id === id); return f ? (f.full_name || f.email) : ''; };
+        const dueInfo = due => {
+          if (!due) return { has: false };
+          const days = Math.ceil((new Date(due) - new Date()) / 86400000);
+          if (days < 0)  return { has: true, label: 'ផុតកំណត់ហើយ', color: '#d0453c' };
+          if (days === 0) return { has: true, label: 'ផុតកំណត់ថ្ងៃនេះ', color: '#d0453c' };
+          if (days === 1) return { has: true, label: 'នៅសល់ ១ ថ្ងៃ', color: '#e0a11b' };
+          return { has: true, label: `នៅសល់ ${days} ថ្ងៃ`, color: days <= 3 ? '#e0a11b' : '#2e9e5b' };
+        };
+        const annItems = anns.map(a => {
+          const cat = CATS[a.category] || CATS.info;
+          const di = dueInfo(a.due_at);
+          let readStat = '';
+          if (isAdmin) {
+            const ts = students.filter(st => a.target_type === 'all' ? true : a.target_type === 'school' ? st.school_id === a.target_id : a.target_type === 'student' ? st.id === a.target_id : false);
+            const rc = ts.filter(st => Array.isArray(st.settings && st.settings.annRead) && st.settings.annRead.includes(a.id)).length;
+            readStat = `👁 អានរួច ${rc}/${ts.length}`;
+          }
+          const tgt = a.target_type === 'student' ? ('សិស្ស៖ ' + stuName(a.target_id)) : a.target_type === 'school' ? ('សាលា៖ ' + schName(a.target_id)) : 'ទាំងអស់គ្នា';
+          return {
             title: a.title || '', body: a.body || '',
             hasTitle: !!(a.title || '').trim(), hasBody: !!(a.body || '').trim(),
-            dateLabel: fmt(a.created_at), isNew: (a.created_at || '') > seen,
+            dateLabel: fmt(a.created_at), isNew: !read.has(a.id),
+            catEmoji: cat.emoji, catLabel: cat.label, catBar: `border-left:4px solid ${cat.color};`,
+            hasAssign: !!a.assign_kind,
+            assignLabel: '▶ ធ្វើ ' + (ASSIGN[a.assign_kind] || 'លំហាត់') + (a.assign_lesson ? ' ' + a.assign_lesson : ''),
+            onDo: () => this.doAssignment(a.assign_kind, a.assign_lesson),
+            hasDue: di.has, dueLabel: di.label, dueStyle: `color:${di.color};font-weight:700;`,
+            showAdmin: isAdmin, readStat, targetLabel: tgt,
             onDelete: () => this.deleteAnn(a.id),
-          })),
-          annTitle: s.annTitle, annBody: s.annBody,
-          onAnnTitle: e => this.onAnnTitle(e), onAnnBody: e => this.onAnnBody(e),
+          };
+        });
+        const catChips = Object.keys(CATS).map(k => ({ key: k, label: CATS[k].label, emoji: CATS[k].emoji, style: s.annCat === k ? `background:${CATS[k].color};color:#fff;border-color:${CATS[k].color};` : '', onPick: () => this.setAnnCat(k) }));
+        const schoolOpts = (s.schools || []).map(sc => ({ id: sc.id, name: sc.full_name || sc.email, sel: s.annTargetId === sc.id }));
+        const studentOpts = students.map(st => ({ id: st.id, name: (st.full_name || st.email) + (st.school_id ? ' · ' + schName(st.school_id) : ''), sel: s.annTargetId === st.id }));
+        return {
+          annOpen: s.annOpen, openAnn: () => this.openAnn(), closeAnn: () => this.closeAnn(),
+          annComposeOpen: s.annComposeOpen, openCompose: () => this.openCompose(), closeCompose: () => this.closeCompose(),
+          annHasUnread: unread > 0, annBadge: unread > 9 ? '9+' : String(unread),
+          annIsAdmin: isAdmin, annEmpty: anns.length === 0, annItems,
+          annTitle: s.annTitle, annBody: s.annBody, onAnnTitle: e => this.onAnnTitle(e), onAnnBody: e => this.onAnnBody(e),
           postAnn: () => this.postAnn(), annPostLabel: s.annBusy ? 'កំពុងផ្ញើ…' : 'ផ្ញើប្រកាស',
           annHasErr: !!s.annErr, annErr: s.annErr,
+          catChips,
+          annTargetAll: s.annTarget === 'all', annTargetSchool: s.annTarget === 'school', annTargetStudent: s.annTarget === 'student',
+          setTargetAll: () => this.setAnnTarget('all'), setTargetSchool: () => this.setAnnTarget('school'), setTargetStudent: () => this.setAnnTarget('student'),
+          schoolOpts, studentOpts, annTargetId: s.annTargetId, onAnnTargetId: e => this.onAnnTargetId(e),
+          annAssignOn: s.annAssignOn, toggleAnnAssign: () => this.toggleAnnAssign(), annAssignClass: s.annAssignOn ? 'on' : '',
+          annAssignKind: s.annAssignKind, setAnnAssignKind: e => this.setAnnAssignKind(e),
+          annAssignLesson: s.annAssignLesson, onAnnAssignLesson: e => this.onAnnAssignLesson(e),
+          annAssignNeedsLesson: ['word', 'quiz', 'img'].includes(s.annAssignKind),
+          annDue: s.annDue, onAnnDue: e => this.onAnnDue(e),
         };
       })(),
       pr: s.printReport || {}, prItems: (s.printReport && s.printReport.items) || [], prHasLogo: !!(s.printReport && s.printReport.logo), prNoLogo: !(s.printReport && s.printReport.logo),
