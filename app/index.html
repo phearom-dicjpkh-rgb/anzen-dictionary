@@ -2570,18 +2570,28 @@ textarea.input { min-height: 90px; resize: vertical; }
           </sc-if>
           <sc-for list="{{ annItems }}" as="a" hint-placeholder-count="3">
             <div class="card elev-sm" style="gap:6px;{{ a.catBar }}">
-              <div style="display:flex;align-items:center;gap:8px;">
+              <div style="display:flex;align-items:center;gap:7px;">
                 <span style="font-size:12px;">{{ a.catEmoji }}</span>
                 <div style="font-size:11px;font-weight:700;opacity:0.75;">{{ a.catLabel }}</div>
+                <sc-if value="{{ a.pinned }}"><span style="font-size:11px;">📌</span></sc-if>
                 <div style="font-size:10px;opacity:0.45;flex:1;">{{ a.dateLabel }}</div>
                 <sc-if value="{{ a.isNew }}"><span style="font-size:9px;background:#e24b4a;color:#fff;padding:1px 7px;border-radius:99px;font-weight:700;">ថ្មី</span></sc-if>
+                <sc-if value="{{ annIsAdmin }}"><button aria-label="ខ្ទាស់" title="ខ្ទាស់/ដោះ" sc-camel-on-click="{{ a.onPin }}" style="border:none;background:transparent;cursor:pointer;font-size:13px;padding:0 2px;">{{ a.pinGlyph }}</button></sc-if>
                 <sc-if value="{{ annIsAdmin }}"><button aria-label="លុប" sc-camel-on-click="{{ a.onDelete }}" style="border:none;background:transparent;color:#c0392b;cursor:pointer;font-size:14px;padding:0 2px;">🗑</button></sc-if>
               </div>
+              <sc-if value="{{ a.scheduled }}"><div style="font-size:10px;color:#8a6d1b;background:#fbf3dc;border-radius:6px;padding:3px 8px;align-self:flex-start;">{{ a.schedLabel }}</div></sc-if>
               <sc-if value="{{ a.hasTitle }}"><div style="font-weight:700;font-size:15px;line-height:1.4;">{{ a.title }}</div></sc-if>
               <sc-if value="{{ a.hasBody }}"><div style="font-size:13px;line-height:1.65;white-space:pre-wrap;">{{ a.body }}</div></sc-if>
+              <sc-if value="{{ a.hasImage }}"><img src="{{ a.image }}" alt="" style="width:100%;border-radius:10px;margin-top:2px;border:1px solid var(--color-divider);"></sc-if>
               <sc-if value="{{ a.hasDue }}"><div style="font-size:11px;{{ a.dueStyle }}">⏰ {{ a.dueLabel }}</div></sc-if>
               <sc-if value="{{ a.hasAssign }}"><button class="btn btn-primary" style="align-self:flex-start;padding:8px 16px;font-size:13px;margin-top:2px;" sc-camel-on-click="{{ a.onDo }}">{{ a.assignLabel }}</button></sc-if>
-              <sc-if value="{{ a.showAdmin }}"><div style="display:flex;gap:10px;flex-wrap:wrap;font-size:10px;opacity:0.6;border-top:1px solid var(--color-divider);padding-top:6px;margin-top:2px;"><span>🎯 {{ a.targetLabel }}</span><span>{{ a.readStat }}</span></div></sc-if>
+              <sc-if value="{{ a.showAdmin }}">
+                <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:10px;opacity:0.6;border-top:1px solid var(--color-divider);padding-top:6px;margin-top:2px;"><span>🎯 {{ a.targetLabel }}</span><span>{{ a.readStat }}</span></div>
+                <sc-if value="{{ a.hasDoneStat }}">
+                  <div style="font-size:11px;font-weight:700;color:var(--color-accent-700);cursor:pointer;" sc-camel-on-click="{{ a.onToggleDone }}">{{ a.doneStat }} ▾</div>
+                  <sc-if value="{{ a.doneExpanded }}"><div style="font-size:11px;opacity:0.7;line-height:1.6;background:var(--color-neutral-100);border-radius:8px;padding:6px 9px;">{{ a.notDoneLabel }}</div></sc-if>
+                </sc-if>
+              </sc-if>
             </div>
           </sc-for>
         </div>
@@ -2605,7 +2615,17 @@ textarea.input { min-height: 90px; resize: vertical; }
           </div>
         </div>
         <div class="field"><label>ចំណងជើង</label><input class="input" type="text" placeholder="ចំណងជើងប្រកាស" value="{{ annTitle }}" sc-camel-on-change="{{ onAnnTitle }}"></div>
-        <div class="field"><label>អត្ថបទ</label><textarea class="input" placeholder="សរសេរអត្ថបទប្រកាសនៅទីនេះ…" value="{{ annBody }}" sc-camel-on-change="{{ onAnnBody }}" style="resize:vertical;min-height:170px;line-height:1.7;font-size:15px;"></textarea></div>
+        <div class="field"><label>អត្ថបទ</label><textarea class="input" placeholder="សរសេរអត្ថបទប្រកាសនៅទីនេះ…" value="{{ annBody }}" sc-camel-on-change="{{ onAnnBody }}" style="resize:vertical;min-height:150px;line-height:1.7;font-size:15px;"></textarea></div>
+        <div class="field">
+          <label>ភ្ជាប់រូបភាព (ស្រេចចិត្ត)</label>
+          <sc-if value="{{ hasAnnImage }}">
+            <div style="display:flex;align-items:flex-start;gap:12px;">
+              <img src="{{ annImage }}" alt="" style="max-width:140px;max-height:120px;border-radius:10px;border:1px solid var(--color-divider);object-fit:cover;">
+              <a href="#" style="font-size:12px;" sc-camel-on-click="{{ clearAnnImage }}">លុបរូបចេញ</a>
+            </div>
+          </sc-if>
+          <input type="file" accept="image/*" sc-camel-on-change="{{ onAnnImageFile }}" style="font-size:12px;margin-top:6px;">
+        </div>
         <div>
           <div style="font-size:11px;opacity:0.6;margin-bottom:7px;">ផ្ញើទៅ (mention)</div>
           <div class="seg">
@@ -2644,6 +2664,19 @@ textarea.input { min-height: 90px; resize: vertical; }
               <div class="field"><label>លំហាត់ទី</label><input class="input" type="number" min="1" value="{{ annAssignLesson }}" sc-camel-on-change="{{ onAnnAssignLesson }}"></div>
             </sc-if>
             <div class="field"><label>ថ្ងៃផុតកំណត់ (ស្រេចចិត្ត)</label><input class="input" type="date" value="{{ annDue }}" sc-camel-on-change="{{ onAnnDue }}"></div>
+          </sc-if>
+        </div>
+        <label class="switch-row" style="display:flex;align-items:center;gap:12px;cursor:pointer;" sc-camel-on-click="{{ toggleAnnPin }}">
+          <div style="flex:1;"><div style="font-weight:700;font-size:14px;">📌 ខ្ទាស់លើគេ</div><div style="font-size:11px;opacity:0.6;">សារសំខាន់ បង្ហាញនៅលើគេ</div></div>
+          <span class="switch {{ annPinnedClass }}"><span class="track"></span><span class="thumb"></span></span>
+        </label>
+        <div class="card elev-sm" style="gap:10px;">
+          <label class="switch-row" style="display:flex;align-items:center;gap:12px;cursor:pointer;" sc-camel-on-click="{{ toggleAnnSchedule }}">
+            <div style="flex:1;"><div style="font-weight:700;font-size:14px;">🕐 កំណត់ពេលផ្ញើ</div><div style="font-size:11px;opacity:0.6;">ផ្ញើនៅពេលក្រោយ (បើមិនកំណត់ ផ្ញើភ្លាម)</div></div>
+            <span class="switch {{ annScheduleClass }}"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+          <sc-if value="{{ annScheduleOn }}">
+            <div class="field"><label>ថ្ងៃ ម៉ោង ផ្ញើ</label><input class="input" type="datetime-local" value="{{ annPublishAt }}" sc-camel-on-change="{{ onAnnPublishAt }}"></div>
           </sc-if>
         </div>
         <sc-if value="{{ annHasErr }}"><div style="font-size:13px;color:#c0392b;">{{ annErr }}</div></sc-if>
@@ -8662,8 +8695,9 @@ function makeSupabaseBackend(){
     async listTeachers(){ const { data } = await client.from('profiles').select('id,full_name,email,school_id').eq('role','teacher').order('full_name'); return { rows:data||[] }; },
     async listSchools(){ const { data } = await client.from('profiles').select('id,full_name,email,settings').eq('role','school').order('full_name'); return { rows:data||[] }; },
     async schoolBrand(id){ if(!id) return null; const { data } = await client.rpc('school_brand', { sid: id }); const r = (data && data[0]) || null; return r ? { full_name: r.full_name || '', logo: r.logo || '', color: r.color || '' } : null; },
-    async listAnnouncements(){ let sel = 'id,title,body,created_at,category,target_type,target_id,assign_kind,assign_lesson,due_at'; let { data, error } = await client.from('announcements').select(sel).order('created_at', { ascending: false }).limit(60); if (error) { const r = await client.from('announcements').select('id,title,body,created_at').order('created_at', { ascending: false }).limit(60); data = r.data; } return { rows: data || [] }; },
-    async postAnnouncement(p){ const { data: sess } = await client.auth.getUser(); const uid = sess && sess.user ? sess.user.id : null; const row = { title: p.title || '', body: p.body || '', created_by: uid, category: p.category || 'info', target_type: p.target_type || 'all', target_id: p.target_id || null, assign_kind: p.assign_kind || null, assign_lesson: (p.assign_lesson != null ? p.assign_lesson : null), due_at: p.due_at || null }; const { error } = await client.from('announcements').insert(row); return { error: error ? error.message : null }; },
+    async listAnnouncements(){ let sel = 'id,title,body,created_at,category,target_type,target_id,assign_kind,assign_lesson,due_at,pinned,image,publish_at'; let { data, error } = await client.from('announcements').select(sel).order('created_at', { ascending: false }).limit(60); if (error) { const r = await client.from('announcements').select('id,title,body,created_at').order('created_at', { ascending: false }).limit(60); data = r.data; } return { rows: data || [] }; },
+    async postAnnouncement(p){ const { data: sess } = await client.auth.getUser(); const uid = sess && sess.user ? sess.user.id : null; const row = { title: p.title || '', body: p.body || '', created_by: uid, category: p.category || 'info', target_type: p.target_type || 'all', target_id: p.target_id || null, assign_kind: p.assign_kind || null, assign_lesson: (p.assign_lesson != null ? p.assign_lesson : null), due_at: p.due_at || null, pinned: !!p.pinned, image: p.image || null, publish_at: p.publish_at || new Date().toISOString() }; const { error } = await client.from('announcements').insert(row); return { error: error ? error.message : null }; },
+    async updateAnnouncement(id, patch){ const { error } = await client.from('announcements').update(patch).eq('id', id); return { error: error ? error.message : null }; },
     async deleteAnnouncement(id){ const { error } = await client.from('announcements').delete().eq('id', id); return { error: error ? error.message : null }; },
     // The student leaderboard: a SECURITY DEFINER function returns only name +
     // level + a tiebreak, never a classmate's email or word list, so RLS still
@@ -8820,7 +8854,8 @@ function makeDemoBackend(){
     async schoolBrand(id){ const u=load().find(x=>x.id===id&&x.role==='school'); return u ? { full_name:u.full_name||'', logo:(u.settings&&u.settings.logo)||'', color:(u.settings&&(u.settings.color||u.settings.avatarColor))||'' } : null; },
     _anns(){ try { return JSON.parse(localStorage.getItem('dict_demo_announcements') || '[]'); } catch(e){ return []; } },
     async listAnnouncements(){ return { rows: this._anns().slice().sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||'')) }; },
-    async postAnnouncement(p){ const a=this._anns(); a.push({ id:'an-'+Date.now(), title:p.title||'', body:p.body||'', created_at:new Date().toISOString(), category:p.category||'info', target_type:p.target_type||'all', target_id:p.target_id||null, assign_kind:p.assign_kind||null, assign_lesson:(p.assign_lesson!=null?p.assign_lesson:null), due_at:p.due_at||null }); localStorage.setItem('dict_demo_announcements', JSON.stringify(a)); return { error:null }; },
+    async postAnnouncement(p){ const a=this._anns(); a.push({ id:'an-'+Date.now(), title:p.title||'', body:p.body||'', created_at:new Date().toISOString(), category:p.category||'info', target_type:p.target_type||'all', target_id:p.target_id||null, assign_kind:p.assign_kind||null, assign_lesson:(p.assign_lesson!=null?p.assign_lesson:null), due_at:p.due_at||null, pinned:!!p.pinned, image:p.image||null, publish_at:p.publish_at||new Date().toISOString() }); localStorage.setItem('dict_demo_announcements', JSON.stringify(a)); return { error:null }; },
+    async updateAnnouncement(id, patch){ const a=this._anns(); const x=a.find(y=>y.id===id); if(x) Object.assign(x, patch); localStorage.setItem('dict_demo_announcements', JSON.stringify(a)); return { error:null }; },
     async deleteAnnouncement(id){ localStorage.setItem('dict_demo_announcements', JSON.stringify(this._anns().filter(x=>x.id!==id))); return { error:null }; },
     async schoolByToken(token){
       const s=load().find(x=>x.role==='school' && (x.token_student===token || x.token_teacher===token));
@@ -8971,6 +9006,7 @@ class Component extends DCLogic {
     levelUpShow: false, levelUpLevel: 0, levelUpMsg: '',
     announcements: [], annOpen: false, annComposeOpen: false, annTitle: '', annBody: '', annBusy: false, annErr: '',
     annCat: 'info', annTarget: 'all', annTargetId: '', annAssignOn: false, annAssignKind: 'quiz', annAssignLesson: 1, annDue: '',
+    annPinned: false, annImage: '', annImageBlob: null, annScheduleOn: false, annPublishAt: '', annDoneExpand: [],
     testMode: null, testKind: 'mc_jp', testLesson: 1, testMix: false,
     testWords: [], testIdx: 0, testScore: 0, testResults: [], testPicks: [],
     // exercises (លំហាត់ / លំហាត់រូបភាព)
@@ -9162,6 +9198,7 @@ class Component extends DCLogic {
   // Is this announcement addressed to the current viewer? (admin sees all.)
   annVisibleForMe(a){
     if (this.state.role === 'admin') return true;
+    if (a.publish_at && new Date(a.publish_at) > new Date()) return false;   // scheduled — not yet live
     const t = a.target_type || 'all';
     if (t === 'all') return true;
     if (t === 'student') return a.target_id === this.state.userId;
@@ -9178,7 +9215,7 @@ class Component extends DCLogic {
     if (changed) { const settings = { ...this.state.settings, annRead: [...read] }; this.setState({ settings }, () => this.persist()); }
   }
   closeAnn(){ this.setState({ annOpen: false, annErr: '' }); }
-  openCompose(){ this.setState({ annComposeOpen: true, annErr: '' }); }
+  openCompose(){ this.setState({ annComposeOpen: true, annErr: '', annTitle: '', annBody: '', annCat: 'info', annTarget: 'all', annTargetId: '', annAssignOn: false, annAssignKind: 'quiz', annAssignLesson: 1, annDue: '', annPinned: false, annImage: '', annImageBlob: null, annScheduleOn: false, annPublishAt: '' }); }
   closeCompose(){ this.setState({ annComposeOpen: false, annErr: '' }); }
   onAnnTitle(e){ this.setState({ annTitle: e.target.value }); }
   onAnnBody(e){ this.setState({ annBody: e.target.value }); }
@@ -9189,6 +9226,30 @@ class Component extends DCLogic {
   setAnnAssignKind(e){ this.setState({ annAssignKind: e.target.value }); }
   onAnnAssignLesson(e){ this.setState({ annAssignLesson: Math.max(1, parseInt(e.target.value, 10) || 1) }); }
   onAnnDue(e){ this.setState({ annDue: e.target.value }); }
+  toggleAnnPin(){ this.setState(s => ({ annPinned: !s.annPinned })); }
+  toggleAnnSchedule(){ this.setState(s => ({ annScheduleOn: !s.annScheduleOn })); }
+  onAnnPublishAt(e){ this.setState({ annPublishAt: e.target.value }); }
+  onAnnImageFile(e){
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    if (!/^image\//.test(f.type)) { this.setState({ annErr: 'សូមជ្រើសរើសរូបភាព' }); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1000, sc = Math.min(1, max / Math.max(img.width, img.height));
+        const cv = document.createElement('canvas'); cv.width = Math.round(img.width * sc); cv.height = Math.round(img.height * sc);
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        cv.toBlob(blob => this.setState({ annImageBlob: blob, annImage: cv.toDataURL('image/png'), annErr: '' }), 'image/png', 0.9);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(f);
+  }
+  clearAnnImage(){ this.setState({ annImage: '', annImageBlob: null }); }
+  // admin: toggle an existing message's pin
+  async pinItem(id, pinned){ await Backend.updateAnnouncement(id, { pinned: !pinned }); this.loadAnnouncements(); }
+  toggleDoneExpand(id){ this.setState(s => ({ annDoneExpand: s.annDoneExpand.includes(id) ? s.annDoneExpand.filter(x => x !== id) : [...s.annDoneExpand, id] })); }
   async postAnn(){
     if (this.state.annBusy) return;
     const s = this.state;
@@ -9196,21 +9257,25 @@ class Component extends DCLogic {
     if (!title && !body) { this.setState({ annErr: 'សូមបញ្ចូលអត្ថបទប្រកាស' }); return; }
     if (s.annTarget !== 'all' && !s.annTargetId) { this.setState({ annErr: 'សូមជ្រើសរើសអ្នកទទួល' }); return; }
     const needsLesson = s.annAssignOn && ['word', 'quiz', 'img'].includes(s.annAssignKind);
+    this.setState({ annBusy: true, annErr: '' });
+    let imageUrl = '';
+    if (s.annImageBlob) { const up = await Backend.uploadSchoolLogo(s.annImageBlob); if (up.error) { this.setState({ annBusy: false, annErr: 'ផ្ទុករូបមិនបាន៖ ' + up.error }); return; } imageUrl = up.url; }
     const patch = {
       title, body, category: s.annCat,
       target_type: s.annTarget, target_id: s.annTarget === 'all' ? null : s.annTargetId,
       assign_kind: s.annAssignOn ? s.annAssignKind : null,
       assign_lesson: needsLesson ? (s.annAssignLesson || 1) : null,
       due_at: (s.annAssignOn && s.annDue) ? new Date(s.annDue + 'T23:59:59').toISOString() : null,
+      pinned: s.annPinned, image: imageUrl || null,
+      publish_at: (s.annScheduleOn && s.annPublishAt) ? new Date(s.annPublishAt).toISOString() : new Date().toISOString(),
     };
-    this.setState({ annBusy: true, annErr: '' });
     const { error } = await Backend.postAnnouncement(patch);
     if (error) { this.setState({ annBusy: false, annErr: error }); return; }
     await this.loadAnnouncements();
     const read = this.annReadSet();
     for (const a of (this.state.announcements || [])) read.add(a.id);   // admin's own posts are read
     const settings = { ...this.state.settings, annRead: [...read] };
-    this.setState({ annBusy: false, annComposeOpen: false, annTitle: '', annBody: '', annCat: 'info', annTarget: 'all', annTargetId: '', annAssignOn: false, annDue: '', settings }, () => this.persist());
+    this.setState({ annBusy: false, annComposeOpen: false, annTitle: '', annBody: '', annCat: 'info', annTarget: 'all', annTargetId: '', annAssignOn: false, annDue: '', annPinned: false, annImage: '', annImageBlob: null, annScheduleOn: false, annPublishAt: '', settings }, () => this.persist());
   }
   async deleteAnn(id){
     if (!window.confirm('លុបប្រកាសនេះមែនទេ?')) return;
@@ -12733,26 +12798,49 @@ class Component extends DCLogic {
           if (days === 1) return { has: true, label: 'នៅសល់ ១ ថ្ងៃ', color: '#e0a11b' };
           return { has: true, label: `នៅសល់ ${days} ថ្ងៃ`, color: days <= 3 ? '#e0a11b' : '#2e9e5b' };
         };
+        // has the student done the assigned test? (a stored score for that lesson)
+        const assignmentDone = (st, kind, lesson) => {
+          const set = st.settings || {};
+          if (kind === 'quiz') return (set.quizzes || {})[lesson] != null;
+          if (kind === 'img')  return (set.imgQuizzes || {})[lesson] != null;
+          if (kind === 'word') return Object.values(set.lessons || {}).some(rec => rec && rec[lesson] != null);
+          if (kind === 'exam') return (Array.isArray(set.examLog) && set.examLog.length > 0) || Object.keys(set.exams || {}).length > 0;
+          return false;
+        };
+        const targetStudents = a => students.filter(st => a.target_type === 'all' ? true : a.target_type === 'school' ? st.school_id === a.target_id : a.target_type === 'student' ? st.id === a.target_id : false);
+        const now = Date.now();
+        anns.sort((x, y) => (y.pinned ? 1 : 0) - (x.pinned ? 1 : 0) || String(y.created_at || '').localeCompare(String(x.created_at || '')));
         const annItems = anns.map(a => {
           const cat = CATS[a.category] || CATS.info;
           const di = dueInfo(a.due_at);
-          let readStat = '';
+          let readStat = '', doneStat = '', notDoneLabel = '';
           if (isAdmin) {
-            const ts = students.filter(st => a.target_type === 'all' ? true : a.target_type === 'school' ? st.school_id === a.target_id : a.target_type === 'student' ? st.id === a.target_id : false);
+            const ts = targetStudents(a);
             const rc = ts.filter(st => Array.isArray(st.settings && st.settings.annRead) && st.settings.annRead.includes(a.id)).length;
             readStat = `👁 អានរួច ${rc}/${ts.length}`;
+            if (a.assign_kind) {
+              const notDone = ts.filter(st => !assignmentDone(st, a.assign_kind, a.assign_lesson));
+              doneStat = `✅ ធ្វើរួច ${ts.length - notDone.length}/${ts.length}`;
+              notDoneLabel = notDone.length ? ('មិនទាន់ធ្វើ៖ ' + notDone.map(st => st.full_name || st.email).join(', ')) : 'អ្នកទាំងអស់ធ្វើរួច 🎉';
+            }
           }
+          const scheduled = a.publish_at && new Date(a.publish_at).getTime() > now;
           const tgt = a.target_type === 'student' ? ('សិស្ស៖ ' + stuName(a.target_id)) : a.target_type === 'school' ? ('សាលា៖ ' + schName(a.target_id)) : 'ទាំងអស់គ្នា';
           return {
             title: a.title || '', body: a.body || '',
             hasTitle: !!(a.title || '').trim(), hasBody: !!(a.body || '').trim(),
             dateLabel: fmt(a.created_at), isNew: !read.has(a.id),
             catEmoji: cat.emoji, catLabel: cat.label, catBar: `border-left:4px solid ${cat.color};`,
+            pinned: !!a.pinned, pinGlyph: a.pinned ? '📌' : '📍', onPin: () => this.pinItem(a.id, a.pinned),
+            hasImage: !!a.image, image: a.image || '',
             hasAssign: !!a.assign_kind,
             assignLabel: '▶ ធ្វើ ' + (ASSIGN[a.assign_kind] || 'លំហាត់') + (a.assign_lesson ? ' ' + a.assign_lesson : ''),
             onDo: () => this.doAssignment(a.assign_kind, a.assign_lesson),
             hasDue: di.has, dueLabel: di.label, dueStyle: `color:${di.color};font-weight:700;`,
+            scheduled, schedLabel: scheduled ? ('🕐 គ្រោងផ្ញើ ' + fmt(a.publish_at)) : '',
             showAdmin: isAdmin, readStat, targetLabel: tgt,
+            hasDoneStat: isAdmin && !!a.assign_kind, doneStat, notDoneLabel,
+            doneExpanded: s.annDoneExpand.includes(a.id), onToggleDone: () => this.toggleDoneExpand(a.id),
             onDelete: () => this.deleteAnn(a.id),
           };
         });
@@ -12776,6 +12864,10 @@ class Component extends DCLogic {
           annAssignLesson: s.annAssignLesson, onAnnAssignLesson: e => this.onAnnAssignLesson(e),
           annAssignNeedsLesson: ['word', 'quiz', 'img'].includes(s.annAssignKind),
           annDue: s.annDue, onAnnDue: e => this.onAnnDue(e),
+          annPinned: s.annPinned, annPinnedClass: s.annPinned ? 'on' : '', toggleAnnPin: () => this.toggleAnnPin(),
+          annImage: s.annImage, hasAnnImage: !!s.annImage, onAnnImageFile: e => this.onAnnImageFile(e), clearAnnImage: () => this.clearAnnImage(),
+          annScheduleOn: s.annScheduleOn, annScheduleClass: s.annScheduleOn ? 'on' : '', toggleAnnSchedule: () => this.toggleAnnSchedule(),
+          annPublishAt: s.annPublishAt, onAnnPublishAt: e => this.onAnnPublishAt(e),
         };
       })(),
       pr: s.printReport || {}, prItems: (s.printReport && s.printReport.items) || [], prHasLogo: !!(s.printReport && s.printReport.logo), prNoLogo: !(s.printReport && s.printReport.logo),
