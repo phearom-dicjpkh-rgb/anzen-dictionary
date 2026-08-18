@@ -8368,17 +8368,22 @@ function buildUsageDetail(usage, listen, from, to){
   return { rows, totalSecs, listenSecs, studySecs: Math.max(0, totalSecs - listenSecs), activeDays };
 }
 
-// The last seven days of time in the app. Shared by a learner's own profile
-// and by the teacher's view of them, so both read the same shape.
+// This week, Monday → Sunday. Shared by a learner's own profile and by the
+// teacher's view of them, so both read the same shape. Days later in the week
+// than today simply read zero.
 function buildUsageChart(usage){
   const days = [];
   let week = 0;
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate() - i);
+  const today = new Date();
+  const todayKey = dayKey(today);
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));   // getDay 0=Sun..6=Sat → back up to Monday
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday); d.setDate(monday.getDate() + i);
     const dk = dayKey(d);
     const secs = (usage && usage[dk]) || 0;
     week += secs;
-    days.push({ secs, mins: Math.round(secs / 60), label: KH_WEEKDAY[d.getDay()], isToday: i === 0, dayKey: dk });
+    days.push({ secs, mins: Math.round(secs / 60), label: KH_WEEKDAY[d.getDay()], isToday: dk === todayKey, dayKey: dk });
   }
   const peak = Math.max(300, ...days.map(d => d.secs));   // a floor keeps tiny bars readable
   days.forEach(d => {
