@@ -711,6 +711,10 @@ textarea.input { min-height: 90px; resize: vertical; }
           <option value="page" label="តាមទំព័រ" style="color:#111;">តាមទំព័រ</option>
         </select>
       </sc-if>
+      <button sc-camel-on-click="{{ openAnn }}" aria-label="ដំណឹង" title="ដំណឹង" style="flex:none;position:relative;width:36px;height:36px;border-radius:9px;border:none;background:rgba(255,255,255,0.16);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;">
+        <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 01-3.46 0"></path></svg>
+        <sc-if value="{{ annHasUnread }}"><span style="position:absolute;top:3px;right:4px;min-width:14px;height:14px;padding:0 2px;border-radius:999px;background:#e24b4a;color:#fff;font-size:9px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--color-accent);">{{ annBadge }}</span></sc-if>
+      </button>
     </div>
     <div data-scroll="main" style="flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:0;padding-bottom:{{ mainPadBottom }};box-sizing:border-box;">
       <div style="zoom:{{ fontScale }};">
@@ -2544,6 +2548,44 @@ textarea.input { min-height: 90px; resize: vertical; }
             </sc-for>
           </div>
           <div style="margin-top:16px;font-size:10px;color:#999;text-align:center;">{{ pr.appName }} · SSW DICTIONARY</div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ annOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;">
+      <div style="position:absolute;inset:0;background:rgba(20,30,50,0.45);" sc-camel-on-click="{{ closeAnn }}"></div>
+      <div style="position:relative;width:100%;max-width:460px;max-height:88vh;background:var(--color-bg);border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 12px 44px rgba(0,0,0,0.4);">
+        <div style="display:flex;align-items:center;gap:10px;padding:13px 16px;background:var(--color-accent);color:#fff;">
+          <svg width="19" height="19" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 01-3.46 0"></path></svg>
+          <div style="flex:1;font-weight:700;font-size:16px;">ដំណឹង</div>
+          <button aria-label="បិទ" sc-camel-on-click="{{ closeAnn }}" style="width:28px;height:28px;border:none;border-radius:8px;background:rgba(255,255,255,0.18);color:#fff;font-size:14px;cursor:pointer;">✕</button>
+        </div>
+        <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 18px;display:flex;flex-direction:column;gap:12px;">
+          <sc-if value="{{ annIsAdmin }}">
+            <div class="card elev-sm" style="gap:8px;">
+              <div style="font-weight:700;font-size:13px;">ប្រកាសថ្មី (Admin)</div>
+              <input class="input" type="text" placeholder="ចំណងជើង" value="{{ annTitle }}" sc-camel-on-change="{{ onAnnTitle }}">
+              <textarea class="input" placeholder="អត្ថបទប្រកាស…" value="{{ annBody }}" sc-camel-on-change="{{ onAnnBody }}" style="resize:vertical;min-height:66px;line-height:1.6;"></textarea>
+              <sc-if value="{{ annHasErr }}"><div style="font-size:12px;color:#c0392b;">{{ annErr }}</div></sc-if>
+              <button class="btn btn-primary btn-block" sc-camel-on-click="{{ postAnn }}">{{ annPostLabel }}</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ annEmpty }}">
+            <div style="text-align:center;padding:32px 10px;opacity:0.5;font-size:13px;">មិនទាន់មានដំណឹងទេ</div>
+          </sc-if>
+          <sc-for list="{{ annItems }}" as="a" hint-placeholder-count="3">
+            <div class="card elev-sm" style="gap:6px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="font-size:10px;opacity:0.5;flex:1;">{{ a.dateLabel }}</div>
+                <sc-if value="{{ a.isNew }}"><span style="font-size:9px;background:#e24b4a;color:#fff;padding:1px 7px;border-radius:99px;font-weight:700;">ថ្មី</span></sc-if>
+                <sc-if value="{{ annIsAdmin }}"><button aria-label="លុប" sc-camel-on-click="{{ a.onDelete }}" style="border:none;background:transparent;color:#c0392b;cursor:pointer;font-size:14px;padding:0 2px;">🗑</button></sc-if>
+              </div>
+              <sc-if value="{{ a.hasTitle }}"><div style="font-weight:700;font-size:15px;line-height:1.4;">{{ a.title }}</div></sc-if>
+              <sc-if value="{{ a.hasBody }}"><div style="font-size:13px;line-height:1.65;white-space:pre-wrap;">{{ a.body }}</div></sc-if>
+            </div>
+          </sc-for>
         </div>
       </div>
     </div>
@@ -8559,6 +8601,9 @@ function makeSupabaseBackend(){
     async listTeachers(){ const { data } = await client.from('profiles').select('id,full_name,email,school_id').eq('role','teacher').order('full_name'); return { rows:data||[] }; },
     async listSchools(){ const { data } = await client.from('profiles').select('id,full_name,email,settings').eq('role','school').order('full_name'); return { rows:data||[] }; },
     async schoolBrand(id){ if(!id) return null; const { data } = await client.rpc('school_brand', { sid: id }); const r = (data && data[0]) || null; return r ? { full_name: r.full_name || '', logo: r.logo || '', color: r.color || '' } : null; },
+    async listAnnouncements(){ const { data } = await client.from('announcements').select('id,title,body,created_at').order('created_at', { ascending: false }).limit(50); return { rows: data || [] }; },
+    async postAnnouncement(p){ const { data: sess } = await client.auth.getUser(); const uid = sess && sess.user ? sess.user.id : null; const { error } = await client.from('announcements').insert({ title: p.title || '', body: p.body || '', created_by: uid }); return { error: error ? error.message : null }; },
+    async deleteAnnouncement(id){ const { error } = await client.from('announcements').delete().eq('id', id); return { error: error ? error.message : null }; },
     // The student leaderboard: a SECURITY DEFINER function returns only name +
     // level + a tiebreak, never a classmate's email or word list, so RLS still
     // hides the details that only a teacher may see.
@@ -8712,6 +8757,10 @@ function makeDemoBackend(){
       return { rows: me && me.role==='school' ? all.filter(t=>t.school_id===me.id) : all }; },
     async listSchools(){ return { rows:load().filter(x=>x.role==='school') }; },
     async schoolBrand(id){ const u=load().find(x=>x.id===id&&x.role==='school'); return u ? { full_name:u.full_name||'', logo:(u.settings&&u.settings.logo)||'', color:(u.settings&&(u.settings.color||u.settings.avatarColor))||'' } : null; },
+    _anns(){ try { return JSON.parse(localStorage.getItem('dict_demo_announcements') || '[]'); } catch(e){ return []; } },
+    async listAnnouncements(){ return { rows: this._anns().slice().sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||'')) }; },
+    async postAnnouncement(p){ const a=this._anns(); a.push({ id:'an-'+Date.now(), title:p.title||'', body:p.body||'', created_at:new Date().toISOString() }); localStorage.setItem('dict_demo_announcements', JSON.stringify(a)); return { error:null }; },
+    async deleteAnnouncement(id){ localStorage.setItem('dict_demo_announcements', JSON.stringify(this._anns().filter(x=>x.id!==id))); return { error:null }; },
     async schoolByToken(token){
       const s=load().find(x=>x.role==='school' && (x.token_student===token || x.token_teacher===token));
       return { school: s ? { id:s.id, full_name:s.full_name, role: s.token_teacher===token ? 'teacher' : 'student' } : null };
@@ -8859,6 +8908,7 @@ class Component extends DCLogic {
     // admin: A4 results preview / print
     printOpen: false, printReport: null,
     levelUpShow: false, levelUpLevel: 0, levelUpMsg: '',
+    announcements: [], annOpen: false, annTitle: '', annBody: '', annBusy: false, annErr: '',
     testMode: null, testKind: 'mc_jp', testLesson: 1, testMix: false,
     testWords: [], testIdx: 0, testScore: 0, testResults: [], testPicks: [],
     // exercises (លំហាត់ / លំហាត់រូបភាព)
@@ -9045,6 +9095,37 @@ class Component extends DCLogic {
   setAvatarColor(c){ const settings = { ...this.state.settings, avatarColor: c }; this.setState({ settings }, () => this.persist()); }
   async loadLeaderboard(){ const r = await Backend.leaderboard(); this.setState({ leaderboard: r.rows || [] }); }
 
+  // — Announcements (ប្រកាស) — admin posts, everyone reads via the header bell —
+  async loadAnnouncements(){ const r = await Backend.listAnnouncements(); this.setState({ announcements: r.rows || [] }); }
+  openAnn(){
+    this.setState({ annOpen: true });
+    // opening marks everything read: remember the newest timestamp we have seen
+    const newest = (this.state.announcements[0] && this.state.announcements[0].created_at) || new Date().toISOString();
+    const seen = (this.state.settings && this.state.settings.annSeen) || '';
+    if (newest > seen) { const settings = { ...this.state.settings, annSeen: newest }; this.setState({ settings }, () => this.persist()); }
+  }
+  closeAnn(){ this.setState({ annOpen: false, annErr: '' }); }
+  onAnnTitle(e){ this.setState({ annTitle: e.target.value }); }
+  onAnnBody(e){ this.setState({ annBody: e.target.value }); }
+  async postAnn(){
+    if (this.state.annBusy) return;
+    const title = (this.state.annTitle || '').trim(), body = (this.state.annBody || '').trim();
+    if (!title && !body) { this.setState({ annErr: 'សូមបញ្ចូលអត្ថបទប្រកាស' }); return; }
+    this.setState({ annBusy: true, annErr: '' });
+    const { error } = await Backend.postAnnouncement({ title, body });
+    if (error) { this.setState({ annBusy: false, annErr: error }); return; }
+    await this.loadAnnouncements();
+    // the admin's own post counts as read
+    const newest = (this.state.announcements[0] && this.state.announcements[0].created_at) || new Date().toISOString();
+    const settings = { ...this.state.settings, annSeen: newest };
+    this.setState({ annBusy: false, annTitle: '', annBody: '', settings }, () => this.persist());
+  }
+  async deleteAnn(id){
+    if (!window.confirm('លុបប្រកាសនេះមែនទេ?')) return;
+    await Backend.deleteAnnouncement(id);
+    this.loadAnnouncements();
+  }
+
   async componentDidMount(){
     this.primeVoices();
     this.startUsageTracking();
@@ -9083,6 +9164,7 @@ class Component extends DCLogic {
       authStage: 'app', screen, email:'', password:'', authBusy:false, authError:'',
     }, () => {
       this._lastLevel = computeLevel(this.state.settings, totalUsageSecs(this.state.usage), (this.state.viewed || []).length);   // baseline so only real rises pop
+      this.loadAnnouncements();
       if (p.role === 'admin')   this.loadAdminData();
       if (['teacher','school','admin'].includes(p.role)) this.loadStudents();
       this.loadBooksAndCustom();
@@ -12526,6 +12608,28 @@ class Component extends DCLogic {
       // — A4 results preview / print —
       printOpen: s.printOpen, closePrint: () => this.closePrint(), doPrint: () => this.doPrint(),
       levelUpShow: s.levelUpShow, levelUpLevel: s.levelUpLevel, levelUpMsg: s.levelUpMsg, closeLevelUp: () => this.closeLevelUp(),
+      ...(() => {
+        const seen = (s.settings && s.settings.annSeen) || '';
+        const anns = s.announcements || [];
+        const unread = anns.filter(a => (a.created_at || '') > seen).length;
+        const fmt = ts => { const d = new Date(ts); if (isNaN(d)) return ''; const z = n => String(n).padStart(2, '0'); return `${z(d.getDate())}/${z(d.getMonth()+1)}/${d.getFullYear()} ${z(d.getHours())}:${z(d.getMinutes())}`; };
+        return {
+          annOpen: s.annOpen, openAnn: () => this.openAnn(), closeAnn: () => this.closeAnn(),
+          annHasUnread: unread > 0, annBadge: unread > 9 ? '9+' : String(unread),
+          annIsAdmin: s.role === 'admin',
+          annEmpty: anns.length === 0,
+          annItems: anns.map(a => ({
+            title: a.title || '', body: a.body || '',
+            hasTitle: !!(a.title || '').trim(), hasBody: !!(a.body || '').trim(),
+            dateLabel: fmt(a.created_at), isNew: (a.created_at || '') > seen,
+            onDelete: () => this.deleteAnn(a.id),
+          })),
+          annTitle: s.annTitle, annBody: s.annBody,
+          onAnnTitle: e => this.onAnnTitle(e), onAnnBody: e => this.onAnnBody(e),
+          postAnn: () => this.postAnn(), annPostLabel: s.annBusy ? 'កំពុងផ្ញើ…' : 'ផ្ញើប្រកាស',
+          annHasErr: !!s.annErr, annErr: s.annErr,
+        };
+      })(),
       pr: s.printReport || {}, prItems: (s.printReport && s.printReport.items) || [], prHasLogo: !!(s.printReport && s.printReport.logo), prNoLogo: !(s.printReport && s.printReport.logo),
       monitorQuizSummary, hasMonitorQuiz: monitorQuizSummary.hasAny,
       monitorImgQuizSummary, hasMonitorImgQuiz: monitorImgQuizSummary.hasAny,
