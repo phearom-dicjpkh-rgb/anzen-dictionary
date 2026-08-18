@@ -8371,13 +8371,13 @@ function buildUsageDetail(usage, listen, from, to){
 // This week, Monday → Sunday. Shared by a learner's own profile and by the
 // teacher's view of them, so both read the same shape. Days later in the week
 // than today simply read zero.
-function buildUsageChart(usage){
+function buildUsageChart(usage, refDate){
   const days = [];
   let week = 0;
-  const today = new Date();
-  const todayKey = dayKey(today);
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));   // getDay 0=Sun..6=Sat → back up to Monday
+  const base = (refDate instanceof Date && !isNaN(refDate)) ? refDate : new Date();
+  const todayKey = dayKey(new Date());
+  const monday = new Date(base);
+  monday.setDate(base.getDate() - ((base.getDay() + 6) % 7));   // getDay 0=Sun..6=Sat → back up to Monday of refDate's week
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday); d.setDate(monday.getDate() + i);
     const dk = dayKey(d);
@@ -12091,7 +12091,6 @@ class Component extends DCLogic {
     }));
 
     // the same two panels again, for whichever student is being followed
-    const monitorChart = buildUsageChart(s.viewingUsage);
     // detailed usage over a chosen date range (defaults: first recorded day → today)
     const _vUsage = s.viewingUsage || {}, _vListen = s.viewingListen || {};
     const _usageKeys = [...new Set([...Object.keys(_vUsage), ...Object.keys(_vListen)])].sort();
@@ -12099,6 +12098,10 @@ class Component extends DCLogic {
     const _today = dayKey(new Date());
     const monUsageFrom = s.monUsageFrom || _firstDay;
     const monUsageTo = s.monUsageTo || _today;
+    // Admin can scrub the weekly chart to the week of the chosen "from" date;
+    // until they pick one (and for every other role) it stays on the current week.
+    const _chartRef = (s.role === 'admin' && s.monUsageFrom) ? new Date(s.monUsageFrom + 'T00:00:00') : new Date();
+    const monitorChart = buildUsageChart(_vUsage, _chartRef);
     const usageDetail = buildUsageDetail(_vUsage, _vListen, monUsageFrom, monUsageTo);
     // test results a teacher can drill into: each lesson chip is tappable to
     // reveal which words the student got right (green ✓) or wrong (red ✗)
