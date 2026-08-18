@@ -469,6 +469,26 @@ textarea.input { min-height: 90px; resize: vertical; }
 .pm-cell.pm-open { background: rgba(39, 174, 96, 0.12); }
 .pm-cell:active { filter: brightness(0.94); }
 
+/* — Settings (grouped rows) — */
+.set-ghead { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 50%, transparent); margin: 20px 4px 8px; }
+.set-group { background: var(--color-neutral-100); border: 1px solid var(--color-divider); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-sm); }
+.set-row { display: flex; align-items: center; gap: 13px; padding: 13px 14px; border-top: 1px solid var(--color-divider); }
+.set-group > .set-row:first-child { border-top: none; }
+.set-ico { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex: none; background: var(--color-accent-100); color: var(--color-accent-700); }
+.set-ico svg { width: 18px; height: 18px; }
+.set-tx { min-width: 0; }
+.set-tx b { font-size: 14px; font-weight: 700; display: block; }
+.set-tx s { font-size: 11px; color: color-mix(in srgb, var(--color-text) 55%, transparent); text-decoration: none; display: block; margin-top: 1px; }
+.set-chev { margin-left: auto; color: color-mix(in srgb, var(--color-text) 40%, transparent); display: flex; flex: none; }
+.set-chev svg { width: 18px; height: 18px; }
+/* iOS-style switch (styled checkbox) */
+.switch { position: relative; width: 44px; height: 26px; flex: none; cursor: pointer; }
+.switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 1; }
+.switch .track { position: absolute; inset: 0; border-radius: 999px; background: var(--color-neutral-300); transition: background 0.18s; }
+.switch .thumb { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: left 0.18s; }
+.switch.on .track { background: var(--color-accent); }
+.switch.on .thumb { left: 21px; }
+
 /* — tags — */
 .tag {
   display: inline-flex; align-items: center; font-size: 11px;
@@ -782,6 +802,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isFavorites }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 20px;">
+          <sc-if value="{{ hasMenuTab }}"><button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button></sc-if>
           <h1 style="font-size:26px;margin:0 0 14px;">ពាក្យសំណព្វ</h1>
           <sc-if value="{{ hasFavorites }}">
             <div style="display:flex;flex-direction:column;gap:8px;">
@@ -1405,6 +1426,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
         <div style="padding:16px 20px 44px;">
+          <sc-if value="{{ hasMenuTab }}"><button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button></sc-if>
           <h1 style="font-size:27px;letter-spacing:-0.02em;margin:0 0 18px;">ប្រវត្តិរូប</h1>
 
           <!-- identity: avatar (zodiac + colour) + name + role -->
@@ -2300,57 +2322,76 @@ textarea.input { min-height: 90px; resize: vertical; }
         <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;">
           <sc-if value="{{ hasMenuTab }}"><button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button></sc-if>
-          <h1 style="font-size:26px;margin:0 0 4px;">ការកំណត់</h1>
-          <div style="font-size:12px;opacity:0.6;margin-bottom:6px;">{{ roleLabel }} · {{ profileName }} · <a href="#" sc-camel-on-click="{{ switchRole }}">ចេញពីគណនី</a></div>
+          <h1 style="font-size:26px;margin:0 0 3px;">ការកំណត់</h1>
           <div style="font-size:12px;margin-bottom:16px;"><a href="install.html" target="_blank" rel="noopener">ទំព័រ QR សម្រាប់ចែករំលែក និងដំឡើង →</a></div>
 
-          <sc-if value="{{ isAdmin }}">
-          <div class="card elev-sm" style="margin-bottom:18px;gap:12px;">
-            <div class="card-kicker">ឈ្មោះ និង Logo (Admin)</div>
-            <div class="field">
-              <label>ឈ្មោះវចនានុក្រម</label>
-              <input class="input" type="text" value="{{ settingsName }}" sc-camel-on-change="{{ onSettingsName }}">
+          <!-- account -->
+          <div class="set-group">
+            <div class="set-row">
+              <div class="set-ico" style="border-radius:50%;background:var(--color-accent);color:#fff;"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+              <div class="set-tx" style="flex:1;"><b>{{ roleLabel }}</b><s>{{ profileName }}</s></div>
+              <a href="#" sc-camel-on-click="{{ switchRole }}" style="font-size:12px;font-weight:700;color:var(--color-accent-700);text-decoration:none;">ចេញ</a>
             </div>
-            <div class="field">
-              <label>Logo</label>
-              <div style="display:flex;align-items:center;gap:12px;">
-                <sc-if value="{{ hasSettingsLogo }}">
-                  <img src="{{ settingsLogo }}" alt="logo" style="width:52px;height:52px;flex:none;border-radius:10px;object-fit:cover;border:1px solid var(--color-divider);">
-                </sc-if>
-                <div style="display:flex;flex-direction:column;gap:6px;min-width:0;">
-                  <input type="file" accept="image/*" sc-camel-on-change="{{ onSettingsLogoFile }}" style="font-size:12px;max-width:100%;">
-                  <sc-if value="{{ hasSettingsLogo }}">
-                    <a href="#" style="font-size:12px;" sc-camel-on-click="{{ clearSettingsLogo }}">លុប logo ចេញ</a>
-                  </sc-if>
-                </div>
-              </div>
-            </div>
-            <sc-if value="{{ hasSettingsError }}"><div style="font-size:12px;color:#c0392b;">{{ settingsError }}</div></sc-if>
-            <sc-if value="{{ hasSettingsMsg }}"><div style="font-size:12px;color:var(--color-accent-700);">{{ settingsMsg }}</div></sc-if>
-            <button class="btn btn-primary btn-block" sc-camel-on-click="{{ saveAppSettings }}">{{ settingsSaveLabel }}</button>
           </div>
 
-          <div class="card elev-sm" style="margin-bottom:18px;gap:10px;">
-            <div class="card-kicker">ធ្វើបច្ចុប្បន្នភាពពាក្យ (Admin)</div>
-            <div style="font-size:12px;opacity:0.65;line-height:1.6;">
-              បន្ទាប់ពីកែពាក្យក្នុង Google Docs រួច ចុចប៊ូតុងនេះ ដើម្បីទាញចូលកម្មវិធី។
+          <sc-if value="{{ isAdmin }}">
+          <div class="set-ghead">អត្តសញ្ញាណកម្មវិធី</div>
+          <div class="set-group">
+            <div class="set-row" style="flex-direction:column;align-items:stretch;gap:9px;">
+              <div style="display:flex;align-items:center;gap:13px;">
+                <div class="set-ico"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h16v2"></path><path d="M9 19h6"></path><path d="M12 5v14"></path></svg></div>
+                <div class="set-tx"><b>ឈ្មោះវចនានុក្រម</b></div>
+              </div>
+              <input class="input" type="text" value="{{ settingsName }}" sc-camel-on-change="{{ onSettingsName }}" style="width:100%;">
             </div>
-            <sc-if value="{{ hasSyncError }}"><div style="font-size:12px;color:#c0392b;line-height:1.5;">{{ syncError }}</div></sc-if>
-            <sc-if value="{{ hasSyncMsg }}"><div style="font-size:12px;color:var(--color-accent-700);line-height:1.5;">{{ syncMsg }}</div></sc-if>
-            <button class="btn btn-secondary btn-block" sc-camel-on-click="{{ syncWords }}">{{ syncBtnLabel }}</button>
+            <div class="set-row">
+              <div class="set-ico"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg></div>
+              <div class="set-tx" style="flex:1;"><b>Logo</b></div>
+              <sc-if value="{{ hasSettingsLogo }}"><img src="{{ settingsLogo }}" alt="logo" style="width:38px;height:38px;flex:none;border-radius:9px;object-fit:cover;border:1px solid var(--color-divider);"></sc-if>
+            </div>
+            <div class="set-row" style="padding-top:2px;">
+              <div style="width:34px;flex:none;"></div>
+              <div style="display:flex;flex-direction:column;gap:6px;min-width:0;flex:1;">
+                <input type="file" accept="image/*" sc-camel-on-change="{{ onSettingsLogoFile }}" style="font-size:12px;max-width:100%;">
+                <sc-if value="{{ hasSettingsLogo }}"><a href="#" style="font-size:12px;" sc-camel-on-click="{{ clearSettingsLogo }}">លុប logo ចេញ</a></sc-if>
+              </div>
+            </div>
           </div>
+          <sc-if value="{{ hasSettingsError }}"><div style="font-size:12px;color:#c0392b;margin:8px 4px 0;">{{ settingsError }}</div></sc-if>
+          <sc-if value="{{ hasSettingsMsg }}"><div style="font-size:12px;color:var(--color-accent-700);margin:8px 4px 0;">{{ settingsMsg }}</div></sc-if>
+          <button class="btn btn-primary btn-block" style="margin-top:10px;" sc-camel-on-click="{{ saveAppSettings }}">{{ settingsSaveLabel }}</button>
+
+          <div class="set-ghead">ទិន្នន័យ</div>
+          <div class="set-group">
+            <div class="set-row" style="cursor:pointer;" sc-camel-on-click="{{ syncWords }}">
+              <div class="set-ico"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3-6.7"></path><path d="M21 3v5h-5"></path></svg></div>
+              <div class="set-tx" style="flex:1;"><b>{{ syncBtnLabel }}</b><s>ទាញការកែពី Google Docs</s></div>
+              <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
+            </div>
+          </div>
+          <sc-if value="{{ hasSyncError }}"><div style="font-size:12px;color:#c0392b;line-height:1.5;margin:8px 4px 0;">{{ syncError }}</div></sc-if>
+          <sc-if value="{{ hasSyncMsg }}"><div style="font-size:12px;color:var(--color-accent-700);line-height:1.5;margin:8px 4px 0;">{{ syncMsg }}</div></sc-if>
           </sc-if>
-          <div class="field" style="margin-bottom:18px;">
-            <label>ទំហំអក្សរ</label>
-            <input type="range" min="0.85" max="1.3" step="0.05" value="{{ fontScale }}" sc-camel-on-change="{{ onFontScaleChange }}" style="width:100%;">
+
+          <div class="set-ghead">ការបង្ហាញ</div>
+          <div class="set-group">
+            <div class="set-row" style="flex-direction:column;align-items:stretch;gap:11px;">
+              <div style="display:flex;align-items:center;gap:13px;">
+                <div class="set-ico"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h16v2"></path><path d="M9 20h6"></path><path d="M12 5v15"></path></svg></div>
+                <div class="set-tx" style="flex:1;"><b>ទំហំអក្សរ</b></div>
+                <span style="font-size:12px;color:color-mix(in srgb, var(--color-text) 55%, transparent);">ក&nbsp;<b style="font-size:16px;">ក</b></span>
+              </div>
+              <input type="range" min="0.85" max="1.3" step="0.05" value="{{ fontScale }}" sc-camel-on-change="{{ onFontScaleChange }}" style="width:100%;">
+            </div>
+            <div class="set-row">
+              <div class="set-ico"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M15.54 8.46a5 5 0 010 7.07"></path><path d="M19.07 4.93a10 10 0 010 14.14"></path></svg></div>
+              <div class="set-tx" style="flex:1;"><b>លេងសម្លេងស្វ័យប្រវត្តិ</b><s>ពេលបើកមើលពាក្យ</s></div>
+              <label class="switch {{ autoAudioClass }}">
+                <input type="checkbox" checked="{{ autoAudio }}" sc-camel-on-change="{{ onAutoAudioChange }}">
+                <span class="track"></span><span class="thumb"></span>
+              </label>
+            </div>
           </div>
-          <label class="radio" style="margin-bottom:18px;">
-            <input type="checkbox" checked="{{ autoAudio }}" sc-camel-on-change="{{ onAutoAudioChange }}">
-            <span class="dot" style="border-radius:4px;"></span>
-            <span>លេងសម្លេងស្វ័យប្រវត្តិនៅពេលបើកមើលពាក្យ</span>
-          </label>
-          <div class="hr"></div>
-          <div style="font-size:12px;opacity:0.55;margin-top:14px;">កម្មវិធីនេះជាគំរូ (prototype) សម្រាប់សិស្សប្រើសិក្សា និងតេស្តពាក្យវាក្យសព្ទ និងវេយ្យាករណ៍ភាសាជប៉ុន។</div>
         </div>
         </sc-if>
 
@@ -12859,7 +12900,7 @@ class Component extends DCLogic {
       syncButtonLabel: s.syncing ? 'កំពុងទាញ…' : 'ធ្វើសមកាលកម្មឥឡូវនេះ',
       startSync: () => this.startSync(),
       fontScale: s.settings.fontScale, onFontScaleChange: e => this.onFontScaleChange(e),
-      autoAudio: s.settings.autoAudio, onAutoAudioChange: e => this.onAutoAudioChange(e),
+      autoAudio: s.settings.autoAudio, autoAudioClass: s.settings.autoAudio ? 'on' : '', onAutoAudioChange: e => this.onAutoAudioChange(e),
 
       isDetailOpen: !!s.detailWordId, detailWord,
       closeDetail: () => this.closeDetail(), stopProp: e => this.stopProp(e),
