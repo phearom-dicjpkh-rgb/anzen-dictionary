@@ -846,38 +846,48 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isTestHub }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 20px;">
-          <h1 style="font-size:26px;margin:0 0 14px;">តេស្តពាក្យ</h1>
-          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
-            <div class="card elev-sm" style="cursor:pointer;text-align:center;padding:20px;" sc-camel-on-click="{{ startMcLessons }}">
-              <div class="card-title" style="font-size:17px;">ជ្រើសរើសពាក្យត្រូវ</div>
-              <div class="card-body" style="font-size:12px;">ជ្រើសរើសពីរជម្រើស · ជប៉ុន ↔ ខ្មែរ</div>
-            </div>
-            <div class="card elev-sm" style="cursor:pointer;text-align:center;padding:20px;" sc-camel-on-click="{{ openQuizList }}">
-              <div class="card-title" style="font-size:17px;">លំហាត់ <sc-if value="{{ exercisesLockedForMe }}"><span style="font-size:14px;">🔒</span></sc-if></div>
-              <div class="card-body" style="font-size:12px;">សំណួរ 〇/✖ និង A/B/C</div>
-            </div>
-            <div class="card elev-sm" style="cursor:pointer;text-align:center;padding:20px;" sc-camel-on-click="{{ openImgQuizList }}">
-              <div class="card-title" style="font-size:17px;">លំហាត់រូបភាព <sc-if value="{{ imgExercisesLockedForMe }}"><span style="font-size:14px;">🔒</span></sc-if></div>
-              <div class="card-body" style="font-size:12px;">មើលរូបភាព រួចជ្រើសរើស</div>
-            </div>
-            <div class="card elev-sm" style="cursor:pointer;text-align:center;padding:20px;" sc-camel-on-click="{{ openExam }}">
-              <div class="card-title" style="font-size:17px;">ប្រឡងសាកល្បង <sc-if value="{{ examLockedForMe }}"><span style="font-size:14px;">🔒</span></sc-if></div>
-              <div class="card-body" style="font-size:12px;">៥០ សំណួរ · ៨០ នាទី</div>
-            </div>
-          </div>
-          <div class="hr"></div>
-          <div style="margin-top:14px;">
-            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;opacity:0.55;margin-bottom:8px;">ប្រវត្តិតេស្តថ្មីៗ</div>
-            <sc-if value="{{ hasHistory }}">
-              <sc-for list="{{ recentHistory }}" as="h" hint-placeholder-count="3">
-                <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--color-divider);font-size:13px;">
-                  <span>{{ h.label }}</span>
-                  <span style="opacity:0.65;">{{ h.scoreLabel }} · {{ h.dateLabel }}</span>
+          <sc-if value="{{ testNotRoot }}"><button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ testBack }}">← ត្រឡប់</button></sc-if>
+          <sc-if value="{{ testNotRoot }}"><div style="font-size:11.5px;opacity:0.5;margin-bottom:6px;">{{ testCrumbText }}</div></sc-if>
+          <h1 style="font-size:26px;margin:0 0 16px;">{{ testHubTitle }}</h1>
+
+          <sc-if value="{{ testShowList }}">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <sc-for list="{{ testHubItems }}" as="n" hint-placeholder-count="3">
+                <div class="card elev-sm" style="cursor:pointer;flex-direction:row;align-items:center;gap:13px;padding:18px 18px;{{ n.rowDim }}" sc-camel-on-click="{{ n.onEnter }}">
+                  <div style="flex:1;min-width:0;">
+                    <div class="card-title" style="font-size:17px;">{{ n.label }}{{ n.lockGlyph }}</div>
+                    <div class="card-body" style="font-size:12px;">{{ n.sub }}</div>
+                  </div>
+                  <span style="opacity:0.4;font-size:20px;">›</span>
                 </div>
               </sc-for>
-            </sc-if>
-            <sc-if value="{{ noHistory }}"><div style="font-size:12px;opacity:0.5;">មិនទាន់មានប្រវត្តិតេស្តទេ</div></sc-if>
-          </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ testShowTests }}">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div class="card elev-sm" style="cursor:pointer;text-align:center;padding:20px;" sc-camel-on-click="{{ startMcLessons }}">
+                <div class="card-title" style="font-size:17px;">ជ្រើសរើសពាក្យត្រូវ</div>
+                <div class="card-body" style="font-size:12px;">ជ្រើសរើសពីរជម្រើស · ជប៉ុន ↔ ខ្មែរ</div>
+              </div>
+              <div class="card elev-sm" style="cursor:pointer;text-align:center;padding:20px;" sc-camel-on-click="{{ openQuizList }}">
+                <div class="card-title" style="font-size:17px;">លំហាត់ <sc-if value="{{ exercisesLockedForMe }}"><span style="font-size:14px;">🔒</span></sc-if></div>
+                <div class="card-body" style="font-size:12px;">សំណួរ 〇/✖ និង A/B/C</div>
+              </div>
+              <div class="card elev-sm" style="cursor:pointer;text-align:center;padding:20px;" sc-camel-on-click="{{ openImgQuizList }}">
+                <div class="card-title" style="font-size:17px;">លំហាត់រូបភាព <sc-if value="{{ imgExercisesLockedForMe }}"><span style="font-size:14px;">🔒</span></sc-if></div>
+                <div class="card-body" style="font-size:12px;">មើលរូបភាព រួចជ្រើសរើស</div>
+              </div>
+              <div class="card elev-sm" style="cursor:pointer;text-align:center;padding:20px;" sc-camel-on-click="{{ openExam }}">
+                <div class="card-title" style="font-size:17px;">ប្រឡងសាកល្បង <sc-if value="{{ examLockedForMe }}"><span style="font-size:14px;">🔒</span></sc-if></div>
+                <div class="card-body" style="font-size:12px;">៥០ សំណួរ · ៨០ នាទី</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ testShowPlaceholder }}">
+            <div style="text-align:center;padding:56px 20px;opacity:0.55;font-size:13px;line-height:1.9;">មិនទាន់មានទិន្នន័យសម្រាប់ផ្នែកនេះទេ<br><span style="font-size:12px;opacity:0.8;">(កំពុងរៀបចំ · ឆាប់ៗនេះ)</span></div>
+          </sc-if>
         </div>
         </sc-if>
 
@@ -7999,6 +8009,38 @@ const PAGES = Array.from(new Set(WORDS.map(w => w.page))).sort((a,b)=>a-b);
 // Tests are a ladder of numbered lessons: ten words each, five on show at a
 // time, and the next lesson opens only once the one before it is passed.
 const LESSON_SIZE = 10, LESSON_BLOCK = 5, PASS_PCT = 90;
+
+// — Test hub tree (drill-down). Only "driving" carries the real tests today;
+//   every other leaf is a placeholder whose lockKey the admin controls in
+//   ការកំណត់សិទ្ធ (default locked until its data is ready). —
+const TEST_TREE = {
+  skills: { label: 'តេស្តជំនាញ', sub: 'បើកបរ · ថែទាំរថយន្ត', children: {
+    driving: { label: 'ជំនាញបើកបរ', sub: 'ជ្រើសរើសពាក្យ · លំហាត់ · រូបភាព · ប្រឡង', tests: true },
+    maint:   { label: 'ជំនាញថែទាំរថយន្ត', lockKey: 't_maint', placeholder: true },
+  } },
+  jp: { label: 'តេស្តភាសាជប៉ុន', sub: 'JLPT · JFT', lockKey: 't_jp', children: {
+    jlpt: { label: 'JLPT', placeholder: true },
+    jft:  { label: 'JFT', placeholder: true },
+  } },
+  law: { label: 'តេស្តច្បាប់ចរាចរណ៍', sub: 'ច្បាប់ខ្មែរ · ច្បាប់ជប៉ុន', children: {
+    kh: { label: 'ច្បាប់ខ្មែរ', sub: 'ភាសាខ្មែរ · អង់គ្លេស', lockKey: 't_law_kh', children: {
+      km: { label: 'ភាសាខ្មែរ', placeholder: true },
+      en: { label: 'ភាសាអង់គ្លេស', placeholder: true },
+    } },
+    jp: { label: 'ច្បាប់ជប៉ុន', sub: 'ភាសាខ្មែរ · ភាសាជប៉ុន', children: {
+      km: { label: 'ភាសាខ្មែរ', lockKey: 't_law_jp_km', placeholder: true },
+      ja: { label: 'ភាសាជប៉ុន', lockKey: 't_law_jp_ja', placeholder: true },
+    } },
+  } },
+};
+const TEST_LOCK_ITEMS = [
+  { key: 't_maint',     label: 'តេស្តជំនាញ · ថែទាំរថយន្ត' },
+  { key: 't_jp',        label: 'តេស្តភាសាជប៉ុន (JLPT · JFT)' },
+  { key: 't_law_kh',    label: 'ច្បាប់ចរាចរណ៍ · ច្បាប់ខ្មែរ' },
+  { key: 't_law_jp_km', label: 'ច្បាប់ជប៉ុន · ភាសាខ្មែរ' },
+  { key: 't_law_jp_ja', label: 'ច្បាប់ជប៉ុន · ភាសាជប៉ុន' },
+];
+function resolveTestNode(path){ let node = { children: TEST_TREE }; for (const k of (path || [])) { node = node.children && node.children[k]; if (!node) return null; } return node; }
 const MODE_LABEL = { mc_jp:'ជប៉ុន → ខ្មែរ', mc_km:'ខ្មែរ → ជប៉ុន' };
 
 // — Exercises (លំហាត់): true/false and A/B/C questions from the SSW problem
@@ -9009,6 +9051,7 @@ class Component extends DCLogic {
     annPinned: false, annImage: '', annImageBlob: null, annScheduleOn: false, annPublishAt: '', annDoneExpand: [],
     testMode: null, testKind: 'mc_jp', testLesson: 1, testMix: false,
     testWords: [], testIdx: 0, testScore: 0, testResults: [], testPicks: [],
+    testPath: [],   // drill-down path in the test hub tree
     // exercises (លំហាត់ / លំហាត់រូបភាព)
     quizDeck: 'quiz',
     quizLesson: 1, quizMix: false, quizQuestions: [], quizIdx: 0, quizScore: 0, quizResults: [], quizPicks: [], quizAnswered: false, quizPicked: null,
@@ -11605,7 +11648,17 @@ class Component extends DCLogic {
   reloadPage(){ this.stopSpeech(); try { location.reload(); } catch(e) { location.href = location.href; } }
   goHome(){ this.stopSpeech(); this.setState({ screen: 'home', playerPlaying: false }); }
   goFavorites(){ this.stopSpeech(); this.setState({ screen: 'favorites', playerPlaying: false }); }
-  goTest(){ this.stopSpeech(); this.setState({ screen: 'test', testMode: null, playerPlaying: false }); }
+  goTest(){ this.stopSpeech(); this.setState({ screen: 'test', testMode: null, testPath: [], playerPlaying: false }); }
+  // drill-down navigation in the test hub tree
+  testEnter(key){
+    const cur = resolveTestNode(this.state.testPath);
+    const child = cur && cur.children && cur.children[key];
+    if (!child) return;
+    if (child.lockKey && !this.featureGrantedForMe(child.lockKey)) { this.showToast('ផ្នែកនេះមិនទាន់មាន (ជាប់សោ) 🔒'); return; }
+    this.setState({ testPath: [...this.state.testPath, key] });
+  }
+  testBack(){ this.setState({ testPath: this.state.testPath.slice(0, -1) }); }
+  testToRoot(){ this.setState({ testPath: [] }); }
   goMenu(){ this.stopSpeech(); this.setState({ screen: 'menu', playerPlaying: false }); }
   goRanking(){ this.stopSpeech(); this.setState({ screen: 'ranking', playerPlaying: false }); this.loadLeaderboard(); }
   goSettings(){ this.stopSpeech(); this.setState({ screen: 'settings', playerPlaying: false, settingsName: this.state.appName, settingsLogo: this.state.appLogo, settingsLogoBlob: null, settingsMsg: '', settingsError: '' }); }
@@ -12699,9 +12752,15 @@ class Component extends DCLogic {
       const list = Array.isArray(permFeatureGrants[f.key]) ? permFeatureGrants[f.key] : [];
       return { label: f.label, cells: permCols.map(c => permCell(!list.includes(c.id), () => this.togglePermFeature(f.key, c.id))) };
     });
+    // Test sections (same grant model: locked until the branch is unlocked)
+    const permTestRows = TEST_LOCK_ITEMS.map(f => {
+      const list = Array.isArray(permFeatureGrants[f.key]) ? permFeatureGrants[f.key] : [];
+      return { label: f.label, cells: permCols.map(c => permCell(!list.includes(c.id), () => this.togglePermFeature(f.key, c.id))) };
+    });
     const permGroups = [
       { title: 'លំហាត់', rows: permExRows },
       { title: 'សៀវភៅ', rows: permBookRows },
+      { title: 'តេស្ត (ដោះសោ ➜ អនុញ្ញាតឲ្យសាលា)', rows: permTestRows },
       { title: 'សិទ្ធិ Admin (ដោះសោ ➜ អនុញ្ញាតឲ្យសាលា)', rows: permFeatRows },
     ];
     const permHasSchools = permCols.length > 0;
@@ -12709,6 +12768,31 @@ class Component extends DCLogic {
     return {
       isHome: s.screen === 'home', isFavorites: s.screen === 'favorites', isSettings: s.screen === 'settings',
       isTestHub: s.screen === 'test' && !testMode,
+      ...(() => {
+        const path = s.testPath || [];
+        const cur = resolveTestNode(path) || { children: TEST_TREE };
+        const crumb = ['តេស្ត']; let acc = { children: TEST_TREE };
+        for (const k of path) { acc = acc.children[k]; crumb.push(acc.label); }
+        const items = Object.keys(cur.children || {}).map(k => {
+          const c = cur.children[k];
+          const locked = !!(c.lockKey && !this.featureGrantedForMe(c.lockKey));
+          return {
+            label: c.label, sub: c.sub || (c.placeholder ? 'ឆាប់ៗនេះ' : ''),
+            locked, lockGlyph: locked ? ' 🔒' : '', rowDim: locked ? 'opacity:0.6;' : '',
+            onEnter: () => this.testEnter(k),
+          };
+        });
+        return {
+          testAtRoot: path.length === 0, testNotRoot: path.length > 0,
+          testHubTitle: path.length ? cur.label : 'តេស្ត',
+          testCrumbText: crumb.join('  ›  '),
+          testHubItems: items,
+          testShowList: !cur.tests && !cur.placeholder,
+          testShowTests: !!cur.tests,
+          testShowPlaceholder: !!cur.placeholder,
+          testBack: () => this.testBack(),
+        };
+      })(),
       isMonitor: s.screen === 'monitor',
       // — បណ្ណាល័យ (authored books, Admin) —
       isLibrary: s.screen === 'library',
