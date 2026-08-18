@@ -489,6 +489,20 @@ textarea.input { min-height: 90px; resize: vertical; }
 .switch.on .track { background: var(--color-accent); }
 .switch.on .thumb { left: 21px; }
 
+/* — Level-up celebration — */
+.lvlup-ov { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; background: rgba(20,30,50,0.45); backdrop-filter: blur(2px); animation: lvlup-fade 0.25s ease; }
+.lvlup-card { position: relative; width: min(84%, 320px); background: var(--color-neutral-100); border-radius: 22px; padding: 26px 24px 24px; text-align: center; box-shadow: 0 18px 50px rgba(0,0,0,0.4); animation: lvlup-pop 0.42s cubic-bezier(0.18,0.9,0.32,1.4); overflow: hidden; }
+.lvlup-card::before { content: ""; position: absolute; top: -40%; left: -10%; right: -10%; height: 80%; background: radial-gradient(closest-side, color-mix(in srgb, var(--color-accent) 30%, transparent), transparent); pointer-events: none; }
+.lvlup-emoji { font-size: 54px; line-height: 1; margin-bottom: 8px; animation: lvlup-bounce 0.9s ease infinite alternate; }
+.lvlup-badge { display: inline-flex; align-items: center; gap: 7px; background: var(--color-accent); color: #fff; font-weight: 800; font-size: 20px; padding: 8px 18px; border-radius: 999px; margin: 4px 0 10px; box-shadow: 0 6px 16px color-mix(in srgb, var(--color-accent) 45%, transparent); }
+.lvlup-title { font-size: 20px; font-weight: 800; color: var(--color-accent-700); margin: 2px 0 4px; }
+.lvlup-msg { font-size: 15px; opacity: 0.85; }
+.lvlup-x { position: absolute; top: 10px; right: 12px; width: 28px; height: 28px; border: none; border-radius: 8px; background: color-mix(in srgb, var(--color-text) 8%, transparent); color: var(--color-text); font-size: 14px; cursor: pointer; }
+@keyframes lvlup-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes lvlup-pop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes lvlup-bounce { from { transform: translateY(0) rotate(-4deg); } to { transform: translateY(-9px) rotate(4deg); } }
+@media (prefers-reduced-motion: reduce) { .lvlup-ov, .lvlup-card, .lvlup-emoji { animation: none; } }
+
 /* — tags — */
 .tag {
   display: inline-flex; align-items: center; font-size: 11px;
@@ -2531,6 +2545,18 @@ textarea.input { min-height: 90px; resize: vertical; }
           </div>
           <div style="margin-top:16px;font-size:10px;color:#999;text-align:center;">{{ pr.appName }} · SSW DICTIONARY</div>
         </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ levelUpShow }}" hint-placeholder-val="{{ false }}">
+    <div class="lvlup-ov" sc-camel-on-click="{{ closeLevelUp }}">
+      <div class="lvlup-card">
+        <button class="lvlup-x" sc-camel-on-click="{{ closeLevelUp }}" aria-label="បិទ">✕</button>
+        <div class="lvlup-emoji">🎉</div>
+        <div class="lvlup-title">អបអរសាទរ!</div>
+        <div class="lvlup-badge">🏆 កម្រិត {{ levelUpLevel }}</div>
+        <div class="lvlup-msg">{{ levelUpMsg }}</div>
       </div>
     </div>
     </sc-if>
@@ -8435,18 +8461,27 @@ function hourRunTotals(secByHour){
 // is the same everywhere.
 // how many sets in one record (e.g. one ladder, or the exam blocks) were passed
 function passedCount(rec){ let n = 0; for (const k of Object.keys(rec || {})) if (rec[k] >= PASS_PCT) n++; return n; }
-// A student's level rewards harder work more: each passed word-test lesson is
-// worth 1, each passed exercise (លំហាត់) 2, each passed image-exercise 1, and
-// each passed exam block (ប្រឡងសាកល្បង) 3.
-function computeLevel(settings){
+function totalUsageSecs(usage){ let t = 0; for (const k in (usage || {})) t += usage[k] || 0; return t; }
+// A student's level (កំរិត):
+//   ប្រឡងសាកល្បង  — +1 per pass          (each passing attempt in examLog)
+//   លំហាត់         — +1 every 3 passes
+//   លំហាត់រូបភាព   — +1 every 5 passes
+//   ជ្រើសរើសពាក្យ  — +1 every 10 passes    (word-test lessons)
+//   រៀន           — +1 every 10 hours
+function computeLevel(settings, usageSecs){
   settings = settings || {};
-  let n = 0;
+  let wordP = 0;
   const lessons = settings.lessons || {};
-  for (const kind of Object.keys(lessons)) n += passedCount(lessons[kind]);   // word tests × 1
-  n += passedCount(settings.quizzes) * 2;       // លំហាត់ × 2
-  n += passedCount(settings.imgQuizzes) * 1;    // លំហាត់រូបភាព × 1
-  n += passedCount(settings.exams) * 3;         // ប្រឡងសាកល្បង × 3 (per block)
-  return n;
+  for (const kind of Object.keys(lessons)) wordP += passedCount(lessons[kind]);
+  const quizP = passedCount(settings.quizzes);
+  const imgP  = passedCount(settings.imgQuizzes);
+  const examP = examStars(settings);              // each passing exam attempt
+  const hours = (usageSecs || 0) / 3600;
+  return examP
+       + Math.floor(quizP / 3)
+       + Math.floor(imgP / 5)
+       + Math.floor(wordP / 10)
+       + Math.floor(hours / 10);
 }
 // a star for every time the exam was passed (each passing attempt in the log)
 function examStars(settings){ const log = (settings || {}).examLog; return Array.isArray(log) ? log.filter(a => a && a.passed).length : 0; }
@@ -8667,7 +8702,7 @@ function makeDemoBackend(){
       const all=load(); const sch=all.find(x=>x.id===me.school_id);
       const schoolName=sch?(sch.full_name||sch.email||''):'';
       const rows=all.filter(x=>x.role==='student' && x.school_id && x.school_id===me.school_id).map(u=>({
-        full_name: u.full_name||'', level: computeLevel(u.settings||{}), stars: examStars(u.settings||{}),
+        full_name: u.full_name||'', level: computeLevel(u.settings||{}, totalUsageSecs(u.usage)), stars: examStars(u.settings||{}),
         progress: Array.isArray(u.viewed)?u.viewed.length:0, is_me: u.id===me.id, school_name:schoolName,
         avatar: (u.settings && u.settings.avatarAnimal) || '', avatar_color: (u.settings && u.settings.avatarColor) || '' }));
       return { rows }; },
@@ -8821,6 +8856,7 @@ class Component extends DCLogic {
     shareSearch: '', shareWordId: null, shareSize: 'square', shareStyle: 'refined', shareColor: '', shareImgData: '', shareBusy: false, shareErr: '',
     // admin: A4 results preview / print
     printOpen: false, printReport: null,
+    levelUpShow: false, levelUpLevel: 0, levelUpMsg: '',
     testMode: null, testKind: 'mc_jp', testLesson: 1, testMix: false,
     testWords: [], testIdx: 0, testScore: 0, testResults: [], testPicks: [],
     // exercises (លំហាត់ / លំហាត់រូបភាព)
@@ -9044,6 +9080,7 @@ class Component extends DCLogic {
       settings:  Object.assign({ fontScale:1, autoAudio:false }, p.settings || {}),
       authStage: 'app', screen, email:'', password:'', authBusy:false, authError:'',
     }, () => {
+      this._lastLevel = computeLevel(this.state.settings, totalUsageSecs(this.state.usage));   // baseline so only real rises pop
       if (p.role === 'admin')   this.loadAdminData();
       if (['teacher','school','admin'].includes(p.role)) this.loadStudents();
       this.loadBooksAndCustom();
@@ -9062,11 +9099,27 @@ class Component extends DCLogic {
   }
 
   persist(){
+    this._maybeCelebrateLevelUp();
     if (this._saveT) clearTimeout(this._saveT);
     const snap = { viewed:this.state.viewed, favorites:this.state.favorites, history:this.state.history, settings:this.state.settings, usage:this.state.usage };
     const id = this.state.userId;
     this._saveT = setTimeout(() => { if (id) Backend.saveProgress(id, snap); }, 600);
   }
+  // Watch the viewer's own level; when it rises, pop a centred celebration.
+  _maybeCelebrateLevelUp(){
+    const lvl = computeLevel(this.state.settings, totalUsageSecs(this.state.usage));
+    if (this._lastLevel == null) { this._lastLevel = lvl; return; }   // baseline, no popup
+    if (lvl > this._lastLevel) this.showLevelUp(lvl);
+    this._lastLevel = lvl;
+  }
+  showLevelUp(lvl){
+    const msgs = ['ពូកែណាស់! 🌟', 'ខ្នះខ្នែងខ្លាំងណាស់! 💪', 'ល្អឥតខ្ចោះ! 🎯', 'បន្តទៀតទៅ! 🚀', 'អស្ចារ្យណាស់! 🎉', 'ខិតខំបានល្អ! 👏'];
+    const msg = msgs[Math.floor(Math.random() * msgs.length)];
+    clearTimeout(this._levelUpT);
+    this.setState({ levelUpShow: true, levelUpLevel: lvl, levelUpMsg: msg });
+    this._levelUpT = setTimeout(() => this.setState({ levelUpShow: false }), 4200);
+  }
+  closeLevelUp(){ clearTimeout(this._levelUpT); this.setState({ levelUpShow: false }); }
 
   toggleViewed(id, e){
     if (e) e.stopPropagation();
@@ -12052,7 +12105,7 @@ class Component extends DCLogic {
       verdict: a.passed ? 'ជាប់ ✓' : 'ធ្លាក់ ✗', verdictColor: a.passed ? 'color:#3a9e5c;' : 'color:#d0342c;',
       dateLabel: (() => { const d = new Date(a.date); return `${d.getDate()}/${d.getMonth() + 1}`; })(),
     }));
-    const myLevel = computeLevel(s.settings);
+    const myLevel = computeLevel(s.settings, totalUsageSecs(s.usage));
 
     // — the student leaderboard —
     // Rank by level, break ties on words seen, then name. The top three wear a
@@ -12247,7 +12300,7 @@ class Component extends DCLogic {
       return {
         schoolId: st.school_id || '',
         name: (st.full_name || st.email || '').trim() || 'សិស្ស',
-        level: computeLevel(st.settings || {}),
+        level: computeLevel(st.settings || {}, totalUsageSecs(st.usage)),
         stars: examStars(st.settings || {}),
         words: keys.size,
         avatar: (st.settings && st.settings.avatarAnimal) || '',
@@ -12470,6 +12523,7 @@ class Component extends DCLogic {
       monitorLessonSummary, downloadOpenPdf: () => this.downloadOpenPdf(), downloadExamPdf: () => this.downloadExamPdf(),
       // — A4 results preview / print —
       printOpen: s.printOpen, closePrint: () => this.closePrint(), doPrint: () => this.doPrint(),
+      levelUpShow: s.levelUpShow, levelUpLevel: s.levelUpLevel, levelUpMsg: s.levelUpMsg, closeLevelUp: () => this.closeLevelUp(),
       pr: s.printReport || {}, prItems: (s.printReport && s.printReport.items) || [], prHasLogo: !!(s.printReport && s.printReport.logo), prNoLogo: !(s.printReport && s.printReport.logo),
       monitorQuizSummary, hasMonitorQuiz: monitorQuizSummary.hasAny,
       monitorImgQuizSummary, hasMonitorImgQuiz: monitorImgQuizSummary.hasAny,
