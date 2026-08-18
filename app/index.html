@@ -2023,6 +2023,7 @@ textarea.input { min-height: 90px; resize: vertical; }
           <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
           <h1 style="font-size:26px;margin:0 0 4px;">ការកំណត់សិទ្ធ</h1>
           <div style="font-size:12px;opacity:0.6;margin-bottom:6px;line-height:1.6;">ជួរឈរ = សាលា/សាខា (រួមទាំងសិស្សក្នុងសាលា) · ជួរដេក = ធនធាន។ ចុចលើប្រអប់ដើម្បីចាក់សោ 🔒 ក្រហម ឬ ដោះសោ 🔓 បៃតង។ ចាក់សោលើសាលា គឺចាក់សោលើសិស្សក្នុងសាលាដូចគ្នា។</div>
+          <sc-if value="{{ permHasMsg }}"><div style="font-size:12px;line-height:1.6;margin:4px 0 8px;padding:8px 12px;border-radius:var(--radius-sm);{{ permMsgStyle }}">{{ permMsg }}</div></sc-if>
           <sc-if value="{{ permNoSchools }}">
             <div style="text-align:center;padding:40px 20px;opacity:0.5;font-size:13px;">មិនទាន់មានសាលា/សាខា ដើម្បីកំណត់សិទ្ធ</div>
           </sc-if>
@@ -8730,7 +8731,7 @@ class Component extends DCLogic {
     exercisesLocked: false, exercisesLockedSchools: [],
     imgExercisesLocked: false, imgExercisesLockedSchools: [],
     examLocked: false, examLockedSchools: [],
-    featureLocks: {},
+    featureLocks: {}, permMsg: '', permMsgErr: false,
     // ប្រឡងសាកល្បង (mock exam)
     examBlock: 1, examQuestions: [], examIdx: 0, examAnswers: [], examDeadline: 0, examRemain: 0,
     examScore: 0, examResults: [], examTimeUp: false,
@@ -9758,7 +9759,7 @@ class Component extends DCLogic {
   }
 
   // — Admin: per-book visibility —
-  goBooks(){ this.setState({ screen: 'books', awMsg: '' }); }
+  goBooks(){ this.setState({ screen: 'books', awMsg: '', permMsg: '', permMsgErr: false }); }
 
   // — បណ្ណាល័យ: admin-authored books (rich text + image links). The editor is
   //   built imperatively so dc-runtime re-renders never wipe what's being typed. —
@@ -10832,7 +10833,8 @@ class Component extends DCLogic {
       schools: patch.schools ? new Set(patch.schools) : new Set(cur.schools) };
     BOOK_VIS.set(book, next);
     this.setState(st => ({ overridesRev: st.overridesRev + 1 }));   // reflect at once
-    await Backend.saveBookSetting({ book, locked: next.locked, all_schools: next.allSchools, schools: [...next.schools] });
+    const { error } = await Backend.saveBookSetting({ book, locked: next.locked, all_schools: next.allSchools, schools: [...next.schools] });
+    return { error };
   }
   toggleBookLock(book){ const v = BOOK_VIS.get(book) || {}; this.saveBookVis(book, { locked: !v.locked }); }
   setBookAllSchools(book, all){ this.saveBookVis(book, { allSchools: all }); }
@@ -10859,7 +10861,8 @@ class Component extends DCLogic {
       list = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id];
     }
     this.setState({ [lk]: false, [sk]: list });
-    await Backend.saveExerciseLock({ kind, locked: false, schools: list });
+    const { error } = await Backend.saveExerciseLock({ kind, locked: false, schools: list });
+    this._permSaved(error);
   }
   async togglePermBook(book, id){
     const v = BOOK_VIS.get(book) || { locked: false, allSchools: true, schools: new Set() };
@@ -10873,14 +10876,23 @@ class Component extends DCLogic {
       if (set.has(id)) set.delete(id); else set.add(id);
       allowed = [...set];
     }
-    await this.saveBookVis(book, { locked: false, allSchools: false, schools: allowed });
+    const { error } = await this.saveBookVis(book, { locked: false, allSchools: false, schools: allowed });
+    this._permSaved(error);
   }
   async togglePermFeature(key, id){
     const map = Object.assign({}, this.state.featureLocks || {});
     const cur = Array.isArray(map[key]) ? map[key].slice() : [];
     map[key] = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id];
     this.setState({ featureLocks: map });
-    await Backend.saveFeatureLocks(map);
+    const { error } = await Backend.saveFeatureLocks(map);
+    this._permSaved(error);
+  }
+  // Make a failed save visible on the matrix. A missing feature_locks column
+  // (migration 23 not run) is the usual cause — the grant looks set but never
+  // persists, so a branch never actually receives it.
+  _permSaved(error){
+    if (error) this.setState({ permMsg: 'រក្សាទុកមិនបាន — សូម run migration 23 (feature_locks) ក្នុង Supabase។ ' + error, permMsgErr: true });
+    else { this.setState({ permMsg: 'បានរក្សាទុក ✓', permMsgErr: false }); clearTimeout(this._permMsgT); this._permMsgT = setTimeout(() => this.setState({ permMsg: '' }), 1800); }
   }
 
   async syncWords(){
@@ -12515,6 +12527,8 @@ class Component extends DCLogic {
       // — Admin: book visibility —
       isBooks: s.screen === 'books', goBooks: () => this.goBooks(),
       permCols, permGridCols, permGroups, permHasSchools, permNoSchools: !permHasSchools,
+      permHasMsg: !!s.permMsg, permMsg: s.permMsg,
+      permMsgStyle: s.permMsgErr ? 'background:rgba(214,48,49,0.12);color:#b12a25;' : 'background:rgba(39,174,96,0.14);color:#1e7d47;',
 
       // — Admin —
       isAdmin: s.role === 'admin', isAdminScreen: s.screen === 'admin',
