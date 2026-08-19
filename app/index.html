@@ -846,7 +846,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isTestHub }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 20px;">
-          <sc-if value="{{ testNotRoot }}"><button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ testBack }}">← ត្រឡប់</button></sc-if>
+          <sc-if value="{{ testNotRoot }}"><button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ testBack }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button></sc-if>
           <sc-if value="{{ testNotRoot }}"><div style="font-size:11.5px;opacity:0.5;margin-bottom:6px;">{{ testCrumbText }}</div></sc-if>
           <h1 style="font-size:26px;margin:0 0 16px;">{{ testHubTitle }}</h1>
 
@@ -906,7 +906,7 @@ textarea.input { min-height: 90px; resize: vertical; }
         <sc-if value="{{ isLessonList }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
-            <button class="btn btn-ghost" style="padding-left:0;" sc-camel-on-click="{{ backToHub }}">← ត្រឡប់</button>
+            <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ backToHub }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
           </div>
           <h1 style="font-size:24px;margin:0 0 4px;">{{ lessonHeading }}</h1>
           <sc-if value="{{ noTestWords }}">
@@ -1006,7 +1006,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isQuizList }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;">
-          <button class="btn btn-ghost" style="padding-left:0;margin-bottom:2px;" sc-camel-on-click="{{ backToHub }}">← ត្រឡប់</button>
+          <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ backToHub }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
           <h1 style="font-size:24px;margin:0 0 4px;">{{ quizListTitle }}</h1>
           <div style="font-size:12px;opacity:0.6;margin-bottom:14px;">{{ quizUnlockLabel }}</div>
           <div style="display:flex;flex-direction:column;gap:9px;">
@@ -1098,7 +1098,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isExamIntro }}" hint-placeholder-val="{{ false }}">
         <div style="padding:24px;min-height:560px;display:flex;flex-direction:column;">
-          <button class="btn btn-ghost" style="padding-left:0;" sc-camel-on-click="{{ backToHub }}">← ត្រឡប់</button>
+          <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ backToHub }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
           <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;">
             <div style="font-size:44px;">📝</div>
             <h1 style="font-size:24px;margin:0;">ប្រឡងសាកល្បង</h1>
@@ -8034,7 +8034,7 @@ const TEST_TREE = {
     jlpt: { label: 'JLPT', placeholder: true },
     jft:  { label: 'JFT', placeholder: true },
   } },
-  law: { label: 'តេស្តច្បាប់ចរាចរណ៍', sub: 'ច្បាប់ខ្មែរ · ច្បាប់ជប៉ុន', children: {
+  law: { label: 'តេស្តច្បាប់ចរាចរណ៍', sub: 'ច្បាប់ខ្មែរ · ច្បាប់ជប៉ុន', lockKey: 't_law', children: {
     kh: { label: 'ច្បាប់ខ្មែរ', sub: 'ភាសាខ្មែរ · អង់គ្លេស', lockKey: 't_law_kh', children: {
       km: { label: 'ភាសាខ្មែរ', placeholder: true },
       en: { label: 'ភាសាអង់គ្លេស', placeholder: true },
@@ -8046,6 +8046,7 @@ const TEST_TREE = {
   } },
 };
 const TEST_LOCK_ITEMS = [
+  { key: 't_law',       label: 'តេស្តច្បាប់ចរាចរណ៍ (ទាំងមូល)' },
   { key: 't_maint',     label: 'តេស្តជំនាញ · ថែទាំរថយន្ត' },
   { key: 't_jp',        label: 'តេស្តភាសាជប៉ុន (JLPT · JFT)' },
   { key: 't_law_kh',    label: 'ច្បាប់ចរាចរណ៍ · ច្បាប់ខ្មែរ' },
