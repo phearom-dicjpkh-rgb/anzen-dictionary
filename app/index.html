@@ -2112,7 +2112,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               <sc-for list="{{ permGroups }}" as="g" hint-placeholder-count="3">
                 <div class="pm-group">{{ g.title }}</div>
                 <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
-                  <div class="pm-rowlabel">{{ r.label }}</div>
+                  <div class="pm-rowlabel" style="padding-left:{{ r.pad }};{{ r.lblCur }}" sc-camel-on-click="{{ r.onLabel }}">{{ r.chev }}{{ r.label }}</div>
                   <sc-for list="{{ r.cells }}" as="cell" hint-placeholder-count="2">
                     <button class="pm-cell {{ cell.cls }}" sc-camel-on-click="{{ cell.onToggle }}" title="{{ cell.title }}">{{ cell.glyph }}</button>
                   </sc-for>
@@ -8026,20 +8026,20 @@ const LESSON_SIZE = 10, LESSON_BLOCK = 5, PASS_PCT = 90;
 //   every other leaf is a placeholder whose lockKey the admin controls in
 //   ការកំណត់សិទ្ធ (default locked until its data is ready). —
 const TEST_TREE = {
-  skills: { label: 'តេស្តជំនាញ', sub: 'បើកបរ · ថែទាំរថយន្ត', children: {
-    driving: { label: 'ជំនាញបើកបរ', sub: 'ជ្រើសរើសពាក្យ · លំហាត់ · រូបភាព · ប្រឡង', tests: true },
+  skills: { label: 'តេស្តជំនាញ', sub: 'បើកបរ · ថែទាំរថយន្ត', lockKey: 't_skills', open: true, children: {
+    driving: { label: 'ជំនាញបើកបរ', sub: 'ជ្រើសរើសពាក្យ · លំហាត់ · រូបភាព · ប្រឡង', lockKey: 't_driving', open: true, tests: true },
     maint:   { label: 'ជំនាញថែទាំរថយន្ត', lockKey: 't_maint', placeholder: true },
   } },
   jp: { label: 'តេស្តភាសាជប៉ុន', sub: 'JLPT · JFT', lockKey: 't_jp', children: {
-    jlpt: { label: 'JLPT', placeholder: true },
-    jft:  { label: 'JFT', placeholder: true },
+    jlpt: { label: 'JLPT', lockKey: 't_jlpt', placeholder: true },
+    jft:  { label: 'JFT', lockKey: 't_jft', placeholder: true },
   } },
   law: { label: 'តេស្តច្បាប់ចរាចរណ៍', sub: 'ច្បាប់ខ្មែរ · ច្បាប់ជប៉ុន', lockKey: 't_law', children: {
     kh: { label: 'ច្បាប់ខ្មែរ', sub: 'ភាសាខ្មែរ · អង់គ្លេស', lockKey: 't_law_kh', children: {
-      km: { label: 'ភាសាខ្មែរ', placeholder: true },
-      en: { label: 'ភាសាអង់គ្លេស', placeholder: true },
+      km: { label: 'ភាសាខ្មែរ', lockKey: 't_law_kh_km', placeholder: true },
+      en: { label: 'ភាសាអង់គ្លេស', lockKey: 't_law_kh_en', placeholder: true },
     } },
-    jp: { label: 'ច្បាប់ជប៉ុន', sub: 'ភាសាខ្មែរ · ភាសាជប៉ុន', children: {
+    jp: { label: 'ច្បាប់ជប៉ុន', sub: 'ភាសាខ្មែរ · ភាសាជប៉ុន', lockKey: 't_law_jp', children: {
       km: { label: 'ភាសាខ្មែរ', sub: '標識 · 練習 · 仮免 · 本免', lockKey: 't_law_jp_km', lawLang: 'km' },
       ja: { label: 'ភាសាជប៉ុន', sub: '標識 · 練習 · 仮免 · 本免', lockKey: 't_law_jp_ja', lawLang: 'ja' },
     } },
@@ -9080,7 +9080,7 @@ class Component extends DCLogic {
     exercisesLocked: false, exercisesLockedSchools: [],
     imgExercisesLocked: false, imgExercisesLockedSchools: [],
     examLocked: false, examLockedSchools: [],
-    featureLocks: {}, permMsg: '', permMsgErr: false,
+    featureLocks: {}, permMsg: '', permMsgErr: false, permTestExpand: [],
     // ប្រឡងសាកល្បង (mock exam)
     examBlock: 1, examQuestions: [], examIdx: 0, examAnswers: [], examDeadline: 0, examRemain: 0,
     examScore: 0, examResults: [], examTimeUp: false,
@@ -11672,13 +11672,25 @@ class Component extends DCLogic {
   goFavorites(){ this.stopSpeech(); this.setState({ screen: 'favorites', playerPlaying: false }); }
   goTest(){ this.stopSpeech(); this.setState({ screen: 'test', testMode: null, testPath: [], playerPlaying: false }); }
   // drill-down navigation in the test hub tree
+  // A test node is locked for a branch when: (grant nodes) it is NOT unlocked
+  // for the branch, or (default-open nodes like skills/driving) it IS in the
+  // locked list. Admin is never locked.
+  testNodeLocked(node){
+    if (!node || !node.lockKey) return false;
+    if (this.state.role === 'admin') return false;
+    const list = (this.state.featureLocks || {})[node.lockKey];
+    const mine = this.state.role === 'school' ? this.state.userId : this.state.mySchoolId;
+    const inList = Array.isArray(list) && !!mine && list.includes(mine);
+    return node.open ? inList : !inList;
+  }
   testEnter(key){
     const cur = resolveTestNode(this.state.testPath);
     const child = cur && cur.children && cur.children[key];
     if (!child) return;
-    if (child.lockKey && !this.featureGrantedForMe(child.lockKey)) { this.showToast('ផ្នែកនេះមិនទាន់មាន (ជាប់សោ) 🔒'); return; }
+    if (this.testNodeLocked(child)) { this.showToast('ផ្នែកនេះមិនទាន់មាន (ជាប់សោ) 🔒'); return; }
     this.setState({ testPath: [...this.state.testPath, key] });
   }
+  togglePermTestExpand(pathKey){ this.setState(s => ({ permTestExpand: s.permTestExpand.includes(pathKey) ? s.permTestExpand.filter(x => x !== pathKey) : [...s.permTestExpand, pathKey] })); }
   testBack(){ this.setState({ testPath: this.state.testPath.slice(0, -1) }); }
   testToRoot(){ this.setState({ testPath: [] }); }
   goMenu(){ this.stopSpeech(); this.setState({ screen: 'menu', playerPlaying: false }); }
@@ -12797,17 +12809,40 @@ class Component extends DCLogic {
       const list = Array.isArray(permFeatureGrants[f.key]) ? permFeatureGrants[f.key] : [];
       return { label: f.label, cells: permCols.map(c => permCell(!list.includes(c.id), () => this.togglePermFeature(f.key, c.id))) };
     });
-    // Test sections (same grant model: locked until the branch is unlocked)
-    const permTestRows = TEST_LOCK_ITEMS.map(f => {
-      const list = Array.isArray(permFeatureGrants[f.key]) ? permFeatureGrants[f.key] : [];
-      return { label: f.label, cells: permCols.map(c => permCell(!list.includes(c.id), () => this.togglePermFeature(f.key, c.id))) };
-    });
+    // Test sections mirror the test-hub tree: tap a category row to expand its
+    // children, and lock at any level. Skills/driving hold real tests so they
+    // are OPEN by default (locking = adding the branch to the list); the empty
+    // sections are LOCKED by default (unlocking = adding the branch).
+    const permTestExpand = s.permTestExpand || [];
+    const buildTestRows = (nodes, depth, parentPath) => {
+      let rows = [];
+      for (const k of Object.keys(nodes)) {
+        const node = nodes[k];
+        const pathKey = parentPath ? parentPath + '/' + k : k;
+        const hasChildren = !!node.children;
+        const expanded = permTestExpand.includes(pathKey);
+        const list = Array.isArray(permFeatureGrants[node.lockKey]) ? permFeatureGrants[node.lockKey] : [];
+        const lockedFor = id => node.open ? list.includes(id) : !list.includes(id);
+        rows.push({
+          label: node.label, pad: (12 + depth * 16) + 'px',
+          chev: hasChildren ? (expanded ? '▾ ' : '▸ ') : '',
+          lblCur: hasChildren ? 'cursor:pointer;font-weight:700;' : '',
+          onLabel: hasChildren ? () => this.togglePermTestExpand(pathKey) : undefined,
+          cells: node.lockKey ? permCols.map(c => permCell(lockedFor(c.id), () => this.togglePermFeature(node.lockKey, c.id)))
+                              : permCols.map(() => ({ locked: false, cls: '', glyph: '', title: '', onToggle: undefined })),
+        });
+        if (hasChildren && expanded) rows = rows.concat(buildTestRows(node.children, depth + 1, pathKey));
+      }
+      return rows;
+    };
+    const permTestRows = buildTestRows(TEST_TREE, 0, '');
     const permGroups = [
       { title: 'លំហាត់', rows: permExRows },
       { title: 'សៀវភៅ', rows: permBookRows },
-      { title: 'តេស្ត (ដោះសោ ➜ អនុញ្ញាតឲ្យសាលា)', rows: permTestRows },
+      { title: 'តេស្ត (ចុចប្រភេទ ➜ ពង្រីក · 🔒 ចាក់ · 🔓 ដោះ)', rows: permTestRows },
       { title: 'សិទ្ធិ Admin (ដោះសោ ➜ អនុញ្ញាតឲ្យសាលា)', rows: permFeatRows },
     ];
+    permGroups.forEach(g => g.rows.forEach(r => { if (r.pad === undefined) r.pad = '12px'; if (r.chev === undefined) r.chev = ''; if (r.lblCur === undefined) r.lblCur = ''; }));
     const permHasSchools = permCols.length > 0;
 
     return {
@@ -12820,7 +12855,7 @@ class Component extends DCLogic {
         for (const k of path) { acc = acc.children[k]; crumb.push(acc.label); }
         const items = Object.keys(cur.children || {}).map(k => {
           const c = cur.children[k];
-          const locked = !!(c.lockKey && !this.featureGrantedForMe(c.lockKey));
+          const locked = this.testNodeLocked(c);
           return {
             label: c.label, sub: c.sub || (c.placeholder ? 'ឆាប់ៗនេះ' : ''),
             locked, lockGlyph: locked ? ' 🔒' : '', rowDim: locked ? 'opacity:0.6;' : '',
