@@ -8027,7 +8027,7 @@ const LESSON_SIZE = 10, LESSON_BLOCK = 5, PASS_PCT = 90;
 //   ការកំណត់សិទ្ធ (default locked until its data is ready). —
 const TEST_TREE = {
   skills: { label: 'តេស្តជំនាញ', sub: 'បើកបរ · ថែទាំរថយន្ត', lockKey: 't_skills', open: true, children: {
-    driving: { label: 'ជំនាញបើកបរ', sub: 'ជ្រើសរើសពាក្យ · លំហាត់ · រូបភាព · ប្រឡង', lockKey: 't_driving', open: true, tests: true },
+    driving: { label: 'ជំនាញបើកបរ', sub: 'ជ្រើសរើសពាក្យ · លំហាត់ · រូបភាព · ប្រឡង', lockKey: 't_driving', open: true, tests: true, exerciseLocks: true },
     maint:   { label: 'ជំនាញថែទាំរថយន្ត', lockKey: 't_maint', placeholder: true },
   } },
   jp: { label: 'តេស្តភាសាជប៉ុន', sub: 'JLPT · JFT', lockKey: 't_jp', children: {
@@ -12814,12 +12814,13 @@ class Component extends DCLogic {
     // are OPEN by default (locking = adding the branch to the list); the empty
     // sections are LOCKED by default (unlocking = adding the branch).
     const permTestExpand = s.permTestExpand || [];
+    const EXERCISE_LOCKS = [{ kind: 'quiz', label: 'លំហាត់' }, { kind: 'img', label: 'លំហាត់រូបភាព' }, { kind: 'exam', label: 'ប្រឡងសាកល្បង' }];
     const buildTestRows = (nodes, depth, parentPath) => {
       let rows = [];
       for (const k of Object.keys(nodes)) {
         const node = nodes[k];
         const pathKey = parentPath ? parentPath + '/' + k : k;
-        const hasChildren = !!node.children;
+        const hasChildren = !!node.children || !!node.exerciseLocks;
         const expanded = permTestExpand.includes(pathKey);
         const list = Array.isArray(permFeatureGrants[node.lockKey]) ? permFeatureGrants[node.lockKey] : [];
         const lockedFor = id => node.open ? list.includes(id) : !list.includes(id);
@@ -12831,13 +12832,19 @@ class Component extends DCLogic {
           cells: node.lockKey ? permCols.map(c => permCell(lockedFor(c.id), () => this.togglePermFeature(node.lockKey, c.id)))
                               : permCols.map(() => ({ locked: false, cls: '', glyph: '', title: '', onToggle: undefined })),
         });
-        if (hasChildren && expanded) rows = rows.concat(buildTestRows(node.children, depth + 1, pathKey));
+        if (expanded) {
+          if (node.children) rows = rows.concat(buildTestRows(node.children, depth + 1, pathKey));
+          if (node.exerciseLocks) for (const ex of EXERCISE_LOCKS) {
+            const [lk, sk] = this.lockState(ex.kind); const on = !!s[lk]; const exl = s[sk] || [];
+            rows.push({ label: ex.label, pad: (12 + (depth + 1) * 16) + 'px', chev: '', lblCur: '',
+              cells: permCols.map(c => permCell(on || exl.includes(c.id), () => this.togglePermExercise(ex.kind, c.id))) });
+          }
+        }
       }
       return rows;
     };
     const permTestRows = buildTestRows(TEST_TREE, 0, '');
     const permGroups = [
-      { title: 'លំហាត់', rows: permExRows },
       { title: 'សៀវភៅ', rows: permBookRows },
       { title: 'តេស្ត (ចុចប្រភេទ ➜ ពង្រីក · 🔒 ចាក់ · 🔓 ដោះ)', rows: permTestRows },
       { title: 'សិទ្ធិ Admin (ដោះសោ ➜ អនុញ្ញាតឲ្យសាលា)', rows: permFeatRows },
