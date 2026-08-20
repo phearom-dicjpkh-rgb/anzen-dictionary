@@ -878,6 +878,10 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <div class="card-title" style="font-size:17px;">លំហាត់រូបភាព <sc-if value="{{ imgExercisesLockedForMe }}"><span style="font-size:14px;">🔒</span></sc-if></div>
                 <div class="card-body" style="font-size:12px;">មើលរូបភាព រួចជ្រើសរើស</div>
               </div>
+              <div class="card elev-sm" style="cursor:pointer;text-align:center;padding:20px;" sc-camel-on-click="{{ openHazardList }}">
+                <div class="card-title" style="font-size:17px;">ព្យាករណ៍គ្រោះថ្នាក់ <sc-if value="{{ hazardExercisesLockedForMe }}"><span style="font-size:14px;">🔒</span></sc-if></div>
+                <div class="card-body" style="font-size:12px;">មើលស្ថានភាព រួចទាយគ្រោះថ្នាក់</div>
+              </div>
               <div class="card elev-sm" style="cursor:pointer;text-align:center;padding:20px;" sc-camel-on-click="{{ openExam }}">
                 <div class="card-title" style="font-size:17px;">ប្រឡងសាកល្បង <sc-if value="{{ examLockedForMe }}"><span style="font-size:14px;">🔒</span></sc-if></div>
                 <div class="card-body" style="font-size:12px;">៥០ សំណួរ · ៨០ នាទី</div>
@@ -8069,6 +8073,7 @@ const MODE_LABEL = { mc_jp:'ជប៉ុន → ខ្មែរ', mc_km:'ខ្�
 //   the same way the word test does.
 const QUIZ_SIZE = 10;
 const IMGQUIZ_SIZE = 5;          // លំហាត់រូបភាព: 5 questions per set (must get 5/5)
+const HAZARD_SIZE = 5;           // ព្យាករណ៍គ្រោះថ្នាក់: 5 questions per exercise (5/5)
 const EXAM_SIZE = 50;            // ប្រឡងសាកល្បង: 50 questions per exam
 const EXAM_MINUTES = 80;         // countdown length
 const EXAM_PASS = 90;            // pass mark % (45/50)
@@ -8351,6 +8356,33 @@ const RAW_IMGQUIZ = [
 {"q":"イラストのとおり、積載制限を超えた積載を行う場合、昼間は荷物の見えやすいところに布をつけるが、 その場合何色の布をつけるかA・B・Cから一つ選んでください。","t":"mc","o":["赤色(あかいろ)","青色(あおいろ)","黄色(きいろ)"],"a":0,"img":"https://drive.google.com/thumbnail?id=1tqvfLLYQlq8Qox8R-m5pzoLWa1Ezfm6R&sz=w1000"},
 {"q":"イラストのとおり、パレットの中心に荷重がいくように周りをあげる方式を何というかA・B・Cから一つ選んでください。","t":"mc","o":["周端(しゅうへん)アップ方式(ほうしき)","周縁(しゅうえん)アップ方式(ほうしき)","周端上位方式(しゅうへんじょういほうしき)"],"a":1,"img":"https://drive.google.com/thumbnail?id=1JD_Cp1bLEwmQrZr9N8ngVR-5RF8HSBfR&sz=w1000"}];
 
+// ព្យាករណ៍គ្រោះថ្នាក់ — 危険予測 (5 per exercise, pass 5/5). tools/sync-quiz.js.
+const RAW_HAZARD = [
+{"q":"信号が黄色に変わった交差点に接近しています。交差点の向こうの歩道には子どもたちがいます。対向車線の車は右折の合図を出しています。 この場面ではどのような運転をすればよいのでしょうか。","t":"mc","o":["前(まえ)の車(くるま)は黄信号(きしんごう)で止(と)まると思(おも)うので、自分(じぶん)もブレーキをかける。","前(まえ)の車(くるま)に続(つづ)いて自分(じぶん)も交差点(こうさてん)に進入(しんにゅう)し、対向車(たいこうしゃ)は右折(うせつ)なので自分(じぶん)が先(さき)に通行(つうこう)するように 加速(かそく)する。","前(まえ)の車(くるま)に続(つづ)いて自分(じぶん)も交差点(こうさてん)を通過(つうか)しても子(こ)どもたちが道路(どうろ)を渡(わた)り始(はじ)めることはないのでそのまま通行(つうこう)する。"],"a":0,"img":"https://drive.google.com/thumbnail?id=11HTLtnoJwVa_TVojHuwXibLNoJxqJp6N&sz=w1000","e":"正しい行動（Ⓐ）： 前の車は黄信号で止まると思うので、自分もブレーキをかける。（信号が黄色に変わったため、前の車が停止する可能性が高く、追突を防ぐためにも減速・停止の準備をするのが安全運転です）。\n\n間違い（Ⓑ・Ⓒ）：\n\nⒷ「前の車に続いて交差点に入り、加速する」は、黄信号での無理な進入となり非常に危険です。\n\nⒸ「子どもたちが道路を渡り始めることはないのでそのまま通行する」は、「〜だろう」運転であり、子どもの急な飛び出しなどの危険を予測できていないため危険です。"},
+{"q":"住宅街の見通しの悪い交差点に接近しています。この場面ではどのような運転をすればよいのでしょうか。","t":"mc","o":["見通(みとお)しの悪(わる)い交差点(こうさてん)でも標識(ひょうしき)がないので徐行(じょこう)せずに通行(つうこう)する。","交差(こうさ)する道路(どうろ)の左側(ひだりがわ)には誰(だれ)もいないが、見通(みとお)しが悪(わる)いので安心(あんしん)せず徐行(じょこう)で通行(つうこう)する。","対向車(たいこうしゃ)のかげから進行(しんこう)してくる車(くるま)や歩行者(ほこうしゃ)は相手(あいて)が気(き)を付(つ)けるので自分(じぶん)はそのまま進行(しんこう)できる。"],"a":1,"img":"https://drive.google.com/thumbnail?id=10dfKvztkvVEQlGnV42WAbNgSNgHuu6jL&sz=w1000","e":"正しい行動（Ⓑ）： 交差する道路の左側には誰もいないが、見通しが悪いので安心せず徐行で通行する。（見通しの悪い交差点では、歩行者や自転車、他の車両が突然飛び出してくる可能性があるため、すぐに止まれる速度（徐行）で慎重に通行するのが安全運転の基本です）。\n\n間違い（Ⓐ・Ⓒ）：\n\nⒶ「標識がないので徐行せずに通行する」は誤りです。標識の有無にかかわらず、見通しの悪い交差点では徐行が必要です。\n\nⒸ「対向車のかげから進行してくる車や歩行者は相手が気をつけるので自分はそのまま進行できる」は誤りです。「相手が気をつけるだろう」という他力本願な運転（〜だろう運転）は事故の原因となります。"},
+{"q":"長(なが )い下り坂のカーブを走行しています。道路には 急な下り坂を示(しめ )す 標識が設置してあります。危険を避けるためにはどのような運転をすればよいでしょうか。","t":"mc","o":["急(きゅう)な下(くだ)り坂(ざか)は速度(そくど)が出(で)やすいので、フットブレーキをたくさん使(つか)って速度(そくど)を コントロールし、前(まえ)の車(くるま)との車間距離(しゃかんきょり)も十分(じゅうぶん)とっておく。","トラックは横転(おうてん)しやすいのでＳ字(じ)カーブでは、ハンドルやブレーキ操作(そうさ)は慎重(しんちょう)に行(おこな )う。","前(まえ)の車(くるま)において行(い)かれないようにできるだけ接近(せっきん)して走行(そうこう)する。"],"a":1,"img":"https://drive.google.com/thumbnail?id=1yVczCh_sL2OxCssW-9196GCvvB4hoacK&sz=w1000","e":"正しい行動（Ⓑ）： トラックは横転しやすいのでS字カーブでは、ハンドルやブレーキ操作は慎重に行う。（重心が高いトラックはカーブでの急ハンドルや急ブレーキによって遠心力が働き、横転事故を起こしやすいため、手前で十分減速して慎重に操作する必要があります）。\n\n間違い（Ⓐ・Ⓒ）：\n\nⒶ「フットブレーキをたくさん使って速度をコントロールし…」は誤りです。長い下り坂でフットブレーキを使いすぎると、フェード現象やベーパーロック現象を起こしてブレーキが効かなくなる危険があります（エンジンブレーキや排気ブレーキを使用するのが正解です）。\n\nⒸ「前の車において行かれないようにできるだけ接近して走行する」は誤りです。車間距離を詰める行為は追突事故の危険を高めます。"},
+{"q":"片側１車線の道路を走行しています。危険を避けるにはどのような運転をすればよいでしょうか。","t":"mc","o":["自転車(じてんしゃ)が歩行者(ほこうしゃ)などにより通行(つうこう)できなくなった場合(ばあい)、自転車(じてんしゃ)は一度(いちど)止(と)まるはずなのでそのまま通行(つうこう)する。","歩行者(ほこうしゃ)が横断歩道(おうだんほどう)を横断(おうだん)しようとしているが、車(くるま)が優先(ゆうせん)なので速度(そくど)を上(あ)げて走行(そうこう)し 先(さき)に通過(つうか)する","対向車(たいこうしゃ)が横断歩道(おうだんほどう)を通過(つうか)したら右側(みぎがわ)の歩行者(ほこうしゃ)は横断歩道(おうだんほどう)を渡(わた)り始(はじ)めるかもしれないので、特(とく)に注意(ちゅうい)し、先(さき)に渡(わた)らせる。"],"a":2,"img":"https://drive.google.com/thumbnail?id=18mr2VwGdYsAZIFdCka63DjlKJzkpW1eF&sz=w1000","e":"正しい行動（Ⓒ）： 対向車が横断歩道を通過したら右側の歩行者は横断歩道を渡し始めるかもしれないので、特に注意し、先に渡らせる。（対向車の陰で見えにくかった歩行者が渡り始める危険性を予測し、歩行者優先の原則に従って譲る行動が正しい運転です）。\n\n間違い（Ⓐ・Ⓑ）：\n\nⒶ「自転車は一度止まるはずなのでそのまま通行する」は、「〜だろう」という思い込み運転であり、自転車が飛び出してきた場合に事故になります。\n\nⒷ「車が優先なので速度を上げて走行し先に通過する」は誤りです。道路交通法上、横断歩道では歩行者が絶対優先であり、車が優先されることはありません。"},
+{"q":"踏切に接近しています。 左前方には自転車が通行しており、踏切の前方には信号機のある交差点があり、信号は赤です。危険を避けるためにはどのような運転をすればよいでしょうか。","t":"mc","o":["電車(でんしゃ)が来(き)ていないので、一時停止(いちじていし)せず急(いそ)いで通過(つうか)する。","踏切(ふみきり)の先(さき)に自分(じぶん)の車(くるま)が入(はい)れるスペースがあるかどうかを確認(かくにん)するが、後部(こうぶ)が少(すこ)しはみ出(で)る程度(ていど)であれば早(はや)く進(すす)んだ方(ほう)が良(よ)い。","踏切(ふみきり)に進入(しんにゅう)するときは、踏切(ふみきり)を通行(つうこう)する歩行者(ほこうしゃ)や自転車(じてんしゃ)、対向車(たいこうしゃ)に注意(ちゅうい)しながら、中央(ちゅうおう)寄(よ)りを通行(つうこう)する。"],"a":2,"img":"https://drive.google.com/thumbnail?id=1Wv8DRQfdBR7a52jy0fUZQX3jG6OBcrC6&sz=w1000","e":"正しい行動（Ⓒ）： 踏切に進入するときは、踏切を通行する歩行者や自転車、対向車に注意しながら、中央寄りを通行する。（周囲の歩行者や対向車に十分配慮し、脱輪などを防ぐため中央寄りを通行するのが安全な運転手順です）。\n\n間違い（Ⓐ・Ⓑ）：\n\nⒶ「電車が来ていないので、一時停止せず急いで通過する」は誤りです。踏切の手前では必ず一時停止して安全確認を行わなければなりません（信号機による交通整理が行われている場合を除く）。\n\nⒷ「後部が少しはみ出る程度であれば早く進んだ方が良い」は危険です。踏切の先（交差点側）に自分の車が入る十分なスペースがない場合は、車体が踏切内に取り残される恐れがあるため、踏切手前で停止して待機しなければなりません。"},
+{"q":"左に曲がろうとしているときに、二輪車が後から来る場合どうしますか。","t":"mc","o":["巻(ま)き込(こ)まないか注意(ちゅうい)する","横断歩道(おうだんほどう)には人(ひと)がいないので素早(すばや)く曲(ま)がる","自転車(じてんしゃ)より先(さき)に曲(ま)がれるようにする"],"a":0,"img":"https://drive.google.com/thumbnail?id=1r6jkU5ocMAYmKUcnUw3CV6inbqIcQUR0&sz=w1000"},
+{"q":"狭い道で対向から車が来たらどうしますか。","t":"mc","o":["止(と)まって譲(ゆず)る","スピードを出(だ)して進行(しんこう)する","看板(かんばん)にぶつけてもよいのでできるだけ左(ひだり)に避(よ)ける"],"a":0,"img":"https://drive.google.com/thumbnail?id=10OcQcDelWJ0lffksIvXaeA2acPoLLr1D&sz=w1000"},
+{"q":"駐車場から車道に出る時の正しい行動はどれですか。","t":"mc","o":["トラックが入(はい)ってきそうなので急(いそ)いで出発(しゅっぱつ)する","歩道(ほどう)の歩行者(ほこうしゃ)や自転車(じてんしゃ)に気(き)を付(つ)けて出発(しゅっぱつ)する","トラックの陰(かげ)は相手(あいて)が気(き)を付ける(つける)べきなので、自分(じぶん)は気(き)にしなくてよい"],"a":1,"img":"https://drive.google.com/thumbnail?id=1xy37Y41B0zq9nL4F4YiV9jlcuTQebVwx&sz=w1000"},
+{"q":"歩道と自転車レーンのある片側１車線の道路を走行中の正しい行動はどれですか。","t":"mc","o":["左側(ひだりがわ)の自転車(じてんしゃ)レーンを走行(そうこう)している自転車(じてんしゃ)が駐車車両(ちゅうしゃしゃりょう)を避(さ)けてくるかもしれないので、対向車線(たいこうしゃせん)にはみ出(だ)しながら走行(そうこう)する。","ミラーには後方(こうほう)してくる配達用(はいたつよう)（お客(きゃく)様(さま)に荷物(にもつ)を運ぶ(はこぶ)自転車(じてんしゃ)）が見(み)えるので、動き(うごき)に注意(ちゅうい)する。","左前方(ひだりぜんぽう)の自転車(じてんしゃ)は駐車車両(ちゅうしゃしゃりょう)の後方(こうほう)で必(かなら)ず一時停止(いちじていし)するので、その間(かん)に避(よ)ける。"],"a":1,"img":"https://drive.google.com/thumbnail?id=1Oj00qZ_zx1yaWU3ZKB7ofI9xurWWlM_J&sz=w1000"},
+{"q":"雪の降る片側1車線の道路を走行中、道路には雪が積もり始めている場面での正しい運転。","t":"mc","o":["雪道(ゆきみち)は強(つよ)くブレーキがかかりですぐに対応(たいおう)できるのであまり注意(ちゅうい)する必要(ひつよう)はない。","左(ひだり)の車(くるま)や歩行者(ほこうしゃ)の動(うご)きに注意(ちゅうい)し、速度(そくど)を落(お)として走行(そうこう)する","雪(ゆき)が積(つ)もり標識(ひょうしき)や標示(ひょうじ)が見(み)えなくなっている時(とき)は、守(まも)る必要(ひつよう)がない。"],"a":1,"img":"https://drive.google.com/thumbnail?id=1xrorWG0GnQe4meSFKw0cYjfJADlvyFbP&sz=w1000"},
+{"q":"雨の高速道路を走行しています。 前の車の速度を遅(おそ )く感(かん )じたあなたは追越車線に進路を変えようとしています。この場面では危険を避けるためには どのような運転をすればよいでしょうか。","t":"mc","o":["速度(そくど)の規制(きせい)(60km/h)が出(だ)されているが、追越(おいこ )しのときは規制速度(せいげんそくど)を超(こ)えて法定速度(ほうていそくど)(90km/h)で走行(そうこう)できる。","雨天時(うてんじ)はミラーの後続車(こうぞくしゃ)が見(み)えにくいことや、路面(ろめん)が濡(ぬ)れていてスリップしやすいので慎重(しんちょう)に進路(しんろ)を変(か)える。","右側部分(みぎがわぶぶん)に後続車(こうぞくしゃ)がいるが相手(あいて)も状況(じょうきょう)がわかっているはずなので進路(しんろ)を変更(へんこう)してもよい"],"a":1,"img":"https://drive.google.com/thumbnail?id=1eYo242oaVqTV6401Qxv0HhDtl88SH4f3&sz=w1000"},
+{"q":"高速道路を走行しています。前方は渋滞して車が停止しています。 この場面ではどのような運転をすればよいでしょうか。","t":"mc","o":["右(みぎ)の車線(しゃせん)の方(ほう)が少(すこ)し空(す)いているので移動(いどう)して前(まえ)へ行(い)けるようにする。","前(まえ)の車(くるま)はすぐに進(すす)み始(はじ)めそうなので、そのまま進行(しんこう)しても問題(もんだい)ない。","早(はや)めに減速(げんそく)を開始(かいし)し、追突事故(ついとつじこ)を防止(ぼうし)する。"],"a":2,"img":"https://drive.google.com/thumbnail?id=1VL1svN2DNHwLyFzz1BKolIVscgO74GWP&sz=w1000"},
+{"q":"雪の降る片側1車線の道路を走行しています。道路には雪が積もり始めています。 この場面ではどのような運転をすればよいでしょうか。","t":"mc","o":["雪道(ゆきみち)は強(つよ)くブレーキがかかりですぐに停止(ていし)できるので特(とく)に注意(ちゅうい)する必要(ひつよう)はない。","自分(じぶん)が優先道路(ゆうせんどうろ)のはずなので左(ひだり)の車(くるま)や歩行者(ほこうしゃ)は気(き)にせず通行(つうこう)すればよい","雪(ゆき)が積(つ)もり標識(ひょうしき)や標示(ひょうじ)が見(み)えなくなっているので、周(まわ)りの動(うご)きを良(よ)く見(み)て\n 運転(うんてん)する。"],"a":2,"img":"https://drive.google.com/thumbnail?id=1xrorWG0GnQe4meSFKw0cYjfJADlvyFbP&sz=w1000"},
+{"q":"貨物専用路上駐車帯（荷物を集めたり配ったりするトラックだけの駐車帯）から発進しようとしています。車道と歩道の間にガードレールがあります。 前方には駐車している車があり、後方からは車が接近しています。 この場面ではどのような運転をすればよいでしょうか。","t":"mc","o":["トラックはリアオーバーハングが大(おお)きいので、左後部(ひだりこうぶ)がガードレールにぶつからないか良(よ)く確認(かくにん)する。","後方(こうほう)から来(く)る車(くるま)はまだ遠(とお)いので、自分(じぶん)が先(さき)に発進(はっしん)する。","前方(ぜんぽう)の駐車車両(ちゅうしゃしゃりょう)が発進(はっしん)するタイミングまで、気(き)を付(つ)ける必要(ひつよう)はない。"],"a":0,"img":"https://drive.google.com/thumbnail?id=1s3oXRfMkhE6eugFzzHHpdVXmncbCTe51&sz=w1000"},
+{"q":"信号機のある交差点を右折しようとしています。この場面での正しい行動はどれですか。","t":"mc","o":["右折(うせつ)した先(さき)の道路(どうろ)に駐車車両(ちゅうしゃしゃりょう)があり、その後(うし)ろから歩行者(ほこうしゃ)が渡(わた)ってくるかもしれないので注意(ちゅうい)する。","対向車(たいこうしゃ)が接近(せっきん)してきているので急(いそ)いで先(さき)に曲(ま)がる。","右(みぎ)のミラーには自転車(じてんしゃ)や歩行者(ほこうしゃ)が映(うつ)っていないので横断歩道(おうだんほどう)を渡(わた)る人(ひと)はいない。"],"a":0,"img":"https://drive.google.com/thumbnail?id=1P_Pnbrfkl5vxtko0-fEuIe1uVxCoZm3O&sz=w1000"},
+{"q":"前方には信号のない横断歩道があり、右側に横断しようとしている高齢者が立っている。この場合(ばあい）、トラックの運転手の行動として、一番良いものをA・B・C から一つ選びなさい。","t":"mc","o":["自転車(じてんしゃ)が車道(しゃどう)にはみ出(だ)しそうなのでスピードを上(あ)げて急(いそ)いで通過(つうか)する。","横断歩道上(おうだんほどうじょう)に歩行者(ほこうしゃ)がいないので、そのまま通過(つうか)する。","横断歩道(おうだんほどう)の手前(てまえ)で停止(ていし)して、歩行者(ほこうしゃ)を先(さき)に横断(おうだん)させる。"],"a":2,"img":"https://drive.google.com/thumbnail?id=1CXJnLCVDYJCzlFtBBhBbcC_M92Ugz0yO&sz=w1000"},
+{"q":"運転中に大地震が発生し、やむを得()ず車を道路上に置いて避難する場合(ばあい）、トラックの運転手の行動として一番良いものをA・B・C から一つ選びなさい。","t":"mc","o":["道路左側(どうろひだりがわ)に寄(よ)せて駐車(ちゅうしゃ)し、 ドアロックをして、エンジンキーは大切(たいせつ)に持(も)ち去(さ)る。","道路左側(どうろひだりがわ)に寄(よ)せて駐車(ちゅうしゃ)し、エンジンを止(と)め、エンジンキーは付(つ)けたままとし、窓(まど)を閉(し)め、ドアはロックしない。","道路左側(どうろひだりがわ)に寄(よ)せて駐車(ちゅうしゃ)し、エンジンは止(と)めずに、窓(まど)を開(あ)け、ドアはロックしない。"],"a":1,"img":"https://drive.google.com/thumbnail?id=1XCfV_5qirNXYKE8fnEvf4AUe6oFd-3eg&sz=w1000"},
+{"q":"トラックの運転手の行動として、一番良いものをA・B・C から一(ひと）)選びなさい。交通場面の状況 ・信号機のある交差点を右折しようとしている・対向直進車が接近してる。・右折先の道路に駐車車両があり、 歩行者の影が見える","t":"mc","o":["信号機(しんごうき)が青(あお)なので、 対向直進車(たいこうちょくしんしゃ)より優先的(ゆうせんてき)に右折(うせつ)できる。","対向直進車(たいこうちょくしんしゃ)は乗用車(じょうようしゃ)で自車(じしゃ)(トラック) の方(ほう)が大(おお)きいので優先的(ゆうせんてき)に右折(うせつ)できる","対向車(たいこうしゃ)が接近(せっきん)しているときは右折(うせつ)をせずに、対向車(たいこうしゃ)の通過(つうか)を待(ま)ち、安全(あんぜん)が確認(かくにん)されてから右折(うせつ)する。"],"a":2,"img":"https://drive.google.com/thumbnail?id=1gTvBZeHff_oMN6xNnrShyZg3QmhF7Ms3&sz=w1000"},
+{"q":"トラックの運転手の行動として、一番良いものをA・B・C から一つ選んでください。(交通場面の状況) ・信号機のある交差点を左折しようとしている。・左後方から二輪車が接近している。・先行車の向こうに自転車が見える。","t":"mc","o":["左後方(ひだりこうほう)の二輪車(にりんしゃ)の巻(ま)き込(こ)み事故(じこ)を防止(ぼうし)するため、 先行車(せんこうしゃ)との車間距離(しゃかんきょり)を縮(ちぢ)め、 すばやく左折(させつ)する。","先行車(せんこうしゃ)が横断歩行者等(おうだんほこうしゃとう)のために停止(ていし)することを予測(よそく)して、あらかじめ車間距離(しゃかんきょり)を保持(ほじ)しておく。","交差点内(こうさてんない)にいる歩行者(ほこうしゃ)などに左折(させつ)を知(し)らせるために、方向指示器(ほうこうしじき)に加(くわ)え、クラクションを鳴(な)らしながら左折(させつ)する。"],"a":1,"img":"https://drive.google.com/thumbnail?id=1FhPtIB-bSX9tGzCHATxUjqazwiLWl4zN&sz=w1000"},
+{"q":"トラックの運転手の行動として、 一番良いものをA・B・Cから一つ選んでください。(交通場面の状況) ・住宅街の道路を走行している。・前方左側を二輪車が走行している。・右側の脇道から車や自転車が出ようとしている。・駐車車両の向こうに人影が見える。","t":"mc","o":["スピードを落(お)として走行(そうこう)するとともに、脇道(わきみち)の車(くるま)や自転車(じてんしゃ)が出(で)てこないか注意(ちゅうい)して運転(うんてん)する。","前方二輪車(ぜんぽうにりんしゃ)が膨(ふく)らんでこないようにクラクションを鳴(な)らし、前方駐車車両(ぜんぽうちゅうしゃしゃりょう)と前方二輪車(ぜんぽうにりんしゃ)を追(お)い越(こ)す。","自車(じしゃ)(トラック) の方(ほう)が大(おお)きいので優先的(ゆうせんてき)に通行(つうこう)できる。"],"a":0,"img":"https://drive.google.com/thumbnail?id=1zHszvOSvTVtN83mMya87i2d5k2u1r9MD&sz=w1000"},
+{"q":"トラックの運転手の行動として、 一番良いものをA・B・Cから一つ選んでください。(交通場面の状況) ・夜間の高速道路を走行している。・前方の路肩に停止表示器材をおいて故障車が停止している。","t":"mc","o":["ミラーで後方右側(こうほうみぎがわ)から車両(しゃりょう)が接近(せっきん)していたことから、停止(ていし)し先(さき)に行(い)かせた。","故障車(こしょうしゃ)を発見(はっけん)したら早(はや)めに進路変更(しんろへんこう)をしておく。","クラクションを鳴(な)らし続(つづ)け、後方右側(こうほうみぎがわ)の車両(しゃりょう)に故障車(こしょうしゃ)の存在(そんざい)を 知(し)らせる。"],"a":1,"img":"https://drive.google.com/thumbnail?id=1xYynBdtLzvj_woqcC0iK1CPJ3lvkpOwN&sz=w1000"},
+{"q":"トラックの運転手の行動として、 一番良いものをA・B・Cから一つ選んでください。(交通場面の状況) ・バス停のある片側1車線の道路を走行している。・対向車線側のバス停にバスが停車している。","t":"mc","o":["自車(じしゃ)(トラック)がスムーズに走行(そうこう)できるよう、バスに乗(の)り込(こ)むために強引(ごういん)に道路(どうろ)を横断(おうだん)してくる歩行者(ほこうしゃ)に向(む)けクラクションを鳴(な)らす。","バスを降(お)りた乗客(じょうきゃく)がバスの後(うし)ろから道路(どうろ)を横断(おうだん)してこないように、クラクションを鳴(な)らし続(つづ)けながら走行(そうこう)する。","バスが停車(ていしゃ)しているときは、バスに乗(の)り込(こ)もうとする人(ひと)やバスを降(お)りた人(ひと)が道路(どうろ)を横断(おうだん)する危険(きけん)があるので、 道路(どうろ)の両側(りょうがわ)に目(め)を向(む)けて歩行者(ほこうしゃ)の動向(どうこう)に注意(ちゅうい)する。"],"a":2,"img":"https://drive.google.com/thumbnail?id=1NyNUA_ZG9SajkJzozsdMX-TfTOVNAoMm&sz=w1000"},
+{"q":"トラックの運転手の行動として、 一番良いものをA・B・Cから一つ選んでください。(交通場面の状況) ・片側2車線の道路を走行している。前車が進路変更しようとしている。","t":"mc","o":["大型車(おおがたしゃ)は加減速(かげんそく)しにくいので、 方向指示器(ほうこうしじき)で車線変更(しゃせんへんこう)を知(し)らせれば、後方右側(こうほうみぎがわ)の三輪車(さんりんしゃ)が譲(ゆず)ってくれるので、後(あと)は気(き)にしなくてよい。","車線変更時(しゃせんへんこうじ)は後続車(こうぞくしゃ)の有無(うむ)を確認(かくにん)するとともに、 前車(ぜんしゃ)が減速(げんそく)・停止(ていし)することも想定(そうてい)されることから前方車両(ぜんぽうしゃりょう)との車間距離(しゃかんきょり)を開(あ)けて走行(そうこう)する。","前方(ぜんぽう)に駐車車両(ちゅうしゃしゃりょう)がある場合(ばあい)、 必(かなら)ず反対車線(はんたいしゃせん)へはみ出(だ)して走行(そうこう)しなくてはならない。"],"a":1,"img":"https://drive.google.com/thumbnail?id=1MMoyemPywMNWi8GiW7PDaCgd5yyouD0Y&sz=w1000"},
+{"q":"踏切内で運行不能となった場合、 トラックの運転手の行動として、 踏切内で運行不能となった場合、トラックの運転手の行動として、一番良いものをA・B・Cから一つ選んでください。","t":"mc","o":["速(すみ)やかに警報機(けいほうき)についている 「非常(ひじょう)ボタン」を押(お)すなどの措置(そち)をとる。","速(すみ)やかに自分(じぶん)の貴重品(きちょうひん)をもってトラックから遠(とお)ざかる。","踏切(ふみきり)に自動装置(じどうそうち)がついているので、何(なに)もしなくてよい。"],"a":0,"img":"https://drive.google.com/thumbnail?id=1l437rlMTj3DRHWYya8yvfQMTDZ62yMP9&sz=w1000"}];
+
 // ប្រឡងសាកល្បង — mock exam (50 per exam, pass 45/50). Furigana 漢字(かな) is
 // kept on purpose because the exam forbids the dictionary. tools/sync-quiz.js.
 const RAW_EXAM = [
@@ -8562,12 +8594,14 @@ const RAW_LAW_END = 1;
 const QUIZ_DECKS = {
   quiz: { data: RAW_QUIZ,    size: QUIZ_SIZE,    prog: 'quizzes',    det: 'quizDetails',    title: 'លំហាត់', mixSize: 20 },
   img:  { data: RAW_IMGQUIZ, size: IMGQUIZ_SIZE, prog: 'imgQuizzes',  det: 'imgQuizDetails', title: 'លំហាត់រូបភាព', mixSize: 10 },
+  hazard: { data: RAW_HAZARD, size: HAZARD_SIZE, prog: 'hazardQuizzes', det: 'hazardDetails', title: 'ព្យាករណ៍គ្រោះថ្នាក់', mixSize: 5 },
 };
 
 // Each lockable section maps to a (boolean, jsonb) column pair on app_settings.
 const LOCK_COLS = {
   quiz: ['exercises_locked', 'exercises_locked_schools'],
   img:  ['img_exercises_locked', 'img_exercises_locked_schools'],
+  hazard: ['hazard_locked', 'hazard_locked_schools'],
   exam: ['exam_locked', 'exam_locked_schools'],
 };
 
@@ -8679,6 +8713,7 @@ function totalUsageSecs(usage){ let t = 0; for (const k in (usage || {})) t += u
 //   ប្រឡងសាកល្បង  — +1 per pass          (each passing attempt in examLog)
 //   លំហាត់         — +1 every 3 passes
 //   លំហាត់រូបភាព   — +1 every 5 passes
+//   ព្យាករណ៍គ្រោះថ្នាក់ — +1 every 2 passes
 //   ជ្រើសរើសពាក្យ  — +1 every 10 passes    (word-test lessons)
 //   រៀន           — +1 every 10 hours
 //   មើលពាក្យ       — +1 every 200 words viewed
@@ -8689,11 +8724,13 @@ function computeLevel(settings, usageSecs, viewedCount){
   for (const kind of Object.keys(lessons)) wordP += passedCount(lessons[kind]);
   const quizP = passedCount(settings.quizzes);
   const imgP  = passedCount(settings.imgQuizzes);
+  const hazP  = passedCount(settings.hazardQuizzes);
   const examP = examStars(settings);              // each passing exam attempt
   const hours = (usageSecs || 0) / 3600;
   return examP
        + Math.floor(quizP / 3)
        + Math.floor(imgP / 5)
+       + Math.floor(hazP / 2)
        + Math.floor(wordP / 10)
        + Math.floor(hours / 10)
        + Math.floor((viewedCount || 0) / 200);
@@ -8792,7 +8829,7 @@ function makeSupabaseBackend(){
     },
     async setApproved(id, approved){ const { error } = await client.from('profiles').update({ approved }).eq('id', id); return { error: error ? error.message : null }; },
     async listAccounts(){ const { data } = await client.from('profiles').select('id,email,full_name,role,teacher_id,school_id,approved').order('role'); return { rows:data||[] }; },
-    async getAppSettings(){ /* select * so a column a migration has not added yet (e.g. an older DB missing exercises_locked_schools) can't fail the whole read — each field is read defensively below */ const { data } = await client.from('app_settings').select('*').eq('id',1).single(); const d=data||{}; return { app_name:d.app_name||DEFAULT_APP_NAME, logo:d.logo||'', exercises_locked:!!d.exercises_locked, exercises_locked_schools:d.exercises_locked_schools||[], img_exercises_locked:!!d.img_exercises_locked, img_exercises_locked_schools:d.img_exercises_locked_schools||[], exam_locked:!!d.exam_locked, exam_locked_schools:d.exam_locked_schools||[], feature_locks:(d.feature_locks && typeof d.feature_locks==='object')?d.feature_locks:{} }; },
+    async getAppSettings(){ /* select * so a column a migration has not added yet (e.g. an older DB missing exercises_locked_schools) can't fail the whole read — each field is read defensively below */ const { data } = await client.from('app_settings').select('*').eq('id',1).single(); const d=data||{}; return { app_name:d.app_name||DEFAULT_APP_NAME, logo:d.logo||'', exercises_locked:!!d.exercises_locked, exercises_locked_schools:d.exercises_locked_schools||[], img_exercises_locked:!!d.img_exercises_locked, img_exercises_locked_schools:d.img_exercises_locked_schools||[], hazard_locked:!!d.hazard_locked, hazard_locked_schools:d.hazard_locked_schools||[], exam_locked:!!d.exam_locked, exam_locked_schools:d.exam_locked_schools||[], feature_locks:(d.feature_locks && typeof d.feature_locks==='object')?d.feature_locks:{} }; },
     async saveAppSettings(patch){ const { error } = await client.from('app_settings').update({ app_name:patch.app_name, logo:patch.logo, updated_at:new Date().toISOString() }).eq('id',1); return { error: error ? error.message : null }; },
     async saveExerciseLock(patch){ const cols=LOCK_COLS[patch.kind||'quiz']; const upd={ updated_at:new Date().toISOString() }; upd[cols[0]]=!!patch.locked; upd[cols[1]]=patch.schools||[]; const { data, error } = await client.from('app_settings').update(upd).eq('id',1).select('id'); if (error) return { error: error.message }; if (!data || !data.length) return { error: 'row id=1 មិនបានធ្វើបច្ចុប្បន្នភាព — ពិនិត្យសិទ្ធិ Admin (is_admin/approved)' }; return { error: null }; },
     async saveFeatureLocks(map){ const { data, error } = await client.from('app_settings').update({ feature_locks: map || {}, updated_at:new Date().toISOString() }).eq('id',1).select('id'); if (error) return { error: error.message }; if (!data || !data.length) return { error: 'row id=1 មិនបានធ្វើបច្ចុប្បន្នភាព — ពិនិត្យសិទ្ធិ Admin (is_admin/approved) ឬ migration 23' }; return { error: null }; },
@@ -8958,7 +8995,7 @@ function makeDemoBackend(){
         : all.filter(u=>u.id===me.id);
       return { rows: visible.map(({id,email,full_name,role,teacher_id,school_id,approved})=>({id,email,full_name,role,teacher_id,school_id,approved})) };
     },
-    async getAppSettings(){ const d={ app_name:DEFAULT_APP_NAME, logo:'', exercises_locked:false, exercises_locked_schools:[], img_exercises_locked:false, img_exercises_locked_schools:[], exam_locked:false, exam_locked_schools:[], feature_locks:{} }; try { const s=JSON.parse(localStorage.getItem('dict_app_settings')||'null'); if(s) Object.assign(d, s); } catch(e){} if(!d.feature_locks||typeof d.feature_locks!=='object') d.feature_locks={}; return d; },
+    async getAppSettings(){ const d={ app_name:DEFAULT_APP_NAME, logo:'', exercises_locked:false, exercises_locked_schools:[], img_exercises_locked:false, img_exercises_locked_schools:[], hazard_locked:false, hazard_locked_schools:[], exam_locked:false, exam_locked_schools:[], feature_locks:{} }; try { const s=JSON.parse(localStorage.getItem('dict_app_settings')||'null'); if(s) Object.assign(d, s); } catch(e){} if(!d.feature_locks||typeof d.feature_locks!=='object') d.feature_locks={}; return d; },
     async saveFeatureLocks(map){ const cur=(await this.getAppSettings()); cur.feature_locks=map||{}; localStorage.setItem('dict_app_settings', JSON.stringify(cur)); return { error:null }; },
     async saveAppSettings(patch){ const cur=(await this.getAppSettings()); localStorage.setItem('dict_app_settings', JSON.stringify({ ...cur, app_name:patch.app_name, logo:patch.logo })); return { error:null }; },
     async saveExerciseLock(patch){ const cur=(await this.getAppSettings()); const cols=LOCK_COLS[patch.kind||'quiz']; cur[cols[0]]=!!patch.locked; cur[cols[1]]=patch.schools||[]; localStorage.setItem('dict_app_settings', JSON.stringify(cur)); return { error:null }; },
@@ -9367,6 +9404,7 @@ class Component extends DCLogic {
     if (kind === 'exam') { this.setState({ screen: 'test' }, () => this.startExam()); return; }
     if (kind === 'word') { this.setState({ screen: 'test', testKind: 'mc_jp' }, () => this.startLesson(n)); return; }
     if (kind === 'img')  { this.setState({ screen: 'test', quizDeck: 'img' }, () => this.startQuiz(n)); return; }
+    if (kind === 'hazard') { this.setState({ screen: 'test', quizDeck: 'hazard' }, () => this.startQuiz(n)); return; }
     this.setState({ screen: 'test', quizDeck: 'quiz' }, () => this.startQuiz(n));   // quiz (default)
   }
 
@@ -9933,6 +9971,7 @@ class Component extends DCLogic {
       this.setState({ appName: s.app_name || DEFAULT_APP_NAME, appLogo: s.logo || '',
         exercisesLocked: !!s.exercises_locked, exercisesLockedSchools: arr(s.exercises_locked_schools),
         imgExercisesLocked: !!s.img_exercises_locked, imgExercisesLockedSchools: arr(s.img_exercises_locked_schools),
+        hazardExercisesLocked: !!s.hazard_locked, hazardExercisesLockedSchools: arr(s.hazard_locked_schools),
         examLocked: !!s.exam_locked, examLockedSchools: arr(s.exam_locked_schools),
         featureLocks: (s.feature_locks && typeof s.feature_locks === 'object') ? s.feature_locks : {} });
     } catch(e) {}
@@ -9957,9 +9996,11 @@ class Component extends DCLogic {
   }
   exercisesLockedForMe(){ return this.lockedForMe(this.state.exercisesLocked, this.state.exercisesLockedSchools); }
   imgExercisesLockedForMe(){ return this.lockedForMe(this.state.imgExercisesLocked, this.state.imgExercisesLockedSchools); }
+  hazardExercisesLockedForMe(){ return this.lockedForMe(this.state.hazardExercisesLocked, this.state.hazardExercisesLockedSchools); }
   examLockedForMe(){ return this.lockedForMe(this.state.examLocked, this.state.examLockedSchools); }
-  // generic lock toggles, keyed by section: 'quiz' | 'img' | 'exam'
+  // generic lock toggles, keyed by section: 'quiz' | 'img' | 'hazard' | 'exam'
   lockState(kind){ return kind === 'img' ? ['imgExercisesLocked', 'imgExercisesLockedSchools']
+    : kind === 'hazard' ? ['hazardExercisesLocked', 'hazardExercisesLockedSchools']
     : kind === 'exam' ? ['examLocked', 'examLockedSchools'] : ['exercisesLocked', 'exercisesLockedSchools']; }
   async toggleLockAll(kind){
     const [lk, sk] = this.lockState(kind);
@@ -11807,6 +11848,7 @@ class Component extends DCLogic {
   quizVisible(){ const u = this.quizUnlocked(); return Math.min(this.quizTotal(), LESSON_BLOCK * (Math.floor((u + 1) / LESSON_BLOCK) + 1)); }
   openQuizList(){ if (this.exercisesLockedForMe()) { this.showToast('លំហាត់ត្រូវបានចាក់សោ'); return; } this.setState({ quizDeck: 'quiz', testMode: 'quizlist' }); }
   openImgQuizList(){ if (this.imgExercisesLockedForMe()) { this.showToast('លំហាត់រូបភាពត្រូវបានចាក់សោ'); return; } this.setState({ quizDeck: 'img', testMode: 'quizlist' }); }
+  openHazardList(){ if (this.hazardExercisesLockedForMe()) { this.showToast('ព្យាករណ៍គ្រោះថ្នាក់ត្រូវបានចាក់សោ'); return; } this.setState({ quizDeck: 'hazard', testMode: 'quizlist' }); }
   startQuiz(n){
     const qs = this.quizSlice(n);
     if (!qs.length) return;
@@ -11870,7 +11912,7 @@ class Component extends DCLogic {
       }
     }
     // log every attempt with its full detail, so a teacher can open any single run
-    const entry = { mode: this.state.quizDeck === 'img' ? 'imgquiz' : 'quiz', lesson: quizMix ? 0 : quizLesson, mix: !!quizMix, score: quizScore, total, date: new Date().toISOString(), items: attemptItems, dur: this._attemptDur() };
+    const entry = { mode: this.state.quizDeck === 'img' ? 'imgquiz' : this.state.quizDeck === 'hazard' ? 'hazard' : 'quiz', lesson: quizMix ? 0 : quizLesson, mix: !!quizMix, score: quizScore, total, date: new Date().toISOString(), items: attemptItems, dur: this._attemptDur() };
     this.setState({ settings, history: [...this.state.history, entry].slice(-HISTORY_MAX), testMode: 'quizresults' }, () => this.persist());
   }
   retryQuiz(){ this.state.quizMix ? this.startQuizMix() : this.startQuiz(this.state.quizLesson); }
@@ -12824,7 +12866,7 @@ class Component extends DCLogic {
     // are OPEN by default (locking = adding the branch to the list); the empty
     // sections are LOCKED by default (unlocking = adding the branch).
     const permTestExpand = s.permTestExpand || [];
-    const EXERCISE_LOCKS = [{ kind: 'quiz', label: 'លំហាត់' }, { kind: 'img', label: 'លំហាត់រូបភាព' }, { kind: 'exam', label: 'ប្រឡងសាកល្បង' }];
+    const EXERCISE_LOCKS = [{ kind: 'quiz', label: 'លំហាត់' }, { kind: 'img', label: 'លំហាត់រូបភាព' }, { kind: 'hazard', label: 'ព្យាករណ៍គ្រោះថ្នាក់' }, { kind: 'exam', label: 'ប្រឡងសាកល្បង' }];
     const buildTestRows = (nodes, depth, parentPath) => {
       let rows = [];
       for (const k of Object.keys(nodes)) {
@@ -12993,6 +13035,7 @@ class Component extends DCLogic {
           const set = st.settings || {};
           if (kind === 'quiz') return (set.quizzes || {})[lesson] != null;
           if (kind === 'img')  return (set.imgQuizzes || {})[lesson] != null;
+          if (kind === 'hazard') return (set.hazardQuizzes || {})[lesson] != null;
           if (kind === 'word') return Object.values(set.lessons || {}).some(rec => rec && rec[lesson] != null);
           if (kind === 'exam') return (Array.isArray(set.examLog) && set.examLog.length > 0) || Object.keys(set.exams || {}).length > 0;
           return false;
@@ -13444,8 +13487,10 @@ class Component extends DCLogic {
       // — exercises (លំហាត់ / លំហាត់រូបភាព) —
       openQuizList: () => this.openQuizList(),
       openImgQuizList: () => this.openImgQuizList(),
+      openHazardList: () => this.openHazardList(),
       exercisesLocked: s.exercisesLocked, exercisesLockedForMe: this.exercisesLockedForMe(),
       imgExercisesLockedForMe: this.imgExercisesLockedForMe(),
+      hazardExercisesLockedForMe: this.hazardExercisesLockedForMe(),
       isQuizList: testMode === 'quizlist', isQuiz: testMode === 'quiz', isQuizResults: testMode === 'quizresults',
       quizListTitle: this.qDeck().title,
       quizItems, quizUnlockLabel: `បើកសោ ${quizUnlocked} / ${quizTotal} លំហាត់ · ត្រូវបាន ${PASS_PCT}% ដើម្បីបន្ត`,

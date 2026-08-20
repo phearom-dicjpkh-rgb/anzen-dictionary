@@ -7,10 +7,11 @@
  *   node tools/sync-quiz.js          # fetch + write
  *   node tools/sync-quiz.js --check  # report only, change nothing
  *
- * Three tabs, each its own gid, each baked into its own array:
- *   gid 0          -> RAW_QUIZ     លំហាត់ (10 per exercise)      furigana stripped
- *   gid 1823744360 -> RAW_IMGQUIZ  លំហាត់រូបភាព (5 per exercise) furigana stripped
- *   gid 320587093  -> RAW_EXAM     ប្រឡងសាកល្បង (50 per exam)    furigana KEPT
+ * Four tabs, each its own gid, each baked into its own array:
+ *   gid 0          -> RAW_QUIZ     លំហាត់ (10 per exercise)          furigana stripped
+ *   gid 1823744360 -> RAW_IMGQUIZ  លំហាត់រូបភាព (5 per exercise)     furigana stripped
+ *   gid 1030434148 -> RAW_HAZARD   ព្យាករណ៍គ្រោះថ្នាក់ (5 / exercise) furigana stripped
+ *   gid 320587093  -> RAW_EXAM     ប្រឡងសាកល្បង (50 per exam)        furigana KEPT
  *
  * Column layout is the same on every tab (per row):
  *   A = number   B = 問題 (question)   C = correct answer   D = wrong answers
@@ -37,6 +38,7 @@ const SHEET = (process.env.QUIZ_SHEET || 'https://docs.google.com/spreadsheets/d
 const SOURCES = [
   { gid: '0',          block: 'RAW_QUIZ',    size: 10, furiQ: false, furiOpt: true },
   { gid: '1823744360', block: 'RAW_IMGQUIZ', size: 5,  furiQ: false, furiOpt: true },
+  { gid: '1030434148', block: 'RAW_HAZARD',  size: 5,  furiQ: false, furiOpt: true },
   { gid: '320587093',  block: 'RAW_EXAM',    size: 50, furiQ: true,  furiOpt: true },
 ];
 const csvUrl = gid => `${SHEET}?gid=${gid}&single=true&output=csv`;
