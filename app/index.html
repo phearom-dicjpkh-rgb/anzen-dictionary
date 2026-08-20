@@ -1251,6 +1251,17 @@ textarea.input { min-height: 90px; resize: vertical; }
               </sc-for>
             </div>
             </sc-if>
+            <sc-if value="{{ hazardSec.open }}">
+            <div class="card elev-sm" style="padding:4px 14px 8px;margin-bottom:12px;">
+              <div style="font-size:12px;font-weight:700;padding:8px 0 2px;">{{ hazardSec.label }}</div>
+              <sc-for list="{{ hazardSec.attempts }}" as="a" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--color-divider);font-size:13px;{{ a.rowStyle }}" sc-camel-on-click="{{ a.onOpen }}">
+                  <span style="display:flex;align-items:center;gap:7px;min-width:0;"><sc-if value="{{ a.canOpen }}"><span style="color:var(--color-accent-700);font-size:14px;flex:none;">⬇</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span></span>
+                  <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+                </div>
+              </sc-for>
+            </div>
+            </sc-if>
             <sc-if value="{{ examSec.open }}">
             <div class="card elev-sm" style="padding:4px 14px 8px;margin-bottom:12px;">
               <div style="font-size:12px;font-weight:700;padding:8px 0 2px;">{{ examSec.label }}</div>
@@ -1534,6 +1545,17 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <div class="card elev-sm" style="padding:4px 14px 8px;margin-top:12px;">
                   <div style="font-size:12px;font-weight:700;padding:8px 0 2px;">{{ myImgSec.label }}</div>
                   <sc-for list="{{ myImgSec.attempts }}" as="a" hint-placeholder-count="4">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--color-divider);font-size:13px;">
+                      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">{{ a.label }}</span>
+                      <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+                    </div>
+                  </sc-for>
+                </div>
+                </sc-if>
+                <sc-if value="{{ myHazardSec.open }}">
+                <div class="card elev-sm" style="padding:4px 14px 8px;margin-top:12px;">
+                  <div style="font-size:12px;font-weight:700;padding:8px 0 2px;">{{ myHazardSec.label }}</div>
+                  <sc-for list="{{ myHazardSec.attempts }}" as="a" hint-placeholder-count="4">
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--color-divider);font-size:13px;">
                       <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">{{ a.label }}</span>
                       <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
@@ -12482,8 +12504,9 @@ class Component extends DCLogic {
     const myWordSec = mkMySection('word', 'តេស្តពាក្យ', ownAttemptList(['mc_jp', 'mc_km'], h => `${MODE_LABEL[h.mode] || ''} · ${h.mix ? 'ច្របល់ 🎲' : 'មេរៀនទី ' + h.lesson}`));
     const myQuizSec = mkMySection('quiz', 'លំហាត់', ownAttemptList(['quiz'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const myImgSec = mkMySection('img', 'លំហាត់រូបភាព', ownAttemptList(['imgquiz'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
+    const myHazardSec = mkMySection('hazard', 'ព្យាករណ៍គ្រោះថ្នាក់', ownAttemptList(['hazard'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const myExamSec = mkMySection('exam', 'ប្រឡងសាកល្បង', ownAttemptList(['exam'], h => { const d = new Date(h.date); return `${d.getDate()}/${d.getMonth() + 1}`; }));
-    const myRings = [myWordSec, myQuizSec, myImgSec, myExamSec].map(sec => ({ label: sec.label, fraction: sec.fraction, pct: sec.pct, pctLabel: sec.pctLabel, ringColor: sec.ringColor, ringDash: sec.ringDash, hasAny: sec.hasAny, dim: sec.dim, open: sec.open, toggle: sec.toggle }));
+    const myRings = [myWordSec, myQuizSec, myImgSec, myHazardSec, myExamSec].map(sec => ({ label: sec.label, fraction: sec.fraction, pct: sec.pct, pctLabel: sec.pctLabel, ringColor: sec.ringColor, ringDash: sec.ringDash, hasAny: sec.hasAny, dim: sec.dim, open: sec.open, toggle: sec.toggle }));
     // hour-by-hour breakdown for the tapped day on the own profile
     const profHour = (() => {
       const dk = s.profHourDay;
@@ -12683,6 +12706,7 @@ class Component extends DCLogic {
     const wordSec = mkSection('word', 'តេស្តពាក្យ', attemptList(['mc_jp', 'mc_km'], h => `${MODE_LABEL[h.mode] || ''} · ${h.mix ? 'ច្របល់ 🎲' : 'មេរៀនទី ' + h.lesson}`));
     const quizSec = mkSection('quiz', 'លំហាត់', attemptList(['quiz'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const imgSec = mkSection('img', 'លំហាត់រូបភាព', attemptList(['imgquiz'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
+    const hazardSec = mkSection('hazard', 'ព្យាករណ៍គ្រោះថ្នាក់', attemptList(['hazard'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const examSec = mkSection('exam', 'ប្រឡងសាកល្បង', attemptList(['exam'], h => { const d = new Date(h.date); return `${d.getDate()}/${d.getMonth() + 1}`; }));
 
     const ROLE_LABEL = { admin: 'អ្នកគ្រប់គ្រង', school: 'សាលា/សាខា', teacher: 'គ្រូ', student: 'សិស្ស' };
@@ -13110,8 +13134,8 @@ class Component extends DCLogic {
       hasExamReport: s.role === 'admin' && !!(s.viewingExamReport && s.viewingExamReport.items),
       // collapsible per-category boxes: every attempt (pass + fail together),
       // each openable as a PDF (admin). Tap the title to hide/show the list.
-      wordSec, quizSec, imgSec, examSec,
-      hasAnyAttempts: wordSec.hasAny || quizSec.hasAny || imgSec.hasAny || examSec.hasAny,
+      wordSec, quizSec, imgSec, hazardSec, examSec,
+      hasAnyAttempts: wordSec.hasAny || quizSec.hasAny || imgSec.hasAny || hazardSec.hasAny || examSec.hasAny,
       attemptsHint: (s.role === 'admin' || this.featureGrantedForMe('pdf')) ? 'ចុចលើការធ្វើនីមួយៗ ដើម្បីទាញយក PDF' : 'រាល់ការធ្វើរបស់សិស្ស',
       monitorUsageDays: monitorChart.days.map(d => ({ ...d, selected: s.monHourDay === d.dayKey, selectedStyle: s.monHourDay === d.dayKey ? 'outline:2px solid var(--color-accent-700);outline-offset:1px;' : '', onTap: () => this.openHourDetail(d.dayKey) })),
       monitorUsageTodayLabel: monitorChart.todayLabel,
@@ -13148,7 +13172,7 @@ class Component extends DCLogic {
           monHeroWords: `${monitorOverallViewed} / ${monitorTotal}`,
           monHeroHours: fmtDuration(usageDetail.totalSecs),
           monHeroActiveDays: String(usageDetail.activeDays),
-          monRings: [wordSec, quizSec, imgSec, examSec].map(sec => ({
+          monRings: [wordSec, quizSec, imgSec, hazardSec, examSec].map(sec => ({
             label: sec.label, fraction: sec.fraction, pct: sec.pct, pctLabel: sec.pctLabel,
             ringColor: sec.ringColor, ringDash: sec.ringDash, hasAny: sec.hasAny, dim: sec.hasAny ? '' : 'opacity:0.55;',
             open: sec.open, toggle: sec.toggle,
@@ -13178,7 +13202,7 @@ class Component extends DCLogic {
       hasBranch: !!(s.mySchoolId && schoolName(s.mySchoolId)),
       bookStats, usageDays, usageTodayLabel, usageWeekLabel, myLessonSummary,
       // test rings + attempt panels + hour drill-down (profile, matching the monitor)
-      myRings, myWordSec, myQuizSec, myImgSec, myExamSec,
+      myRings, myWordSec, myQuizSec, myImgSec, myHazardSec, myExamSec,
       closeProfHour: () => this.setState({ profHourDay: null }),
       ...profHour,
       myQuizSummary, hasMyQuiz: myQuizSummary.hasAny,
