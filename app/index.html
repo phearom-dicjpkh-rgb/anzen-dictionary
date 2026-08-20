@@ -11644,7 +11644,7 @@ class Component extends DCLogic {
   downloadExamPdf(){
     const er = this.state.viewingExamReport;
     if (!er || !er.items) { this.showToast('គ្មានទិន្នន័យប្រឡង'); return; }
-    this._printReport({ title: `ប្រឡងសាកល្បង · ឈុតទី ${er.block}`, date: er.date, scoreLabel: `${er.score} / ${er.total}`, items: er.items, dur: er.dur });
+    this._printReport({ title: 'ប្រឡងសាកល្បង', date: er.date, scoreLabel: `${er.score} / ${er.total}`, items: er.items, dur: er.dur });
   }
   // open one specific attempt (by its index in the viewed student's history) as
   // an A4 PDF — this is how every single run, pass or fail, is reviewed/downloaded
@@ -11659,7 +11659,7 @@ class Component extends DCLogic {
     const pct = h.total ? Math.round(h.score / h.total * 100) : 0;
     const dir = h.mode === 'mc_km' ? 'ខ្មែរ → ជប៉ុន' : 'ជប៉ុន → ខ្មែរ';
     const lessonLabel = h.mix ? 'ច្របល់' : `លំហាត់ទី ${h.lesson}`;
-    const title = h.mode === 'exam' ? `ប្រឡងសាកល្បង · ឈុតទី ${h.lesson}`
+    const title = h.mode === 'exam' ? 'ប្រឡងសាកល្បង'
       : h.mode === 'quiz' ? `លំហាត់ · ${lessonLabel}`
       : h.mode === 'imgquiz' ? `លំហាត់រូបភាព · ${lessonLabel}`
       : `ជ្រើសរើសពាក្យត្រូវ · ${dir} · ${h.mix ? 'ច្របល់' : 'មេរៀនទី ' + h.lesson}`;
@@ -11863,18 +11863,16 @@ class Component extends DCLogic {
   retryQuiz(){ this.state.quizMix ? this.startQuizMix() : this.startQuiz(this.state.quizLesson); }
   backToQuizList(){ this.setState({ testMode: 'quizlist' }); }
 
-  // — ប្រឡងសាកល្បង (mock exam): 50 questions, 80-min countdown, one random
-  //   block per attempt, no dictionary help, review at the end —
+  // — ប្រឡងសាកល្បង (mock exam): 50 questions drawn at random (shuffled) from the
+  //   whole exam pool each attempt, 80-min countdown, no dictionary help, review —
   examBlocks(){ return Math.max(1, Math.ceil(RAW_EXAM.length / EXAM_SIZE)); }
   openExam(){ if (this.examLockedForMe()) { this.showToast('ប្រឡងសាកល្បងត្រូវបានចាក់សោ'); return; } this.setState({ testMode: 'examintro' }); }
   startExam(){
-    const blocks = this.examBlocks();
-    const n = 1 + Math.floor(Math.random() * blocks);       // a random exam set
-    const qs = RAW_EXAM.slice((n - 1) * EXAM_SIZE, n * EXAM_SIZE);
+    const qs = sample(RAW_EXAM, EXAM_SIZE);                  // 50 random, reshuffled every attempt
     if (!qs.length) return;
     const deadline = Date.now() + EXAM_MINUTES * 60 * 1000;
     this._attemptStart = Date.now();
-    this.setState({ testMode: 'exam', examSource: 'exam', examLawLabel: '', examBlock: n, examQuestions: qs, examIdx: 0,
+    this.setState({ testMode: 'exam', examSource: 'exam', examLawLabel: '', examBlock: 1, examQuestions: qs, examIdx: 0,
       examAnswers: [], examDeadline: deadline, examRemain: EXAM_MINUTES * 60 }, () => this.runExamTimer());
   }
   // A traffic-law test runs through the same exam engine (timed, review, 90%).
@@ -12188,8 +12186,7 @@ class Component extends DCLogic {
       const d = new Date(h.date);
       // Flashcard is retired, but a fallback keeps any old history line readable
       const modeName = MODE_LABEL[h.mode] || ({ quiz: 'លំហាត់', imgquiz: 'លំហាត់រូបភាព', exam: 'ប្រឡងសាកល្បង', flashcard: 'Flashcard' }[h.mode]) || h.mode;
-      const unit = h.mode === 'exam' ? 'ឈុតទី' : 'ទី';
-      const name = modeName + (h.lesson ? ` · ${unit} ${h.lesson}` : '');
+      const name = modeName + (h.mode !== 'exam' && h.lesson ? ` · ទី ${h.lesson}` : '');
       return { label: name, scoreLabel: `${h.score}/${h.total}`, dateLabel: `${d.getDate()}/${d.getMonth()+1}` };
     });
 
@@ -12430,7 +12427,7 @@ class Component extends DCLogic {
     const myWordSec = mkMySection('word', 'តេស្តពាក្យ', ownAttemptList(['mc_jp', 'mc_km'], h => `${MODE_LABEL[h.mode] || ''} · ${h.mix ? 'ច្របល់ 🎲' : 'មេរៀនទី ' + h.lesson}`));
     const myQuizSec = mkMySection('quiz', 'លំហាត់', ownAttemptList(['quiz'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const myImgSec = mkMySection('img', 'លំហាត់រូបភាព', ownAttemptList(['imgquiz'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
-    const myExamSec = mkMySection('exam', 'ប្រឡងសាកល្បង', ownAttemptList(['exam'], h => `ឈុតទី ${h.lesson}`));
+    const myExamSec = mkMySection('exam', 'ប្រឡងសាកល្បង', ownAttemptList(['exam'], h => { const d = new Date(h.date); return `${d.getDate()}/${d.getMonth() + 1}`; }));
     const myRings = [myWordSec, myQuizSec, myImgSec, myExamSec].map(sec => ({ label: sec.label, fraction: sec.fraction, pct: sec.pct, pctLabel: sec.pctLabel, ringColor: sec.ringColor, ringDash: sec.ringDash, hasAny: sec.hasAny, dim: sec.dim, open: sec.open, toggle: sec.toggle }));
     // hour-by-hour breakdown for the tapped day on the own profile
     const profHour = (() => {
@@ -12461,7 +12458,7 @@ class Component extends DCLogic {
     const myQuizSummary = chipSummary(s.settings.quizzes);
     const myImgQuizSummary = chipSummary(s.settings.imgQuizzes);
     const myExamLog = (Array.isArray(s.settings.examLog) ? s.settings.examLog : []).slice().reverse().map(a => ({
-      label: `ឈុតទី ${a.block}`, scoreLabel: `${a.score}/${a.total} · ${a.pct}%`,
+      label: 'ប្រឡងសាកល្បង', scoreLabel: `${a.score}/${a.total} · ${a.pct}%`,
       verdict: a.passed ? 'ជាប់ ✓' : 'ធ្លាក់ ✗', verdictColor: a.passed ? 'color:#3a9e5c;' : 'color:#d0342c;',
       dateLabel: (() => { const d = new Date(a.date); return `${d.getDate()}/${d.getMonth() + 1}`; })(),
     }));
@@ -12580,7 +12577,7 @@ class Component extends DCLogic {
     const monitorImgQuizSummary = ladderSummary(s.viewingImgQuizzes, s.viewingImgQuizDetails, 'imgquiz');
     // the exam is not a ladder — show every attempt (pass or fail), newest first
     const examLogRow = a => ({
-      label: `ឈុតទី ${a.block}`, scoreLabel: `${a.score}/${a.total} · ${a.pct}%`,
+      label: 'ប្រឡងសាកល្បង', scoreLabel: `${a.score}/${a.total} · ${a.pct}%`,
       verdict: a.passed ? 'ជាប់ ✓' : 'ធ្លាក់ ✗', verdictColor: a.passed ? 'color:#3a9e5c;' : 'color:#d0342c;',
       dateLabel: (() => { const d = new Date(a.date); return `${d.getDate()}/${d.getMonth() + 1}`; })(),
     });
@@ -12631,7 +12628,7 @@ class Component extends DCLogic {
     const wordSec = mkSection('word', 'តេស្តពាក្យ', attemptList(['mc_jp', 'mc_km'], h => `${MODE_LABEL[h.mode] || ''} · ${h.mix ? 'ច្របល់ 🎲' : 'មេរៀនទី ' + h.lesson}`));
     const quizSec = mkSection('quiz', 'លំហាត់', attemptList(['quiz'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const imgSec = mkSection('img', 'លំហាត់រូបភាព', attemptList(['imgquiz'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
-    const examSec = mkSection('exam', 'ប្រឡងសាកល្បង', attemptList(['exam'], h => `ឈុតទី ${h.lesson}`));
+    const examSec = mkSection('exam', 'ប្រឡងសាកល្បង', attemptList(['exam'], h => { const d = new Date(h.date); return `${d.getDate()}/${d.getMonth() + 1}`; }));
 
     const ROLE_LABEL = { admin: 'អ្នកគ្រប់គ្រង', school: 'សាលា/សាខា', teacher: 'គ្រូ', student: 'សិស្ស' };
     const ROLE_TAG = { admin: 'tag tag-accent', school: 'tag tag-outline', teacher: 'tag tag-accent-2', student: 'tag tag-neutral' };
@@ -13530,7 +13527,7 @@ class Component extends DCLogic {
       examNextStyle: (examPicked === undefined || examPicked === null) ? 'opacity:0.45;' : '',
       examNotLast: s.examIdx < examCount - 1, examLast: s.examIdx >= examCount - 1, examAnsweredCount,
       backFromExam: () => this.backFromExam(), retryExam: () => this.retryExam(),
-      examReviewTitle: s.examSource === 'law' ? s.examLawLabel : `ប្រឡងសាកល្បង · ឈុតទី ${s.examBlock}`,
+      examReviewTitle: s.examSource === 'law' ? s.examLawLabel : 'ប្រឡងសាកល្បង',
       examScoreLabel: `${s.examScore} / ${examCount}`,
       examPassColor: examPassed ? '#3a9e5c' : '#d0342c',
       examVerdict: examPassed ? 'ជាប់ ✓' : 'មិនទាន់ជាប់',
