@@ -2704,6 +2704,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               <select class="input" value="{{ annAssignKind }}" sc-camel-on-change="{{ setAnnAssignKind }}">
                 <option value="quiz" label="លំហាត់">លំហាត់</option>
                 <option value="img" label="លំហាត់រូបភាព">លំហាត់រូបភាព</option>
+                <option value="hazard" label="ព្យាករណ៍គ្រោះថ្នាក់">ព្យាករណ៍គ្រោះថ្នាក់</option>
                 <option value="word" label="ជ្រើសរើសពាក្យត្រូវ">ជ្រើសរើសពាក្យត្រូវ</option>
                 <option value="exam" label="ប្រឡងសាកល្បង">ប្រឡងសាកល្បង</option>
               </select>
@@ -9482,7 +9483,7 @@ class Component extends DCLogic {
     const title = (s.annTitle || '').trim(), body = (s.annBody || '').trim();
     if (!title && !body) { this.setState({ annErr: 'សូមបញ្ចូលអត្ថបទប្រកាស' }); return; }
     if (s.annTarget !== 'all' && !s.annTargetId) { this.setState({ annErr: 'សូមជ្រើសរើសអ្នកទទួល' }); return; }
-    const needsLesson = s.annAssignOn && ['word', 'quiz', 'img'].includes(s.annAssignKind);
+    const needsLesson = s.annAssignOn && ['word', 'quiz', 'img', 'hazard'].includes(s.annAssignKind);
     this.setState({ annBusy: true, annErr: '' });
     let imageUrl = '';
     if (s.annImageBlob) { const up = await Backend.uploadSchoolLogo(s.annImageBlob); if (up.error) { this.setState({ annBusy: false, annErr: 'ផ្ទុករូបមិនបាន៖ ' + up.error }); return; } imageUrl = up.url; }
@@ -13138,7 +13139,7 @@ class Component extends DCLogic {
           warning:    { label: 'ព្រមាន',  emoji: '🔴', color: '#d0453c' },
           celebrate:  { label: 'អបអរ',    emoji: '🎉', color: '#e0a11b' },
         };
-        const ASSIGN = { word: 'ជ្រើសរើសពាក្យត្រូវ', quiz: 'លំហាត់', img: 'លំហាត់រូបភាព', exam: 'ប្រឡងសាកល្បង' };
+        const ASSIGN = { word: 'ជ្រើសរើសពាក្យត្រូវ', quiz: 'លំហាត់', img: 'លំហាត់រូបភាព', hazard: 'ព្យាករណ៍គ្រោះថ្នាក់', exam: 'ប្រឡងសាកល្បង' };
         const anns = (s.announcements || []).filter(a => this.annVisibleForMe(a));
         const read = this.annReadSet();
         const unread = anns.filter(a => !read.has(a.id)).length;
@@ -13220,7 +13221,7 @@ class Component extends DCLogic {
           annAssignOn: s.annAssignOn, toggleAnnAssign: () => this.toggleAnnAssign(), annAssignClass: s.annAssignOn ? 'on' : '',
           annAssignKind: s.annAssignKind, setAnnAssignKind: e => this.setAnnAssignKind(e),
           annAssignLesson: s.annAssignLesson, onAnnAssignLesson: e => this.onAnnAssignLesson(e),
-          annAssignNeedsLesson: ['word', 'quiz', 'img'].includes(s.annAssignKind),
+          annAssignNeedsLesson: ['word', 'quiz', 'img', 'hazard'].includes(s.annAssignKind),
           annDue: s.annDue, onAnnDue: e => this.onAnnDue(e),
           annPinned: s.annPinned, annPinnedClass: s.annPinned ? 'on' : '', toggleAnnPin: () => this.toggleAnnPin(),
           annImage: s.annImage, hasAnnImage: !!s.annImage, onAnnImageFile: e => this.onAnnImageFile(e), clearAnnImage: () => this.clearAnnImage(),
