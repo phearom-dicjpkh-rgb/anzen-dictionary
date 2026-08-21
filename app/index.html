@@ -9319,6 +9319,54 @@ class Component extends DCLogic {
       if (this._usageTicks >= 4) { this._usageTicks = 0; this.persist(); }   // save about once a minute
     });
   }
+  // Begin a test attempt: remember when it started and how much usage had been
+  // counted so far, so we can reconcile at the end (see creditAttemptUsage).
+  _beginAttempt(){ const now = Date.now(); this._attemptStart = now; this._attemptUsageStart = totalUsageSecs(this.state.usage); }
+  // The 15-second heartbeat only counts while the tab is visible; on a phone the
+  // screen can lock or the app go to the background mid-exam, which pauses the
+  // timer even though the student is still working (the exam's own countdown is
+  // wall-clock). So when an attempt finishes, make sure the day's usage reflects
+  // at least the time the attempt actually took — crediting only the part that
+  // was missed, capped to the time the attempt was allowed to run.
+  creditAttemptUsage(maxSec){
+    if (!this.state.userId || this._attemptStart == null) return;
+    let dur = Math.round((Date.now() - this._attemptStart) / 1000);
+    if (maxSec) dur = Math.min(dur, maxSec);
+    const counted = Math.max(0, totalUsageSecs(this.state.usage) - (this._attemptUsageStart || 0));
+    const missing = dur - counted;
+    if (missing >= 20) this._creditUsageSpan(missing, dur);
+  }
+  // Add `sec` seconds of usage, spread over the last `spanSec` seconds (the
+  // attempt window ending now), into both the daily totals and the hourly
+  // buckets, weighted by how much of each clock hour the window covers.
+  _creditUsageSpan(sec, spanSec){
+    const endMs = Date.now(), startMs = endMs - Math.max(spanSec, 1) * 1000;
+    const segs = []; let t = startMs;
+    while (t < endMs) {
+      const d = new Date(t);
+      const nextHour = new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours() + 1, 0, 0, 0).getTime();
+      const e = Math.min(nextHour, endMs);
+      segs.push({ key: dayKey(d), hour: d.getHours(), w: e - t }); t = e;
+    }
+    const totW = segs.reduce((a, s) => a + s.w, 0) || 1;
+    let left = sec;
+    segs.forEach((s, i) => { const share = (i === segs.length - 1) ? left : Math.round(sec * s.w / totW); s.share = Math.max(0, share); left -= s.share; });
+    const dCut = new Date(); dCut.setDate(dCut.getDate() - USAGE_KEEP_DAYS); const oldest = dayKey(dCut);
+    const hCut = new Date(); hCut.setDate(hCut.getDate() - USAGE_HOURS_KEEP_DAYS); const hOldest = dayKey(hCut);
+    this.setState(s => {
+      const usage = { ...(s.usage || {}) };
+      const settings = { ...s.settings };
+      const uh = { ...(settings.usageHours || {}) };
+      for (const seg of segs) {
+        if (!(seg.share > 0)) continue;
+        if (seg.key >= oldest) usage[seg.key] = (usage[seg.key] || 0) + seg.share;
+        if (seg.key >= hOldest) { const day = { ...(uh[seg.key] || {}) }; day[seg.hour] = (day[seg.hour] || 0) + seg.share; uh[seg.key] = day; }
+      }
+      settings.usageHours = uh;
+      return { usage, settings };
+    }, () => this.persist());
+    this._attemptStart = null;   // reconciled — don't credit the same attempt twice
+  }
   goProfile(){ this.stopSpeech(); this.setState({ screen: 'profile', playerPlaying: false }); }
   // collapse / reveal a profile section (progress · tests · avatar)
   toggleProfSection(k){ const o = { ...this.state.profOpen }; o[k] = !o[k]; this.setState({ profOpen: o }); }
@@ -11839,7 +11887,7 @@ class Component extends DCLogic {
   startLesson(n){
     const words = shuffle(this.lessonWords(n));
     if (!words.length) return;
-    this._attemptStart = Date.now();
+    this._beginAttempt();
     this.setState({ testMode: 'mc', testMix: false,
       testLesson: n, testWords: words, testIdx: 0, testScore: 0, testResults: [], testPicks: [],
       mcSelected: null, mcAnswered: false, mcOptions: this.buildMcOptions(words[0]) });
@@ -11851,7 +11899,7 @@ class Component extends DCLogic {
     const pool = this.testPool();
     const words = sample(pool, Math.min(LESSON_SIZE * 2, pool.length));
     if (!words.length) return;
-    this._attemptStart = Date.now();
+    this._beginAttempt();
     this.setState({ testMode: 'mc', testMix: true,
       testLesson: 0, testWords: words, testIdx: 0, testScore: 0, testResults: [], testPicks: [],
       mcSelected: null, mcAnswered: false, mcOptions: this.buildMcOptions(words[0]) });
@@ -11874,7 +11922,7 @@ class Component extends DCLogic {
   startQuiz(n){
     const qs = this.quizSlice(n);
     if (!qs.length) return;
-    this._attemptStart = Date.now();
+    this._beginAttempt();
     this.setState({ testMode: 'quiz', quizLesson: n, quizMix: false, quizQuestions: qs,
       quizIdx: 0, quizScore: 0, quizResults: [], quizPicks: [], quizAnswered: false, quizPicked: null });
   }
@@ -11885,7 +11933,7 @@ class Component extends DCLogic {
     const c = this.qDeck();
     const qs = sample(c.data, Math.min(c.mixSize || c.size, c.data.length));
     if (!qs.length) return;
-    this._attemptStart = Date.now();
+    this._beginAttempt();
     this.setState({ testMode: 'quiz', quizLesson: 0, quizMix: true, quizQuestions: qs,
       quizIdx: 0, quizScore: 0, quizResults: [], quizPicks: [], quizAnswered: false, quizPicked: null });
   }
@@ -11936,6 +11984,7 @@ class Component extends DCLogic {
     // log every attempt with its full detail, so a teacher can open any single run
     const entry = { mode: this.state.quizDeck === 'img' ? 'imgquiz' : this.state.quizDeck === 'hazard' ? 'hazard' : 'quiz', lesson: quizMix ? 0 : quizLesson, mix: !!quizMix, score: quizScore, total, date: new Date().toISOString(), items: attemptItems, dur: this._attemptDur() };
     this.setState({ settings, history: [...this.state.history, entry].slice(-HISTORY_MAX), testMode: 'quizresults' }, () => this.persist());
+    this.creditAttemptUsage(total * 300);   // count the time spent, even if the screen slept mid-exercise (cap 5 min/question)
   }
   retryQuiz(){ this.state.quizMix ? this.startQuizMix() : this.startQuiz(this.state.quizLesson); }
   backToQuizList(){ this.setState({ testMode: 'quizlist' }); }
@@ -11948,7 +11997,7 @@ class Component extends DCLogic {
     const qs = sample(RAW_EXAM, EXAM_SIZE);                  // 50 random, reshuffled every attempt
     if (!qs.length) return;
     const deadline = Date.now() + EXAM_MINUTES * 60 * 1000;
-    this._attemptStart = Date.now();
+    this._beginAttempt();
     this.setState({ testMode: 'exam', examSource: 'exam', examLawLabel: '', examBlock: 1, examQuestions: qs, examIdx: 0,
       examAnswers: [], examDeadline: deadline, examRemain: EXAM_MINUTES * 60 }, () => this.runExamTimer());
   }
@@ -11958,7 +12007,7 @@ class Component extends DCLogic {
     const qs = ((typeof RAW_LAW !== 'undefined' && RAW_LAW[lang]) || {})[key] || [];
     if (!qs.length) { this.showToast('មិនទាន់មានទិន្នន័យ'); return; }
     const deadline = Date.now() + cfg.mins * 60 * 1000;
-    this._attemptStart = Date.now();
+    this._beginAttempt();
     this.setState({ testMode: 'exam', examSource: 'law', examLawKey: lang + '_' + key,
       examLawLabel: cfg.label + ' · ' + cfg.kh, examQuestions: qs, examIdx: 0,
       examAnswers: [], examDeadline: deadline, examRemain: cfg.mins * 60 }, () => this.runExamTimer());
@@ -11980,6 +12029,8 @@ class Component extends DCLogic {
   examPrev(){ this.examGo(this.state.examIdx - 1); }
   finishExam(timeUp){
     clearInterval(this._examTimer);
+    // how long the exam was allowed to run — the cap for the usage credit below
+    const allotted = (this._attemptStart != null && this.state.examDeadline) ? Math.round((this.state.examDeadline - this._attemptStart) / 1000) : EXAM_MINUTES * 60;
     const { examBlock, examQuestions, examAnswers } = this.state;
     const label = (q, v) => q.t === 'tf' ? (v === true ? '〇' : v === false ? '✖' : '—')
       : (v === undefined ? '—' : (['A', 'B', 'C', 'D', 'E'][v] || '?'));
@@ -12007,6 +12058,7 @@ class Component extends DCLogic {
       settings.lawResults = lr;
       const entry = { mode: 'law', lesson: 0, lawKey: this.state.examLawKey, lawLabel: this.state.examLawLabel, score, total, date: now2, items: attemptItems2, dur: this._attemptDur() };
       this.setState({ settings, history: [...this.state.history, entry].slice(-HISTORY_MAX), examScore: score, examResults: results, examTimeUp: !!timeUp, testMode: 'examreview' }, () => this.persist());
+      this.creditAttemptUsage(allotted);
       return;
     }
     const exams = { ...(settings.exams || {}) };
@@ -12023,6 +12075,7 @@ class Component extends DCLogic {
     const entry = { mode: 'exam', lesson: examBlock, score, total, date: now, items: attemptItems, dur: this._attemptDur() };
     this.setState({ settings, history: [...this.state.history, entry].slice(-HISTORY_MAX), examScore: score,
       examResults: results, examTimeUp: !!timeUp, testMode: 'examreview' }, () => this.persist());
+    this.creditAttemptUsage(allotted);
   }
   quitExam(){ clearInterval(this._examTimer); this.setState({ testMode: 'examintro' }); }
   backFromExam(){ this.setState({ testMode: null, screen: 'test' }); }
@@ -12057,6 +12110,7 @@ class Component extends DCLogic {
     // log every attempt with its full detail, so a teacher can open any single run
     const entry = { mode: testKind, lesson: testMix ? 0 : testLesson, mix: !!testMix, score: testScore, total, date: new Date().toISOString(), items: attemptItems, dur: this._attemptDur() };
     this.setState({ settings, history: [...this.state.history, entry].slice(-HISTORY_MAX), testMode: 'results' }, () => this.persist());
+    this.creditAttemptUsage(total * 300);   // count the study time even if the screen slept mid-test (cap 5 min/question)
   }
 
   // Two choices only, as asked: the answer and one other word from the pool.
