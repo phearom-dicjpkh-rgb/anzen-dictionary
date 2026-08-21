@@ -12547,11 +12547,17 @@ class Component extends DCLogic {
     const usageTodayLabel = myChart.todayLabel;
     const usageWeekLabel = myChart.weekLabel;
     // own-profile test rings + attempt lists + hour drill-down (same look as the monitor)
-    const ownAttemptList = (modes, labeler) => (s.history || [])
-      .map((h, i) => ({ h, i })).filter(x => modes.indexOf(x.h.mode) !== -1).reverse()
-      .map(({ h }) => { const pct = h.total ? Math.round(h.score / h.total * 100) : 0; const passed = pct >= PASS_PCT; const d = new Date(h.date);
-        return { label: labeler(h), passed, scoreLabel: `${h.score}/${h.total} · ${pct}%`, dateLabel: `${d.getDate()}/${d.getMonth() + 1}`,
-          verdict: passed ? 'ជាប់ ✓' : 'ធ្លាក់ ✗', verdictColor: passed ? 'color:#3a9e5c;' : 'color:#d0342c;', canOpen: false, rowStyle: '', onOpen: () => {} }; });
+    // "21/8 14:30" — day/month plus the time of day the attempt was done
+    const _attemptDateTime = d => `${d.getDate()}/${d.getMonth() + 1} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    // seq = this attempt's order within its category (oldest = 1), so the exam
+    // list can name each run លំហាត់ទី 1 / លំហាត់ទី 2 …
+    const ownAttemptList = (modes, labeler) => {
+      const rows = (s.history || []).map((h, i) => ({ h, i })).filter(x => modes.indexOf(x.h.mode) !== -1);
+      return rows.map((x, k) => ({ h: x.h, seq: k + 1 })).reverse()
+        .map(({ h, seq }) => { const pct = h.total ? Math.round(h.score / h.total * 100) : 0; const passed = pct >= PASS_PCT; const d = new Date(h.date);
+          return { label: labeler(h, seq), passed, scoreLabel: `${h.score}/${h.total}`, dateLabel: _attemptDateTime(d),
+            verdict: passed ? 'ជាប់ ✓' : 'ធ្លាក់ ✗', verdictColor: passed ? 'color:#3a9e5c;' : 'color:#d0342c;', canOpen: false, rowStyle: '', onOpen: () => {} }; });
+    };
     const mkMySection = (key, label, attempts) => { const open = (s.profTestOpen || []).indexOf(key) !== -1; const pass = attempts.filter(a => a.passed).length; const total = attempts.length;
       const pct = total ? Math.round(pass / total * 100) : 0; const color = total === 0 ? '#9aa1ae' : (pct >= 80 ? '#2f8f57' : (pct === 0 ? '#d0453c' : '#c98a2e'));
       return { key, label, attempts, hasAny: total > 0, open, pct, pctLabel: pct + '%', fraction: `${pass} / ${total}`, ringColor: color, ringDash: (pct / 100 * 138.2).toFixed(1), dim: total > 0 ? '' : 'opacity:0.55;', toggle: () => this.toggleProfTest(key) }; };
@@ -12559,7 +12565,7 @@ class Component extends DCLogic {
     const myQuizSec = mkMySection('quiz', 'លំហាត់', ownAttemptList(['quiz'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const myImgSec = mkMySection('img', 'លំហាត់រូបភាព', ownAttemptList(['imgquiz'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const myHazardSec = mkMySection('hazard', 'ព្យាករណ៍គ្រោះថ្នាក់', ownAttemptList(['hazard'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
-    const myExamSec = mkMySection('exam', 'ប្រឡងសាកល្បង', ownAttemptList(['exam'], h => { const d = new Date(h.date); return `${d.getDate()}/${d.getMonth() + 1}`; }));
+    const myExamSec = mkMySection('exam', 'ប្រឡងសាកល្បង', ownAttemptList(['exam'], (h, seq) => `លំហាត់ទី ${seq}`));
     const myRings = [myWordSec, myQuizSec, myImgSec, myHazardSec, myExamSec].map(sec => ({ label: sec.label, fraction: sec.fraction, pct: sec.pct, pctLabel: sec.pctLabel, ringColor: sec.ringColor, ringDash: sec.ringDash, hasAny: sec.hasAny, dim: sec.dim, open: sec.open, toggle: sec.toggle }));
     // hour-by-hour breakdown for the tapped day on the own profile
     const profHour = (() => {
@@ -12718,11 +12724,10 @@ class Component extends DCLogic {
     // Every attempt of every kind (pass or fail), newest first. Each row opens
     // that exact run as an A4 PDF — this is how the admin reviews/downloads any
     // single test the student did, not just the best score.
-    const attemptList = (modes, labeler) => (s.viewingHistory || [])
-      .map((h, i) => ({ h, i }))
-      .filter(x => modes.indexOf(x.h.mode) !== -1)
-      .reverse()
-      .map(({ h, i }) => {
+    const attemptList = (modes, labeler) => {
+      const rows = (s.viewingHistory || []).map((h, i) => ({ h, i })).filter(x => modes.indexOf(x.h.mode) !== -1);
+      return rows.map((x, k) => ({ h: x.h, i: x.i, seq: k + 1 })).reverse()
+      .map(({ h, i, seq }) => {
         const pct = h.total ? Math.round(h.score / h.total * 100) : 0;
         const passed = pct >= PASS_PCT;
         const d = new Date(h.date);
@@ -12731,15 +12736,16 @@ class Component extends DCLogic {
           || (h.mode === 'exam' && er && Array.isArray(er.items) && er.date === h.date);
         const canOpen = (s.role === 'admin' || this.featureGrantedForMe('pdf')) && hasDetail;
         return {
-          label: labeler(h), passed,
-          scoreLabel: `${h.score}/${h.total} · ${pct}%`,
-          dateLabel: `${d.getDate()}/${d.getMonth() + 1}`,
+          label: labeler(h, seq), passed,
+          scoreLabel: `${h.score}/${h.total}`,
+          dateLabel: _attemptDateTime(d),
           verdict: passed ? 'ជាប់ ✓' : 'ធ្លាក់ ✗',
           verdictColor: passed ? 'color:#3a9e5c;' : 'color:#d0342c;',
           canOpen, rowStyle: canOpen ? 'cursor:pointer;' : '',
           onOpen: canOpen ? (() => this.openHistoryPdf(i)) : (() => {}),
         };
       });
+    };
     // One collapsible box per category (word test, exercise, image, exam). The
     // header shows a ជាប់ x/N summary and a chevron; tapping it reveals the list
     // of every attempt (pass and fail together), each openable as a PDF.
@@ -12761,7 +12767,7 @@ class Component extends DCLogic {
     const quizSec = mkSection('quiz', 'លំហាត់', attemptList(['quiz'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const imgSec = mkSection('img', 'លំហាត់រូបភាព', attemptList(['imgquiz'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const hazardSec = mkSection('hazard', 'ព្យាករណ៍គ្រោះថ្នាក់', attemptList(['hazard'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
-    const examSec = mkSection('exam', 'ប្រឡងសាកល្បង', attemptList(['exam'], h => { const d = new Date(h.date); return `${d.getDate()}/${d.getMonth() + 1}`; }));
+    const examSec = mkSection('exam', 'ប្រឡងសាកល្បង', attemptList(['exam'], (h, seq) => `លំហាត់ទី ${seq}`));
 
     const ROLE_LABEL = { admin: 'អ្នកគ្រប់គ្រង', school: 'សាលា/សាខា', teacher: 'គ្រូ', student: 'សិស្ស' };
     const ROLE_TAG = { admin: 'tag tag-accent', school: 'tag tag-outline', teacher: 'tag tag-accent-2', student: 'tag tag-neutral' };
