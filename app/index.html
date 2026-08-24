@@ -1193,8 +1193,11 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <span style="width:24px;height:24px;border-radius:7px;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;">辞</span>ចំណាត់ថ្នាក់
               </div>
               <div style="display:flex;align-items:center;gap:12px;margin-top:14px;position:relative;">
-                <div style="width:54px;height:54px;border-radius:50%;background:{{ monAvatarColor }};display:flex;align-items:center;justify-content:center;font-size:28px;flex:none;border:3px solid rgba(255,255,255,0.6);{{ monAvatarRing }}">{{ monAvatarGlyph }}</div>
-                <div style="min-width:0;"><div style="font-size:18px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ selectedStudent }}</div><div style="font-size:12px;opacity:0.85;">សិស្ស</div></div>
+                <div style="position:relative;flex:none;">
+                  <div style="width:54px;height:54px;border-radius:50%;background:{{ monAvatarColor }};display:flex;align-items:center;justify-content:center;font-size:28px;flex:none;border:3px solid rgba(255,255,255,0.6);{{ monAvatarRing }}">{{ monAvatarGlyph }}</div>
+                  <sc-if value="{{ monIsOnline }}"><span title="កំពុងប្រើប្រាស់ឥឡូវនេះ" style="position:absolute;right:1px;bottom:1px;width:13px;height:13px;border-radius:50%;background:#2e9e5b;border:2.5px solid var(--color-accent-700);"></span></sc-if>
+                </div>
+                <div style="min-width:0;"><div style="font-size:18px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ selectedStudent }}</div><div style="font-size:12px;opacity:0.85;">សិស្ស<sc-if value="{{ monIsOnline }}"> · <span style="color:#8ee6ac;">កំពុងប្រើប្រាស់</span></sc-if></div></div>
               </div>
               <div style="display:flex;gap:18px;margin-top:16px;position:relative;flex-wrap:wrap;">
                 <div><div style="font-size:16px;font-weight:800;">{{ monHeroWords }}</div><div style="font-size:11px;opacity:0.82;">ពាក្យរៀន</div></div>
@@ -1336,35 +1339,41 @@ textarea.input { min-height: 90px; resize: vertical; }
             </div>
             </sc-if>
 
-            <h4 style="font-size:15px;margin:0 0 4px;">ប្រវត្តិលម្អិត · ជ្រើសរើសថ្ងៃ</h4>
-            <div style="font-size:11px;opacity:0.55;margin-bottom:10px;">តាមដានសកម្មភាពសិក្សាតាំងពីចាប់ផ្ដើមប្រើ · ស្ដាប់បែងចែកដោយឡែក 🎧</div>
-            <div class="card elev-sm" style="margin-bottom:22px;">
-              <div style="display:flex;gap:10px;margin-bottom:12px;">
-                <div style="flex:1;min-width:0;">
-                  <div style="font-size:10px;opacity:0.6;margin-bottom:3px;">ចាប់ពី</div>
-                  <input class="input" type="date" value="{{ monUsageFrom }}" min="{{ monUsageFirstDay }}" max="{{ monUsageTo }}" sc-camel-on-change="{{ onMonUsageFrom }}" style="min-height:38px;">
-                </div>
-                <div style="flex:1;min-width:0;">
-                  <div style="font-size:10px;opacity:0.6;margin-bottom:3px;">ដល់</div>
-                  <input class="input" type="date" value="{{ monUsageTo }}" min="{{ monUsageFrom }}" max="{{ monUsageToday }}" sc-camel-on-change="{{ onMonUsageTo }}" style="min-height:38px;">
-                </div>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;">
-                <div style="flex:1 1 46%;background:var(--color-accent-100);color:var(--color-accent-800);border-radius:10px;padding:8px 10px;"><div style="font-size:10px;opacity:0.7;">សរុប</div><div style="font-size:15px;font-weight:700;">{{ monUsageTotalLabel }}</div></div>
-                <div style="flex:1 1 46%;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:10px;padding:8px 10px;"><div style="font-size:10px;opacity:0.7;">ស្ដាប់ 🎧</div><div style="font-size:15px;font-weight:700;">{{ monUsageListenLabel }}</div></div>
-                <div style="flex:1 1 46%;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:10px;padding:8px 10px;"><div style="font-size:10px;opacity:0.7;">សិក្សា (ក្រៅស្ដាប់)</div><div style="font-size:15px;font-weight:700;">{{ monUsageStudyLabel }}</div></div>
-                <div style="flex:1 1 46%;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:10px;padding:8px 10px;"><div style="font-size:10px;opacity:0.7;">ថ្ងៃសកម្ម · មធ្យម</div><div style="font-size:15px;font-weight:700;">{{ monUsageActiveDays }} · {{ monUsageAvgLabel }}</div></div>
-              </div>
-              <div style="max-height:300px;overflow-y:auto;border-top:1px solid var(--color-divider);">
-                <sc-for list="{{ monUsageRows }}" as="d" hint-placeholder-count="8">
-                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 2px;border-bottom:1px solid var(--color-divider);font-size:12px;">
-                    <span style="display:flex;flex-direction:column;"><span style="font-weight:600;">{{ d.dateLabel }}</span><span style="font-size:10px;opacity:0.5;">{{ d.weekday }}</span></span>
-                    <span style="flex:1;height:6px;margin:0 10px;background:var(--color-neutral-200);border-radius:99px;overflow:hidden;"><span style="display:block;height:100%;width:{{ d.barHeight }};background:{{ d.barColor }};"></span></span>
-                    <span style="display:flex;gap:9px;align-items:center;flex:none;"><span style="font-weight:600;">{{ d.totalLabel }}</span><sc-if value="{{ d.hasListen }}"><span style="opacity:0.6;">🎧 {{ d.listenLabel }}</span></sc-if></span>
+            <h4 style="font-size:15px;margin:0 0 4px;">ចូលប្រើ ឬ ប្រឡងច្រើនជាងគេ</h4>
+            <div style="font-size:11px;opacity:0.55;margin-bottom:10px;">តាមចំនួនដងធ្វើ · ពេលវេលាដែលចំណាយ · ចំនួនពាក្យបានមើល</div>
+            <div class="card elev-sm" style="margin-bottom:14px;">
+              <div style="font-size:12px;font-weight:700;opacity:0.65;margin-bottom:10px;">ធ្វើតេស្តច្រើនជាងគេ</div>
+              <sc-if value="{{ monTopTestsEmpty }}">
+                <div style="font-size:12px;opacity:0.55;text-align:center;padding:10px 0;">មិនទាន់ធ្វើតេស្តទេ</div>
+              </sc-if>
+              <sc-for list="{{ monTopTests }}" as="t" hint-placeholder-count="4">
+                <div style="margin-bottom:11px;">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:13px;margin-bottom:4px;{{ t.labelStyle }}">
+                    <span>{{ t.rankGlyph }} {{ t.label }}</span>
+                    <span style="opacity:0.65;font-size:11.5px;font-weight:400;">{{ t.timeLabel }} · {{ t.countLabel }}</span>
                   </div>
-                </sc-for>
-                <sc-if value="{{ monUsageEmpty }}"><div style="font-size:12px;opacity:0.55;padding:12px 2px;text-align:center;">គ្មានទិន្នន័យក្នុងចន្លោះថ្ងៃនេះ</div></sc-if>
-              </div>
+                  <div style="height:7px;background:var(--color-neutral-200);border-radius:99px;overflow:hidden;">
+                    <div style="height:100%;background:{{ t.barColor }};width:{{ t.barWidth }};"></div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div class="card elev-sm" style="margin-bottom:22px;">
+              <div style="font-size:12px;font-weight:700;opacity:0.65;margin-bottom:10px;">អានសៀវភៅ/ទំព័រច្រើនជាងគេ</div>
+              <sc-if value="{{ monTopPagesEmpty }}">
+                <div style="font-size:12px;opacity:0.55;text-align:center;padding:10px 0;">មិនទាន់មើលពាក្យទេ</div>
+              </sc-if>
+              <sc-for list="{{ monTopPages }}" as="p" hint-placeholder-count="4">
+                <div style="margin-bottom:11px;">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:13px;margin-bottom:4px;{{ p.labelStyle }}">
+                    <span>{{ p.rankGlyph }} {{ p.label }}</span>
+                    <span style="opacity:0.65;font-size:11.5px;font-weight:400;">{{ p.countLabel }} · {{ p.pctLabel }}</span>
+                  </div>
+                  <div style="height:7px;background:var(--color-neutral-200);border-radius:99px;overflow:hidden;">
+                    <div style="height:100%;background:var(--color-accent);width:{{ p.barWidth }};"></div>
+                  </div>
+                </div>
+              </sc-for>
             </div>
 
             <h4 style="font-size:15px;margin:0 0 10px;">ការមើលពាក្យតាមទំព័រ</h4>
@@ -1400,7 +1409,10 @@ textarea.input { min-height: 90px; resize: vertical; }
                   <sc-for list="{{ monPodium }}" as="p" hint-placeholder-count="3">
                     <div style="flex:1;max-width:96px;display:flex;flex-direction:column;align-items:center;cursor:pointer;" sc-camel-on-click="{{ p.onSelect }}">
                       <div style="font-size:22px;line-height:1;margin-bottom:4px;">{{ p.medal }}</div>
-                      <div style="width:{{ p.avSize }};height:{{ p.avSize }};border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:{{ p.avFont }};line-height:1;border:2px solid rgba(255,255,255,0.6);">{{ p.avatarGlyph }}</div>
+                      <div style="position:relative;">
+                        <div style="width:{{ p.avSize }};height:{{ p.avSize }};border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:{{ p.avFont }};line-height:1;border:2px solid rgba(255,255,255,0.6);">{{ p.avatarGlyph }}</div>
+                        <sc-if value="{{ p.online }}"><span title="កំពុងប្រើប្រាស់ឥឡូវនេះ" style="position:absolute;right:0;bottom:0;width:11px;height:11px;border-radius:50%;background:#2e9e5b;border:2px solid var(--color-accent-700);"></span></sc-if>
+                      </div>
                       <div style="font-size:11px;margin-top:6px;text-align:center;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;">{{ p.name }}</div>
                     <sc-if value="{{ p.hasStars }}"><div style="font-size:10px;margin-top:1px;">{{ p.stars }}</div></sc-if>
                       <div style="font-size:10px;opacity:0.85;">{{ p.levelLabel }}</div>
@@ -1416,7 +1428,10 @@ textarea.input { min-height: 90px; resize: vertical; }
                   <sc-for list="{{ monRows }}" as="r" hint-placeholder-count="5">
                     <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid transparent;border-radius:10px;cursor:pointer;" sc-camel-on-click="{{ r.onSelect }}">
                       <div style="flex:none;width:22px;text-align:center;{{ r.badgeStyle }}">{{ r.badge }}</div>
-                      <div style="flex:none;width:30px;height:30px;border-radius:50%;background:{{ r.avatarBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);">{{ r.avatarGlyph }}</div>
+                      <div style="position:relative;flex:none;">
+                        <div style="width:30px;height:30px;border-radius:50%;background:{{ r.avatarBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);">{{ r.avatarGlyph }}</div>
+                        <sc-if value="{{ r.online }}"><span title="កំពុងប្រើប្រាស់ឥឡូវនេះ" style="position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:#2e9e5b;border:2px solid var(--color-surface);"></span></sc-if>
+                      </div>
                       <div style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</div>
                       <sc-if value="{{ r.hasStars }}"><div style="flex:none;font-size:12px;">{{ r.stars }}</div></sc-if>
                       <div style="flex:none;font-size:12px;color:var(--color-accent-700);">{{ r.levelLabel }}</div>
@@ -1435,7 +1450,10 @@ textarea.input { min-height: 90px; resize: vertical; }
                       <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
                         <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid transparent;border-radius:10px;cursor:pointer;" sc-camel-on-click="{{ r.onSelect }}">
                           <div style="flex:none;width:22px;text-align:center;{{ r.badgeStyle }}">{{ r.badge }}</div>
-                          <div style="flex:none;width:30px;height:30px;border-radius:50%;background:{{ r.avatarBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);">{{ r.avatarGlyph }}</div>
+                          <div style="position:relative;flex:none;">
+                            <div style="width:30px;height:30px;border-radius:50%;background:{{ r.avatarBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);">{{ r.avatarGlyph }}</div>
+                            <sc-if value="{{ r.online }}"><span title="កំពុងប្រើប្រាស់ឥឡូវនេះ" style="position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:#2e9e5b;border:2px solid var(--color-surface);"></span></sc-if>
+                          </div>
                           <div style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.name }}</div>
                           <sc-if value="{{ r.hasStars }}"><div style="flex:none;font-size:12px;">{{ r.stars }}</div></sc-if>
                           <div style="flex:none;font-size:12px;color:var(--color-accent-700);">{{ r.levelLabel }}</div>
@@ -8858,6 +8876,11 @@ const DEFAULT_APP_NAME = 'វចនានុក្រម';
 function dayKey(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 // Monday (00:00) of the week containing d — the same week-start buildUsageChart uses
 function mondayOf(d){ const m = new Date(d); m.setHours(0,0,0,0); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; }
+// "online" = last_seen touched within the last couple of minutes. last_seen is
+// refreshed by persist() (called ~every minute while the app is open and visible,
+// plus after most actions), so this window comfortably covers normal gaps.
+const ONLINE_MS = 120000;
+function isOnlineAt(lastSeen){ if (!lastSeen) return false; const t = new Date(lastSeen).getTime(); return !isNaN(t) && (Date.now() - t) < ONLINE_MS; }
 const KH_WEEKDAY = ['អា','ច','អ','ពុ','ព្រ','សុ','ស'];
 function fmtDuration(sec){
   sec = Math.round(sec || 0);
@@ -8879,11 +8902,24 @@ function makeSupabaseBackend(){
     async signIn(email,password){ const { error } = await client.auth.signInWithPassword({ email, password }); return { error: error ? 'អ៊ីមែល ឬ ពាក្យសម្ងាត់ មិនត្រឹមត្រូវ' : null }; },
     async signOut(){ try { await client.auth.signOut(); } catch(e){} },
     async getProfile(id){ const { data, error } = await client.from('profiles').select('*').eq('id', id).single(); return error ? { error:error.message } : { profile:data }; },
-    async saveProgress(id,patch){ const { error } = await client.from('profiles').update(patch).eq('id', id); return { error: error ? error.message : null }; },
+    async saveProgress(id,patch){
+      let { error } = await client.from('profiles').update(patch).eq('id', id);
+      // last_seen may not exist yet on a DB that hasn't run that migration — retry
+      // without it so normal progress-saving never blocks on a missing column
+      // (the same class of bug that once broke PDF-grant persistence).
+      if (error && error.code === '42703' && 'last_seen' in patch) {
+        const { last_seen, ...rest } = patch;
+        ({ error } = await client.from('profiles').update(rest).eq('id', id));
+      }
+      return { error: error ? error.message : null };
+    },
     // Every teacher of a branch follows all of its students. No schoolId means
     // "every student" — only an admin asks that, and RLS enforces the rest.
     async listStudents(schoolId){
-      let q = client.from('profiles').select('id,full_name,email,school_id,viewed,favorites,history,settings,usage').eq('role','student');
+      // select * so a column a migration has not added yet (e.g. last_seen, on an
+      // older DB) can't fail the whole roster read — see getAppSettings for the
+      // same defensive pattern and why it matters.
+      let q = client.from('profiles').select('*').eq('role','student');
       if (schoolId) q = q.eq('school_id', schoolId);
       const { data, error } = await q.order('full_name');
       return { rows:data||[], error: error?error.message:null };
@@ -9160,7 +9196,7 @@ class Component extends DCLogic {
     schoolMenu: null,   // 'create' | 'edit' | null
     // teacher monitor
     students: [], selectedStudent: null, selectedStudentName: '', viewingViewed: [],
-    viewingUsage: {}, viewingListen: {}, viewingUsageHours: {}, monHourDay: null, viewingAvatarAnimal: '', viewingAvatarColor: '', monUsageFrom: '', monUsageTo: '', monChartWeek: '', viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {},
+    viewingUsage: {}, viewingListen: {}, viewingUsageHours: {}, monHourDay: null, viewingAvatarAnimal: '', viewingAvatarColor: '', viewingLastSeen: null, monChartWeek: '', viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {},
     viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingExamReport: null, viewingSchoolId: null, viewingSchoolName: '', viewingSchoolLogo: '', viewingHistory: [], monExpandedChip: null, monOpenSections: [],
     leaderboard: [],   // student standings, name + level only
 
@@ -9580,6 +9616,7 @@ class Component extends DCLogic {
       if (p.role === 'admin')   this.loadAdminData();
       if (['teacher','school','admin'].includes(p.role)) this.loadStudents();
       this.loadBooksAndCustom();
+      this.persist();   // touch last_seen right away, so this account shows 🟢 online immediately
     });
   }
   // Book visibility rules + admin-typed words. Rebuilds the indexes once both
@@ -9597,7 +9634,9 @@ class Component extends DCLogic {
   persist(){
     this._maybeCelebrateLevelUp();
     if (this._saveT) clearTimeout(this._saveT);
-    const snap = { viewed:this.state.viewed, favorites:this.state.favorites, history:this.state.history, settings:this.state.settings, usage:this.state.usage };
+    // last_seen rides along on every save — it's what powers the 🟢 online dot
+    // an admin/teacher sees on this account elsewhere, no extra request needed.
+    const snap = { viewed:this.state.viewed, favorites:this.state.favorites, history:this.state.history, settings:this.state.settings, usage:this.state.usage, last_seen:new Date().toISOString() };
     const id = this.state.userId;
     this._saveT = setTimeout(() => { if (id) Backend.saveProgress(id, snap); }, 600);
   }
@@ -10000,7 +10039,7 @@ class Component extends DCLogic {
     // always flush, not only when a save was already pending — the last minute
     // of usage would otherwise be lost on sign-out
     if (this._saveT) clearTimeout(this._saveT);
-    if (this.state.userId) await Backend.saveProgress(this.state.userId, { viewed:this.state.viewed, favorites:this.state.favorites, history:this.state.history, settings:this.state.settings, usage:this.state.usage });
+    if (this.state.userId) await Backend.saveProgress(this.state.userId, { viewed:this.state.viewed, favorites:this.state.favorites, history:this.state.history, settings:this.state.settings, usage:this.state.usage, last_seen:null });
     await Backend.signOut();
     VIEWER = { role: null, schoolId: null };   // back to "see all" on the login screen
     this.setState({ authStage:'login', userId:null, role:null, profileName:'', profileEmail:'', screen:'home',
@@ -11630,8 +11669,8 @@ class Component extends DCLogic {
       viewingUsageHours: (st.settings && st.settings.usageHours && typeof st.settings.usageHours === 'object') ? st.settings.usageHours : {},
       viewingAvatarAnimal: (st.settings && st.settings.avatarAnimal) || '',
       viewingAvatarColor: (st.settings && st.settings.avatarColor) || '',
+      viewingLastSeen: st.last_seen || null,
       monHourDay: null,
-      monUsageFrom: '', monUsageTo: '',
       viewingLessons: (st.settings && st.settings.lessons) || {},
       viewingLessonDetails: (st.settings && st.settings.lessonDetails) || {},
       viewingQuizzes: (st.settings && st.settings.quizzes) || {},
@@ -11657,11 +11696,9 @@ class Component extends DCLogic {
       .then(b => { if (b && this.state.viewingSchoolId === schoolId) this.setState({ viewingSchoolName: b.full_name || '', viewingSchoolLogo: b.logo || '' }); })
       .catch(() => {});
   }
-  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingListen: {}, viewingUsageHours: {}, monHourDay: null, viewingAvatarAnimal: '', viewingAvatarColor: '', monUsageFrom: '', monUsageTo: '', monChartWeek: '', viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingSchoolName: '', viewingSchoolLogo: '', monExpandedChip: null, monOpenSections: [] }); }
+  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingListen: {}, viewingUsageHours: {}, monHourDay: null, viewingAvatarAnimal: '', viewingAvatarColor: '', viewingLastSeen: null, monChartWeek: '', viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingSchoolName: '', viewingSchoolLogo: '', monExpandedChip: null, monOpenSections: [] }); }
   // tap a day in the weekly bar chart → reveal that day's hour-by-hour breakdown (toggles)
   openHourDetail(dayK){ this.setState({ monHourDay: this.state.monHourDay === dayK ? null : dayK }); }
-  onMonUsageFrom(e){ this.setState({ monUsageFrom: e.target.value }); }
-  onMonUsageTo(e){ this.setState({ monUsageTo: e.target.value }); }
   // week-scrubber on the monitor's weekly chart: a tappable date jumps to that
   // date's week, and the arrows step one Monday–Sunday week at a time
   onMonChartWeek(e){ this.setState({ monChartWeek: e.target.value }); }
@@ -11906,7 +11943,19 @@ class Component extends DCLogic {
   goMenu(){ this.stopSpeech(); this.setState({ screen: 'menu', playerPlaying: false }); }
   goRanking(){ this.stopSpeech(); this.setState({ screen: 'ranking', playerPlaying: false }); this.loadLeaderboard(); }
   goSettings(){ this.stopSpeech(); this.setState({ screen: 'settings', playerPlaying: false, settingsName: this.state.appName, settingsLogo: this.state.appLogo, settingsLogoBlob: null, settingsMsg: '', settingsError: '' }); }
-  goMonitor(){ this.stopSpeech(); this.setState({ screen: 'monitor', playerPlaying: false }, () => this.loadStudents()); }
+  goMonitor(){ this.stopSpeech(); this.setState({ screen: 'monitor', playerPlaying: false }, () => { this.loadStudents(); this.startMonPoll(); }); }
+  // Refresh the roster's last_seen every so often while the monitor screen is
+  // open, so the 🟢 online dot stays current. Self-clearing: it stops itself
+  // the moment the viewer navigates away, so there is nothing to tear down.
+  startMonPoll(){
+    if (this._monPollTimer) return;
+    this._monPollTimer = setInterval(async () => {
+      if (this.state.screen !== 'monitor') { clearInterval(this._monPollTimer); this._monPollTimer = null; return; }
+      await this.loadStudents();
+      const sel = this.state.selectedStudent;
+      if (sel) { const st = (this.state.students || []).find(x => x.id === sel); if (st) this.setState({ viewingLastSeen: st.last_seen || null }); }
+    }, 25000);
+  }
 
   openDetail(id){
     this.setState({ detailWordId: id });
@@ -12725,13 +12774,11 @@ class Component extends DCLogic {
     }));
 
     // the same two panels again, for whichever student is being followed
-    // detailed usage over a chosen date range (defaults: first recorded day → today)
+    // total usage stats (hero tiles) always cover the full recorded history
     const _vUsage = s.viewingUsage || {}, _vListen = s.viewingListen || {};
     const _usageKeys = [...new Set([...Object.keys(_vUsage), ...Object.keys(_vListen)])].sort();
     const _firstDay = _usageKeys.length ? _usageKeys[0] : dayKey(new Date());
     const _today = dayKey(new Date());
-    const monUsageFrom = s.monUsageFrom || _firstDay;
-    const monUsageTo = s.monUsageTo || _today;
     // Admin can scrub the weekly chart to any week — a tappable date jumps
     // straight to its week, and ◀ ▶ step one week at a time; until they touch
     // either control (and for every other role) it stays on the current week.
@@ -12742,7 +12789,37 @@ class Component extends DCLogic {
     const _dd = d => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
     const monChartWeekLabel = `${_dd(_chartMon)} – ${_dd(_chartSun)}`;
     const monChartWeekValue = s.monChartWeek || dayKey(_chartMon);
-    const usageDetail = buildUsageDetail(_vUsage, _vListen, monUsageFrom, monUsageTo);
+    const usageDetail = buildUsageDetail(_vUsage, _vListen, _firstDay, _today);
+    // "ចូលប្រើ ឬ ប្រឡងច្រើនជាងគេ" — which test category this student practises
+    // most (ranked by total time spent, from each attempt's own dur), and which
+    // book page they have read the most words on (reusing monitorPageProgress).
+    const _rankGlyph = i => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+    const TEST_CATS = [
+      { modes: ['mc_jp', 'mc_km'], label: 'ជ្រើសរើសពាក្យត្រូវ' },
+      { modes: ['quiz'], label: 'លំហាត់' },
+      { modes: ['imgquiz'], label: 'លំហាត់រូបភាព' },
+      { modes: ['hazard'], label: 'ព្យាករណ៍គ្រោះថ្នាក់' },
+      { modes: ['exam'], label: 'ប្រឡងសាកល្បង' },
+      { modes: ['law'], label: 'ច្បាប់ចរាចរណ៍' },
+    ];
+    const _testCatStats = TEST_CATS.map(c => {
+      const rows = (s.viewingHistory || []).filter(h => c.modes.includes(h.mode));
+      return { label: c.label, count: rows.length, secs: rows.reduce((a, h) => a + (h.dur || 0), 0) };
+    }).filter(x => x.count > 0).sort((a, b) => b.secs - a.secs);
+    const _testMax = Math.max(1, ..._testCatStats.map(x => x.secs));
+    const monTopTests = _testCatStats.slice(0, 6).map((x, i) => ({
+      label: x.label, rankGlyph: _rankGlyph(i), timeLabel: fmtDuration(x.secs), countLabel: `${x.count} ដង`,
+      barWidth: `${Math.max(4, Math.round(x.secs / _testMax * 100))}%`,
+      barColor: i === 0 ? 'var(--color-accent)' : 'var(--color-neutral-400)',
+      labelStyle: i === 0 ? 'font-weight:700;' : '',
+    }));
+    const monTopTestsEmpty = monTopTests.length === 0;
+    const _pageStats = monitorPageProgress.filter(p => p.viewedCount > 0).slice().sort((a, b) => b.viewedCount - a.viewedCount);
+    const monTopPages = _pageStats.slice(0, 5).map((p, i) => ({
+      label: p.label, rankGlyph: _rankGlyph(i), countLabel: `${p.viewedCount} ពាក្យ`, pctLabel: p.pctLabel,
+      barWidth: p.pctLabel, labelStyle: i === 0 ? 'font-weight:700;' : '',
+    }));
+    const monTopPagesEmpty = monTopPages.length === 0;
     // test results a teacher can drill into: each lesson chip is tappable to
     // reveal which words the student got right (green ✓) or wrong (red ✗)
     const monitorLessonSummary = Object.keys(MODE_LABEL).map(kind => {
@@ -12910,6 +12987,7 @@ class Component extends DCLogic {
       avatar: e.avatar || '', avatarColor: e.avatarColor || '',
       avatarGlyph: e.avatar || (e.name || '?').trim().charAt(0).toUpperCase(),
       avatarBg: e.avatarColor || 'var(--color-accent)',
+      online: isOnlineAt(e.st.last_seen),
       onSelect: () => this.selectStudentToView(e.st),
     });
 
@@ -13325,6 +13403,7 @@ class Component extends DCLogic {
           monAvatarColor: color,
           monAvatarGlyph: animal || (s.selectedStudentName || '?').trim().charAt(0),
           monAvatarRing: lum > 0.72 ? 'box-shadow:inset 0 0 0 1px rgba(0,0,0,0.15);' : '',
+          monIsOnline: isOnlineAt(s.viewingLastSeen),
           monHeroWords: `${monitorOverallViewed} / ${monitorTotal}`,
           monHeroHours: fmtDuration(usageDetail.totalSecs),
           monHeroActiveDays: String(usageDetail.activeDays),
@@ -13335,15 +13414,8 @@ class Component extends DCLogic {
           })),
         };
       })(),
-      // detailed usage history with a date-range picker + listening split
-      monUsageFrom, monUsageTo, monUsageFirstDay: _firstDay, monUsageToday: _today,
-      onMonUsageFrom: e => this.onMonUsageFrom(e), onMonUsageTo: e => this.onMonUsageTo(e),
-      monUsageRows: usageDetail.rows, monUsageEmpty: usageDetail.rows.length === 0,
-      monUsageTotalLabel: fmtDuration(usageDetail.totalSecs),
-      monUsageListenLabel: fmtDuration(usageDetail.listenSecs),
-      monUsageStudyLabel: fmtDuration(usageDetail.studySecs),
-      monUsageActiveDays: `${usageDetail.activeDays} ថ្ងៃ`,
-      monUsageAvgLabel: fmtDuration(usageDetail.activeDays ? Math.round(usageDetail.totalSecs / usageDetail.activeDays) : 0),
+      // which test category and which book page this student uses most
+      monTopTests, monTopTestsEmpty, monTopPages, monTopPagesEmpty,
 
       // — Profile —
       isProfile: s.screen === 'profile',

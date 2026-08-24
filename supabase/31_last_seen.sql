@@ -1,0 +1,12 @@
+-- ============================================================================
+--  Anzen Dictionary — "online" indicator for the teacher/admin roster
+--  Run this any time. Safe to re-run.
+--
+--  last_seen is touched by the app's own save (persist()) roughly every
+--  minute while a student is actively using it, and cleared on sign-out.
+--  A teacher/admin viewing the roster then shows a 🟢 dot for any account
+--  seen within the last couple of minutes. No RLS change needed — the
+--  existing self-update policy already lets a profile update its own row,
+--  and last_seen isn't one of the columns the update trigger protects.
+-- ============================================================================
+alter table public.profiles add column if not exists last_seen timestamptz;
