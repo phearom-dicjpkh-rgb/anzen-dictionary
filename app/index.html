@@ -11686,7 +11686,27 @@ class Component extends DCLogic {
       school, student: s.selectedStudentName || '', title: sec.title || '',
       dateLabel: (this._fmtDate(sec.date) || '—') + (sec.dur != null ? '   ·   រយៈពេល ' + this._fmtDuration(sec.dur) : ''), scoreLabel: sec.scoreLabel || '—',
       count: items.length, items,
-    } }, () => this._paginatePreviewSoon());
+    } }, () => { this._setPrintViewport(true); this._paginatePreviewSoon(); });
+  }
+  // The report is built at a fixed tablet width. On a phone that is wider than
+  // the screen, so lay the whole page out at that width (scaled to fit) instead
+  // of letting it reflow into cramped columns, and unlock pinch-to-zoom so the
+  // small text can be read. Restored to the app's locked viewport on close.
+  _setPrintViewport(on){
+    const vp = document.querySelector('meta[name="viewport"]');
+    if (!vp) return;
+    if (on) {
+      if (this._savedViewport == null) this._savedViewport = vp.getAttribute('content');
+      if (window.innerWidth < 812) {
+        const scale = Math.max(0.1, window.innerWidth / 812);
+        vp.setAttribute('content', `width=812, initial-scale=${scale.toFixed(3)}, minimum-scale=${scale.toFixed(3)}, maximum-scale=5, user-scalable=yes, viewport-fit=cover`);
+      } else {
+        vp.setAttribute('content', 'width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover');
+      }
+    } else if (this._savedViewport != null) {
+      vp.setAttribute('content', this._savedViewport);
+      this._savedViewport = null;
+    }
   }
   // Once the overlay has rendered, wait for the question images to load (their
   // height decides where a page ends), then split the single sheet into real A4
@@ -11772,7 +11792,7 @@ class Component extends DCLogic {
     });
   }
   _clearPrintMount(){ document.body.classList.remove('printing'); const m = document.getElementById('print-mount'); if (m) m.innerHTML = ''; }
-  closePrint(){ this._clearPrintMount(); this._printSourceHTML = null; this.setState({ printOpen: false }); }
+  closePrint(){ this._clearPrintMount(); this._printSourceHTML = null; this._setPrintViewport(false); this.setState({ printOpen: false }); }
   doPrint(){
     try {
       const mount = document.getElementById('print-mount');
