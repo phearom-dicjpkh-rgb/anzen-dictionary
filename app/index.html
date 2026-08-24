@@ -1277,6 +1277,14 @@ textarea.input { min-height: 90px; resize: vertical; }
             <div style="font-size:11px;letter-spacing:0.08em;opacity:0.5;margin:6px 0 3px;">រយៈពេលប្រើប្រាស់</div>
             <div style="font-size:11.5px;opacity:0.55;margin-bottom:12px;">ថ្ងៃនេះ {{ monitorUsageTodayLabel }} · ៧ ថ្ងៃ {{ monitorUsageWeekLabel }} · ចុចលើសរសរ ដើម្បីមើលតាមម៉ោង</div>
             <div class="card elev-sm" style="padding:14px 12px 10px;margin-bottom:12px;">
+              <sc-if value="{{ showMonChartScrub }}">
+                <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+                  <label style="position:relative;font-size:11.5px;font-weight:700;color:var(--color-accent-700);background:var(--color-accent-100);border:1px solid var(--color-accent);border-radius:8px;padding:4px 9px;cursor:pointer;">
+                    📅 {{ monChartWeekLabel }}
+                    <input type="date" value="{{ monChartWeekValue }}" sc-camel-on-change="{{ onMonChartWeek }}" style="position:absolute;inset:0;opacity:0;cursor:pointer;">
+                  </label>
+                </div>
+              </sc-if>
               <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:6px;height:114px;">
                 <sc-for list="{{ monitorUsageDays }}" as="d" hint-placeholder-count="7">
                   <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;cursor:pointer;" sc-camel-on-click="{{ d.onTap }}">
@@ -1287,8 +1295,16 @@ textarea.input { min-height: 90px; resize: vertical; }
                 </sc-for>
               </div>
               <div style="text-align:center;font-size:10px;opacity:0.45;margin-top:6px;">នាទី ក្នុងមួយថ្ងៃ</div>
-              <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;font-size:10px;opacity:0.7;margin-top:8px;border-top:1px solid var(--color-divider);padding-top:8px;">
-                <span>🔴 ក្រោម ១ម៉</span><span>🟡 ១–២ម៉</span><span>🟢 ២–៤ម៉</span><span>⚫ លើស ៤ម៉</span>
+              <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;border-top:1px solid var(--color-divider);padding-top:8px;">
+                <sc-if value="{{ showMonChartScrub }}">
+                  <button aria-label="សប្ដាហ៍មុន" sc-camel-on-click="{{ prevMonChartWeek }}" style="flex:none;width:24px;height:24px;border:none;border-radius:7px;background:var(--color-accent-100);color:var(--color-accent-700);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;">◀</button>
+                </sc-if>
+                <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;font-size:10px;opacity:0.7;">
+                  <span>🔴 ក្រោម ១ម៉</span><span>🟡 ១–២ម៉</span><span>🟢 ២–៤ម៉</span><span>⚫ លើស ៤ម៉</span>
+                </div>
+                <sc-if value="{{ showMonChartScrub }}">
+                  <button aria-label="សប្ដាហ៍ក្រោយ" sc-camel-on-click="{{ nextMonChartWeek }}" style="flex:none;width:24px;height:24px;border:none;border-radius:7px;background:var(--color-accent-100);color:var(--color-accent-700);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;">▶</button>
+                </sc-if>
               </div>
             </div>
 
@@ -8840,6 +8856,8 @@ const DEFAULT_APP_NAME = 'វចនានុក្រម';
 
 // — daily usage, kept per local day so the chart matches the student's clock —
 function dayKey(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+// Monday (00:00) of the week containing d — the same week-start buildUsageChart uses
+function mondayOf(d){ const m = new Date(d); m.setHours(0,0,0,0); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; }
 const KH_WEEKDAY = ['អា','ច','អ','ពុ','ព្រ','សុ','ស'];
 function fmtDuration(sec){
   sec = Math.round(sec || 0);
@@ -9142,7 +9160,7 @@ class Component extends DCLogic {
     schoolMenu: null,   // 'create' | 'edit' | null
     // teacher monitor
     students: [], selectedStudent: null, selectedStudentName: '', viewingViewed: [],
-    viewingUsage: {}, viewingListen: {}, viewingUsageHours: {}, monHourDay: null, viewingAvatarAnimal: '', viewingAvatarColor: '', monUsageFrom: '', monUsageTo: '', viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {},
+    viewingUsage: {}, viewingListen: {}, viewingUsageHours: {}, monHourDay: null, viewingAvatarAnimal: '', viewingAvatarColor: '', monUsageFrom: '', monUsageTo: '', monChartWeek: '', viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {},
     viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingExamReport: null, viewingSchoolId: null, viewingSchoolName: '', viewingSchoolLogo: '', viewingHistory: [], monExpandedChip: null, monOpenSections: [],
     leaderboard: [],   // student standings, name + level only
 
@@ -11639,11 +11657,17 @@ class Component extends DCLogic {
       .then(b => { if (b && this.state.viewingSchoolId === schoolId) this.setState({ viewingSchoolName: b.full_name || '', viewingSchoolLogo: b.logo || '' }); })
       .catch(() => {});
   }
-  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingListen: {}, viewingUsageHours: {}, monHourDay: null, viewingAvatarAnimal: '', viewingAvatarColor: '', monUsageFrom: '', monUsageTo: '', viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingSchoolName: '', viewingSchoolLogo: '', monExpandedChip: null, monOpenSections: [] }); }
+  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingListen: {}, viewingUsageHours: {}, monHourDay: null, viewingAvatarAnimal: '', viewingAvatarColor: '', monUsageFrom: '', monUsageTo: '', monChartWeek: '', viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingSchoolName: '', viewingSchoolLogo: '', monExpandedChip: null, monOpenSections: [] }); }
   // tap a day in the weekly bar chart → reveal that day's hour-by-hour breakdown (toggles)
   openHourDetail(dayK){ this.setState({ monHourDay: this.state.monHourDay === dayK ? null : dayK }); }
   onMonUsageFrom(e){ this.setState({ monUsageFrom: e.target.value }); }
   onMonUsageTo(e){ this.setState({ monUsageTo: e.target.value }); }
+  // week-scrubber on the monitor's weekly chart: a tappable date jumps to that
+  // date's week, and the arrows step one Monday–Sunday week at a time
+  onMonChartWeek(e){ this.setState({ monChartWeek: e.target.value }); }
+  _monChartMonday(){ return mondayOf(this.state.monChartWeek ? new Date(this.state.monChartWeek + 'T00:00:00') : new Date()); }
+  prevMonChartWeek(){ const m = this._monChartMonday(); m.setDate(m.getDate() - 7); this.setState({ monChartWeek: dayKey(m) }); }
+  nextMonChartWeek(){ const m = this._monChartMonday(); m.setDate(m.getDate() + 7); this.setState({ monChartWeek: dayKey(m) }); }
   toggleMonChip(key){ this.setState(s => ({ monExpandedChip: s.monExpandedChip === key ? null : key })); }
   toggleMonSection(key){ this.setState(s => ({ monOpenSections: (s.monOpenSections || []).includes(key) ? s.monOpenSections.filter(k => k !== key) : [...(s.monOpenSections || []), key] })); }
 
@@ -12708,10 +12732,16 @@ class Component extends DCLogic {
     const _today = dayKey(new Date());
     const monUsageFrom = s.monUsageFrom || _firstDay;
     const monUsageTo = s.monUsageTo || _today;
-    // Admin can scrub the weekly chart to the week of the chosen "from" date;
-    // until they pick one (and for every other role) it stays on the current week.
-    const _chartRef = (s.role === 'admin' && s.monUsageFrom) ? new Date(s.monUsageFrom + 'T00:00:00') : new Date();
+    // Admin can scrub the weekly chart to any week — a tappable date jumps
+    // straight to its week, and ◀ ▶ step one week at a time; until they touch
+    // either control (and for every other role) it stays on the current week.
+    const isAdminChart = s.role === 'admin';
+    const _chartRef = (isAdminChart && s.monChartWeek) ? new Date(s.monChartWeek + 'T00:00:00') : new Date();
     const monitorChart = buildUsageChart(_vUsage, _chartRef);
+    const _chartMon = mondayOf(_chartRef), _chartSun = new Date(_chartMon); _chartSun.setDate(_chartMon.getDate() + 6);
+    const _dd = d => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const monChartWeekLabel = `${_dd(_chartMon)} – ${_dd(_chartSun)}`;
+    const monChartWeekValue = s.monChartWeek || dayKey(_chartMon);
     const usageDetail = buildUsageDetail(_vUsage, _vListen, monUsageFrom, monUsageTo);
     // test results a teacher can drill into: each lesson chip is tappable to
     // reveal which words the student got right (green ✓) or wrong (red ✗)
@@ -13262,6 +13292,10 @@ class Component extends DCLogic {
       monitorUsageDays: monitorChart.days.map(d => ({ ...d, selected: s.monHourDay === d.dayKey, selectedStyle: s.monHourDay === d.dayKey ? 'outline:2px solid var(--color-accent-700);outline-offset:1px;' : '', onTap: () => this.openHourDetail(d.dayKey) })),
       monitorUsageTodayLabel: monitorChart.todayLabel,
       monitorUsageWeekLabel: monitorChart.weekLabel,
+      // week-scrubber: only an admin gets the tappable date + ◀ ▶ controls
+      showMonChartScrub: isAdminChart,
+      monChartWeekLabel, monChartWeekValue, onMonChartWeek: e => this.onMonChartWeek(e),
+      prevMonChartWeek: () => this.prevMonChartWeek(), nextMonChartWeek: () => this.nextMonChartWeek(),
       closeHourDetail: () => this.setState({ monHourDay: null }),
       // hour-by-hour breakdown for the tapped day
       ...(() => {
