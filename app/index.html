@@ -2650,8 +2650,14 @@ textarea.input { min-height: 90px; resize: vertical; }
 
     <sc-if value="{{ printOpen }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed;inset:0;z-index:120;background:#565b64;display:flex;flex-direction:column;">
-      <div class="no-print" style="flex:none;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;background:#2f333b;">
+      <div class="no-print" style="flex:none;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;background:#2f333b;">
         <button style="background:#4a4f59;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:14px;cursor:pointer;" sc-camel-on-click="{{ closePrint }}">← បិទ</button>
+        <sc-if value="{{ prIsWorksheet }}">
+          <div style="display:flex;border-radius:8px;overflow:hidden;border:1px solid #6b727e;">
+            <button style="border:none;padding:9px 14px;font-size:13px;cursor:pointer;{{ wsTabBlankStyle }}" sc-camel-on-click="{{ wsShowBlank }}">លំហាត់</button>
+            <button style="border:none;padding:9px 14px;font-size:13px;cursor:pointer;border-left:1px solid #6b727e;{{ wsTabAnsStyle }}" sc-camel-on-click="{{ wsShowAnswers }}">ចម្លើយ</button>
+          </div>
+        </sc-if>
         <button style="background:#1a63c9;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:14px;font-weight:600;cursor:pointer;" sc-camel-on-click="{{ doPrint }}">🖨 រក្សាទុក / បោះពុម្ព PDF</button>
       </div>
       <div style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:16px;display:flex;justify-content:center;">
@@ -11886,6 +11892,21 @@ class Component extends DCLogic {
     const cat = WS_CATS.find(c => c.key === catKey); if (!cat) return;
     const qs = this.wsQuestions(catKey, id, mix);
     if (!qs.length) { this.showToast('គ្មានទិន្នន័យលំហាត់នេះ'); return; }
+    const label = mix ? 'លំហាត់ក្រឡុក' : ((this.wsExercises(catKey).find(x => x.id === id) || {}).label || '');
+    // Keep this exact draw: the toolbar's លំហាត់/ចម្លើយ switch re-renders from
+    // it, so a shuffled sheet keeps the same questions when the teacher flips
+    // to the answer key (a fresh draw there would be the wrong sheet).
+    this._wsSheet = { qs, title: `${cat.label} · ${label}` };
+    this._renderWorksheet(withAnswers);
+  }
+  // flip the open worksheet between the blank sheet and the answer key
+  showWsAnswers(withAnswers){
+    if (!this._wsSheet) return;
+    if (!!(this.state.printReport || {}).withAnswers === !!withAnswers) return;
+    this._renderWorksheet(withAnswers);
+  }
+  _renderWorksheet(withAnswers){
+    const { qs, title } = this._wsSheet || {}; if (!qs) return;
     const L = ['A', 'B', 'C', 'D', 'E'];
     const items = qs.map((q, i) => {
       const opts = q.t === 'tf'
@@ -11897,14 +11918,18 @@ class Component extends DCLogic {
           optStyle: (withAnswers && o.ok) ? 'border:1.5px solid #1a7f37;background:#eaf7ee;color:#1a7f37;font-weight:700;' : 'border:1px solid #c7d0e0;color:#222;',
           mark: (withAnswers && o.ok) ? ' ✓' : '' })) };
     });
-    const label = mix ? 'លំហាត់ក្រឡុក' : ((this.wsExercises(catKey).find(x => x.id === id) || {}).label || '');
+    const report = {
+      appName: this.state.appName || 'វចនានុក្រម', logo: this.state.appLogo || '',
+      school: this.state.appName || 'វចនានុក្រម', isWorksheet: true, withAnswers: !!withAnswers,
+      title, count: items.length, wsItems: items,
+    };
     this._clearPrintMount();
     this._printSourceHTML = null;
-    this.setState({ printOpen: true, printReport: {
-      appName: this.state.appName || 'វចនានុក្រម', logo: this.state.appLogo || '',
-      school: this.state.appName || 'វចនានុក្រម', isWorksheet: true, withAnswers,
-      title: `${cat.label} · ${label}`, count: items.length, wsItems: items,
-    } }, () => { this._setPrintViewport(true); this._paginatePreviewSoon(); });
+    // Unmount the old sheet first — _paginatePreview() rewrites #print-sheet's
+    // DOM in place, so rendering the new one into that same node would clash.
+    this.setState({ printOpen: false, printReport: null }, () => {
+      this.setState({ printOpen: true, printReport: report }, () => { this._setPrintViewport(true); this._paginatePreviewSoon(); });
+    });
   }
 
   // — Admin: download a student's results as an A4 PDF (via the print dialog) —
@@ -13579,6 +13604,11 @@ class Component extends DCLogic {
       prWsKindLabel: (s.printReport && s.printReport.withAnswers) ? 'មានចម្លើយ (សម្រាប់គ្រូ)' : 'សម្រាប់សិស្សធ្វើ',
       prWsBlank: '..................................................',
       prWsScoreBlank: `.......... / ${(s.printReport && s.printReport.count) || 0}`,
+      // toolbar switch: same questions, shown blank or with the answers marked
+      wsShowBlank: () => this.showWsAnswers(false),
+      wsShowAnswers: () => this.showWsAnswers(true),
+      wsTabBlankStyle: (s.printReport && s.printReport.withAnswers) ? 'background:#3c414b;color:#c9ced8;' : 'background:#e8ecf3;color:#1a3f7a;font-weight:700;',
+      wsTabAnsStyle: (s.printReport && s.printReport.withAnswers) ? 'background:#e8ecf3;color:#1a3f7a;font-weight:700;' : 'background:#3c414b;color:#c9ced8;',
       monitorQuizSummary, hasMonitorQuiz: monitorQuizSummary.hasAny,
       monitorImgQuizSummary, hasMonitorImgQuiz: monitorImgQuizSummary.hasAny,
       monitorExamLog, hasMonitorExam: monitorExamLog.length > 0,
