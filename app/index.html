@@ -2653,9 +2653,16 @@ textarea.input { min-height: 90px; resize: vertical; }
       <div class="no-print" style="flex:none;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;background:#2f333b;">
         <button style="background:#4a4f59;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:14px;cursor:pointer;" sc-camel-on-click="{{ closePrint }}">← បិទ</button>
         <sc-if value="{{ prIsWorksheet }}">
-          <div style="display:flex;border-radius:8px;overflow:hidden;border:1px solid #6b727e;">
-            <button style="border:none;padding:9px 14px;font-size:13px;cursor:pointer;{{ wsTabBlankStyle }}" sc-camel-on-click="{{ wsShowBlank }}">លំហាត់</button>
-            <button style="border:none;padding:9px 14px;font-size:13px;cursor:pointer;border-left:1px solid #6b727e;{{ wsTabAnsStyle }}" sc-camel-on-click="{{ wsShowAnswers }}">ចម្លើយ</button>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+            <div style="display:flex;border-radius:8px;overflow:hidden;border:1px solid #6b727e;">
+              <button style="border:none;padding:9px 14px;font-size:13px;cursor:pointer;{{ wsTabBlankStyle }}" sc-camel-on-click="{{ wsShowBlank }}">លំហាត់</button>
+              <button style="border:none;padding:9px 14px;font-size:13px;cursor:pointer;border-left:1px solid #6b727e;{{ wsTabAnsStyle }}" sc-camel-on-click="{{ wsShowAnswers }}">ចម្លើយ</button>
+            </div>
+            <div style="display:flex;border-radius:8px;overflow:hidden;border:1px solid #6b727e;">
+              <sc-for list="{{ wsLangTabs }}" as="l" hint-placeholder-count="3">
+                <button style="border:none;padding:9px 12px;font-size:12.5px;cursor:pointer;{{ l.style }}" sc-camel-on-click="{{ l.onPick }}">{{ l.label }}</button>
+              </sc-for>
+            </div>
           </div>
         </sc-if>
         <button style="background:#1a63c9;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:14px;font-weight:600;cursor:pointer;" sc-camel-on-click="{{ doPrint }}">🖨 រក្សាទុក / បោះពុម្ព PDF</button>
@@ -2706,17 +2713,17 @@ textarea.input { min-height: 90px; resize: vertical; }
 
           <sc-if value="{{ prIsWorksheet }}">
           <div style="text-align:center;font-size:20px;font-weight:700;color:#1a4b8c;margin:16px 0 3px;">{{ pr.title }}</div>
-          <div style="text-align:center;font-size:11px;color:#888;margin-bottom:12px;">{{ prWsKindLabel }}</div>
+          <div style="text-align:center;font-size:11px;color:#888;margin-bottom:12px;">{{ pr.lKind }}</div>
           <table style="margin-bottom:6px;">
-            <tr><td class="k">ឈ្មោះសិស្ស</td><td>{{ prWsBlank }}</td></tr>
-            <tr><td class="k">ថ្ងៃខែ</td><td>{{ prWsBlank }}</td></tr>
-            <tr><td class="k">ពិន្ទុ</td><td>{{ prWsScoreBlank }}</td></tr>
+            <tr><td class="k">{{ pr.lName }}</td><td>{{ prWsBlank }}</td></tr>
+            <tr><td class="k">{{ pr.lDate }}</td><td>{{ prWsBlank }}</td></tr>
+            <tr><td class="k">{{ pr.lScore }}</td><td>{{ prWsScoreBlank }}</td></tr>
           </table>
-          <div class="bar"><span>សំណួរ</span><span>សរុប {{ pr.count }} សំណួរ</span></div>
+          <div class="bar"><span>{{ pr.lQuestions }}</span><span>{{ pr.lTotal }}</span></div>
           <div class="rtbl" style="border:1px solid #c7d0e0;">
             <div class="rhead" style="display:flex;background:#eef2f8;color:#1a4b8c;font-weight:600;font-size:12px;">
-              <div style="width:36px;padding:6px 7px;text-align:center;border-right:1px solid #c7d0e0;">លេខ</div>
-              <div style="flex:1;padding:6px 7px;">សំណួរ និង ជម្រើស</div>
+              <div style="width:36px;padding:6px 7px;text-align:center;border-right:1px solid #c7d0e0;">{{ pr.lNo }}</div>
+              <div style="flex:1;padding:6px 7px;">{{ pr.lQAndOpts }}</div>
             </div>
             <sc-for list="{{ prWsItems }}" as="it" hint-placeholder-count="8">
               <div class="prow" style="display:flex;align-items:stretch;font-size:12px;border-top:1px solid #d7deea;">
@@ -8826,6 +8833,33 @@ const WS_CATS = [
   { key: 'law_ja', label: 'ច្បាប់ជប៉ុន · ភាសាជប៉ុន',  sub: '標識 · 練習 · 仮免 · 本免' },
 ];
 
+// The printable worksheet's own wording, so a teacher can hand out a sheet in
+// Khmer, Japanese or English. Only the sheet's labels change — the questions
+// themselves come from the source workbooks and are printed as they are.
+const WS_LANGS = [
+  { key: 'km', label: 'ខ្មែរ' },
+  { key: 'ja', label: '日本語' },
+  { key: 'en', label: 'English' },
+];
+const WS_TEXT = {
+  km: { name:'ឈ្មោះសិស្ស', date:'ថ្ងៃខែ', score:'ពិន្ទុ', questions:'សំណួរ', no:'លេខ', qAndOpts:'សំណួរ និង ជម្រើស',
+        forStudent:'សម្រាប់សិស្សធ្វើ', withAnswers:'មានចម្លើយ (សម្រាប់គ្រូ)', yes:'ត្រូវ', no_:'ខុស',
+        total:n=>`សរុប ${n} សំណួរ`, page:(i,n)=>`ទំព័រ ${i} / ${n}`, exercise:n=>`លំហាត់ទី ${n}`, mix:'លំហាត់ក្រឡុក',
+        cats:{ quiz:'លំហាត់', img:'លំហាត់រូបភាព', hazard:'ព្យាករណ៍គ្រោះថ្នាក់', exam:'ប្រឡងសាកល្បង', word:'ជ្រើសរើសពាក្យត្រូវ',
+               law_km:'ច្បាប់ជប៉ុន · ភាសាខ្មែរ', law_ja:'ច្បាប់ជប៉ុន · ភាសាជប៉ុន' } },
+  ja: { name:'氏名', date:'日付', score:'点数', questions:'問題', no:'番号', qAndOpts:'問題と選択肢',
+        forStudent:'生徒用', withAnswers:'解答つき（先生用）', yes:'正しい', no_:'誤り',
+        total:n=>`全 ${n} 問`, page:(i,n)=>`ページ ${i} / ${n}`, exercise:n=>`第 ${n} 回`, mix:'シャッフル問題',
+        cats:{ quiz:'練習問題', img:'イラスト問題', hazard:'危険予測', exam:'模擬試験', word:'語彙テスト',
+               law_km:'交通法規（クメール語）', law_ja:'交通法規（日本語）' } },
+  en: { name:'Name', date:'Date', score:'Score', questions:'Questions', no:'No.', qAndOpts:'Question & choices',
+        forStudent:'For students', withAnswers:'With answers (teacher)', yes:'True', no_:'False',
+        total:n=>`${n} questions`, page:(i,n)=>`Page ${i} / ${n}`, exercise:n=>`Exercise ${n}`, mix:'Shuffled set',
+        cats:{ quiz:'Exercises', img:'Picture exercises', hazard:'Hazard prediction', exam:'Mock exam', word:'Vocabulary test',
+               law_km:'Traffic law (Khmer)', law_ja:'Traffic law (Japanese)' } },
+};
+const wsText = lang => WS_TEXT[lang] || WS_TEXT.km;
+
 // Each lockable section maps to a (boolean, jsonb) column pair on app_settings.
 const LOCK_COLS = {
   quiz: ['exercises_locked', 'exercises_locked_schools'],
@@ -9368,6 +9402,7 @@ class Component extends DCLogic {
     printOpen: false, printReport: null,
     wsCat: null,    // printable-worksheets screen: which category is open
     wsPick: null,   // { id, mix } waiting on the with/without-answers choice
+    wsLang: 'km',   // which language the printed sheet's own labels are in
     levelUpShow: false, levelUpLevel: 0, levelUpMsg: '',
     announcements: [], annOpen: false, annComposeOpen: false, annTitle: '', annBody: '', annBusy: false, annErr: '',
     annCat: 'info', annTarget: 'all', annTargetId: '', annAssignOn: false, annAssignKind: 'quiz', annAssignLesson: 1, annDue: '',
@@ -11892,11 +11927,10 @@ class Component extends DCLogic {
     const cat = WS_CATS.find(c => c.key === catKey); if (!cat) return;
     const qs = this.wsQuestions(catKey, id, mix);
     if (!qs.length) { this.showToast('គ្មានទិន្នន័យលំហាត់នេះ'); return; }
-    const label = mix ? 'លំហាត់ក្រឡុក' : ((this.wsExercises(catKey).find(x => x.id === id) || {}).label || '');
-    // Keep this exact draw: the toolbar's លំហាត់/ចម្លើយ switch re-renders from
-    // it, so a shuffled sheet keeps the same questions when the teacher flips
-    // to the answer key (a fresh draw there would be the wrong sheet).
-    this._wsSheet = { qs, title: `${cat.label} · ${label}` };
+    // Keep this exact draw: the toolbar's លំហាត់/ចម្លើយ and language switches
+    // re-render from it, so a shuffled sheet keeps the same questions when the
+    // teacher flips over (a fresh draw there would be the wrong sheet).
+    this._wsSheet = { qs, catKey, id, mix };
     this._renderWorksheet(withAnswers);
   }
   // flip the open worksheet between the blank sheet and the answer key
@@ -11905,12 +11939,31 @@ class Component extends DCLogic {
     if (!!(this.state.printReport || {}).withAnswers === !!withAnswers) return;
     this._renderWorksheet(withAnswers);
   }
+  // reprint the open sheet with its labels in another language
+  setWsLang(lang){
+    if (this.state.wsLang === lang) return;
+    const withAnswers = !!(this.state.printReport || {}).withAnswers;
+    this.setState({ wsLang: lang }, () => { if (this._wsSheet && this.state.printOpen) this._renderWorksheet(withAnswers); });
+  }
+  // The sheet's own title, in the chosen language. Law tests keep their
+  // Japanese names (that is what the test is called); the rest are numbered.
+  _wsTitle(catKey, id, mix, T){
+    const catLabel = (T.cats && T.cats[catKey]) || catKey;
+    let label;
+    if (mix) label = T.mix;
+    else if (catKey === 'law_km' || catKey === 'law_ja') {
+      const t = LAW_TESTS.find(x => x.key === id);
+      label = t ? (this.state.wsLang === 'km' ? `${t.label} · ${t.kh}` : t.label) : '';
+    } else label = T.exercise(id);
+    return `${catLabel} · ${label}`;
+  }
   _renderWorksheet(withAnswers){
-    const { qs, title } = this._wsSheet || {}; if (!qs) return;
+    const { qs, catKey, id, mix } = this._wsSheet || {}; if (!qs) return;
+    const T = wsText(this.state.wsLang);
     const L = ['A', 'B', 'C', 'D', 'E'];
     const items = qs.map((q, i) => {
       const opts = q.t === 'tf'
-        ? [{ label: '〇', text: 'ត្រូវ', ok: q.a === true }, { label: '✖', text: 'ខុស', ok: q.a === false }]
+        ? [{ label: '〇', text: T.yes, ok: q.a === true }, { label: '✖', text: T.no_, ok: q.a === false }]
         : (q.o || []).map((t, k) => ({ label: L[k] || '?', text: t, ok: k === q.a }));
       return { n: i + 1, q: q.q || '', hasImg: !!q.img, img: q.img || '',
         opts: opts.map(o => ({ label: o.label, text: o.text,
@@ -11921,8 +11974,13 @@ class Component extends DCLogic {
     const report = {
       appName: this.state.appName || 'វចនានុក្រម', logo: this.state.appLogo || '',
       school: this.state.appName || 'វចនានុក្រម', isWorksheet: true, withAnswers: !!withAnswers,
-      title, count: items.length, wsItems: items,
+      title: this._wsTitle(catKey, id, mix, T), count: items.length, wsItems: items,
+      // the sheet's own wording, so the template holds no fixed language
+      lKind: withAnswers ? T.withAnswers : T.forStudent,
+      lName: T.name, lDate: T.date, lScore: T.score, lQuestions: T.questions, lNo: T.no, lQAndOpts: T.qAndOpts,
+      lTotal: T.total(items.length),
     };
+    this._wsPageLabel = T.page;   // used by _paginatePreview for the page footer
     this._clearPrintMount();
     this._printSourceHTML = null;
     // Unmount the old sheet first — _paginatePreview() rewrites #print-sheet's
@@ -12064,7 +12122,8 @@ class Component extends DCLogic {
     pages.forEach((p, i) => { p.style.minHeight = PAGE_H + 'px';   // now give each card its A4 look
       const lbl = document.createElement('div');
       lbl.style.cssText = 'position:absolute;bottom:7px;right:14px;font-size:10px;color:#9aa3b2;';
-      lbl.textContent = `ទំព័រ ${i + 1} / ${pages.length}`; p.appendChild(lbl); });
+      const pageLbl = (this.state.printReport && this.state.printReport.isWorksheet && this._wsPageLabel) || WS_TEXT.km.page;
+      lbl.textContent = pageLbl(i + 1, pages.length); p.appendChild(lbl); });
     [...sheet.children].forEach(c => { if (c !== wrap) c.remove(); });   // drop the now-empty original blocks
     sheet.dataset.paged = '1';
     sheet.style.background = 'transparent'; sheet.style.boxShadow = 'none';
@@ -13606,7 +13665,6 @@ class Component extends DCLogic {
       prIsWorksheet: !!(s.printReport && s.printReport.isWorksheet),
       prIsResults: !!(s.printReport && !s.printReport.isWorksheet),
       prWsItems: (s.printReport && s.printReport.wsItems) || [],
-      prWsKindLabel: (s.printReport && s.printReport.withAnswers) ? 'មានចម្លើយ (សម្រាប់គ្រូ)' : 'សម្រាប់សិស្សធ្វើ',
       prWsBlank: '..................................................',
       prWsScoreBlank: `.......... / ${(s.printReport && s.printReport.count) || 0}`,
       // toolbar switch: same questions, shown blank or with the answers marked
@@ -13614,6 +13672,10 @@ class Component extends DCLogic {
       wsShowAnswers: () => this.showWsAnswers(true),
       wsTabBlankStyle: (s.printReport && s.printReport.withAnswers) ? 'background:#3c414b;color:#c9ced8;' : 'background:#e8ecf3;color:#1a3f7a;font-weight:700;',
       wsTabAnsStyle: (s.printReport && s.printReport.withAnswers) ? 'background:#e8ecf3;color:#1a3f7a;font-weight:700;' : 'background:#3c414b;color:#c9ced8;',
+      // which language the printed sheet's own labels use (the questions are unchanged)
+      wsLangTabs: WS_LANGS.map((l, i) => ({ label: l.label, onPick: () => this.setWsLang(l.key),
+        style: (s.wsLang === l.key ? 'background:#e8ecf3;color:#1a3f7a;font-weight:700;' : 'background:#3c414b;color:#c9ced8;')
+          + (i ? 'border-left:1px solid #6b727e;' : '') })),
       monitorQuizSummary, hasMonitorQuiz: monitorQuizSummary.hasAny,
       monitorImgQuizSummary, hasMonitorImgQuiz: monitorImgQuizSummary.hasAny,
       monitorExamLog, hasMonitorExam: monitorExamLog.length > 0,
