@@ -1714,6 +1714,23 @@ textarea.input { min-height: 90px; resize: vertical; }
             <h1 style="font-size:26px;margin:0 0 4px;">ទាញយកលំហាត់ PDF</h1>
             <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">ជ្រើសរើសប្រភេទលំហាត់ ដើម្បីបោះពុម្ពសម្រាប់សិស្សធ្វើក្នុងថ្នាក់</div>
             <div style="display:flex;flex-direction:column;gap:10px;">
+              <sc-for list="{{ wsGroups }}" as="g" hint-placeholder-count="2">
+                <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;padding:16px 18px;" sc-camel-on-click="{{ g.onOpen }}">
+                  <div style="font-size:19px;flex:none;opacity:0.6;">📁</div>
+                  <div style="flex:1;min-width:0;">
+                    <div class="card-title" style="font-size:16px;">{{ g.label }}</div>
+                    <div class="card-body" style="font-size:11.5px;">{{ g.sub }} · {{ g.countLabel }}</div>
+                  </div>
+                  <span style="opacity:0.4;font-size:20px;">›</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ wsInGroup }}">
+            <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ backToWsCats }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
+            <div style="font-size:11.5px;opacity:0.55;margin-bottom:2px;">{{ wsCrumb }}</div>
+            <h1 style="font-size:24px;margin:0 0 14px;">{{ wsCatLabel }}</h1>
+            <div style="display:flex;flex-direction:column;gap:10px;">
               <sc-for list="{{ wsCats }}" as="c" hint-placeholder-count="5">
                 <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;padding:16px 18px;" sc-camel-on-click="{{ c.onOpen }}">
                   <div style="flex:1;min-width:0;">
@@ -1727,7 +1744,7 @@ textarea.input { min-height: 90px; resize: vertical; }
           </sc-if>
           <sc-if value="{{ wsInCat }}">
             <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ backToWsCats }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
-            <div style="font-size:11.5px;opacity:0.55;margin-bottom:2px;">ទាញយកលំហាត់ PDF</div>
+            <div style="font-size:11.5px;opacity:0.55;margin-bottom:2px;">{{ wsCrumb }}</div>
             <h1 style="font-size:24px;margin:0 0 4px;">{{ wsCatLabel }}</h1>
             <div style="font-size:12px;opacity:0.6;margin-bottom:14px;">ចុចលើលំហាត់ណាមួយ ដើម្បីទាញយក</div>
             <div style="display:flex;flex-direction:column;gap:9px;">
@@ -8241,12 +8258,31 @@ const TEST_LOCK_ITEMS = [
 ];
 function resolveTestNode(path){ let node = { children: TEST_TREE }; for (const k of (path || [])) { node = node.children && node.children[k]; if (!node) return null; } return node; }
 // The four Japanese-traffic-law tests, run through the mock-exam engine.
+// size = questions in one sitting; a workbook holding more than that is split
+// into numbered exercises (仮免 with 700 questions → 14 tests of 50).
 const LAW_TESTS = [
-  { key: 'sign', label: '標識・表示', kh: 'ផ្លាកសញ្ញា',   mins: 10 },
-  { key: 'prac', label: '練習問題',   kh: 'លំហាត់',       mins: 10 },
-  { key: 'kari', label: '仮免',       kh: 'ប្រឡងបណ្ដោះអាសន្ន', mins: 30 },
-  { key: 'hon',  label: '本免',       kh: 'ប្រឡងផ្លូវការ', mins: 50 },
+  { key: 'sign', label: '標識・表示', kh: 'ផ្លាកសញ្ញា',   mins: 10, size: 10 },
+  { key: 'prac', label: '練習問題',   kh: 'លំហាត់',       mins: 10, size: 10 },
+  { key: 'kari', label: '仮免',       kh: 'ប្រឡងបណ្ដោះអាសន្ន', mins: 30, size: 50 },
+  { key: 'hon',  label: '本免',       kh: 'ប្រឡងផ្លូវការ', mins: 50, size: 100 },
 ];
+// Every sitting of one law test, in order: { key, set, total, questions }.
+// `total` is how many sets that test has, so a single-set test can drop the number.
+function lawSets(lang, key){
+  const cfg = LAW_TESTS.find(t => t.key === key); if (!cfg) return [];
+  const all = ((typeof RAW_LAW !== 'undefined' && RAW_LAW[lang]) || {})[key] || [];
+  const total = Math.max(1, Math.ceil(all.length / cfg.size));
+  if (!all.length) return [];
+  return Array.from({ length: total }, (_, i) => ({
+    key, set: i + 1, total, cfg, questions: all.slice(i * cfg.size, (i + 1) * cfg.size) }));
+}
+// "仮免 · ប្រឡងបណ្ដោះអាសន្ន ៣" — the number only when the test has several sets
+function lawSetLabel(s, useKh){
+  const base = useKh ? `${s.cfg.label} · ${s.cfg.kh}` : s.cfg.label;
+  return s.total > 1 ? `${base} ${s.set}` : base;
+}
+// storage key for a law test's best score — one per sitting
+function lawKeyOf(lang, key, set){ return `${lang}_${key}#${set || 1}`; }
 const MODE_LABEL = { mc_jp:'ជប៉ុន → ខ្មែរ', mc_km:'ខ្មែរ → ជប៉ុន' };
 
 // — Exercises (លំហាត់): true/false and A/B/C questions from the SSW problem
@@ -8833,6 +8869,13 @@ const WS_CATS = [
   { key: 'law_ja', label: 'ច្បាប់ជប៉ុន · ភាសាជប៉ុន',  sub: '標識 · 練習 · 仮免 · 本免' },
 ];
 
+// Folders on the PDF screen, mirroring the test tab, so the list stays findable
+// as more exercise types are added. Every WS_CATS key belongs to one group.
+const WS_GROUPS = [
+  { key: 'skills', label: 'តេស្តជំនាញ',        sub: 'ជំនាញបើកបរ', cats: ['quiz', 'img', 'hazard', 'exam', 'word'] },
+  { key: 'law',    label: 'តេស្តច្បាប់ចរាចរណ៍', sub: 'ច្បាប់ជប៉ុន · ខ្មែរ / ជប៉ុន', cats: ['law_km', 'law_ja'] },
+];
+
 // The printable worksheet's own wording, so a teacher can hand out a sheet in
 // Khmer, Japanese or English. Only the sheet's labels change — the questions
 // themselves come from the source workbooks and are printed as they are.
@@ -9400,6 +9443,7 @@ class Component extends DCLogic {
     shareSearch: '', shareWordId: null, shareSize: 'square', shareStyle: 'refined', shareColor: '', shareImgData: '', shareBusy: false, shareErr: '',
     // admin: A4 results preview / print
     printOpen: false, printReport: null,
+    wsGroup: null,  // printable-worksheets screen: which folder is open
     wsCat: null,    // printable-worksheets screen: which category is open
     wsPick: null,   // { id, mix } waiting on the with/without-answers choice
     wsLang: 'km',   // which language the printed sheet's own labels are in
@@ -11877,9 +11921,11 @@ class Component extends DCLogic {
   toggleMonSection(key){ this.setState(s => ({ monOpenSections: (s.monOpenSections || []).includes(key) ? s.monOpenSections.filter(k => k !== key) : [...(s.monOpenSections || []), key] })); }
 
   // — Printable worksheets: the same exercises, as a blank sheet for class —
-  goWorksheets(){ this.stopSpeech(); this.setState({ screen: 'worksheets', wsCat: null, wsPick: null, playerPlaying: false }); }
+  goWorksheets(){ this.stopSpeech(); this.setState({ screen: 'worksheets', wsGroup: null, wsCat: null, wsPick: null, playerPlaying: false }); }
+  openWsGroup(key){ this.setState({ wsGroup: key }); }
   openWsCat(key){ this.setState({ wsCat: key }); }
-  backToWsCats(){ this.setState({ wsCat: null }); }
+  // one step back up the folder tree: exercises → categories → groups
+  backToWsCats(){ this.setState(st => st.wsCat ? { wsCat: null } : { wsGroup: null }); }
   // tapping an exercise (or the shuffled one) asks with/without answers first
   askWsPrint(id, mix){ this.setState({ wsPick: { id, mix } }); }
   closeWsPick(){ this.setState({ wsPick: null }); }
@@ -11890,9 +11936,10 @@ class Component extends DCLogic {
   // The exercises inside one category, in the order the students meet them.
   wsExercises(catKey){
     if (catKey === 'law_km' || catKey === 'law_ja') {
-      const src = (typeof RAW_LAW !== 'undefined' && RAW_LAW[catKey.slice(4)]) || {};
-      return LAW_TESTS.filter(t => (src[t.key] || []).length)
-        .map(t => ({ id: t.key, label: `${t.label} · ${t.kh}`, count: src[t.key].length }));
+      // one printable sheet per sitting, the same split the test tab uses
+      const lang = catKey.slice(4);
+      return LAW_TESTS.flatMap(t => lawSets(lang, t.key))
+        .map(x => ({ id: `${x.key}#${x.set}`, label: lawSetLabel(x, true), count: x.questions.length }));
     }
     const mk = (total, per, len, label) => Array.from({ length: total }, (_, i) => ({
       id: i + 1, label: `${label} ${i + 1}`, count: Math.min(per, len - i * per) }));
@@ -11905,9 +11952,12 @@ class Component extends DCLogic {
   // every "ទាញយកលំហាត់ក្រឡុក" gives a different sheet.
   wsQuestions(catKey, id, mix){
     if (catKey === 'law_km' || catKey === 'law_ja') {
-      const src = (typeof RAW_LAW !== 'undefined' && RAW_LAW[catKey.slice(4)]) || {};
+      const lang = catKey.slice(4);
+      const src = (typeof RAW_LAW !== 'undefined' && RAW_LAW[lang]) || {};
       if (mix) { const all = LAW_TESTS.reduce((a, t) => a.concat(src[t.key] || []), []); return sample(all, Math.min(20, all.length)); }
-      return (src[id] || []).slice();
+      const [key, set] = String(id).split('#');           // e.g. "kari#3"
+      const x = lawSets(lang, key).find(s => s.set === Number(set || 1));
+      return x ? x.questions.slice() : [];
     }
     if (catKey === 'word') {
       const pool = this.testPool();
@@ -11952,8 +12002,9 @@ class Component extends DCLogic {
     let label;
     if (mix) label = T.mix;
     else if (catKey === 'law_km' || catKey === 'law_ja') {
-      const t = LAW_TESTS.find(x => x.key === id);
-      label = t ? (this.state.wsLang === 'km' ? `${t.label} · ${t.kh}` : t.label) : '';
+      const [key, set] = String(id).split('#');
+      const x = lawSets(catKey.slice(4), key).find(s => s.set === Number(set || 1));
+      label = x ? lawSetLabel(x, this.state.wsLang === 'km') : '';
     } else label = T.exercise(id);
     return `${catLabel} · ${label}`;
   }
@@ -12436,15 +12487,16 @@ class Component extends DCLogic {
       examAnswers: [], examDeadline: deadline, examRemain: EXAM_MINUTES * 60 }, () => this.runExamTimer());
   }
   // A traffic-law test runs through the same exam engine (timed, review, 90%).
-  startLawTest(lang, key){
-    const cfg = LAW_TESTS.find(t => t.key === key); if (!cfg) return;
-    const qs = ((typeof RAW_LAW !== 'undefined' && RAW_LAW[lang]) || {})[key] || [];
-    if (!qs.length) { this.showToast('មិនទាន់មានទិន្នន័យ'); return; }
-    const deadline = Date.now() + cfg.mins * 60 * 1000;
+  startLawTest(lang, key, set){
+    const sets = lawSets(lang, key);
+    const x = sets.find(s => s.set === (set || 1)) || sets[0];
+    if (!x || !x.questions.length) { this.showToast('មិនទាន់មានទិន្នន័យ'); return; }
+    const deadline = Date.now() + x.cfg.mins * 60 * 1000;
     this._beginAttempt();
-    this.setState({ testMode: 'exam', examSource: 'law', examLawKey: lang + '_' + key,
-      examLawLabel: cfg.label + ' · ' + cfg.kh, examQuestions: qs, examIdx: 0,
-      examAnswers: [], examDeadline: deadline, examRemain: cfg.mins * 60 }, () => this.runExamTimer());
+    this.setState({ testMode: 'exam', examSource: 'law', examLawKey: lawKeyOf(lang, key, x.set),
+      examLawLang: lang, examLawTest: key, examLawSet: x.set,
+      examLawLabel: lawSetLabel(x, true), examQuestions: x.questions, examIdx: 0,
+      examAnswers: [], examDeadline: deadline, examRemain: x.cfg.mins * 60 }, () => this.runExamTimer());
   }
   runExamTimer(){
     clearInterval(this._examTimer);
@@ -12513,7 +12565,7 @@ class Component extends DCLogic {
   }
   quitExam(){ clearInterval(this._examTimer); this.setState({ testMode: 'examintro' }); }
   backFromExam(){ this.setState({ testMode: null, screen: 'test' }); }
-  retryExam(){ if (this.state.examSource === 'law') { const p = (this.state.examLawKey || '').split('_'); this.startLawTest(p[0], p[1]); } else { this.startExam(); } }
+  retryExam(){ if (this.state.examSource === 'law') { this.startLawTest(this.state.examLawLang, this.state.examLawTest, this.state.examLawSet); } else { this.startExam(); } }
 
   finishTest(){
     const { testKind, testLesson, testScore, testWords, testResults, testMix } = this.state;
@@ -13479,12 +13531,13 @@ class Component extends DCLogic {
           };
         });
         const lawResults = (s.settings && s.settings.lawResults) || {};
-        const lawTests = cur.lawLang ? LAW_TESTS.map(t => {
-          const n = (((typeof RAW_LAW !== 'undefined' && RAW_LAW[cur.lawLang]) || {})[t.key] || []).length;
-          const best = lawResults[cur.lawLang + '_' + t.key];
-          return { label: t.label, kh: t.kh, meta: n + ' សំណួរ · ' + t.mins + ' នាទី',
+        // each sitting is its own row, so a 700-question workbook becomes 14 tests
+        const lawTests = cur.lawLang ? LAW_TESTS.flatMap(t => lawSets(cur.lawLang, t.key)).map(x => {
+          const best = lawResults[lawKeyOf(cur.lawLang, x.key, x.set)];
+          return { label: x.total > 1 ? `${x.cfg.label} ${x.set}` : x.cfg.label, kh: x.cfg.kh,
+            meta: x.questions.length + ' សំណួរ · ' + x.cfg.mins + ' នាទី',
             hasBest: best != null, bestLabel: best != null ? ('ពិន្ទុល្អបំផុត ' + best + '% ' + (best >= 90 ? '✓' : '')) : '',
-            onStart: () => this.startLawTest(cur.lawLang, t.key) };
+            onStart: () => this.startLawTest(cur.lawLang, x.key, x.set) };
         }) : [];
         return {
           testAtRoot: path.length === 0, testNotRoot: path.length > 0,
@@ -13801,15 +13854,22 @@ class Component extends DCLogic {
       ...(() => {
         const catKey = s.wsCat;
         const cat = WS_CATS.find(c => c.key === catKey) || null;
+        const group = WS_GROUPS.find(g => g.key === s.wsGroup) || null;
         const list = cat ? this.wsExercises(catKey) : [];
         const pick = s.wsPick;
+        const catsOf = g => WS_CATS.filter(c => g.cats.includes(c.key));
         return {
           isWorksheets: s.screen === 'worksheets',
           canWorksheets: s.role === 'admin' || this.featureGrantedForMe('worksheets'),
           goWorksheets: () => this.goWorksheets(),
           worksheetsColor: s.screen === 'worksheets' ? 'var(--color-accent-700)' : 'var(--color-text)',
-          wsAtRoot: !cat, wsInCat: !!cat, wsCatLabel: cat ? cat.label : '',
-          wsCats: WS_CATS.map(c => ({ label: c.label, sub: c.sub,
+          // three levels: folders → categories → the exercises themselves
+          wsAtRoot: !group, wsInGroup: !!group && !cat, wsInCat: !!cat,
+          wsCatLabel: cat ? cat.label : (group ? group.label : ''),
+          wsCrumb: ['ទាញយកលំហាត់ PDF'].concat(group ? [group.label] : []).concat(cat ? [cat.label] : []).join('  ›  '),
+          wsGroups: WS_GROUPS.map(g => ({ label: g.label, sub: g.sub,
+            countLabel: `${catsOf(g).length} ប្រភេទ`, onOpen: () => this.openWsGroup(g.key) })),
+          wsCats: (group ? catsOf(group) : []).map(c => ({ label: c.label, sub: c.sub,
             countLabel: `${this.wsExercises(c.key).length} លំហាត់`, onOpen: () => this.openWsCat(c.key) })),
           wsItems: list.map(x => ({ label: x.label, countLabel: `${x.count} សំណួរ`, onPick: () => this.askWsPrint(x.id, false) })),
           wsPickMix: () => this.askWsPrint(null, true),
