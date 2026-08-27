@@ -10874,7 +10874,9 @@ class Component extends DCLogic {
     else this.showToast(now.locked ? '🔒 បានចាក់សោ (សិស្សអានមិនបាន)' : '🔓 បានដោះសោ (សិស្សអានបាន)');
   }
   libNewBook(){ this._edReturnToRead = null; this.setState({ libMode: 'edit', libBookId: null, libErr: '' }, () => this._buildEditorSoon(null)); }
-  async libEditBook(id, keepReturn){ if (!keepReturn) this._edReturnToRead = null; const { book } = await Backend.getBook(id); this.setState({ libMode: 'edit', libBookId: id, libErr: '' }, () => this._buildEditorSoon(book || {})); }
+  // screen is set too: tapping ✏️ inside the អានសៀវភៅ reader leaves screen on
+  // 'readbooks', so without it the editor was opened but never actually shown
+  async libEditBook(id, keepReturn){ if (!keepReturn) this._edReturnToRead = null; const book = await this._bookCached(id); this.setState({ screen: 'library', libMode: 'edit', libBookId: id, libErr: '' }, () => this._buildEditorSoon(book || {})); }
   // leave the editor back to wherever it was opened from: the reader (if opened
   // via ✏️) or the book list
   _edLeave(){ const ret = this._edReturnToRead; this._edReturnToRead = null; const p = document.getElementById('bookword-pop'); if (p) p.remove(); if (ret && ret.id) { if (typeof ret.page === 'number') this._setLastReadPage(ret.id, ret.page); if (ret.origin === 'readbooks') { this._rbCache = null; this.rbReadBook(ret.id); } else this.libReadBook(ret.id); } else this.libBackToList(); }
@@ -11048,6 +11050,10 @@ class Component extends DCLogic {
       editBtn.title = 'កែសៀវភៅ';
       leftBar.appendChild(editBtn);
     }
+    // 🔍 — find a word or a sentence anywhere in the book
+    const findBtn = icon('🔍', () => toggleFind(), 'font-size:15px;');
+    findBtn.title = 'ស្វែងរកក្នុងសៀវភៅ';
+    leftBar.appendChild(findBtn);
     bar.appendChild(leftBar);
     const rightBar = document.createElement('div'); rightBar.style.cssText = 'display:flex;align-items:center;gap:6px;';
     const jin = document.createElement('input'); jin.type = 'number'; jin.min = '1';
@@ -11092,7 +11098,7 @@ class Component extends DCLogic {
     // fix Google-Drive share links so the pictures actually load
     pages.forEach(p => p.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; }));
     // page number in the bottom margin, centred, auto-incrementing from the start
-    pages.forEach((p, i) => { const pn = document.createElement('div');
+    pages.forEach((p, i) => { const pn = document.createElement('div'); pn.className = 'pgnum';
       pn.style.cssText = `position:absolute;left:0;right:0;bottom:${Math.max(10, Math.round(PAD / 2) - 6)}px;text-align:center;font-size:13px;color:#666;`;
       pn.textContent = String(START + i); p.appendChild(pn); });
     area.addEventListener('click', e => { const el = e.target.closest && e.target.closest('.bookword'); if (el && el.dataset.jp) this._showBookWordPopup(el.dataset.jp); });
@@ -11132,15 +11138,106 @@ class Component extends DCLogic {
       const title = document.createElement('div'); title.textContent = arr.length ? 'ចំណាំ' : 'គ្មានចំណាំ';
       title.style.cssText = 'font-size:12px;opacity:0.6;padding:6px 8px 6px;'; bmPanel.appendChild(title);
       arr.forEach(idx => {
-        const row = document.createElement('div'); row.style.cssText = 'display:flex;align-items:center;gap:6px;';
-        const go = document.createElement('button'); go.type = 'button'; go.textContent = '🔖 ទំព័រ ' + (START + idx);
-        go.style.cssText = 'flex:1;text-align:left;background:transparent;border:none;color:#fff;font-size:14px;padding:9px 8px;border-radius:8px;cursor:pointer;';
+        const row = document.createElement('div'); row.style.cssText = 'display:flex;align-items:center;gap:2px;';
+        const named = this._getBmName(bookId, idx);
+        const go = document.createElement('button'); go.type = 'button';
+        go.textContent = '🔖 ' + (named || ('ទំព័រ ' + (START + idx)));
+        go.title = named ? ('ទំព័រ ' + (START + idx)) : '';
+        go.style.cssText = 'flex:1;min-width:0;text-align:left;background:transparent;border:none;color:#fff;font-size:14px;padding:9px 8px;border-radius:8px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
         go.addEventListener('click', () => { cur = Math.max(0, Math.min(total - 1, idx)); applyView(); resetScroll(); bmPanel.style.display = 'none'; });
+        // ✎ — rename in place; Enter or leaving the box saves, Esc cancels
+        const ren = document.createElement('button'); ren.type = 'button'; ren.textContent = '✎'; ren.title = 'ប្ដូរឈ្មោះ';
+        ren.style.cssText = 'width:28px;height:32px;background:transparent;border:none;color:#fff;opacity:0.55;font-size:13px;cursor:pointer;flex:none;';
+        ren.addEventListener('click', () => {
+          const inp = document.createElement('input'); inp.type = 'text'; inp.value = named;
+          inp.placeholder = 'ទំព័រ ' + (START + idx); inp.maxLength = 60;
+          inp.style.cssText = 'flex:1;min-width:0;background:#3a3a3a;border:1px solid #5a5a5a;border-radius:8px;color:#fff;font-size:14px;padding:8px;';
+          let closed = false;
+          const save = keep => { if (closed) return; closed = true; if (keep) this._setBmName(bookId, idx, inp.value); renderBmPanel(); };
+          inp.addEventListener('keydown', e => { if (e.key === 'Enter') save(true); else if (e.key === 'Escape') save(false); });
+          inp.addEventListener('blur', () => save(true));
+          row.replaceChild(inp, go); ren.style.display = 'none'; inp.focus(); inp.select();
+        });
         const del = document.createElement('button'); del.type = 'button'; del.textContent = '✕';
-        del.style.cssText = 'width:30px;height:32px;background:transparent;border:none;color:#fff;opacity:0.55;font-size:13px;cursor:pointer;flex:none;';
-        del.addEventListener('click', () => { marks.delete(idx); this._setBookmarks(bookId, [...marks]); renderBmPanel(); applyView(); });
-        row.appendChild(go); row.appendChild(del); bmPanel.appendChild(row);
+        del.style.cssText = 'width:28px;height:32px;background:transparent;border:none;color:#fff;opacity:0.55;font-size:13px;cursor:pointer;flex:none;';
+        del.addEventListener('click', () => { marks.delete(idx); this._setBookmarks(bookId, [...marks]); this._setBmName(bookId, idx, ''); renderBmPanel(); applyView(); });
+        row.appendChild(go); row.appendChild(ren); row.appendChild(del); bmPanel.appendChild(row);
       });
+    };
+    // — find in book: jump to the pages holding a word or sentence, and light it up —
+    const findBar = document.createElement('div');
+    findBar.style.cssText = 'position:absolute;top:calc(48px + env(safe-area-inset-top, 0px));left:8px;right:8px;z-index:10;background:#2b2b2b;color:#fff;border-radius:12px;box-shadow:0 10px 34px rgba(0,0,0,0.55);padding:7px;display:none;align-items:center;gap:6px;';
+    const fInp = document.createElement('input'); fInp.type = 'search'; fInp.placeholder = 'ស្វែងរកពាក្យ ឬ ប្រយោគ…';
+    fInp.style.cssText = 'flex:1;min-width:0;background:#3a3a3a;border:1px solid #5a5a5a;border-radius:8px;color:#fff;font-size:14px;padding:8px 10px;';
+    const fCount = document.createElement('span'); fCount.style.cssText = 'font-size:12px;opacity:0.7;flex:none;min-width:46px;text-align:center;';
+    findBar.appendChild(fInp); findBar.appendChild(fCount);
+    const fBtn = (txt, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt;
+      b.style.cssText = 'width:32px;height:32px;border:none;border-radius:8px;background:rgba(255,255,255,0.16);color:#fff;font-size:15px;line-height:1;cursor:pointer;flex:none;';
+      b.addEventListener('click', fn); findBar.appendChild(b); return b; };
+    let hits = [], hitAt = -1, findQ = '';
+    // pages hold live DOM; read their text once, lazily, for the actual searching
+    let pageText = null;
+    // the printed page number is not part of the book's words — skip it, or every
+    // search for a digit would land on every page
+    const bodyText = p => [...p.childNodes]
+      .filter(n => !(n.nodeType === 1 && n.classList && n.classList.contains('pgnum')))
+      .map(n => n.textContent || '').join('');
+    const textOf = () => pageText || (pageText = pages.map(bodyText));
+    const clearMarks = () => {
+      stage.querySelectorAll('span.bkfind').forEach(s => { const t = document.createTextNode(s.textContent); s.parentNode.replaceChild(t, s); });
+      pages.forEach(p => { try { p.normalize(); } catch(e){} });
+    };
+    const markOn = p => {
+      if (!p || !findQ) return;
+      const q = findQ.toLowerCase(), nodes = [];
+      const w = document.createTreeWalker(p, NodeFilter.SHOW_TEXT, null);
+      while (w.nextNode()) { const n = w.currentNode;
+        if (n.parentElement && n.parentElement.closest('.pgnum')) continue;
+        if (n.nodeValue && n.nodeValue.toLowerCase().includes(q)) nodes.push(n); }
+      nodes.forEach(n => {
+        const frag = document.createDocumentFragment(); const s = n.nodeValue; let i = 0;
+        for (;;) {
+          const at = s.toLowerCase().indexOf(q, i);
+          if (at === -1) { if (i < s.length) frag.appendChild(document.createTextNode(s.slice(i))); break; }
+          if (at > i) frag.appendChild(document.createTextNode(s.slice(i, at)));
+          const m = document.createElement('span'); m.className = 'bkfind';
+          m.style.cssText = 'background:#ffe066;color:#111;border-radius:3px;';
+          m.textContent = s.slice(at, at + q.length); frag.appendChild(m);
+          i = at + q.length;
+        }
+        n.parentNode.replaceChild(frag, n);
+      });
+    };
+    const showHit = k => {
+      if (!hits.length) return;
+      hitAt = (k + hits.length) % hits.length;
+      clearMarks();
+      cur = hits[hitAt]; applyView(); resetScroll();
+      markOn(pages[cur]);
+      fCount.textContent = (hitAt + 1) + ' / ' + hits.length;
+    };
+    const runFind = () => {
+      clearMarks();
+      findQ = fInp.value.trim();
+      if (!findQ) { hits = []; hitAt = -1; fCount.textContent = ''; return; }
+      const q = findQ.toLowerCase();
+      hits = textOf().map((t, i) => t.toLowerCase().includes(q) ? i : -1).filter(i => i >= 0);
+      if (!hits.length) { hitAt = -1; fCount.textContent = 'រកមិនឃើញ'; return; }
+      showHit(0);
+    };
+    let findT = null;
+    fInp.addEventListener('input', () => { clearTimeout(findT); findT = setTimeout(runFind, 220); });
+    fInp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (hits.length) showHit(hitAt + 1); else runFind(); } });
+    fBtn('‹', () => showHit(hitAt - 1));
+    fBtn('›', () => showHit(hitAt + 1));
+    fBtn('✕', () => { findBar.style.display = 'none'; findBtn.style.background = 'rgba(255,255,255,0.16)'; clearMarks(); findQ = ''; hits = []; fInp.value = ''; fCount.textContent = ''; });
+    ov.appendChild(findBar);
+    const toggleFind = () => {
+      const open = findBar.style.display === 'none';
+      findBar.style.display = open ? 'flex' : 'none';
+      findBtn.style.background = open ? '#c9971f' : 'rgba(255,255,255,0.16)';
+      bmPanel.style.display = 'none';
+      if (open) { fInp.focus(); } else { clearMarks(); findQ = ''; hits = []; }
     };
     const goInput = () => { const v = parseInt(jin.value, 10); if (!isNaN(v)) { cur = Math.max(0, Math.min(total - 1, v - 1)); applyView(); resetScroll(); } };
     jin.addEventListener('change', goInput);
@@ -11174,6 +11271,18 @@ class Component extends DCLogic {
   _bmAll(){ try { return JSON.parse(localStorage.getItem('dict_book_bookmarks') || '{}') || {}; } catch(e){ return {}; } }
   _getBookmarks(bookId){ if (!bookId) return []; const a = this._bmAll()[bookId]; return Array.isArray(a) ? a : []; }
   _setBookmarks(bookId, arr){ if (!bookId) return; try { const o = this._bmAll(); if (arr && arr.length) o[bookId] = arr.slice().sort((a, b) => a - b); else delete o[bookId]; localStorage.setItem('dict_book_bookmarks', JSON.stringify(o)); } catch(e){} }
+  // a bookmark can be given its own name ("មេរៀនទី ៣"); without one it just shows its page
+  _bmNamesAll(){ try { return JSON.parse(localStorage.getItem('dict_book_bmnames') || '{}') || {}; } catch(e){ return {}; } }
+  _getBmName(bookId, idx){ if (!bookId) return ''; const m = this._bmNamesAll()[bookId]; return (m && m[idx]) || ''; }
+  _setBmName(bookId, idx, name){
+    if (!bookId) return;
+    try {
+      const o = this._bmNamesAll(); const m = o[bookId] || {};
+      if (name && name.trim()) m[idx] = name.trim().slice(0, 60); else delete m[idx];
+      if (Object.keys(m).length) o[bookId] = m; else delete o[bookId];
+      localStorage.setItem('dict_book_bmnames', JSON.stringify(o));
+    } catch(e){}
+  }
   _lastAll(){ try { return JSON.parse(localStorage.getItem('dict_book_lastpage') || '{}') || {}; } catch(e){ return {}; } }
   _getLastReadPage(bookId){ if (!bookId) return 0; const v = this._lastAll()[bookId]; return (typeof v === 'number' && v >= 0) ? v : 0; }
   _setLastReadPage(bookId, idx){ if (!bookId) return; try { const o = this._lastAll(); o[bookId] = idx; localStorage.setItem('dict_book_lastpage', JSON.stringify(o)); } catch(e){} }
