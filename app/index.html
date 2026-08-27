@@ -2185,12 +2185,50 @@ textarea.input { min-height: 90px; resize: vertical; }
                     <div class="card-title" style="font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ b.title }}</div>
                     <div class="card-body" style="font-size:11px;">ចុចដើម្បីអាន · {{ b.dateLabel }}</div>
                   </div>
-                  <button class="btn btn-secondary" style="flex:none;font-size:12px;padding:6px 11px;" sc-camel-on-click="{{ b.onRead }}">📖 អាន</button>
+                  <button class="btn btn-secondary" style="flex:none;font-size:12px;padding:6px 11px;" sc-camel-on-click="{{ b.onWords }}">📋 តារាងពាក្យ</button>
                   <button class="btn btn-secondary" style="flex:none;font-size:12px;padding:6px 11px;" sc-camel-on-click="{{ b.onEdit }}">កែ</button>
                   <button class="btn btn-ghost" style="flex:none;font-size:12px;padding:6px 9px;color:#c0342c;" sc-camel-on-click="{{ b.onDelete }}">លុប</button>
                 </div>
               </sc-for>
               <sc-if value="{{ libEmpty }}"><div style="text-align:center;padding:40px 20px;opacity:0.55;font-size:13px;line-height:1.8;">មិនទាន់មានសៀវភៅ<br>ចុច "+ សៀវភៅថ្មី" ដើម្បីចាប់ផ្ដើម</div></sc-if>
+            </div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ libIsWords }}">
+          <div style="padding:18px 20px 40px;">
+            <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ backToLibList }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
+            <div style="font-size:11.5px;opacity:0.55;margin-bottom:2px;">តារាងពាក្យ</div>
+            <h1 style="font-size:22px;margin:0 0 4px;">{{ libWordTitle }}</h1>
+            <div style="font-size:12px;opacity:0.6;margin-bottom:6px;">សរុប {{ libWordTotal }} ពាក្យ · ត្រូវបំពេញ {{ libWordTodo }}</div>
+            <div style="font-size:11px;opacity:0.5;line-height:1.8;margin-bottom:16px;">ពាក្យផ្ទៃក្រហម មិនទាន់មានក្នុងវចនានុក្រម — បំពេញន័យខ្មែរ រួចចុច រក្សាទុក ដើម្បីបញ្ចូល។</div>
+            <sc-if value="{{ libWordEmpty }}">
+              <div style="text-align:center;padding:44px 20px;opacity:0.55;font-size:13px;">មិនមានពាក្យជប៉ុនក្នុងសៀវភៅនេះទេ</div>
+            </sc-if>
+            <div style="display:flex;flex-direction:column;gap:18px;">
+              <sc-for list="{{ libWordGroups }}" as="g" hint-placeholder-count="3">
+                <div>
+                  <div style="display:flex;align-items:baseline;gap:8px;padding-bottom:6px;border-bottom:2px solid var(--color-accent);margin-bottom:2px;">
+                    <span style="font-size:15px;font-weight:700;">{{ g.label }}</span>
+                    <span style="font-size:11.5px;opacity:0.6;">{{ g.jpLabel }}</span>
+                    <span style="margin-left:auto;font-size:11px;opacity:0.55;">{{ g.countLabel }}</span>
+                  </div>
+                  <sc-for list="{{ g.rows }}" as="w" hint-placeholder-count="6">
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 8px;border-bottom:1px solid var(--color-divider);{{ w.rowStyle }}">
+                      <div style="flex:0 0 40%;min-width:0;">
+                        <div style="font-family:var(--font-jp),system-ui;font-size:15px;line-height:1.3;">{{ w.jp }}</div>
+                        <sc-if value="{{ w.hasKana }}"><div style="font-size:10.5px;opacity:0.55;">{{ w.kana }}</div></sc-if>
+                      </div>
+                      <sc-if value="{{ w.isKnown }}">
+                        <div style="flex:1;min-width:0;font-size:13px;">{{ w.km }}</div>
+                      </sc-if>
+                      <sc-if value="{{ w.needsKm }}">
+                        <input class="input" type="text" placeholder="បំពេញន័យខ្មែរ…" value="{{ w.draft }}" sc-camel-on-change="{{ w.onKm }}" style="flex:1;min-width:0;border-color:#d0342c;font-size:13px;padding:6px 9px;min-height:34px;">
+                        <button class="btn btn-secondary" style="flex:none;font-size:11.5px;padding:5px 10px;" sc-camel-on-click="{{ w.onSave }}">រក្សាទុក</button>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
             </div>
           </div>
           </sc-if>
@@ -9553,6 +9591,8 @@ class Component extends DCLogic {
     pageQuizOpen: false, pageQuizQuestions: [], pageQuizIdx: 0, pageQuizScore: 0, pageQuizSelected: null, pageQuizAnswered: false, pageQuizDone: false,
     // authored books (បណ្ណាល័យ, Admin)
     libBooks: [], libMode: 'list', libBookId: null, libBusy: false, libErr: '',
+    // តារាងពាក្យ — the book's vocabulary, grouped, with blanks to fill in
+    libWordGroups: [], libWordTitle: '', libWordDraft: {}, libWordSaved: {}, libWordBusy: '',
     // reader library (អានសៀវភៅ, everyone) — book covers + read-only reading
     rbBooks: [], rbMode: 'list', rbBusy: false,
   };
@@ -10882,10 +10922,132 @@ class Component extends DCLogic {
   _edLeave(){ const ret = this._edReturnToRead; this._edReturnToRead = null; const p = document.getElementById('bookword-pop'); if (p) p.remove(); if (ret && ret.id) { if (typeof ret.page === 'number') this._setLastReadPage(ret.id, ret.page); if (ret.origin === 'readbooks') { this._rbCache = null; this.rbReadBook(ret.id); } else this.libReadBook(ret.id); } else this.libBackToList(); }
   // read-only view: the finished book, no editor chrome
   async libReadBook(id){ const book = await this._bookCached(id); this._libReadData = book || {}; this._readRootId = 'lib-read-root'; this._readerBack = () => this.libBackToList(); this.setState({ screen: 'library', libMode: 'read', libBookId: id }, () => this._buildReadSoon()); }
+  // open the word table for one book
+  async libWordTable(id){
+    this.setState({ libBusy: true, libErr: '' });
+    const book = await this._bookCached(id);
+    const groups = this._bookVocab(book || {});
+    this.setState({ screen: 'library', libMode: 'words', libBookId: id, libBusy: false,
+      libWordTitle: (book && book.title) || '', libWordGroups: groups, libWordDraft: {}, libWordSaved: {} });
+  }
+  backToLibList(){ this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
+  onLibWordKm(jp, e){ const v = e.target.value; this.setState(s => ({ libWordDraft: { ...s.libWordDraft, [jp]: v } })); }
+  // Filling a blank row adds that word to the dictionary for real — same shape the
+  // បញ្ចូលពាក្យ form uses, so it gets its conjugations and shows up in search.
+  async saveLibWord(jp){
+    const km = ((this.state.libWordDraft || {})[jp] || '').trim();
+    if (!km) { this.showToast('សូមបំពេញន័យខ្មែរសិន'); return; }
+    if (this.state.libWordBusy) return;
+    this.setState({ libWordBusy: jp });
+    const pos = jpDetectPos(jp);
+    const related = jpConjugate(jp, km).forms.map(f => ({ jp: f.jp, km: f.km }));
+    const row = { book: this.state.bookFilter || BOOKS[0] || '', page: null, cat: 'vocab',
+      jp, kana: '', pos, km, starred: false, examples: [], img: '', related, level: '', link: '' };
+    const { row: saved, error } = await Backend.addCustomWord(row);
+    if (error) { this.setState({ libWordBusy: '' }); this.showToast('រក្សាទុកមិនបាន — ' + error); return; }
+    applyCustomWords([saved || { id: 'c-' + Date.now(), ...row }]);
+    this._bvMap = null; this._bwMap = null; rebuildIndexes();
+    this.setState(s => ({ libWordBusy: '', overridesRev: s.overridesRev + 1,
+      libWordSaved: { ...s.libWordSaved, [jp]: km } }));
+    this.showToast(`បន្ថែម «${jp}» ចូលវចនានុក្រម ✓`);
+  }
   _buildReadSoon(){
     const rootId = this._readRootId || 'lib-read-root';
     const run = t => { const root = document.getElementById(rootId); if (!root) { if (t > 0) setTimeout(() => run(t - 1), 30); return; } this._buildReadView(this._libReadData || {}, root); };
     setTimeout(() => run(6), 16);
+  }
+  // ── តារាងពាក្យ: the vocabulary of one book, grouped by part of speech ──
+  // Every jp string that can appear in a book → the dictionary word it belongs to.
+  // Conjugations map back to their base word, which is how a た形 / て形 in the
+  // text still shows up in the table as its 辞書形.
+  _bookVocabMap(){
+    if (this._bvMap && this._bvLen === WORDS.length) return this._bvMap;
+    const m = new Map(); let max = 1;
+    const ok = s => s && s.length <= 20 && HAS_JP.test(s) && s.indexOf('〜') < 0 && !/[（）()\s\/、。，,！!？?・「」]/.test(s);
+    const put = (k, w) => { if (ok(k) && !m.has(k)) { m.set(k, w); if (k.length > max) max = k.length; } };
+    for (const w of WORDS) {
+      if (!w || !w.jp || w.cat === 'grammar') continue;
+      put(w.jp, w);
+      if (Array.isArray(w.related)) for (const f of w.related) put((f && f.jp || '').trim(), w);
+      // Synced words carry no conjugations (only admin-added ones do), so a book
+      // saying 守ります or 運んで would match nothing. Derive the forms here, which
+      // is also what lets the table report the 辞書形 back.
+      const g = this._posGroupOf(w);
+      if (g === 'verb' || g === 'iadj') for (const f of jpConjugate(w.jp, w.km).forms) put(f.jp, w);
+    }
+    this._bvMap = m; this._bvMax = max; this._bvLen = WORDS.length;
+    return m;
+  }
+  // which column a word belongs in. The recorded part of speech wins; most rows
+  // have none, so fall back to what the Japanese itself says.
+  _posGroupOf(w){
+    const p = (w.pos || '').trim();
+    if (/^(នាម|ន\.)$/.test(p)) return 'noun';
+    if (/^(កិរិយាសព្ទ|កិរិយា|កិ\.?)$/.test(p)) return 'verb';
+    if (/^(គុណនាម|គុណ\.)$/.test(p)) return jpDetectType(w.jp || '') === 'iadj' ? 'iadj' : 'naadj';
+    if (p === 'វេយ្យាករណ៍') return 'other';
+    const t = jpDetectType(jpToDict(w.jp || ''));
+    if (t === 'iadj') return 'iadj';
+    if (t === 'noun') return 'noun';
+    return 'verb';
+  }
+  // Read a book and sort its words. Japanese the dictionary does not know yet is
+  // returned too — those are the rows the admin fills in.
+  _bookVocab(book){
+    const meta = this._parseBookMeta((book && book.content) || '');
+    const d = document.createElement('div'); d.innerHTML = this._sanitizeBookHtml(meta.html);
+    d.querySelectorAll('rt,rp').forEach(e => e.remove());   // furigana readings are not the text
+    const text = d.textContent || '';
+    const map = this._bookVocabMap(), max = Math.min(this._bvMax || 1, 20);
+    const found = new Map(), unknown = new Map();
+    let i = 0, run = '';
+    // Trailing particles get swept up with an unmatched word (荷物を), so trim them.
+    const TAIL = /(?:です|である|だ|を|に|は|が|で|と|も|の|や|か|へ|より|から|まで)$/;
+    const flush = () => {
+      if (!run) return;
+      // Whatever matched nothing: keep kanji runs (with the okurigana that follows,
+      // so 新しい and 守ります survive whole) and katakana runs. Loose hiragana on its
+      // own is nearly always grammar, so it is dropped.
+      (run.match(/[一-龯々]+[ぁ-ん]{0,4}|[゠-ヿｦ-ﾟー]{2,12}/g) || []).forEach(raw => {
+        let tok = raw;
+        for (let k = 0; k < 2 && TAIL.test(tok); k++) tok = tok.replace(TAIL, '');
+        if (!tok || tok.length < 2) return;                     // a lone kanji is a stem, not a word
+        unknown.set(tok, (unknown.get(tok) || 0) + 1);
+      });
+      run = '';
+    };
+    while (i < text.length) {
+      const ch = text[i];
+      if (!HAS_JP.test(ch)) { flush(); i++; continue; }
+      let hit = null, len = 0;
+      for (let L = Math.min(max, text.length - i); L >= 1; L--) {
+        const s = text.slice(i, i + L);
+        if (map.has(s)) { hit = map.get(s); len = L; break; }
+      }
+      if (hit) { flush(); if (!found.has(hit.id)) found.set(hit.id, hit); i += len; }
+      else { run += ch; i++; }
+    }
+    flush();
+    const rows = [];
+    for (const w of found.values()) {
+      const g = this._posGroupOf(w);
+      rows.push({ key: w.jp, jp: g === 'verb' ? jpToDict(w.jp) : w.jp, kana: w.kana || '', km: w.km || '', group: g, known: true });
+    }
+    for (const [jp, n] of unknown) {
+      const t = jpDetectType(jpToDict(jp));
+      rows.push({ key: jp, jp, kana: '', km: '', count: n, known: false,
+        group: t === 'iadj' ? 'iadj' : (t === 'noun' ? 'noun' : 'verb') });
+    }
+    const GROUPS = [
+      { key: 'noun',  label: 'នាម',        jpLabel: '名詞' },
+      { key: 'verb',  label: 'កិរិយាសព្ទ',  jpLabel: '動詞 (辞書形)' },
+      { key: 'iadj',  label: 'គុណនាម い',  jpLabel: 'い形容詞' },
+      { key: 'naadj', label: 'គុណនាម な',  jpLabel: 'な形容詞' },
+      { key: 'other', label: 'ផ្សេងៗ',      jpLabel: 'その他' },
+    ];
+    return GROUPS.map(g => ({ ...g,
+      rows: rows.filter(r => r.group === g.key).sort((a, b) => (a.known === b.known ? a.jp.localeCompare(b.jp, 'ja') : (a.known ? 1 : -1))),
+    })).filter(g => g.rows.length);
   }
   // dictionary words (with kanji) → their reading + Khmer meaning, for tap-to-translate
   _bookWordMap(){
@@ -13863,11 +14025,34 @@ class Component extends DCLogic {
       // — បណ្ណាល័យ (authored books, Admin) —
       isLibrary: s.screen === 'library',
       libIsList: s.libMode === 'list', libIsEdit: s.libMode === 'edit', libIsRead: s.libMode === 'read',
+      // — តារាងពាក្យ —
+      libIsWords: s.libMode === 'words', libWordTitle: s.libWordTitle,
+      backToLibList: () => this.backToLibList(),
+      libWordEmpty: !(s.libWordGroups || []).length,
+      libWordTodo: (s.libWordGroups || []).reduce((n, g) => n + g.rows.filter(r => !r.known && !(s.libWordSaved || {})[r.key]).length, 0),
+      libWordTotal: (s.libWordGroups || []).reduce((n, g) => n + g.rows.length, 0),
+      libWordGroups: (s.libWordGroups || []).map(g => ({
+        label: g.label, jpLabel: g.jpLabel, countLabel: g.rows.length + ' ពាក្យ',
+        rows: g.rows.map(r => {
+          const savedKm = (s.libWordSaved || {})[r.key];
+          const done = r.known || !!savedKm;
+          return {
+            jp: r.jp, kana: r.kana, hasKana: !!r.kana,
+            km: savedKm || r.km, isKnown: done, needsKm: !done,
+            rowStyle: done ? '' : 'background:color-mix(in srgb, #d0342c 7%, transparent);',
+            draft: (s.libWordDraft || {})[r.key] || '',
+            saving: s.libWordBusy === r.key,
+            onKm: e => this.onLibWordKm(r.key, e),
+            onSave: () => this.saveLibWord(r.key),
+          };
+        }),
+      })),
       libEmpty: (s.libBooks || []).length === 0,
       libBooks: (s.libBooks || []).map(b => ({
         title: b.title || '(គ្មានចំណងជើង)',
         dateLabel: b.updated_at ? (() => { const d = new Date(b.updated_at); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; })() : '',
         onRead: () => this.libReadBook(b.id),
+        onWords: () => this.libWordTable(b.id),
         onEdit: () => this.libEditBook(b.id),
         onDelete: () => this.libDeleteBook(b.id),
       })),
