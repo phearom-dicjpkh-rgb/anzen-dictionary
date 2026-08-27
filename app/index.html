@@ -648,7 +648,16 @@ textarea.input { min-height: 90px; resize: vertical; }
       <div style="font-size:12px;opacity:0.55;margin-bottom:4px;">សៀវភៅជំនាញឡានដឹកទំនិញ</div>
 
       <sc-if value="{{ isAuthLoading }}">
-        <div style="opacity:0.6;font-size:13px;padding:20px 0;">កំពុងពិនិត្យគណនី…</div>
+        <sc-if value="{{ authChecking }}">
+          <div style="opacity:0.6;font-size:13px;padding:20px 0;">កំពុងពិនិត្យគណនី…</div>
+        </sc-if>
+        <sc-if value="{{ authOffline }}">
+          <div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px 0;">
+            <div style="font-size:30px;">📶</div>
+            <div style="font-size:13.5px;text-align:center;line-height:1.8;opacity:0.75;">មិនអាចភ្ជាប់បណ្ដាញបានទេ<br><span style="font-size:12px;opacity:0.8;">អ្នកនៅតែចូលគណនីដដែល — សូមពិនិត្យអ៊ីនធឺណិត</span></div>
+            <button class="btn btn-primary" style="min-width:180px;" sc-camel-on-click="{{ retryAuth }}">ព្យាយាមម្ដងទៀត</button>
+          </div>
+        </sc-if>
       </sc-if>
 
       <sc-if value="{{ isJoinScreen }}">
@@ -9110,6 +9119,16 @@ function makeSupabaseBackend(){
     async signIn(email,password){ const { error } = await client.auth.signInWithPassword({ email, password }); return { error: error ? 'អ៊ីមែល ឬ ពាក្យសម្ងាត់ មិនត្រឹមត្រូវ' : null }; },
     async signOut(){ try { await client.auth.signOut(); } catch(e){} },
     async getProfile(id){ const { data, error } = await client.from('profiles').select('*').eq('id', id).single(); return error ? { error:error.message } : { profile:data }; },
+    // Is the stored session still accepted by the server? Answers 'ok',
+    // 'invalid' (signed out / revoked — the only case where signing out is
+    // right) or 'offline' (we simply could not ask, so keep the session).
+    async authState(){
+      try {
+        const { data, error } = await client.auth.getUser();
+        if (!error && data && data.user) return 'ok';
+        return (error && (error.status === 401 || error.status === 403)) ? 'invalid' : 'offline';
+      } catch(e){ return 'offline'; }
+    },
     async saveProgress(id,patch){
       let { error } = await client.from('profiles').update(patch).eq('id', id);
       // last_seen may not exist yet on a DB that hasn't run that migration — retry
@@ -9276,6 +9295,7 @@ function makeDemoBackend(){
     async signIn(email,password){ const u=load().find(x=>x.email===String(email).trim().toLowerCase()); if(!u||u.password!==password) return { error:'អ៊ីមែល ឬ ពាក្យសម្ងាត់ មិនត្រឹមត្រូវ' }; localStorage.setItem('dict_demo_session', u.id); return { error:null }; },
     async signOut(){ localStorage.removeItem('dict_demo_session'); },
     async getProfile(id){ const u=load().find(x=>x.id===id); return u?{ profile:JSON.parse(JSON.stringify(u)) }:{ error:'not found' }; },
+    async authState(){ return localStorage.getItem('dict_demo_session') ? 'ok' : 'invalid'; },
     async saveProgress(id,patch){ const us=load(); const u=us.find(x=>x.id===id); if(u){ Object.assign(u, patch); save(us); } return { error:null }; },
     async listStudents(schoolId){ return { rows:load().filter(x=>x.role==='student'&&(!schoolId||x.school_id===schoolId)), error:null }; },
     // mirror the RLS rules so the demo behaves like the real backend
@@ -9385,6 +9405,8 @@ class Component extends DCLogic {
   state = {
     // auth
     authStage: 'loading', // 'loading' | 'login' | 'app'
+    authOffline: false,   // signed in, but the server could not be reached — never sign out for this
+    authRetryId: null,
     email: '', password: '', authError: '', authBusy: false,
     userId: null, role: null, profileName: '', mySchoolId: null,
     profileEmail: '', usage: {},
@@ -9797,12 +9819,50 @@ class Component extends DCLogic {
       const session = await Backend.currentSession();
       if (!session) { this.setState({ authStage: 'login' }); return; }
       await this.loadForUser(session.user.id);
-    } catch(e) { this.setState({ authStage: 'login' }); }
+    } catch(e) {
+      // reading the stored session threw (offline, storage blocked): show the
+      // retry state rather than the login form, so a signed-in user who is
+      // briefly offline is not asked for their password again
+      this.setState({ authStage: 'loading', authOffline: true });
+      this._armAuthRetry();
+    }
+  }
+  // Retry signing back in when the connection returns (or when the user taps
+  // ព្យាយាមម្ដងទៀត). Listeners are attached once and are harmless afterwards.
+  _armAuthRetry(){
+    if (this._authRetryArmed) return;
+    this._authRetryArmed = true;
+    const again = () => { if (this.state.authOffline) this.retryAuth(); };
+    window.addEventListener('online', again);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') again(); });
+  }
+  async retryAuth(){
+    if (this.state.authBusy) return;
+    this.setState({ authBusy: true });
+    try {
+      const session = await Backend.currentSession();
+      const id = (session && session.user && session.user.id) || this.state.authRetryId;
+      if (!id) { this.setState({ authBusy: false, authOffline: false, authStage: 'login' }); return; }
+      this.setState({ authBusy: false, authOffline: false }, () => this.loadForUser(id));
+    } catch(e) { this.setState({ authBusy: false }); }
   }
 
-  async loadForUser(id){
+  async loadForUser(id, attempt){
     const res = await Backend.getProfile(id);
-    if (res.error || !res.profile) { await Backend.signOut(); this.setState({ authStage: 'login' }); return; }
+    if (res.error || !res.profile) {
+      // A profile read fails for two very different reasons: the session is no
+      // longer valid, or the phone lost signal for a moment. Signing out on the
+      // second one throws away a good session and makes the student type their
+      // password again — that is the "it logged itself out" complaint. So retry
+      // first, and only sign out when the server actually rejects the session.
+      const n = (attempt || 0) + 1;
+      if (n <= 4) { setTimeout(() => this.loadForUser(id, n), Math.min(8000, 700 * Math.pow(2, n - 1))); return; }
+      const st = await Backend.authState();
+      if (st === 'invalid') { await Backend.signOut(); this.setState({ authStage: 'login' }); return; }
+      this.setState({ authStage: 'loading', authOffline: true, authRetryId: id });   // keep the session; offer a retry
+      this._armAuthRetry();
+      return;
+    }
     const p = res.profile;
     // a self sign-up waits here until its branch approves it
     if (p.approved === false) {
@@ -14270,6 +14330,8 @@ class Component extends DCLogic {
 
       needsRole: s.authStage !== 'app', hasRole: s.authStage === 'app',
       isAuthLoading: s.authStage === 'loading', isLoginScreen: s.authStage === 'login',
+      authChecking: s.authStage === 'loading' && !s.authOffline,
+      authOffline: !!s.authOffline, retryAuth: () => this.retryAuth(),
       email: s.email, onEmailChange: e => this.onEmailChange(e),
       password: s.password, onPasswordChange: e => this.onPasswordChange(e),
       doLogin: () => this.doLogin(),
