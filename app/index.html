@@ -2207,26 +2207,33 @@ textarea.input { min-height: 90px; resize: vertical; }
             <div style="display:flex;flex-direction:column;gap:18px;">
               <sc-for list="{{ libWordGroups }}" as="g" hint-placeholder-count="3">
                 <div>
-                  <div style="display:flex;align-items:baseline;gap:8px;padding-bottom:6px;border-bottom:2px solid var(--color-accent);margin-bottom:2px;">
+                  <div style="display:flex;align-items:baseline;gap:8px;padding:8px 4px;border-bottom:2px solid var(--color-accent);cursor:pointer;" sc-camel-on-click="{{ g.onToggle }}">
+                    <span style="font-size:13px;opacity:0.6;flex:none;">{{ g.chevron }}</span>
                     <span style="font-size:15px;font-weight:700;">{{ g.label }}</span>
                     <span style="font-size:11.5px;opacity:0.6;">{{ g.jpLabel }}</span>
                     <span style="margin-left:auto;font-size:11px;opacity:0.55;">{{ g.countLabel }}</span>
                   </div>
-                  <sc-for list="{{ g.rows }}" as="w" hint-placeholder-count="6">
-                    <div style="display:flex;align-items:center;gap:10px;padding:8px 8px;border-bottom:1px solid var(--color-divider);{{ w.rowStyle }}">
-                      <div style="flex:0 0 40%;min-width:0;">
-                        <div style="font-family:var(--font-jp),system-ui;font-size:15px;line-height:1.3;">{{ w.jp }}</div>
-                        <sc-if value="{{ w.hasKana }}"><div style="font-size:10.5px;opacity:0.55;">{{ w.kana }}</div></sc-if>
-                      </div>
-                      <sc-if value="{{ w.isKnown }}">
-                        <div style="flex:1;min-width:0;font-size:13px;">{{ w.km }}</div>
-                      </sc-if>
-                      <sc-if value="{{ w.needsKm }}">
-                        <input class="input" type="text" placeholder="បំពេញន័យខ្មែរ…" value="{{ w.draft }}" sc-camel-on-change="{{ w.onKm }}" style="flex:1;min-width:0;border-color:#d0342c;font-size:13px;padding:6px 9px;min-height:34px;">
-                        <button class="btn btn-secondary" style="flex:none;font-size:11.5px;padding:5px 10px;" sc-camel-on-click="{{ w.onSave }}">រក្សាទុក</button>
-                      </sc-if>
+                  <sc-if value="{{ g.open }}">
+                    <div style="display:grid;grid-template-columns:34px minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.6fr);gap:0 8px;align-items:center;padding:6px 4px;font-size:10px;letter-spacing:0.04em;opacity:0.55;border-bottom:1px solid var(--color-divider);">
+                      <span>លេខរៀង</span><span>ពាក្យ</span><span>របៀបអាន</span><span>អត្ថន័យ</span>
                     </div>
-                  </sc-for>
+                    <sc-for list="{{ g.rows }}" as="w" hint-placeholder-count="6">
+                      <div style="display:grid;grid-template-columns:34px minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.6fr);gap:0 8px;align-items:center;padding:7px 4px;border-bottom:1px solid var(--color-divider);{{ w.rowStyle }}">
+                        <span class="num" style="font-size:11.5px;opacity:0.5;">{{ w.n }}</span>
+                        <span style="font-family:var(--font-jp),system-ui;font-size:14.5px;line-height:1.35;word-break:break-word;">{{ w.jp }}</span>
+                        <span style="font-size:11.5px;opacity:0.6;word-break:break-word;">{{ w.kana }}</span>
+                        <sc-if value="{{ w.isKnown }}">
+                          <span style="font-size:12.5px;line-height:1.5;word-break:break-word;">{{ w.km }}</span>
+                        </sc-if>
+                        <sc-if value="{{ w.needsKm }}">
+                          <span style="display:flex;gap:5px;align-items:center;min-width:0;">
+                            <input class="input" type="text" placeholder="បំពេញន័យខ្មែរ…" value="{{ w.draft }}" sc-camel-on-change="{{ w.onKm }}" style="flex:1;min-width:0;border-color:#d0342c;font-size:12px;padding:5px 7px;min-height:30px;">
+                            <button class="btn btn-secondary" style="flex:none;font-size:11px;padding:4px 8px;" sc-camel-on-click="{{ w.onSave }}">រក្សាទុក</button>
+                          </span>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                  </sc-if>
                 </div>
               </sc-for>
             </div>
@@ -9593,6 +9600,7 @@ class Component extends DCLogic {
     libBooks: [], libMode: 'list', libBookId: null, libBusy: false, libErr: '',
     // តារាងពាក្យ — the book's vocabulary, grouped, with blanks to fill in
     libWordGroups: [], libWordTitle: '', libWordDraft: {}, libWordSaved: {}, libWordBusy: '',
+    libWordShut: [],   // group keys folded away
     // reader library (អានសៀវភៅ, everyone) — book covers + read-only reading
     rbBooks: [], rbMode: 'list', rbBusy: false,
   };
@@ -10931,6 +10939,7 @@ class Component extends DCLogic {
       libWordTitle: (book && book.title) || '', libWordGroups: groups, libWordDraft: {}, libWordSaved: {} });
   }
   backToLibList(){ this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
+  toggleWordGroup(key){ this.setState(s => ({ libWordShut: s.libWordShut.includes(key) ? s.libWordShut.filter(k => k !== key) : [...s.libWordShut, key] })); }
   onLibWordKm(jp, e){ const v = e.target.value; this.setState(s => ({ libWordDraft: { ...s.libWordDraft, [jp]: v } })); }
   // Filling a blank row adds that word to the dictionary for real — same shape the
   // បញ្ចូលពាក្យ form uses, so it gets its conjugations and shows up in search.
@@ -11007,11 +11016,14 @@ class Component extends DCLogic {
       if (!run) return;
       // Whatever matched nothing: keep kanji runs (with the okurigana that follows,
       // so 新しい and 守ります survive whole) and katakana runs. Loose hiragana on its
-      // own is nearly always grammar, so it is dropped.
-      (run.match(/[一-龯々]+[ぁ-ん]{0,4}|[゠-ヿｦ-ﾟー]{2,12}/g) || []).forEach(raw => {
+      // own is nearly always grammar, so it is dropped. The katakana range is
+      // ァ-ヶ and ー only — it must not include ・, or a table of contents turns
+      // its ・・・・ leaders into "words".
+      (run.match(/[一-龯々]+[ぁ-ん]{0,4}|[ァ-ヶ]{2,12}ー?|[ァ-ヶ]ー[ァ-ヶー]{0,10}/g) || []).forEach(raw => {
         let tok = raw;
         for (let k = 0; k < 2 && TAIL.test(tok); k++) tok = tok.replace(TAIL, '');
         if (!tok || tok.length < 2) return;                     // a lone kanji is a stem, not a word
+        if (!/[一-龯々ァ-ヶ]/.test(tok)) return;                  // nothing but marks — not a word
         unknown.set(tok, (unknown.get(tok) || 0) + 1);
       });
       run = '';
@@ -14033,11 +14045,16 @@ class Component extends DCLogic {
       libWordTotal: (s.libWordGroups || []).reduce((n, g) => n + g.rows.length, 0),
       libWordGroups: (s.libWordGroups || []).map(g => ({
         label: g.label, jpLabel: g.jpLabel, countLabel: g.rows.length + ' ពាក្យ',
-        rows: g.rows.map(r => {
+        open: !(s.libWordShut || []).includes(g.key),
+        shut: (s.libWordShut || []).includes(g.key),
+        chevron: (s.libWordShut || []).includes(g.key) ? '▸' : '▾',
+        onToggle: () => this.toggleWordGroup(g.key),
+        rows: g.rows.map((r, i) => {
           const savedKm = (s.libWordSaved || {})[r.key];
           const done = r.known || !!savedKm;
           return {
-            jp: r.jp, kana: r.kana, hasKana: !!r.kana,
+            n: i + 1,
+            jp: r.jp, kana: r.kana || '—',
             km: savedKm || r.km, isKnown: done, needsKm: !done,
             rowStyle: done ? '' : 'background:color-mix(in srgb, #d0342c 7%, transparent);',
             draft: (s.libWordDraft || {})[r.key] || '',
