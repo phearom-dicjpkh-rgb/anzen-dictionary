@@ -2201,6 +2201,22 @@ textarea.input { min-height: 90px; resize: vertical; }
             <h1 style="font-size:22px;margin:0 0 4px;">{{ libWordTitle }}</h1>
             <div style="font-size:12px;opacity:0.6;margin-bottom:6px;">សរុប {{ libWordTotal }} ពាក្យ · ត្រូវបំពេញ {{ libWordTodo }}</div>
             <div style="font-size:11px;opacity:0.5;line-height:1.8;margin-bottom:16px;">ពាក្យផ្ទៃក្រហម មិនទាន់មានក្នុងវចនានុក្រម — បំពេញន័យខ្មែរ រួចចុច រក្សាទុក ដើម្បីបញ្ចូល។</div>
+            <div class="card elev-sm" style="gap:8px;margin-bottom:18px;">
+              <div style="font-size:12.5px;font-weight:700;">បញ្ចូលពាក្យថ្មី</div>
+              <div style="display:flex;gap:7px;flex-wrap:wrap;">
+                <input class="input" type="text" placeholder="ពាក្យ" value="{{ nwJp }}" sc-camel-on-change="{{ onNwJp }}" style="flex:1 1 120px;min-width:0;font-size:12.5px;padding:6px 8px;min-height:32px;">
+                <input class="input" type="text" placeholder="របៀបអាន" value="{{ nwKana }}" sc-camel-on-change="{{ onNwKana }}" style="flex:1 1 110px;min-width:0;font-size:12.5px;padding:6px 8px;min-height:32px;">
+              </div>
+              <div style="display:flex;gap:7px;flex-wrap:wrap;">
+                <input class="input" type="text" placeholder="អត្ថន័យ" value="{{ nwKm }}" sc-camel-on-change="{{ onNwKm }}" style="flex:2 1 140px;min-width:0;font-size:12.5px;padding:6px 8px;min-height:32px;">
+                <select class="input" value="{{ nwPos }}" sc-camel-on-change="{{ onNwPos }}" style="flex:1 1 110px;min-width:0;font-size:12.5px;padding:6px 8px;min-height:32px;">
+                  <sc-for list="{{ nwPosOptions }}" as="o" hint-placeholder-count="4">
+                    <option value="{{ o.value }}" selected="{{ o.selected }}">{{ o.label }}</option>
+                  </sc-for>
+                </select>
+                <button class="btn btn-primary" style="flex:none;font-size:12px;padding:6px 14px;margin-top:0;" sc-camel-on-click="{{ addLibWord }}">បន្ថែម</button>
+              </div>
+            </div>
             <sc-if value="{{ libWordEmpty }}">
               <div style="text-align:center;padding:44px 20px;opacity:0.55;font-size:13px;">មិនមានពាក្យជប៉ុនក្នុងសៀវភៅនេះទេ</div>
             </sc-if>
@@ -2226,6 +2242,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                           <span style="display:flex;align-items:center;gap:6px;min-width:0;">
                             <span style="flex:1;min-width:0;font-size:12.5px;line-height:1.5;word-break:break-word;">{{ w.km }}</span>
                             <button sc-camel-on-click="{{ w.onEdit }}" title="កែ ➜ បន្ថែមជាពាក្យថ្មី" style="flex:none;width:26px;height:26px;border:none;border-radius:7px;background:var(--color-neutral-200);color:var(--color-text);font-size:12px;cursor:pointer;">✎</button>
+                            <button sc-camel-on-click="{{ w.onDelete }}" title="លុបពាក្យ" style="flex:none;width:26px;height:26px;border:none;border-radius:7px;background:var(--color-neutral-200);color:#c0342c;font-size:12px;cursor:pointer;">🗑</button>
                           </span>
                         </sc-if>
                         <sc-if value="{{ w.isEditing }}">
@@ -2234,6 +2251,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                           <span style="display:flex;gap:5px;align-items:center;min-width:0;">
                             <input class="input" type="text" placeholder="អត្ថន័យ" value="{{ w.dKm }}" sc-camel-on-change="{{ w.onKm }}" style="flex:1;min-width:0;font-size:12px;padding:5px 7px;min-height:30px;{{ w.fieldStyle }}">
                             <button class="btn btn-secondary" style="flex:none;font-size:11px;padding:4px 8px;" sc-camel-on-click="{{ w.onSave }}">រក្សាទុក</button>
+                            <button sc-camel-on-click="{{ w.onDelete }}" title="លុបពាក្យ" style="flex:none;width:26px;height:26px;border:none;border-radius:7px;background:var(--color-neutral-200);color:#c0342c;font-size:12px;cursor:pointer;">🗑</button>
                           </span>
                         </sc-if>
                       </div>
@@ -9607,6 +9625,7 @@ class Component extends DCLogic {
     libWordGroups: [], libWordTitle: '', libWordDraft: {}, libWordSaved: {}, libWordBusy: '',
     libWordShut: [],   // group keys folded away
     libWordEdit: '',   // the row currently open for editing
+    libWordNew: { jp: '', kana: '', km: '', pos: 'នាម' },
     // reader library (អានសៀវភៅ, everyone) — book covers + read-only reading
     rbBooks: [], rbMode: 'list', rbBusy: false,
   };
@@ -10940,9 +10959,74 @@ class Component extends DCLogic {
   async libWordTable(id){
     this.setState({ libBusy: true, libErr: '' });
     const book = await this._bookCached(id);
-    const groups = this._bookVocab(book || {});
+    const skip = this._wordSkip(id);
+    const groups = this._bookVocab(book || {})
+      .map(g => ({ ...g, rows: g.rows.filter(r => !skip.includes(r.key)) })).filter(g => g.rows.length);
     this.setState({ screen: 'library', libMode: 'words', libBookId: id, libBusy: false,
-      libWordTitle: (book && book.title) || '', libWordGroups: groups, libWordDraft: {}, libWordSaved: {} });
+      libWordTitle: (book && book.title) || '', libWordGroups: groups, libWordDraft: {}, libWordSaved: {},
+      libWordShut: [], libWordEdit: '', libWordNew: { jp: '', kana: '', km: '', pos: 'នាម' } });
+  }
+  // rows dismissed from one book's table (the extraction turns up some noise)
+  _skipAll(){ try { return JSON.parse(localStorage.getItem('dict_book_wordskip') || '{}') || {}; } catch(e){ return {}; } }
+  _wordSkip(bookId){ const a = this._skipAll()[bookId]; return Array.isArray(a) ? a : []; }
+  _addWordSkip(bookId, key){
+    try { const o = this._skipAll(); const a = Array.isArray(o[bookId]) ? o[bookId] : [];
+      if (!a.includes(key)) a.push(key); o[bookId] = a; localStorage.setItem('dict_book_wordskip', JSON.stringify(o)); } catch(e){}
+  }
+  // Remove a row. A word this admin added is deleted from the dictionary for
+  // real; a synced word cannot be (it comes back from the sheet), so it is only
+  // dropped from this book's table — which is also how the noise gets cleared.
+  async deleteLibWord(key){
+    const row = this._wordRow(key); if (!row) return;
+    const saved = (this.state.libWordSaved || {})[key];
+    const jp = (saved && saved.jp) || row.jp;
+    const w = WORDS.find(x => x.jp === jp && x._custom);
+    if (w) {
+      const { error } = await Backend.deleteCustomWord(String(w.id).replace(/^c-/, ''));
+      if (error) { this.showToast('លុបមិនបាន — ' + error); return; }
+      const at = WORDS.findIndex(x => x.id === w.id); if (at >= 0) WORDS.splice(at, 1);
+      this._bvMap = null; this._bwMap = null; rebuildIndexes();
+    }
+    this._addWordSkip(this.state.libBookId, key);
+    this.setState(s => ({
+      overridesRev: s.overridesRev + 1,
+      libWordGroups: s.libWordGroups.map(g => ({ ...g, rows: g.rows.filter(r => r.key !== key) })).filter(g => g.rows.length),
+    }));
+    this.showToast(w ? `លុប «${jp}» ចេញពីវចនានុក្រម` : `ដកចេញពីតារាង`);
+  }
+  onLibNew(field, e){ const v = e.target.value; this.setState(s => ({ libWordNew: { ...s.libWordNew, [field]: v } })); }
+  // Add a word by hand. It lands in the group its part of speech names and slots
+  // into the あ〜ん order straight away.
+  async addLibWord(){
+    const n = this.state.libWordNew || {};
+    const jp = (n.jp || '').trim(), kana = (n.kana || '').trim(), km = (n.km || '').trim(), pos = n.pos || 'នាម';
+    if (!jp || !km) { this.showToast('ត្រូវការពាក្យ និងអត្ថន័យ'); return; }
+    if (this.state.libWordBusy) return;
+    this.setState({ libWordBusy: '__new' });
+    const related = jpConjugate(jp, km).forms.map(f => ({ jp: f.jp, km: f.km }));
+    const row = { book: this.state.bookFilter || BOOKS[0] || '', page: null, cat: 'vocab',
+      jp, kana, pos, km, starred: false, examples: [], img: '', related, level: '', link: '' };
+    const { row: saved, error } = await Backend.addCustomWord(row);
+    if (error) { this.setState({ libWordBusy: '' }); this.showToast('រក្សាទុកមិនបាន — ' + error); return; }
+    applyCustomWords([saved || { id: 'c-' + Date.now(), ...row }]);
+    this._bvMap = null; this._bwMap = null; rebuildIndexes();
+    const group = this._posGroupOf({ jp, pos });
+    const kanaKey = s => (s || '').replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60)).replace(/\s/g, '');
+    const fresh = { key: jp, jp, kana, km, group, known: true, sortKey: kanaKey(kana || jp) };
+    this.setState(s => {
+      const groups = s.libWordGroups.slice();
+      const at = groups.findIndex(g => g.key === group);
+      if (at >= 0) {
+        const rows = [...groups[at].rows, fresh].sort((a, b) => (a.sortKey || '').localeCompare(b.sortKey || '', 'ja'));
+        groups[at] = { ...groups[at], rows };
+      } else {
+        const LB = { noun: ['នាម', '名詞'], verb: ['កិរិយាសព្ទ', '動詞 (辞書形)'], iadj: ['គុណនាម い', 'い形容詞'], naadj: ['គុណនាម な', 'な形容詞'], other: ['ផ្សេងៗ', 'その他'] }[group];
+        groups.push({ key: group, label: LB[0], jpLabel: LB[1], rows: [fresh] });
+      }
+      return { libWordBusy: '', overridesRev: s.overridesRev + 1, libWordGroups: groups,
+        libWordNew: { jp: '', kana: '', km: '', pos } };
+    });
+    this.showToast(`បន្ថែម «${jp}» ចូលវចនានុក្រម ✓`);
   }
   backToLibList(){ this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
   toggleWordGroup(key){ this.setState(s => ({ libWordShut: s.libWordShut.includes(key) ? s.libWordShut.filter(k => k !== key) : [...s.libWordShut, key] })); }
@@ -11013,6 +11097,8 @@ class Component extends DCLogic {
   // have none, so fall back to what the Japanese itself says.
   _posGroupOf(w){
     const p = (w.pos || '').trim();
+    if (/な$|な形/.test(p)) return 'naadj';        // chosen explicitly when the word was added
+    if (/い$|い形/.test(p)) return 'iadj';
     if (/^(នាម|ន\.)$/.test(p)) return 'noun';
     if (/^(កិរិយាសព្ទ|កិរិយា|កិ\.?)$/.test(p)) return 'verb';
     if (/^(គុណនាម|គុណ\.)$/.test(p)) return jpDetectType(w.jp || '') === 'iadj' ? 'iadj' : 'naadj';
@@ -11079,8 +11165,12 @@ class Component extends DCLogic {
       { key: 'naadj', label: 'គុណនាម な',  jpLabel: 'な形容詞' },
       { key: 'other', label: 'ផ្សេងៗ',      jpLabel: 'その他' },
     ];
+    // あ〜ん order: sort on the reading, not the kanji, so 運転者 files under う.
+    // Katakana is folded to hiragana first so トラック sits with と.
+    const kanaKey = s => (s || '').replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60)).replace(/\s/g, '');
+    rows.forEach(r => { r.sortKey = kanaKey(r.kana || r.jp); });
     return GROUPS.map(g => ({ ...g,
-      rows: rows.filter(r => r.group === g.key).sort((a, b) => (a.known === b.known ? a.jp.localeCompare(b.jp, 'ja') : (a.known ? 1 : -1))),
+      rows: rows.filter(r => r.group === g.key).sort((a, b) => a.sortKey.localeCompare(b.sortKey, 'ja')),
     })).filter(g => g.rows.length);
   }
   // dictionary words (with kanji) → their reading + Khmer meaning, for tap-to-translate
@@ -14063,6 +14153,14 @@ class Component extends DCLogic {
       libIsWords: s.libMode === 'words', libWordTitle: s.libWordTitle,
       backToLibList: () => this.backToLibList(),
       libWordEmpty: !(s.libWordGroups || []).length,
+      // បញ្ចូលពាក្យថ្មី — the part of speech decides which group it joins
+      nwJp: (s.libWordNew || {}).jp || '', nwKana: (s.libWordNew || {}).kana || '',
+      nwKm: (s.libWordNew || {}).km || '', nwPos: (s.libWordNew || {}).pos || 'នាម',
+      onNwJp: e => this.onLibNew('jp', e), onNwKana: e => this.onLibNew('kana', e),
+      onNwKm: e => this.onLibNew('km', e), onNwPos: e => this.onLibNew('pos', e),
+      addLibWord: () => this.addLibWord(),
+      nwBusy: s.libWordBusy === '__new',
+      nwPosOptions: ['នាម', 'កិរិយាសព្ទ', 'គុណនាម い', 'គុណនាម な'].map(p => ({ value: p, label: p, selected: (s.libWordNew || {}).pos === p })),
       libWordTodo: (s.libWordGroups || []).reduce((n, g) => n + g.rows.filter(r => !r.known && !(s.libWordSaved || {})[r.key]).length, 0),
       libWordTotal: (s.libWordGroups || []).reduce((n, g) => n + g.rows.length, 0),
       libWordGroups: (s.libWordGroups || []).map(g => ({
@@ -14092,6 +14190,7 @@ class Component extends DCLogic {
             onKm: e => this.onLibWordField(r.key, 'km', e),
             onEdit: () => this.editLibWord(r.key),
             onSave: () => this.saveLibWord(r.key),
+            onDelete: () => this.deleteLibWord(r.key),
           };
         }),
       })),
