@@ -11183,29 +11183,50 @@ class Component extends DCLogic {
       .filter(n => !(n.nodeType === 1 && n.classList && n.classList.contains('pgnum')))
       .map(n => n.textContent || '').join('');
     const textOf = () => pageText || (pageText = pages.map(bodyText));
+    // unwrap, keeping whatever sat inside — a highlight can contain the
+    // tap-to-translate spans, and replacing it with plain text would strip them
     const clearMarks = () => {
-      stage.querySelectorAll('span.bkfind').forEach(s => { const t = document.createTextNode(s.textContent); s.parentNode.replaceChild(t, s); });
+      stage.querySelectorAll('span.bkfind').forEach(s => {
+        const parent = s.parentNode; if (!parent) return;
+        while (s.firstChild) parent.insertBefore(s.firstChild, s);
+        parent.removeChild(s);
+      });
       pages.forEach(p => { try { p.normalize(); } catch(e){} });
     };
+    // A sentence rarely lives in one text node: tap-to-translate wraps each known
+    // word in its own span, so 健康起因事故の防止 is split across several. Join the
+    // page's text nodes, find the matches in the joined string, then highlight
+    // each one as a DOM range across whatever nodes it happens to cross.
     const markOn = p => {
       if (!p || !findQ) return;
-      const q = findQ.toLowerCase(), nodes = [];
+      const nodes = [], starts = []; let joined = '';
       const w = document.createTreeWalker(p, NodeFilter.SHOW_TEXT, null);
       while (w.nextNode()) { const n = w.currentNode;
         if (n.parentElement && n.parentElement.closest('.pgnum')) continue;
-        if (n.nodeValue && n.nodeValue.toLowerCase().includes(q)) nodes.push(n); }
-      nodes.forEach(n => {
-        const frag = document.createDocumentFragment(); const s = n.nodeValue; let i = 0;
-        for (;;) {
-          const at = s.toLowerCase().indexOf(q, i);
-          if (at === -1) { if (i < s.length) frag.appendChild(document.createTextNode(s.slice(i))); break; }
-          if (at > i) frag.appendChild(document.createTextNode(s.slice(i, at)));
+        starts.push(joined.length); nodes.push(n); joined += n.nodeValue || ''; }
+      if (!nodes.length) return;
+      const hay = joined.toLowerCase(), q = findQ.toLowerCase();
+      const ranges = []; let at = 0;
+      for (;;) { const i = hay.indexOf(q, at); if (i === -1) break; ranges.push([i, i + q.length]); at = i + q.length; }
+      if (!ranges.length) return;
+      const locate = pos => {              // joined-string offset → node + offset in it
+        let lo = 0, hi = nodes.length - 1, k = 0;
+        while (lo <= hi) { const mid = (lo + hi) >> 1; if (starts[mid] <= pos) { k = mid; lo = mid + 1; } else hi = mid - 1; }
+        return { node: nodes[k], offset: pos - starts[k] };
+      };
+      // last match first, so the offsets of the earlier ones stay valid
+      ranges.reverse().forEach(([s, e]) => {
+        const a = locate(s), b = locate(e - 1);
+        try {
+          const r = document.createRange();
+          r.setStart(a.node, a.offset); r.setEnd(b.node, b.offset + 1);
           const m = document.createElement('span'); m.className = 'bkfind';
           m.style.cssText = 'background:#ffe066;color:#111;border-radius:3px;';
-          m.textContent = s.slice(at, at + q.length); frag.appendChild(m);
-          i = at + q.length;
-        }
-        n.parentNode.replaceChild(frag, n);
+          // surroundContents refuses a range that only partly covers an element,
+          // which is exactly the multi-span case — then move the contents instead
+          try { r.surroundContents(m); }
+          catch(err){ m.appendChild(r.extractContents()); r.insertNode(m); }
+        } catch(err){}
       });
     };
     const showHit = k => {
