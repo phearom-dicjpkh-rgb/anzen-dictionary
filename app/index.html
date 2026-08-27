@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head><script>window.__resources={"https://unpkg.com/react@18.3.1/umd/react.production.min.js":"vendor/8e25d012-49d0-434a-a063-ebf27a8696ac.js","https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js":"vendor/2f9f9627-86a3-401b-b12c-7abfe38abcbd.js","https://unpkg.com/@babel/standalone@7.29.0/babel.min.js":"vendor/9ceeb466-e86e-4e11-aa91-8a9657117722.js"};</script><script src="config.js"></script><script src="vendor/supabase.js"></script>
+<html><head><script>window.__resources={"https://unpkg.com/react@18.3.1/umd/react.production.min.js":"vendor/8e25d012-49d0-434a-a063-ebf27a8696ac.js","https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js":"vendor/2f9f9627-86a3-401b-b12c-7abfe38abcbd.js","https://unpkg.com/@babel/standalone@7.29.0/babel.min.js":"vendor/9ceeb466-e86e-4e11-aa91-8a9657117722.js"};</script><script defer src="config.js"></script><script defer src="vendor/supabase.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
@@ -19,9 +19,72 @@
 });
 document.addEventListener('wheel', function(e){ if(e.ctrlKey) e.preventDefault(); }, { passive:false });
 </script>
-<script src="vendor/fa54af41-7e64-40dd-9170-fc4da6658880.js"></script>
+<!-- deferred so the boot splash in the body paints before ~270 KB of runtime
+     downloads; execution order is preserved and the runtime only needs the
+     parsed document, which defer guarantees -->
+<script defer src="vendor/fa54af41-7e64-40dd-9170-fc4da6658880.js"></script>
 </head>
 <body>
+
+<!-- Boot splash. The app is ~2.5 MB, so on a slow connection the screen would
+     otherwise sit blank for seconds and look frozen. This is plain markup in
+     the body with its own styles, so it paints on the very first frame —
+     no images, no web fonts, nothing to wait for. The app removes it from
+     componentDidMount (window.__bootDone), and a timer clears it regardless so
+     a script failure can never strand the user here. -->
+<style>
+#boot{
+  position:fixed; inset:0; z-index:9999; overflow:hidden;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:radial-gradient(120% 90% at 50% 12%, #16263a 0%, #080d14 72%);
+  transition:opacity .35s ease;
+}
+#boot.gone{opacity:0; pointer-events:none}
+#boot .o{position:absolute; border-radius:50%; filter:blur(60px)}
+#boot .o1{width:52vw; height:52vw; background:#2f6fb0; opacity:.68; top:6%;   left:-18%;  animation:bd1 13s ease-in-out infinite}
+#boot .o2{width:44vw; height:44vw; background:#5b9bd8; opacity:.44; top:44%;  right:-20%; animation:bd2 15s ease-in-out infinite}
+#boot .o3{width:40vw; height:40vw; background:#1b4d86; opacity:.72; bottom:6%; left:10%;  animation:bd3 17s ease-in-out infinite}
+@keyframes bd1{0%,100%{transform:translate(0,0)}50%{transform:translate(7vw,6vw)}}
+@keyframes bd2{0%,100%{transform:translate(0,0)}50%{transform:translate(-6vw,-5vw)}}
+@keyframes bd3{0%,100%{transform:translate(0,0)}50%{transform:translate(5vw,-6vw)}}
+#boot .tile{
+  position:relative; z-index:2;
+  width:104px; height:104px; border-radius:29px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:Georgia,"Times New Roman",serif; font-size:50px; line-height:1; color:#f3f2f2;
+  background:rgba(220,236,255,.09);
+  -webkit-backdrop-filter:blur(15px); backdrop-filter:blur(15px);
+  border:1px solid rgba(210,231,255,.20);
+  box-shadow:inset 0 1px 0 rgba(225,240,255,.26), 0 20px 44px -20px rgba(0,0,0,.85);
+  animation:bootrise .55s cubic-bezier(.2,.8,.3,1) both;
+}
+@keyframes bootrise{from{transform:translateY(9px); opacity:0}to{transform:translateY(0); opacity:1}}
+#boot .dots{position:relative; z-index:2; display:flex; gap:6px; margin-top:34px}
+#boot .dots i{width:5px; height:5px; border-radius:50%; background:rgba(243,242,242,.34); animation:bootblip 1.4s ease-in-out infinite}
+#boot .dots i:nth-child(2){animation-delay:.18s}
+#boot .dots i:nth-child(3){animation-delay:.36s}
+@keyframes bootblip{0%,100%{opacity:.3; transform:scale(1)}50%{opacity:1; transform:scale(1.35)}}
+@media (prefers-reduced-motion:reduce){
+  #boot .o,#boot .tile,#boot .dots i{animation:none}
+}
+</style>
+<div id="boot" aria-hidden="true">
+  <span class="o o1"></span><span class="o o2"></span><span class="o o3"></span>
+  <div class="tile">辞</div>
+  <div class="dots"><i></i><i></i><i></i></div>
+</div>
+<script>
+(function(){
+  var el = document.getElementById('boot'), done = false;
+  window.__bootDone = function(){
+    if (done || !el) return; done = true;
+    el.className = 'gone';
+    setTimeout(function(){ if (el && el.parentNode) el.parentNode.removeChild(el); }, 400);
+  };
+  // safety net: never let a script error leave the splash covering the app
+  setTimeout(window.__bootDone, 15000);
+})();
+</script>
 
 <x-dc>
 <helmet>
@@ -9814,6 +9877,8 @@ class Component extends DCLogic {
     this.setupInstall();
     this.loadOverrides();
     this.loadAppSettings();
+    // real UI is on screen now — clear the boot splash
+    if (window.__bootDone) window.__bootDone();
     try {
       if (await this.checkInvite()) return;      // arrived through an invite link
       const session = await Backend.currentSession();
