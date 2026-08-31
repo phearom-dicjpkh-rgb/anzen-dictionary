@@ -9950,8 +9950,14 @@ class Component extends DCLogic {
   // together. Hold it until the auth stage settles — or until the offline
   // retry appears, which the user has to be able to tap.
   componentDidUpdate(){
-    if (!window.__bootDone) return;
-    if (this.state.authStage !== 'loading' || this.state.authOffline) window.__bootDone();
+    if (window.__bootDone && (this.state.authStage !== 'loading' || this.state.authOffline)) window.__bootDone();
+    // the book reader is a body-level overlay (see _buildReadViewNow) — leaving
+    // reading mode by any path other than its own ✕ (bottom-nav taps, the
+    // bell, an admin screen switch, …) needs this to take it down, since React
+    // unmounting #lib-read-root/#rb-read-root no longer does that for it
+    const s = this.state;
+    const readerOpen = (s.screen === 'library' && s.libMode === 'read') || (s.screen === 'readbooks' && s.rbMode === 'read');
+    if (!readerOpen) this._clearBodyOverlay();
   }
   async componentDidMount(){
     this.primeVoices();
@@ -10936,7 +10942,7 @@ class Component extends DCLogic {
     if (this._bookMem.size > 3) this._bookMem.delete(this._bookMem.keys().next().value);
     return book || null;
   }
-  rbBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); this.setState({ rbMode: 'list', libBookId: null }, () => this.loadReadBooks()); }
+  rbBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); this._clearBodyOverlay(); this.setState({ rbMode: 'list', libBookId: null }, () => this.loadReadBooks()); }
   // admin locks / unlocks an authored book (locked = students see the cover but can't read)
   async rbToggleLock(id, e){ if (e && e.stopPropagation) e.stopPropagation(); if (this.state.role !== 'admin') return;
     const books = (this.state.rbBooks || []).map(b => b.id === id ? { ...b, locked: !b.locked } : b);
@@ -11309,15 +11315,30 @@ class Component extends DCLogic {
     pend.forEach(im => { im.addEventListener('load', done); im.addEventListener('error', done); });
     setTimeout(() => { if (!fired) { fired = true; build(); } }, 3000);   // don't hang on a slow image
   }
+  // Any DOM node manually mounted onto <body> outside React's tree — currently
+  // just the full-screen book reader. Call before creating a new one, and
+  // whenever the app leaves reading mode by a path other than the reader's own
+  // ✕ (bottom-nav taps, the bell, etc.), since React unmounting
+  // #lib-read-root/#rb-read-root no longer takes a body-level node down with it.
+  _clearBodyOverlay(){ const el = document.getElementById('book-reader-overlay'); if (el && el.parentNode) el.parentNode.removeChild(el); }
   _buildReadViewNow(book, root, html, margin, startPage){
     root.innerHTML = '';
+    this._clearBodyOverlay();
     const A4W = 794, A4H = 1123, PAD = margin || 48, START = startPage || 1;
     const bookId = (book && book.id) || null;
     const marks = new Set(this._getBookmarks(bookId));   // pages the reader flagged
-    // full-screen overlay — the page fills the screen, no app chrome
+    // Full-screen overlay, the page fills the screen, no app chrome — mounted
+    // directly on <body>, NOT inside #lib-read-root/#rb-read-root. Those sit
+    // inside the app's own scrollable content area (data-scroll="main"), and on
+    // some mobile browsers position:fixed inside a scrolling ancestor with
+    // -webkit-overflow-scrolling:touch does not stay pinned to the real
+    // viewport — it scrolls with the container instead, which is why the top
+    // toolbar could end up scrolled out of view on a real phone while working
+    // fine here. A direct child of <body> has no such ancestor.
     const ov = document.createElement('div');
+    ov.id = 'book-reader-overlay';
     ov.style.cssText = 'position:fixed;inset:0;z-index:120;background:#454545;display:flex;flex-direction:column;';
-    root.appendChild(ov);
+    document.body.appendChild(ov);
     const icon = (txt, fn, extra) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.style.cssText = 'width:34px;height:34px;border:none;border-radius:8px;background:rgba(255,255,255,0.16);color:#fff;font-size:17px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;' + (extra || ''); b.addEventListener('click', fn); return b; };
     // thin top bar (icons only)
     const bar = document.createElement('div');
@@ -11593,7 +11614,7 @@ class Component extends DCLogic {
   _lastAll(){ try { return JSON.parse(localStorage.getItem('dict_book_lastpage') || '{}') || {}; } catch(e){ return {}; } }
   _getLastReadPage(bookId){ if (!bookId) return 0; const v = this._lastAll()[bookId]; return (typeof v === 'number' && v >= 0) ? v : 0; }
   _setLastReadPage(bookId, idx){ if (!bookId) return; try { const o = this._lastAll(); o[bookId] = idx; localStorage.setItem('dict_book_lastpage', JSON.stringify(o)); } catch(e){} }
-  libBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); const ib = document.getElementById('lib-img-bar'); if (ib) ib.remove(); const sb = document.getElementById('lib-shape-bar'); if (sb) sb.remove(); this._edSelImg = null; this._edSelShape = null; this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
+  libBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); const ib = document.getElementById('lib-img-bar'); if (ib) ib.remove(); const sb = document.getElementById('lib-shape-bar'); if (sb) sb.remove(); this._edSelImg = null; this._edSelShape = null; this._clearBodyOverlay(); this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
   async libDeleteBook(id){ if (!window.confirm('លុបសៀវភៅនេះមែនទេ?')) return; await Backend.deleteBook(id); this.loadBooks(); }
   // strip anything unsafe before a book is stored (it is shown to other users)
   _sanitizeBookHtml(html){
