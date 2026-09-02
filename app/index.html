@@ -657,6 +657,12 @@ textarea.input { min-height: 90px; resize: vertical; }
   .report .prow, .report tr { page-break-inside:avoid !important; break-inside:avoid !important; -webkit-column-break-inside:avoid !important; }
   .report img { max-width:170px !important; max-height:130px !important; page-break-inside:avoid !important; break-inside:avoid !important; }
   .no-print { display:none !important; }
+  /* book PDF export: each .a4page is already laid out at true A4 pixel size
+     (794×1123 ≈ 210×297mm @96dpi), so print it edge-to-edge on its own named
+     page (no browser page margin) instead of the 12mm default used for reports */
+  @page book-page { size:A4; margin:0; }
+  .book-pdf-pages .a4page { page: book-page; box-shadow:none !important; page-break-after:always !important; break-after:page !important; }
+  .book-pdf-pages .a4page:last-child { page-break-after:auto !important; break-after:auto !important; }
 }
 </style>
   <style>
@@ -11361,6 +11367,10 @@ class Component extends DCLogic {
     const findBtn = icon('🔍', () => toggleFind(), 'font-size:15px;');
     findBtn.title = 'ស្វែងរកក្នុងសៀវភៅ';
     leftBar.appendChild(findBtn);
+    // ⬇ — download the whole book as a printable PDF (native print/Save-as-PDF dialog)
+    const pdfBtn = icon('⬇', () => this._downloadBookPdf((book && book.title) || 'សៀវភៅ', html, PAD, START), 'font-size:15px;');
+    pdfBtn.title = 'ទាញយកជា PDF';
+    leftBar.appendChild(pdfBtn);
     bar.appendChild(leftBar);
     const rightBar = document.createElement('div'); rightBar.style.cssText = 'display:flex;align-items:center;gap:6px;';
     const jin = document.createElement('input'); jin.type = 'number'; jin.min = '1';
@@ -11404,10 +11414,16 @@ class Component extends DCLogic {
     const wrapOne = p => { if (p && !p._bwWrapped) { p._bwWrapped = true; this._wrapBookWords(p); } };
     // fix Google-Drive share links so the pictures actually load
     pages.forEach(p => p.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; }));
-    // page number in the bottom margin, centred, auto-incrementing from the start
-    pages.forEach((p, i) => { const pn = document.createElement('div'); pn.className = 'pgnum';
+    // page number in the bottom margin, centred — a custom number typed in the
+    // editor wins, otherwise auto-increments from the start
+    pages.forEach((p, i) => {
+      const mark = p.querySelector('.pgnum-mark[data-pn]');
+      const custom = mark ? (mark.getAttribute('data-pn') || '').trim() : '';
+      if (mark) mark.remove();
+      const pn = document.createElement('div'); pn.className = 'pgnum';
       pn.style.cssText = `position:absolute;left:0;right:0;bottom:${Math.max(10, Math.round(PAD / 2) - 6)}px;text-align:center;font-size:13px;color:#666;`;
-      pn.textContent = String(START + i); p.appendChild(pn); });
+      pn.textContent = custom || String(START + i); p.appendChild(pn);
+    });
     area.addEventListener('click', e => { const el = e.target.closest && e.target.closest('.bookword'); if (el && el.dataset.jp) this._showBookWordPopup(el.dataset.jp); });
     const total = pages.length;
     jin.max = String(total); jtot.textContent = '/ ' + total;
@@ -11638,16 +11654,26 @@ class Component extends DCLogic {
     if (meta) { const mm = parseInt(meta.getAttribute('data-margin'), 10), sp = parseInt(meta.getAttribute('data-start'), 10); if (!isNaN(mm)) margin = mm; if (!isNaN(sp)) startPage = sp; meta.remove(); }
     return { margin: Math.max(16, Math.min(160, margin)), startPage: Math.max(1, startPage), html: d.innerHTML };
   }
+  // join every sheet with a hidden page-break marker so the reader reproduces
+  // exactly the same page-by-page layout (true WYSIWYG); a sheet with a custom
+  // page number (set via the floating field at the bottom of the sheet) also
+  // gets a trailing hidden marker carrying that value
+  _edSerializePages(){
+    const brk = '<div class="pgbrk" style="display:none"></div>';
+    return (this._edPages || []).map(p => {
+      let h = this._sanitizeBookHtml(p.innerHTML);
+      const pn = (p.dataset.pn || '').trim();
+      if (pn) h += `<div class="pgnum-mark" data-pn="${pn.replace(/"/g, '&quot;')}" style="display:none"></div>`;
+      return h;
+    }).join(brk);
+  }
   async saveBook(){
     this._deselectEditorImage(); this._deselectShape();   // drop selection chrome so it isn't saved
     const titleEl = document.getElementById('lib-title');
     const errEl = document.getElementById('lib-err'), btn = document.getElementById('lib-save');
     const title = (titleEl ? titleEl.value : '').trim();
     const meta = `<div data-bookmeta="1" data-margin="${this._libMargin || 64}" data-start="${this._libStartPage || 1}" style="display:none"></div>`;
-    // join every sheet with a hidden page-break marker so the reader reproduces
-    // exactly the same page-by-page layout (true WYSIWYG)
-    const brk = '<div class="pgbrk" style="display:none"></div>';
-    const body = (this._edPages || []).map(p => this._sanitizeBookHtml(p.innerHTML)).join(brk);
+    const body = this._edSerializePages();
     const content = meta + (body || '');
     const showErr = m => { if (errEl) { errEl.textContent = m; errEl.style.display = 'block'; clearTimeout(this._edErrT); this._edErrT = setTimeout(() => { if (errEl) errEl.style.display = 'none'; }, 3500); } };
     if (!title) { showErr('សូមបញ្ចូលចំណងជើងសៀវភៅ'); return false; }
@@ -12041,6 +12067,8 @@ class Component extends DCLogic {
     // save; if we came in from the reader (✏️), go back to reading afterwards
     const save = icon('💾', async () => { const ok = await this.saveBook(); if (ok !== false && this._edReturnToRead) this._edLeave(); }, 'រក្សាទុក'); save.id = 'lib-save';
     save.style.background = 'var(--color-accent-700)'; top.appendChild(save);
+    const pdfBtn = icon('⬇', () => this._downloadBookPdf(title.value || book.title || 'សៀវភៅ', this._edSerializePages(), PAD, this._libStartPage || 1), 'ទាញយកជា PDF');
+    top.appendChild(pdfBtn);
     const toolsBtn = icon('▴', () => { toolsOpen = !toolsOpen; tools.style.display = toolsOpen ? 'flex' : 'none'; toolsBtn.textContent = toolsOpen ? '▴' : '▾'; setTimeout(refit, 30); }, 'លាក់/បង្ហាញ ឧបករណ៍');
     top.appendChild(toolsBtn);
     ov.appendChild(top);
@@ -12111,7 +12139,7 @@ class Component extends DCLogic {
     gadd(gIns, '🖼', () => {
       const url = normalizeImgUrl(window.prompt('Link រូបភាព (https://…)') || '');
       if (!url) return;
-      exec('insertHTML', `<img src="${url.replace(/"/g, '&quot;')}" data-wrap="center" style="max-width:100%;height:auto;border-radius:6px;display:block;margin:8px auto;">`);
+      exec('insertHTML', `<img src="${url.replace(/"/g, '&quot;')}" data-wrap="center" data-w="55" style="width:55%;max-width:100%;height:auto;border-radius:6px;display:block;margin:8px auto;">`);
       const p = this._edCurPage();
       if (p) p.querySelectorAll('img').forEach(im => this._edHookImage(im));
     }, 'បញ្ចូលរូបភាព');
@@ -12175,6 +12203,17 @@ class Component extends DCLogic {
     const stage = document.createElement('div'); stage.style.cssText = 'margin:auto;flex:none;position:relative;';
     canvas.appendChild(stage); canvasWrap.appendChild(canvas);
     this._edStage = stage; this._edCanvas = canvas;
+    // floating field at the bottom margin of the current sheet — type a page
+    // number to override the auto count (shown while reading); leave blank to
+    // keep auto-numbering. Not part of the sheet's own contenteditable content,
+    // so it never gets caught by paste-cleaning or the overflow reflow.
+    const pgNumField = document.createElement('input'); pgNumField.type = 'text'; pgNumField.inputMode = 'numeric'; pgNumField.maxLength = 6;
+    pgNumField.title = 'លេខទំព័រផ្ទាល់ខ្លួន (ទុកទទេ = រាប់ស្វ័យប្រវត្តិ)';
+    pgNumField.style.cssText = 'position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;width:64px;height:26px;text-align:center;font-size:13px;border:1px dashed rgba(0,0,0,0.4);border-radius:6px;background:rgba(255,255,255,0.92);color:#333;';
+    pgNumField.addEventListener('mousedown', e => e.stopPropagation());
+    pgNumField.addEventListener('input', () => { const p = this._edPages[this._edCur]; if (p) { p.dataset.pn = pgNumField.value.trim(); this._edDirty = true; } });
+    stage.appendChild(pgNumField);
+    this._edPnField = pgNumField;
     const edge = (txt, fn, side) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt;
       b.style.cssText = `position:absolute;${side}:6px;top:50%;transform:translateY(-50%);width:40px;height:40px;border:none;border-radius:50%;background:rgba(0,0,0,0.5);color:#fff;font-size:24px;line-height:1;cursor:pointer;z-index:8;display:flex;align-items:center;justify-content:center;`;
       b.addEventListener('mousedown', e => e.preventDefault());
@@ -12239,6 +12278,8 @@ class Component extends DCLogic {
     p.className = 'lib-epage report'; p.contentEditable = 'true';
     p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-family:var(--font-jp),system-ui,sans-serif;letter-spacing:normal;font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;outline:none;display:none;`;
     p.innerHTML = (html && html.trim()) ? html : '<p><br></p>';
+    const pnMark = p.querySelector('.pgnum-mark[data-pn]');
+    if (pnMark) { p.dataset.pn = pnMark.getAttribute('data-pn') || ''; pnMark.remove(); }
     p.addEventListener('input', () => { this._edDirty = true; this._edScheduleReflow(this._edPages.indexOf(p)); });
     // clean paste — strip the source's layout styling so text flows the full width
     p.addEventListener('paste', e => {
@@ -12305,6 +12346,11 @@ class Component extends DCLogic {
     if (this._edZlabel) this._edZlabel.textContent = Math.round((this._edScale || 1) * 100) + '%';
     if (this._edPrevB) this._edPrevB.style.display = this._edCur === 0 ? 'none' : 'flex';
     if (this._edNextB) this._edNextB.style.display = this._edCur === pages.length - 1 ? 'none' : 'flex';
+    if (this._edPnField) {
+      const p = pages[this._edCur];
+      this._edPnField.value = (p && p.dataset.pn) || '';
+      this._edPnField.placeholder = String((this._libStartPage || 1) + this._edCur);
+    }
   }
   _edIsEmpty(p){ return !(p.textContent || '').trim() && !p.querySelector('img,hr'); }
   _edScheduleReflow(fromIdx){ clearTimeout(this._edReflowT); this._edReflowT = setTimeout(() => this._edReflow(fromIdx), 160); }
@@ -12805,6 +12851,52 @@ class Component extends DCLogic {
       el.innerHTML = furiganaHTML(txt);
       el.dataset.furi = '1';
     });
+  }
+  // download a whole book (reader or live editor content) as a PDF, via the
+  // browser's own print/"Save as PDF" dialog — its live preview stands in for
+  // an in-app preview step, so this goes straight to window.print().
+  _downloadBookPdf(title, html, margin, startPage){
+    try {
+      const A4W = 794, A4H = 1123, PAD = margin || 48, START = startPage || 1;
+      const src = document.createElement('div'); src.innerHTML = html || '';
+      this._edStripJpSpacesIn(src);
+      // laid out off-screen (not the on-screen stacked/scaled reader or editor
+      // sheets) so print sees plain, normally-flowing A4 blocks, one per page
+      const mount = document.createElement('div');
+      mount.style.cssText = `position:fixed;left:-9999px;top:0;width:${A4W}px;`;
+      document.body.appendChild(mount);
+      const mkPage = () => { const p = document.createElement('div'); p.className = 'a4page report';
+        p.style.cssText = `width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;position:relative;font-family:var(--font-jp),system-ui,sans-serif;letter-spacing:normal;font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;`;
+        mount.appendChild(p); return p; };
+      let page = mkPage();
+      const blocks = [...src.childNodes].filter(n => n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim()));
+      for (const n of blocks) {
+        if (n.nodeType === 1 && n.classList && n.classList.contains('pgbrk')) { if (page.childNodes.length) page = mkPage(); continue; }
+        page.appendChild(n);
+        if (page.scrollHeight > A4H && page.childNodes.length > 1) { page.removeChild(n); page = mkPage(); page.appendChild(n); }
+      }
+      let pages = [...mount.querySelectorAll('.a4page')];
+      if (!pages.length) { const p = mkPage(); p.innerHTML = '<p style="opacity:0.5;">(សៀវភៅទទេ)</p>'; pages = [p]; }
+      pages.forEach(p => p.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; }));
+      pages.forEach((p, i) => {
+        const mark = p.querySelector('.pgnum-mark[data-pn]');
+        const custom = mark ? (mark.getAttribute('data-pn') || '').trim() : '';
+        if (mark) mark.remove();
+        const pn = document.createElement('div');
+        pn.style.cssText = `position:absolute;left:0;right:0;bottom:${Math.max(10, Math.round(PAD / 2) - 6)}px;text-align:center;font-size:13px;color:#666;`;
+        pn.textContent = custom || String(START + i); p.appendChild(pn);
+      });
+      const wrap = document.createElement('div'); wrap.className = 'book-pdf-pages';
+      pages.forEach(p => wrap.appendChild(p));
+      this._clearPrintMount();
+      this._printSourceHTML = wrap.outerHTML;
+      mount.remove();
+      // most browsers suggest document.title as the "Save as PDF" filename
+      const prevTitle = document.title;
+      document.title = title || prevTitle;
+      this.doPrint();
+      setTimeout(() => { document.title = prevTitle; }, 1000);
+    } catch(e) { this.showToast('មិនអាចទាញយកជា PDF បានទេ'); }
   }
   _clearPrintMount(){ document.body.classList.remove('printing'); const m = document.getElementById('print-mount'); if (m) m.innerHTML = ''; }
   closePrint(){ this._clearPrintMount(); this._printSourceHTML = null; this._setPrintViewport(false); this.setState({ printOpen: false }); }
