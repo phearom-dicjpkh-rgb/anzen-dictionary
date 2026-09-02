@@ -11414,15 +11414,20 @@ class Component extends DCLogic {
     const wrapOne = p => { if (p && !p._bwWrapped) { p._bwWrapped = true; this._wrapBookWords(p); } };
     // fix Google-Drive share links so the pictures actually load
     pages.forEach(p => p.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; }));
-    // page number in the bottom margin, centred — a custom number typed in the
-    // editor wins, otherwise auto-increments from the start
-    pages.forEach((p, i) => {
+    // page number in the bottom margin, centred — a custom number typed on a
+    // page in the editor is an "anchor": that page takes the typed value and
+    // every following page auto-continues from it until the next anchor
+    const pnAnchors = pages.map(p => {
       const mark = p.querySelector('.pgnum-mark[data-pn]');
-      const custom = mark ? (mark.getAttribute('data-pn') || '').trim() : '';
+      const v = mark ? (mark.getAttribute('data-pn') || '').trim() : '';
       if (mark) mark.remove();
+      return v ? parseInt(v, 10) : null;
+    });
+    const pnNums = this._computePageNumbers(pnAnchors, START);
+    pages.forEach((p, i) => {
       const pn = document.createElement('div'); pn.className = 'pgnum';
       pn.style.cssText = `position:absolute;left:0;right:0;bottom:${Math.max(10, Math.round(PAD / 2) - 6)}px;text-align:center;font-size:13px;color:#666;`;
-      pn.textContent = custom || String(START + i); p.appendChild(pn);
+      pn.textContent = String(pnNums[i]); p.appendChild(pn);
     });
     area.addEventListener('click', e => { const el = e.target.closest && e.target.closest('.bookword'); if (el && el.dataset.jp) this._showBookWordPopup(el.dataset.jp); });
     const total = pages.length;
@@ -11653,6 +11658,16 @@ class Component extends DCLogic {
     let margin = 64, startPage = 1;
     if (meta) { const mm = parseInt(meta.getAttribute('data-margin'), 10), sp = parseInt(meta.getAttribute('data-start'), 10); if (!isNaN(mm)) margin = mm; if (!isNaN(sp)) startPage = sp; meta.remove(); }
     return { margin: Math.max(16, Math.min(160, margin)), startPage: Math.max(1, startPage), html: d.innerHTML };
+  }
+  // effective page numbers for a sequence of sheets. `anchors[i]` is the
+  // custom number typed on sheet i (or null). A typed number resets the
+  // count from that page on; every other page just continues from the
+  // nearest anchor before it (or the book's global start, for the very
+  // first pages) — so setting one anchor renumbers everything after it,
+  // and deleting a sheet is never a manual renumbering job.
+  _computePageNumbers(anchors, start){
+    let running = (start || 1) - 1;
+    return anchors.map(a => { running = (a != null && !isNaN(a)) ? a : running + 1; return running; });
   }
   // join every sheet with a hidden page-break marker so the reader reproduces
   // exactly the same page-by-page layout (true WYSIWYG); a sheet with a custom
@@ -12348,8 +12363,10 @@ class Component extends DCLogic {
     if (this._edNextB) this._edNextB.style.display = this._edCur === pages.length - 1 ? 'none' : 'flex';
     if (this._edPnField) {
       const p = pages[this._edCur];
+      const anchors = pages.map(pg => { const v = (pg.dataset.pn || '').trim(); return v ? parseInt(v, 10) : null; });
+      const nums = this._computePageNumbers(anchors, this._libStartPage || 1);
       this._edPnField.value = (p && p.dataset.pn) || '';
-      this._edPnField.placeholder = String((this._libStartPage || 1) + this._edCur);
+      this._edPnField.placeholder = String(nums[this._edCur]);
     }
   }
   _edIsEmpty(p){ return !(p.textContent || '').trim() && !p.querySelector('img,hr'); }
@@ -12878,13 +12895,17 @@ class Component extends DCLogic {
       let pages = [...mount.querySelectorAll('.a4page')];
       if (!pages.length) { const p = mkPage(); p.innerHTML = '<p style="opacity:0.5;">(សៀវភៅទទេ)</p>'; pages = [p]; }
       pages.forEach(p => p.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; }));
-      pages.forEach((p, i) => {
+      const pnAnchors = pages.map(p => {
         const mark = p.querySelector('.pgnum-mark[data-pn]');
-        const custom = mark ? (mark.getAttribute('data-pn') || '').trim() : '';
+        const v = mark ? (mark.getAttribute('data-pn') || '').trim() : '';
         if (mark) mark.remove();
+        return v ? parseInt(v, 10) : null;
+      });
+      const pnNums = this._computePageNumbers(pnAnchors, START);
+      pages.forEach((p, i) => {
         const pn = document.createElement('div');
         pn.style.cssText = `position:absolute;left:0;right:0;bottom:${Math.max(10, Math.round(PAD / 2) - 6)}px;text-align:center;font-size:13px;color:#666;`;
-        pn.textContent = custom || String(START + i); p.appendChild(pn);
+        pn.textContent = String(pnNums[i]); p.appendChild(pn);
       });
       const wrap = document.createElement('div'); wrap.className = 'book-pdf-pages';
       pages.forEach(p => wrap.appendChild(p));
