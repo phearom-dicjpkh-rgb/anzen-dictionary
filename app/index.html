@@ -3103,12 +3103,7 @@ textarea.input { min-height: 90px; resize: vertical; }
           <div>
             <sc-if value="{{ detailWord.hasFallbackKana }}"><div style="font-size:13px;opacity:0.55;margin-bottom:2px;">{{ detailWord.kana }}</div></sc-if>
             <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-family:var(--font-heading);font-weight:600;font-size:34px;line-height:1.7;">
-                <sc-for list="{{ detailWord.jpRuns }}" as="run" hint-placeholder-count="1">
-                  <sc-if value="{{ run.kanji }}"><ruby>{{ run.text }}<rt style="font-size:13px;font-weight:400;opacity:0.55;">{{ run.reading }}</rt></ruby></sc-if>
-                  <sc-if value="{{ run.notKanji }}">{{ run.text }}</sc-if>
-                </sc-for>
-              </span>
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:34px;line-height:1.7;"><sc-for list="{{ detailWord.jpRuns }}" as="run" hint-placeholder-count="1"><sc-if value="{{ run.kanji }}"><ruby>{{ run.text }}<rt style="font-size:13px;font-weight:400;opacity:0.55;">{{ run.reading }}</rt></ruby></sc-if><sc-if value="{{ run.notKanji }}">{{ run.text }}</sc-if></sc-for></span>
               <sc-if value="{{ isAdmin }}">
                 <button sc-camel-on-click="{{ toggleDetailStar }}" aria-label="ពាក្យសំខាន់" style="flex:none;background:transparent;border:none;cursor:pointer;padding:2px 4px;font-size:22px;line-height:1;color:{{ detailWord.starColor }};">{{ detailWord.starGlyph }}</button>
               </sc-if>
