@@ -3101,9 +3101,14 @@ textarea.input { min-height: 90px; resize: vertical; }
       <div style="background:var(--color-bg);width:100%;border-radius:20px 20px 0 0;padding:22px 22px 28px;box-shadow:var(--shadow-lg);max-height:82%;overflow-y:auto;box-sizing:border-box;" sc-camel-on-click="{{ stopProp }}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
           <div>
-            <div style="font-size:13px;opacity:0.55;margin-bottom:2px;">{{ detailWord.kana }}</div>
+            <sc-if value="{{ detailWord.hasFallbackKana }}"><div style="font-size:13px;opacity:0.55;margin-bottom:2px;">{{ detailWord.kana }}</div></sc-if>
             <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-family:var(--font-heading);font-weight:600;font-size:34px;line-height:1.05;">{{ detailWord.jp }}</span>
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:34px;line-height:1.7;">
+                <sc-for list="{{ detailWord.jpRuns }}" as="run" hint-placeholder-count="1">
+                  <sc-if value="{{ run.kanji }}"><ruby>{{ run.text }}<rt style="font-size:13px;font-weight:400;opacity:0.55;">{{ run.reading }}</rt></ruby></sc-if>
+                  <sc-if value="{{ run.notKanji }}">{{ run.text }}</sc-if>
+                </sc-for>
+              </span>
               <sc-if value="{{ isAdmin }}">
                 <button sc-camel-on-click="{{ toggleDetailStar }}" aria-label="ពាក្យសំខាន់" style="flex:none;background:transparent;border:none;cursor:pointer;padding:2px 4px;font-size:22px;line-height:1;color:{{ detailWord.starColor }};">{{ detailWord.starGlyph }}</button>
               </sc-if>
@@ -8222,6 +8227,16 @@ function parseKanaIntoRuns(jp, kana){
     pos = end;
   }
   return map;
+}
+// runs ready for a ruby-annotated headword — the reading sits directly above
+// its own kanji (real furigana), not as one line above the whole word, which
+// misreads as furigana for katakana/hiragana that's already phonetic
+function jpRubyRuns(jp, kana){
+  const map = parseKanaIntoRuns(jp, kana);
+  return splitKanaRuns(jp).map((r, i) => {
+    const reading = r.kanji ? (map[i + ':' + r.text] || '') : '';
+    return { kanji: !!reading, notKanji: !reading, text: r.text, reading };
+  });
 }
 let _furiMap = null, _furiMax = 0;
 function furiMap(){
@@ -13614,7 +13629,13 @@ class Component extends DCLogic {
       const base = WORDS.find(w => w.id === bid), f = base && (base.related || []).find(r => r.jp === fjp);
       if (base && f) detailW = { id: s.detailWordId, _baseId: bid, _relatedOf: base.jp, jp: fjp, kana: '', pos: base.pos, km: f.km || base.km, book: base.book, page: base.page, examples: Array.isArray(f.examples) ? f.examples : [], starred: false, img: '', romaji: '', romajiNorm: '', cat: 'vocab' };
     }
+    const detailWordJpRuns = detailW ? jpRubyRuns(detailW.jp, detailW.kana) : [];
     const detailWord = detailW ? { ...detailW, tagClass: tagClassFor(detailW.pos), favFill: s.favorites.includes(detailW.id) ? 'var(--color-accent-700)' : 'transparent',
+          jpRuns: detailWordJpRuns,
+          // legacy rows where かな isn't a kanji reading at all (e.g. an acronym's
+          // expansion) never get a ruby, so still show them as a plain line —
+          // otherwise that text would just vanish
+          hasFallbackKana: !detailWordJpRuns.some(r => r.kanji) && !!(detailW.kana || '').trim(),
           // only an admin may delete, and only a custom (admin-added) word — never a synced word or a conjugation
           canDelete: s.role === 'admin' && !!detailW._custom && !detailW._relatedOf,
           // admins get a tappable star; everyone else just sees the mark
