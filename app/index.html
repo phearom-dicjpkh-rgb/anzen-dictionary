@@ -1989,53 +1989,77 @@ textarea.input { min-height: 90px; resize: vertical; }
         </sc-if>
 
         <sc-if value="{{ isAddWord }}" hint-placeholder-val="{{ false }}">
-        <div style="padding:18px 20px 30px;">
+        <div style="padding:18px 20px 30px;display:flex;flex-direction:column;gap:14px;">
           <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
-          <h1 style="font-size:26px;margin:0 0 14px;">បញ្ចូលពាក្យថ្មី</h1>
+          <h1 style="font-size:26px;margin:0;">បញ្ចូលពាក្យថ្មី</h1>
 
-          <div class="field" style="margin-bottom:10px;"><label>សៀវភៅ</label>
-            <div style="position:relative;">
-              <button class="input" style="width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" sc-camel-on-click="{{ toggleAwBookMenu }}">
-                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ awBookLabel }}</span>
-                <span style="opacity:0.5;">▾</span>
-              </button>
-              <sc-if value="{{ awBookMenuOpen }}">
-              <div style="position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:15;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-md);box-shadow:var(--shadow-md);overflow:hidden;">
-                <sc-for list="{{ awBookItems }}" as="b" hint-placeholder-count="2">
-                  <div style="padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--color-divider);{{ b.rowStyle }}" sc-camel-on-click="{{ b.onSelect }}">{{ b.name }}</div>
-                </sc-for>
+          <div class="card">
+            <div class="card-kicker">សៀវភៅ &amp; ប្រភេទ</div>
+            <div class="field"><label>សៀវភៅ</label>
+              <div style="position:relative;">
+                <button class="input" style="width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" sc-camel-on-click="{{ toggleAwBookMenu }}">
+                  <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ awBookLabel }}</span>
+                  <span style="opacity:0.5;">▾</span>
+                </button>
+                <sc-if value="{{ awBookMenuOpen }}">
+                <div style="position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:15;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-md);box-shadow:var(--shadow-md);overflow:hidden;">
+                  <sc-for list="{{ awBookItems }}" as="b" hint-placeholder-count="2">
+                    <div style="padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--color-divider);{{ b.rowStyle }}" sc-camel-on-click="{{ b.onSelect }}">{{ b.name }}</div>
+                  </sc-for>
+                </div>
+                </sc-if>
               </div>
-              </sc-if>
+            </div>
+            <div class="field"><label>ឬ បញ្ចូលឈ្មោះសៀវភៅថ្មី</label>
+              <input class="input" type="text" placeholder="ឧ. SSW-Bus" value="{{ awNewBook }}" sc-camel-on-change="{{ onAwNewBook }}"></div>
+            <div class="seg">
+              <label class="seg-opt"><input type="radio" name="awcat" checked="{{ awIsVocab }}" sc-camel-on-change="{{ onAwCatVocab }}"><span>វាក្យសព្ទ</span></label>
+              <label class="seg-opt"><input type="radio" name="awcat" checked="{{ awIsGrammar }}" sc-camel-on-change="{{ onAwCatGrammar }}"><span>វេយ្យាករណ៍</span></label>
             </div>
           </div>
-          <div class="field" style="margin-bottom:12px;"><label>ឬ បញ្ចូលឈ្មោះសៀវភៅថ្មី</label>
-            <input class="input" type="text" placeholder="ឧ. SSW-Bus" value="{{ awNewBook }}" sc-camel-on-change="{{ onAwNewBook }}"></div>
 
-          <div class="seg" style="margin-bottom:12px;">
-            <label class="seg-opt"><input type="radio" name="awcat" checked="{{ awIsVocab }}" sc-camel-on-change="{{ onAwCatVocab }}"><span>វាក្យសព្ទ</span></label>
-            <label class="seg-opt"><input type="radio" name="awcat" checked="{{ awIsGrammar }}" sc-camel-on-change="{{ onAwCatGrammar }}"><span>វេយ្យាករណ៍</span></label>
+          <div class="card">
+            <div class="card-kicker">ព័ត៌មានពាក្យ</div>
+            <div class="field"><label>ទំព័រ (ស្រេចចិត្ត)</label>
+              <input class="input" type="number" inputmode="numeric" placeholder="ឧ. 12" value="{{ awPage }}" sc-camel-on-change="{{ onAwPage }}"></div>
+            <div class="field"><label>ពាក្យជប៉ុន</label>
+              <input class="input" type="text" value="{{ awJp }}" sc-camel-on-change="{{ onAwJp }}"></div>
+
+            <sc-if value="{{ hasAwDup }}">
+              <div style="font-size:12px;color:#c0392b;background:color-mix(in srgb, #c0392b 10%, var(--color-surface));border:1px solid #c0392b;border-radius:var(--radius-md);padding:8px 10px;line-height:1.5;">ពាក្យនេះមានរួចហើយ៖<br>{{ awDupLabel }}</div>
+            </sc-if>
+
+            <div class="field">
+              <label>របៀបអាន — សរសេរតែអានឲ្យ kanji ប៉ុណ្ណោះ (かな·カナ ចម្លងស្វ័យប្រវត្តិ)</label>
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:8px 10px;border:1px solid var(--color-divider);border-radius:var(--radius-md);min-height:36px;box-sizing:border-box;">
+                <sc-for list="{{ awKanaRuns }}" as="run" hint-placeholder-count="2">
+                  <sc-if value="{{ run.kanji }}">
+                    <div style="display:inline-flex;align-items:stretch;border:1px solid var(--color-accent);border-radius:var(--radius-sm);overflow:hidden;flex:none;">
+                      <span style="padding:5px 6px;background:var(--color-accent-100);color:var(--color-accent-800);font-size:14px;white-space:nowrap;line-height:1.4;">{{ run.text }}</span>
+                      <input type="text" inputmode="kana" value="{{ run.reading }}" sc-camel-on-change="{{ run.onChange }}" placeholder="かな" style="border:none;background:transparent;font-size:14px;color:var(--color-text);padding:5px 6px;width:{{ run.width }};min-width:44px;">
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ run.notKanji }}">
+                    <span style="padding:5px 3px;font-size:14px;opacity:0.6;white-space:pre;line-height:1.4;">{{ run.text }}</span>
+                  </sc-if>
+                </sc-for>
+                <sc-if value="{{ awNoKanaRuns }}"><span style="font-size:12px;opacity:0.45;">សរសេរពាក្យជប៉ុនសិន</span></sc-if>
+              </div>
+              <sc-if value="{{ awKana }}"><div style="font-size:11.5px;opacity:0.55;margin-top:4px;">→ {{ awKana }}</div></sc-if>
+            </div>
+
+            <sc-if value="{{ awIsVocab }}">
+            <div class="field"><label>ថ្នាក់ពាក្យ (ន. · កិ. · គុណ. · បំពេញស្វ័យ)</label>
+              <input class="input" type="text" value="{{ awPos }}" sc-camel-on-change="{{ onAwPos }}"></div>
+            </sc-if>
+            <div class="field"><label>ន័យខ្មែរ</label>
+              <input class="input" type="text" value="{{ awKm }}" sc-camel-on-change="{{ onAwKm }}"></div>
           </div>
 
-          <div class="field" style="margin-bottom:10px;"><label>ទំព័រ (ស្រេចចិត្ត)</label>
-            <input class="input" type="number" inputmode="numeric" placeholder="ឧ. 12" value="{{ awPage }}" sc-camel-on-change="{{ onAwPage }}"></div>
-          <div class="field" style="margin-bottom:10px;"><label>ពាក្យជប៉ុន</label>
-            <input class="input" type="text" value="{{ awJp }}" sc-camel-on-change="{{ onAwJp }}"></div>
-
-          <sc-if value="{{ hasAwDup }}">
-            <div style="font-size:12px;color:#c0392b;background:color-mix(in srgb, #c0392b 10%, var(--color-surface));border:1px solid #c0392b;border-radius:var(--radius-md);padding:8px 10px;margin-bottom:10px;line-height:1.5;">ពាក្យនេះមានរួចហើយ៖<br>{{ awDupLabel }}</div>
-          </sc-if>
-
-          <div class="field" style="margin-bottom:10px;"><label>របៀបអាន (かな)</label>
-            <input class="input" type="text" value="{{ awKana }}" sc-camel-on-change="{{ onAwKana }}"></div>
-          <sc-if value="{{ awIsVocab }}">
-          <div class="field" style="margin-bottom:10px;"><label>ថ្នាក់ពាក្យ (ន. · កិ. · គុណ. · បំពេញស្វ័យ)</label>
-            <input class="input" type="text" value="{{ awPos }}" sc-camel-on-change="{{ onAwPos }}"></div>
-          </sc-if>
-          <div class="field" style="margin-bottom:12px;"><label>ន័យខ្មែរ</label>
-            <input class="input" type="text" value="{{ awKm }}" sc-camel-on-change="{{ onAwKm }}"></div>
-
           <sc-if value="{{ awIsGrammar }}">
-            <div class="field" style="margin-bottom:10px;"><label>កំរិត</label>
+          <div class="card">
+            <div class="card-kicker">ព័ត៌មានវេយ្យាករណ៍</div>
+            <div class="field"><label>កំរិត</label>
               <select class="input" sc-camel-on-change="{{ onAwLevel }}" style="cursor:pointer;">
                 <option value="" selected="{{ awLevelNone }}">— ជ្រើសកំរិត —</option>
                 <option value="N5" selected="{{ awLevelN5 }}">N5</option>
@@ -2044,59 +2068,72 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <option value="N2" selected="{{ awLevelN2 }}">N2</option>
                 <option value="N1" selected="{{ awLevelN1 }}">N1</option>
               </select></div>
-            <div class="field" style="margin-bottom:10px;"><label>តំណភ្ជាប់ (វេយ្យាករណ៍ពាក់ព័ន្ធ ឬ URL)</label>
+            <div class="field"><label>តំណភ្ជាប់ (វេយ្យាករណ៍ពាក់ព័ន្ធ ឬ URL)</label>
               <input class="input" type="text" value="{{ awLink }}" sc-camel-on-change="{{ onAwLink }}" placeholder="ឧ. 〜てもいい ឬ https://…"></div>
+          </div>
           </sc-if>
 
           <sc-if value="{{ awIsVocab }}">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;margin-top:4px;">
-              <span style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.55;">{{ awRelatedCount }}</span>
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div class="card-kicker" style="margin-bottom:0;">{{ awRelatedCount }}</div>
               <div style="display:flex;gap:12px;">
                 <a href="#" style="font-size:12px;color:var(--color-accent-700);" sc-camel-on-click="{{ genRelated }}">⚙️ បង្កើតស្វ័យ</a>
                 <sc-if value="{{ hasAwRelated }}"><a href="#" style="font-size:12px;color:#c0392b;" sc-camel-on-click="{{ clearAwRelated }}">សម្អាត</a></sc-if>
               </div>
             </div>
-            <div style="font-size:11px;opacity:0.55;line-height:1.6;margin-bottom:8px;">ចុច «បង្កើតស្វ័យ» → conjugations (食べない、食べた…) ជាមួយខ្មែរដោយក្បួន (កែបាន)។ ភ្ជាប់នឹងពាក្យដើម ហើយអាចចុចអានក្នុងសៀវភៅ។</div>
+            <div style="font-size:11px;opacity:0.55;line-height:1.6;">ចុច «បង្កើតស្វ័យ» → conjugations (食べない、食べた…) ជាមួយខ្មែរដោយក្បួន (កែបាន)។ ភ្ជាប់នឹងពាក្យដើម ហើយអាចចុចអានក្នុងសៀវភៅ។</div>
             <sc-for list="{{ awRelated }}" as="rl" hint-placeholder-count="1">
-              <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+              <div style="display:flex;gap:6px;align-items:center;">
                 <input class="input" type="text" value="{{ rl.jp }}" sc-camel-on-change="{{ rl.onJp }}" style="flex:1;min-width:0;">
                 <input class="input" type="text" value="{{ rl.km }}" sc-camel-on-change="{{ rl.onKm }}" style="flex:1;min-width:0;">
                 <a href="#" style="font-size:12px;color:#c0392b;flex:none;" sc-camel-on-click="{{ rl.onRemove }}">✕</a>
               </div>
             </sc-for>
+          </div>
           </sc-if>
-          <div class="field" style="margin-bottom:12px;"><label>តំណភ្ជាប់រូបភាព (ស្រេចចិត្ត · Drive ក៏បាន)</label>
-            <input class="input" type="text" value="{{ awImg }}" sc-camel-on-change="{{ onAwImg }}" placeholder="https://…"></div>
 
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;cursor:pointer;" sc-camel-on-click="{{ toggleAwStar }}">
-            <span style="font-size:24px;line-height:1;color:{{ awStarColor }};">{{ awStarGlyph }}</span>
-            <span style="font-size:13px;">ពាក្យសំខាន់ (ដាក់ផ្កាយក្រហម — ប្រើក្នុងតេស្ត)</span>
+          <div class="card">
+            <div class="card-kicker">រូបភាព &amp; សំគាល់</div>
+            <div class="field"><label>តំណភ្ជាប់រូបភាព (ស្រេចចិត្ត · Drive ក៏បាន)</label>
+              <input class="input" type="text" value="{{ awImg }}" sc-camel-on-change="{{ onAwImg }}" placeholder="https://…"></div>
+            <div style="display:flex;align-items:center;gap:10px;cursor:pointer;" sc-camel-on-click="{{ toggleAwStar }}">
+              <span style="font-size:24px;line-height:1;color:{{ awStarColor }};">{{ awStarGlyph }}</span>
+              <span style="font-size:13px;">ពាក្យសំខាន់ (ដាក់ផ្កាយក្រហម — ប្រើក្នុងតេស្ត)</span>
+            </div>
           </div>
 
-          <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.55;margin-bottom:8px;">ឧទាហរណ៍</div>
-          <sc-for list="{{ awExamples }}" as="ex" hint-placeholder-count="1">
-            <div style="border:1px solid var(--color-divider);border-radius:var(--radius-md);padding:10px;margin-bottom:10px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                <span style="font-size:11px;opacity:0.55;">{{ ex.num }}</span>
-                <div style="display:flex;gap:12px;">
-                  <a href="#" style="font-size:12px;color:var(--color-accent-700);" sc-camel-on-click="{{ ex.onTranslate }}">{{ ex.transLabel }}</a>
-                  <a href="#" style="font-size:12px;color:#c0392b;" sc-camel-on-click="{{ ex.onRemove }}">លុប</a>
+          <div class="card">
+            <div class="card-kicker">ឧទាហរណ៍</div>
+            <sc-for list="{{ awExamples }}" as="ex" hint-placeholder-count="1">
+              <div style="border:1px solid var(--color-divider);border-radius:var(--radius-md);padding:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="font-size:11px;opacity:0.55;">{{ ex.num }}</span>
+                  <div style="display:flex;gap:12px;">
+                    <a href="#" style="font-size:12px;color:var(--color-accent-700);" sc-camel-on-click="{{ ex.onTranslate }}">{{ ex.transLabel }}</a>
+                    <a href="#" style="font-size:12px;color:#c0392b;" sc-camel-on-click="{{ ex.onRemove }}">លុប</a>
+                  </div>
                 </div>
+                <input class="input" type="text" placeholder="ប្រយោគជប៉ុន" value="{{ ex.jp }}" sc-camel-on-change="{{ ex.onJp }}" style="margin-bottom:6px;">
+                <input class="input" type="text" placeholder="ការបកប្រែខ្មែរ (ចុច 🌐 បកប្រែ ស្វ័យ)" value="{{ ex.km }}" sc-camel-on-change="{{ ex.onKm }}">
               </div>
-              <input class="input" type="text" placeholder="ប្រយោគជប៉ុន" value="{{ ex.jp }}" sc-camel-on-change="{{ ex.onJp }}" style="margin-bottom:6px;">
-              <input class="input" type="text" placeholder="ការបកប្រែខ្មែរ (ចុច 🌐 បកប្រែ ស្វ័យ)" value="{{ ex.km }}" sc-camel-on-change="{{ ex.onKm }}">
-            </div>
-          </sc-for>
-          <button class="btn btn-secondary btn-block" style="margin-bottom:16px;" sc-camel-on-click="{{ addAwExample }}">+ បន្ថែមឧទាហរណ៍</button>
+            </sc-for>
+            <button class="btn btn-secondary btn-block" style="margin-top:0;" sc-camel-on-click="{{ addAwExample }}">+ បន្ថែមឧទាហរណ៍</button>
+          </div>
 
-          <sc-if value="{{ hasAwError }}"><div style="font-size:12px;color:#c0392b;margin-bottom:8px;line-height:1.5;">{{ awError }}</div></sc-if>
-          <sc-if value="{{ hasAwMsg }}"><div style="font-size:12px;color:var(--color-accent-700);margin-bottom:8px;line-height:1.5;">{{ awMsg }}</div></sc-if>
-          <button class="btn btn-primary btn-block" sc-camel-on-click="{{ saveAddWord }}">{{ awSaveLabel }}</button>
-          <div class="hr" style="margin:18px 0 12px;"></div>
-          <button class="btn btn-secondary btn-block" style="margin-top:0;" sc-camel-on-click="{{ exportCustomWords }}">📋 ចម្លងពាក្យបន្ថែម ទៅ Sheet</button>
-          <div style="font-size:11px;opacity:0.6;line-height:1.7;margin-top:8px;">ចម្លងតែពាក្យដែលបានបន្ថែមក្នុងកម្មវិធី រួច paste ក្រោមជួរចុងក្រោយក្នុង Google Sheet។ ក្រោយ sync ចូល សូមលុបវាចេញពីទីនេះ ដើម្បីកុំឲ្យស្ទួន។</div>
-          <button class="btn btn-secondary btn-block" style="margin-top:14px;" sc-camel-on-click="{{ exportAllWords }}">📥 ចម្លងពាក្យទាំងអស់ (ជំនួស Sheet)</button>
-          <div style="font-size:11px;opacity:0.6;line-height:1.7;margin-top:8px;">ចម្លងពាក្យទាំងអស់ក្នុងកម្មវិធី (រួមទាំងពាក្យថ្មី និង ការកែ)។ បើក Google Sheet → ជ្រើសតារាងទាំងមូល → លុប → paste ចាប់ពីប្រអប់ A1។ មានជួរក្បាល (header) រួចស្រាប់។</div>
+          <div>
+            <sc-if value="{{ hasAwError }}"><div style="font-size:12px;color:#c0392b;margin-bottom:8px;line-height:1.5;">{{ awError }}</div></sc-if>
+            <sc-if value="{{ hasAwMsg }}"><div style="font-size:12px;color:var(--color-accent-700);margin-bottom:8px;line-height:1.5;">{{ awMsg }}</div></sc-if>
+            <button class="btn btn-primary btn-block" style="margin-top:0;" sc-camel-on-click="{{ saveAddWord }}">{{ awSaveLabel }}</button>
+          </div>
+
+          <div class="card">
+            <div class="card-kicker">ធនធាន Sheet</div>
+            <button class="btn btn-secondary btn-block" style="margin-top:0;" sc-camel-on-click="{{ exportCustomWords }}">📋 ចម្លងពាក្យបន្ថែម ទៅ Sheet</button>
+            <div style="font-size:11px;opacity:0.6;line-height:1.7;">ចម្លងតែពាក្យដែលបានបន្ថែមក្នុងកម្មវិធី រួច paste ក្រោមជួរចុងក្រោយក្នុង Google Sheet។ ក្រោយ sync ចូល សូមលុបវាចេញពីទីនេះ ដើម្បីកុំឲ្យស្ទួន។</div>
+            <button class="btn btn-secondary btn-block" style="margin-top:6px;" sc-camel-on-click="{{ exportAllWords }}">📥 ចម្លងពាក្យទាំងអស់ (ជំនួស Sheet)</button>
+            <div style="font-size:11px;opacity:0.6;line-height:1.7;">ចម្លងពាក្យទាំងអស់ក្នុងកម្មវិធី (រួមទាំងពាក្យថ្មី និង ការកែ)។ បើក Google Sheet → ជ្រើសតារាងទាំងមូល → លុប → paste ចាប់ពីប្រអប់ A1។ មានជួរក្បាល (header) រួចស្រាប់។</div>
+          </div>
         </div>
         </sc-if>
 
@@ -3145,8 +3182,24 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <div class="field" style="margin-bottom:10px;"><label>ពាក្យជប៉ុន</label>
           <input class="input" type="text" value="{{ edJp }}" sc-camel-on-change="{{ onEdJp }}"></div>
-        <div class="field" style="margin-bottom:10px;"><label>របៀបអាន (かな)</label>
-          <input class="input" type="text" value="{{ edKana }}" sc-camel-on-change="{{ onEdKana }}"></div>
+        <div class="field" style="margin-bottom:10px;">
+          <label>របៀបអាន — សរសេរតែអានឲ្យ kanji ប៉ុណ្ណោះ (かな·カナ ចម្លងស្វ័យប្រវត្តិ)</label>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:8px 10px;border:1px solid var(--color-divider);border-radius:var(--radius-md);min-height:36px;box-sizing:border-box;">
+            <sc-for list="{{ edKanaRuns }}" as="run" hint-placeholder-count="2">
+              <sc-if value="{{ run.kanji }}">
+                <div style="display:inline-flex;align-items:stretch;border:1px solid var(--color-accent);border-radius:var(--radius-sm);overflow:hidden;flex:none;">
+                  <span style="padding:5px 6px;background:var(--color-accent-100);color:var(--color-accent-800);font-size:14px;white-space:nowrap;line-height:1.4;">{{ run.text }}</span>
+                  <input type="text" inputmode="kana" value="{{ run.reading }}" sc-camel-on-change="{{ run.onChange }}" placeholder="かな" style="border:none;background:transparent;font-size:14px;color:var(--color-text);padding:5px 6px;width:{{ run.width }};min-width:44px;">
+                </div>
+              </sc-if>
+              <sc-if value="{{ run.notKanji }}">
+                <span style="padding:5px 3px;font-size:14px;opacity:0.6;white-space:pre;line-height:1.4;">{{ run.text }}</span>
+              </sc-if>
+            </sc-for>
+            <sc-if value="{{ edNoKanaRuns }}"><span style="font-size:12px;opacity:0.45;">សរសេរពាក្យជប៉ុនសិន</span></sc-if>
+          </div>
+          <sc-if value="{{ edKana }}"><div style="font-size:11.5px;opacity:0.55;margin-top:4px;">→ {{ edKana }}</div></sc-if>
+        </div>
         <div class="field" style="margin-bottom:10px;"><label>ថ្នាក់ពាក្យ (ន. · កិ. · គុណ.)</label>
           <input class="input" type="text" value="{{ edPos }}" sc-camel-on-change="{{ onEdPos }}"></div>
         <div class="field" style="margin-bottom:12px;"><label>ន័យខ្មែរ</label>
@@ -8128,6 +8181,48 @@ const HAS_KANJI = /[㐀-鿿豈-﫿]/;
 // book reader also make kana-only headwords (デジタコ, あいさつ…) tappable
 const HAS_JP = /[぀-ヿ㐀-鿿豈-﫿ｦ-ﾟ]/;
 const HIRAGANA_ONE = /^[぀-ゟ]$/;
+// split a headword into kanji vs non-kanji runs, e.g. "ペーパー・ロック現象" →
+// [{text:'ペーパー・ロック', kanji:false}, {text:'現象', kanji:true}] — used by
+// the add/edit-word forms so the author only ever types a reading for the
+// kanji part; katakana/hiragana are already phonetic and get copied as-is.
+function splitKanaRuns(text){
+  const out = []; text = String(text || '');
+  let i = 0;
+  while (i < text.length){
+    const isK = HAS_KANJI.test(text[i]);
+    let j = i + 1;
+    while (j < text.length && HAS_KANJI.test(text[j]) === isK) j++;
+    out.push({ text: text.slice(i, j), kanji: isK });
+    i = j;
+  }
+  return out;
+}
+// reassemble the full かな from a headword + a map of per-run typed readings
+// (keyed "index:runText", so unrelated edits elsewhere in the word don't lose
+// what was already typed)
+function buildKanaFromRuns(jp, map){
+  map = map || {};
+  return splitKanaRuns(jp).map((r, i) => r.kanji ? (map[i + ':' + r.text] || '') : r.text).join('');
+}
+// the inverse — an existing word's かな was saved as one flat string; split it
+// back into per-run readings so opening it for editing shows the same
+// per-kanji boxes instead of one blank field. Non-kanji runs are matched
+// verbatim at their expected position; whatever falls between them is that
+// kanji run's reading.
+function parseKanaIntoRuns(jp, kana){
+  const runs = splitKanaRuns(jp), map = {};
+  kana = String(kana || '');
+  let pos = 0;
+  for (let i = 0; i < runs.length; i++) {
+    const r = runs[i];
+    if (!r.kanji) { if (kana.startsWith(r.text, pos)) pos += r.text.length; continue; }
+    let end = kana.length;
+    for (let j = i + 1; j < runs.length; j++) { if (!runs[j].kanji) { const idx = kana.indexOf(runs[j].text, pos); if (idx >= 0) end = idx; break; } }
+    map[i + ':' + r.text] = kana.slice(pos, end);
+    pos = end;
+  }
+  return map;
+}
 let _furiMap = null, _furiMax = 0;
 function furiMap(){
   if (_furiMap) return _furiMap;
@@ -9580,11 +9675,11 @@ class Component extends DCLogic {
     syncBusy: false, syncMsg: '', syncError: '',
     // admin word editor
     editSearch: '', editWordId: null,
-    edJp: '', edKana: '', edPos: '', edKm: '', edImg: '', edExamples: [], edConj: null,
+    edJp: '', edKana: '', edKanaMap: {}, edPos: '', edKm: '', edImg: '', edExamples: [], edConj: null,
     edBusy: false, edMsg: '', edError: '', overridesRev: 0,
     // admin: add a new word / grammar
     awBook: '', awBookMenuOpen: false, awNewBook: '', awCat: 'vocab', awPage: '',
-    awJp: '', awKana: '', awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [],
+    awJp: '', awKana: '', awKanaMap: {}, awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [],
     awRelated: [], awLevel: '', awLink: '', awIsConj: false,
     awBusy: false, awMsg: '', awError: '',
     screen: 'home', search: '', catFilter: 'all', searchMode: 'general', pageFilter: null, pageInput: '',
@@ -10667,7 +10762,7 @@ class Component extends DCLogic {
   pickEditWord(id){
     const w = WORDS.find(x => x.id === id);
     if (!w) return;
-    this.setState({ editWordId: id, edConj: null, edJp: w.jp, edKana: w.kana, edPos: w.pos, edKm: w.km, edImg: w.img || '',
+    this.setState({ editWordId: id, edConj: null, edJp: w.jp, edKana: w.kana, edKanaMap: parseKanaIntoRuns(w.jp, w.kana), edPos: w.pos, edKm: w.km, edImg: w.img || '',
       edExamples: w.examples.map(e => ({ jp: e.jp, km: e.km })), edMsg: '', edError: '' });
   }
   // Straight from the word sheet, so an admin who spots a mistake while
@@ -10704,8 +10799,11 @@ class Component extends DCLogic {
     this.setState({ detailWordId: null, shareWordId: id, shareSearch: '', screen: 'share', shareErr: '' }, () => this.drawShareCard());
   }
   closeEditWord(){ this.setState({ editWordId: null, edMsg: '', edError: '' }); }
-  onEdJp(e){ this.setState({ edJp: e.target.value }); }
-  onEdKana(e){ this.setState({ edKana: e.target.value }); }
+  onEdJp(e){ const v = e.target.value; this.setState(s => ({ edJp: v, edKana: buildKanaFromRuns(v, s.edKanaMap) })); }
+  onEdKanaRun(runKey, e){
+    const v = e.target.value;
+    this.setState(s => { const map = { ...s.edKanaMap, [runKey]: v }; return { edKanaMap: map, edKana: buildKanaFromRuns(s.edJp, map) }; });
+  }
   onEdPos(e){ this.setState({ edPos: e.target.value }); }
   onEdKm(e){ this.setState({ edKm: e.target.value }); }
   onEdImg(e){ this.setState({ edImg: e.target.value }); }
@@ -10724,7 +10822,7 @@ class Component extends DCLogic {
   // writes back to its base word's related list rather than a word override
   openConjugationEdit(w){
     this.setState({ editWordId: w.id, edConj: { baseId: w._baseId, jp: w.jp },
-      edJp: w.jp, edKana: w.kana || '', edPos: w.pos || '', edKm: w.km || '', edImg: '',
+      edJp: w.jp, edKana: w.kana || '', edKanaMap: parseKanaIntoRuns(w.jp, w.kana || ''), edPos: w.pos || '', edKm: w.km || '', edImg: '',
       edExamples: (Array.isArray(w.examples) ? w.examples : []).map(e => ({ jp: e.jp, km: e.km })), edMsg: '', edError: '' });
   }
   async saveEditWord(){
@@ -10770,8 +10868,13 @@ class Component extends DCLogic {
   onAwCatVocab(){ this.setState({ awCat: 'vocab' }); }
   onAwCatGrammar(){ this.setState({ awCat: 'grammar' }); }
   onAwPage(e){ this.setState({ awPage: e.target.value }); }
-  onAwJp(e){ const v = e.target.value; this.setState(s => ({ awJp: v, awPos: (s.awPos || '').trim() ? s.awPos : (s.awCat === 'vocab' ? jpDetectPos(v) : s.awPos) })); }
-  onAwKana(e){ this.setState({ awKana: e.target.value }); }
+  onAwJp(e){ const v = e.target.value; this.setState(s => ({ awJp: v, awKana: buildKanaFromRuns(v, s.awKanaMap), awPos: (s.awPos || '').trim() ? s.awPos : (s.awCat === 'vocab' ? jpDetectPos(v) : s.awPos) })); }
+  // one kanji run's reading was typed — rebuild the full かな, leaving every
+  // katakana/hiragana part untouched (they're copied verbatim, never typed)
+  onAwKanaRun(runKey, e){
+    const v = e.target.value;
+    this.setState(s => { const map = { ...s.awKanaMap, [runKey]: v }; return { awKanaMap: map, awKana: buildKanaFromRuns(s.awJp, map) }; });
+  }
   onAwPos(e){ this.setState({ awPos: e.target.value }); }
   onAwKm(e){ this.setState({ awKm: e.target.value }); }
   onAwImg(e){ this.setState({ awImg: e.target.value }); }
@@ -10821,7 +10924,7 @@ class Component extends DCLogic {
     rebuildIndexes();
     // keep the book, category and page so the admin can add the next word fast
     this.setState(st => ({ awBusy: false, awMsg: `បន្ថែម «${jp}»${related.length ? ` + ${related.length} ពាក្យពាក់ព័ន្ធ` : ''} រួចរាល់ ✓`, overridesRev: st.overridesRev + 1,
-      awJp: '', awKana: '', awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [], awRelated: [], awLevel: '', awLink: '', awIsConj: false }));
+      awJp: '', awKana: '', awKanaMap: {}, awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [], awRelated: [], awLevel: '', awLink: '', awIsConj: false }));
   }
   // copy text to the clipboard, with an execCommand fallback for embedded browsers
   copyText(text){
@@ -14669,7 +14772,11 @@ class Component extends DCLogic {
       shareDetailWord: () => this.shareDetailWord(),
       deleteDetailWord: () => this.deleteDetailWord(),
       edJp: s.edJp, onEdJp: e => this.onEdJp(e),
-      edKana: s.edKana, onEdKana: e => this.onEdKana(e),
+      edKana: s.edKana,
+      edNoKanaRuns: !(s.edJp || '').trim(),
+      edKanaRuns: splitKanaRuns(s.edJp).map((r, i) => { const key = i + ':' + r.text;
+        return r.kanji ? { kanji: true, notKanji: false, text: r.text, reading: s.edKanaMap[key] || '', onChange: e => this.onEdKanaRun(key, e), width: Math.max(3, r.text.length * 2 + 1) + 'ch' }
+                        : { kanji: false, notKanji: true, text: r.text }; }),
       edPos: s.edPos, onEdPos: e => this.onEdPos(e),
       edKm: s.edKm, onEdKm: e => this.onEdKm(e),
       edImg: s.edImg, onEdImg: e => this.onEdImg(e),
@@ -14693,7 +14800,11 @@ class Component extends DCLogic {
       onAwCatVocab: () => this.onAwCatVocab(), onAwCatGrammar: () => this.onAwCatGrammar(),
       awPage: s.awPage, onAwPage: e => this.onAwPage(e),
       awJp: s.awJp, onAwJp: e => this.onAwJp(e),
-      awKana: s.awKana, onAwKana: e => this.onAwKana(e),
+      awKana: s.awKana,
+      awNoKanaRuns: !(s.awJp || '').trim(),
+      awKanaRuns: splitKanaRuns(s.awJp).map((r, i) => { const key = i + ':' + r.text;
+        return r.kanji ? { kanji: true, notKanji: false, text: r.text, reading: s.awKanaMap[key] || '', onChange: e => this.onAwKanaRun(key, e), width: Math.max(3, r.text.length * 2 + 1) + 'ch' }
+                        : { kanji: false, notKanji: true, text: r.text }; }),
       awPos: s.awPos, onAwPos: e => this.onAwPos(e),
       awKm: s.awKm, onAwKm: e => this.onAwKm(e),
       awImg: s.awImg, onAwImg: e => this.onAwImg(e),
