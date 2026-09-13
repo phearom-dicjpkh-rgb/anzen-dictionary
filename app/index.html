@@ -1200,7 +1200,7 @@ textarea.input { min-height: 90px; resize: vertical; }
           <div style="height:6px;background:var(--color-neutral-200);border-radius:99px;overflow:hidden;margin-bottom:16px;">
             <div style="height:100%;width:{{ examProgressPct }};background:linear-gradient(90deg, var(--color-accent-700), var(--color-accent));border-radius:99px;transition:width .3s;"></div>
           </div>
-          <div style="font-size:16.5px;line-height:1.95;margin-bottom:16px;">{{ examQuestionText }}</div>
+          <div style="font-size:16.5px;line-height:1.95;margin-bottom:16px;"><sc-for list="{{ examSegments }}" as="sg" hint-placeholder-count="6"><sc-if value="{{ sg.isLink }}"><span style="color:var(--color-accent-700);border-bottom:1px dotted var(--color-accent-400);cursor:pointer;" sc-camel-on-click="{{ sg.onOpen }}">{{ sg.text }}</span></sc-if><sc-if value="{{ sg.isPlain }}"><span>{{ sg.text }}</span></sc-if></sc-for></div>
           <sc-if value="{{ examHasImg }}">
             <div style="display:flex;justify-content:center;margin-bottom:20px;"><img src="{{ examImg }}" alt="" style="max-width:100%;max-height:200px;border-radius:12px;border:1px solid var(--color-divider);"></div>
           </sc-if>
@@ -13807,6 +13807,12 @@ class Component extends DCLogic {
     const examMc = examQ && examQ.t === 'mc' ? examQ.o.map((text, i) => ({
       text, badge: EXAM_LETTERS[i] || '?', boxStyle: examSelStyle(examPicked === i), onSelect: () => this.pickExam(i),
     })) : [];
+    // tap a dictionary word right in the question to see its translation —
+    // same word-linking the practice-exercise screen already has
+    const examSegments = examQ ? linkSegments(examQ.q).map(sg => ({
+      text: sg.text, isLink: !!sg.isLink, isPlain: !sg.isLink,
+      onOpen: sg.isLink ? (() => this.openDetail(sg.id)) : (() => {}),
+    })) : [];
     const examPct = examCount ? Math.round(s.examScore / examCount * 100) : 0;
     const examPassed = examPct >= EXAM_PASS;
     const examReview = (s.examResults || []).map((r, i) => ({
@@ -15167,7 +15173,7 @@ class Component extends DCLogic {
       examTimer: `${examMM}:${String(examSS).padStart(2, '0')}`,
       examTimerStyle: s.examRemain <= 300 ? 'color:#d0342c;' : 'color:var(--color-accent-700);',
       examProgressPct: examCount ? Math.round((s.examIdx + 1) / examCount * 100) + '%' : '0%',
-      examQuestionText: examQ ? examQ.q : '',
+      examSegments,
       examHasImg: !!(examQ && examQ.img), examImg: (examQ && examQ.img) || '',
       examIsTf: !!(examQ && examQ.t === 'tf'), examIsMc: !!(examQ && examQ.t === 'mc'), examTf, examMc,
       examPrev: () => this.examPrev(), examNext: () => this.examNext(), submitExam: () => this.trySubmitExam(),
