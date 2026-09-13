@@ -1820,6 +1820,23 @@ textarea.input { min-height: 90px; resize: vertical; }
               </sc-for>
             </div>
           </sc-if>
+          <sc-if value="{{ wsInSubFolders }}">
+            <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ backToWsCats }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
+            <div style="font-size:11.5px;opacity:0.55;margin-bottom:2px;">{{ wsCrumb }}</div>
+            <h1 style="font-size:24px;margin:0 0 14px;">{{ wsCatLabel }}</h1>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <sc-for list="{{ wsSubFolders }}" as="f" hint-placeholder-count="4">
+                <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;padding:16px 18px;" sc-camel-on-click="{{ f.onOpen }}">
+                  <div style="font-size:19px;flex:none;opacity:0.6;">📁</div>
+                  <div style="flex:1;min-width:0;">
+                    <div class="card-title" style="font-size:16px;">{{ f.label }}</div>
+                    <div class="card-body" style="font-size:11.5px;">{{ f.countLabel }}</div>
+                  </div>
+                  <span style="opacity:0.4;font-size:20px;">›</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
           <sc-if value="{{ wsInCat }}">
             <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ backToWsCats }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
             <div style="font-size:11.5px;opacity:0.55;margin-bottom:2px;">{{ wsCrumb }}</div>
@@ -9709,6 +9726,7 @@ class Component extends DCLogic {
     printOpen: false, printReport: null,
     wsGroup: null,  // printable-worksheets screen: which folder is open
     wsCat: null,    // printable-worksheets screen: which category is open
+    wsSub: null,    // printable-worksheets screen: which law test-type folder is open (標識/練習/仮免/本免)
     wsPick: null,   // { id, mix } waiting on the with/without-answers choice
     wsLang: 'km',   // which language the printed sheet's own labels are in
     levelUpShow: false, levelUpLevel: 0, levelUpMsg: '',
@@ -12712,11 +12730,14 @@ class Component extends DCLogic {
   toggleMonSection(key){ this.setState(s => ({ monOpenSections: (s.monOpenSections || []).includes(key) ? s.monOpenSections.filter(k => k !== key) : [...(s.monOpenSections || []), key] })); }
 
   // — Printable worksheets: the same exercises, as a blank sheet for class —
-  goWorksheets(){ this.stopSpeech(); this.setState({ screen: 'worksheets', wsGroup: null, wsCat: null, wsPick: null, playerPlaying: false }); }
+  goWorksheets(){ this.stopSpeech(); this.setState({ screen: 'worksheets', wsGroup: null, wsCat: null, wsSub: null, wsPick: null, playerPlaying: false }); }
   openWsGroup(key){ this.setState({ wsGroup: key }); }
-  openWsCat(key){ this.setState({ wsCat: key }); }
-  // one step back up the folder tree: exercises → categories → groups
-  backToWsCats(){ this.setState(st => st.wsCat ? { wsCat: null } : { wsGroup: null }); }
+  openWsCat(key){ this.setState({ wsCat: key, wsSub: null }); }
+  // 標識/練習/仮免/本免 — the law categories' own extra folder level (each has
+  // several sittings, so they're grouped by test type before showing sheets)
+  openWsSub(key){ this.setState({ wsSub: key }); }
+  // one step back up the folder tree: exercises → law test-type → categories → groups
+  backToWsCats(){ this.setState(st => st.wsSub ? { wsSub: null } : st.wsCat ? { wsCat: null } : { wsGroup: null }); }
   // tapping an exercise (or the shuffled one) asks with/without answers first
   askWsPrint(id, mix){ this.setState({ wsPick: { id, mix } }); }
   closeWsPick(){ this.setState({ wsPick: null }); }
@@ -12725,11 +12746,14 @@ class Component extends DCLogic {
     this.setState({ wsPick: null }, () => this._printWorksheet(this.state.wsCat, p.id, p.mix, withAnswers));
   }
   // The exercises inside one category, in the order the students meet them.
-  wsExercises(catKey){
+  // `sub` narrows a law category down to one test type (標識/練習/仮免/本免) —
+  // each has its own folder since 仮免/本免 alone can run to a dozen sittings.
+  wsExercises(catKey, sub){
     if (catKey === 'law_km' || catKey === 'law_ja') {
-      // one printable sheet per sitting, the same split the test tab uses
       const lang = catKey.slice(4);
-      return LAW_TESTS.flatMap(t => lawSets(lang, t.key))
+      const tests = sub ? LAW_TESTS.filter(t => t.key === sub) : LAW_TESTS;
+      // one printable sheet per sitting, the same split the test tab uses
+      return tests.flatMap(t => lawSets(lang, t.key))
         .map(x => ({ id: `${x.key}#${x.set}`, label: lawSetLabel(x, true), count: x.questions.length }));
     }
     const mk = (total, per, len, label) => Array.from({ length: total }, (_, i) => ({
@@ -12745,7 +12769,10 @@ class Component extends DCLogic {
     if (catKey === 'law_km' || catKey === 'law_ja') {
       const lang = catKey.slice(4);
       const src = (typeof RAW_LAW !== 'undefined' && RAW_LAW[lang]) || {};
-      if (mix) { const all = LAW_TESTS.reduce((a, t) => a.concat(src[t.key] || []), []); return sample(all, Math.min(20, all.length)); }
+      // shuffled sheet draws only from the open test-type folder (仮免/本免/…),
+      // not blended across all of them — each stays its own question pool
+      if (mix) { const tests = this.state.wsSub ? LAW_TESTS.filter(t => t.key === this.state.wsSub) : LAW_TESTS;
+        const all = tests.reduce((a, t) => a.concat(src[t.key] || []), []); return sample(all, Math.min(20, all.length)); }
       const [key, set] = String(id).split('#');           // e.g. "kari#3"
       const x = lawSets(lang, key).find(s => s.set === Number(set || 1));
       return x ? x.questions.slice() : [];
@@ -14748,22 +14775,30 @@ class Component extends DCLogic {
         const catKey = s.wsCat;
         const cat = WS_CATS.find(c => c.key === catKey) || null;
         const group = WS_GROUPS.find(g => g.key === s.wsGroup) || null;
-        const list = cat ? this.wsExercises(catKey) : [];
+        // law categories get an extra folder level (標識/練習/仮免/本免) — each of
+        // those alone can run to a dozen sittings, so a flat list got unwieldy
+        const isLawCat = !!cat && (cat.key === 'law_km' || cat.key === 'law_ja');
+        const sub = isLawCat && s.wsSub ? LAW_TESTS.find(t => t.key === s.wsSub) : null;
+        const showSubFolders = isLawCat && !sub;
+        const list = cat && !showSubFolders ? this.wsExercises(catKey, sub && sub.key) : [];
         const pick = s.wsPick;
         const catsOf = g => WS_CATS.filter(c => g.cats.includes(c.key));
+        const subLabel = t => `${t.label} · ${t.kh}`;
         return {
           isWorksheets: s.screen === 'worksheets',
           canWorksheets: s.role === 'admin' || this.featureGrantedForMe('worksheets'),
           goWorksheets: () => this.goWorksheets(),
           worksheetsColor: s.screen === 'worksheets' ? 'var(--color-accent-700)' : 'var(--color-text)',
-          // three levels: folders → categories → the exercises themselves
-          wsAtRoot: !group, wsInGroup: !!group && !cat, wsInCat: !!cat,
-          wsCatLabel: cat ? cat.label : (group ? group.label : ''),
-          wsCrumb: ['ទាញយកលំហាត់ PDF'].concat(group ? [group.label] : []).concat(cat ? [cat.label] : []).join('  ›  '),
+          // four levels for law categories, three for the rest: folders → categories → (law test-type →) the sheets themselves
+          wsAtRoot: !group, wsInGroup: !!group && !cat, wsInSubFolders: showSubFolders, wsInCat: !!cat && !showSubFolders,
+          wsCatLabel: sub ? subLabel(sub) : (cat ? cat.label : (group ? group.label : '')),
+          wsCrumb: ['ទាញយកលំហាត់ PDF'].concat(group ? [group.label] : []).concat(cat ? [cat.label] : []).concat(sub ? [subLabel(sub)] : []).join('  ›  '),
           wsGroups: WS_GROUPS.map(g => ({ label: g.label, sub: g.sub,
             countLabel: `${catsOf(g).length} ប្រភេទ`, onOpen: () => this.openWsGroup(g.key) })),
           wsCats: (group ? catsOf(group) : []).map(c => ({ label: c.label, sub: c.sub,
             countLabel: `${this.wsExercises(c.key).length} លំហាត់`, onOpen: () => this.openWsCat(c.key) })),
+          wsSubFolders: isLawCat ? LAW_TESTS.map(t => ({ label: subLabel(t),
+            countLabel: `${this.wsExercises(catKey, t.key).length} លំហាត់`, onOpen: () => this.openWsSub(t.key) })) : [],
           wsItems: list.map(x => ({ label: x.label, countLabel: `${x.count} សំណួរ`, onPick: () => this.askWsPrint(x.id, false) })),
           wsPickMix: () => this.askWsPrint(null, true),
           backToWsCats: () => this.backToWsCats(),
