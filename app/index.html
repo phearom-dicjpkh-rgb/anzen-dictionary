@@ -1251,9 +1251,9 @@ textarea.input { min-height: 90px; resize: vertical; }
               <div style="display:flex;gap:9px;padding:9px 11px;border-radius:10px;border:1px solid var(--color-divider);background:{{ r.bg }};">
                 <span style="flex:none;font-size:16px;font-weight:700;{{ r.markColor }}">{{ r.mark }}</span>
                 <div style="flex:1;min-width:0;">
-                  <div style="font-size:12.5px;line-height:1.8;">{{ r.num }}. {{ r.q }}</div>
+                  <div style="font-size:12.5px;line-height:1.8;">{{ r.num }}. <sc-for list="{{ r.qSegs }}" as="sg" hint-placeholder-count="6"><sc-if value="{{ sg.isLink }}"><span style="color:var(--color-accent-700);border-bottom:1px dotted var(--color-accent-400);cursor:pointer;" sc-camel-on-click="{{ sg.onOpen }}">{{ sg.text }}</span></sc-if><sc-if value="{{ sg.isPlain }}">{{ sg.text }}</sc-if></sc-for></div>
                   <div style="font-size:11px;opacity:0.7;margin-top:3px;">ត្រូវ: {{ r.correctLabel }} · អ្នកឆ្លើយ: {{ r.pickedLabel }}</div>
-                  <sc-if value="{{ r.hasExplain }}"><div style="font-size:11.5px;line-height:1.7;margin-top:5px;padding:6px 9px;border-radius:8px;background:var(--color-neutral-100);border-left:3px solid var(--color-accent);"><span style="opacity:0.6;">ការពន្យល់៖ </span>{{ r.explain }}</div></sc-if>
+                  <sc-if value="{{ r.hasExplain }}"><div style="font-size:11.5px;line-height:1.7;margin-top:5px;padding:6px 9px;border-radius:8px;background:var(--color-neutral-100);border-left:3px solid var(--color-accent);"><span style="opacity:0.6;">ការពន្យល់៖ </span><sc-for list="{{ r.explainSegs }}" as="sg" hint-placeholder-count="6"><sc-if value="{{ sg.isLink }}"><span style="color:var(--color-accent-700);border-bottom:1px dotted var(--color-accent-400);cursor:pointer;" sc-camel-on-click="{{ sg.onOpen }}">{{ sg.text }}</span></sc-if><sc-if value="{{ sg.isPlain }}">{{ sg.text }}</sc-if></sc-for></div></sc-if>
                 </div>
               </div>
             </sc-for>
@@ -11138,6 +11138,21 @@ class Component extends DCLogic {
   // real Japanese term (+ picture), without leaving the test
   openTermPopup(id){ this.setState({ termPopupId: id }); }
   closeTermPopup(){ this.setState({ termPopupId: null }); }
+  // tap-to-translate segments for any piece of test/review text — Japanese
+  // text links dictionary words (opens the word's own entry); Khmer text
+  // (translated law questions) links curated technical terms instead
+  // (opens the small JP+picture popup). Shared by the live exam question and
+  // its after-the-fact review list.
+  linkTextSegments(text){
+    if (!text) return [];
+    return HAS_JP.test(text) ? linkSegments(text).map(sg => ({
+      text: sg.text, isLink: !!sg.isLink, isPlain: !sg.isLink,
+      onOpen: sg.isLink ? (() => this.openDetail(sg.id)) : (() => {}),
+    })) : linkKmSegments(text).map(sg => ({
+      text: sg.text, isLink: !!sg.isLink, isPlain: !sg.isLink,
+      onOpen: sg.isLink ? (() => this.openTermPopup(sg.id)) : (() => {}),
+    }));
+  }
   // copy text to the clipboard, with an execCommand fallback for embedded browsers
   copyText(text){
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -13991,24 +14006,16 @@ class Component extends DCLogic {
     const examMc = examQ && examQ.t === 'mc' ? examQ.o.map((text, i) => ({
       text, badge: EXAM_LETTERS[i] || '?', boxStyle: examSelStyle(examPicked === i), onSelect: () => this.pickExam(i),
     })) : [];
-    // tap a word right in the question to see its translation — a Japanese
-    // question links dictionary words (same as the practice-exercise screen);
-    // a Khmer-language question (translated law text) instead links any
-    // curated technical term back to its real Japanese name + picture
-    const examSegments = examQ ? (HAS_JP.test(examQ.q) ? linkSegments(examQ.q).map(sg => ({
-      text: sg.text, isLink: !!sg.isLink, isPlain: !sg.isLink,
-      onOpen: sg.isLink ? (() => this.openDetail(sg.id)) : (() => {}),
-    })) : linkKmSegments(examQ.q).map(sg => ({
-      text: sg.text, isLink: !!sg.isLink, isPlain: !sg.isLink,
-      onOpen: sg.isLink ? (() => this.openTermPopup(sg.id)) : (() => {}),
-    }))) : [];
+    // tap a word right in the question to see its translation — same helper
+    // used for the review list below
+    const examSegments = examQ ? this.linkTextSegments(examQ.q) : [];
     const examPct = examCount ? Math.round(s.examScore / examCount * 100) : 0;
     const examPassed = examPct >= EXAM_PASS;
     const examReview = (s.examResults || []).map((r, i) => ({
-      num: i + 1, q: r.q, mark: r.ok ? '✓' : '✗',
+      num: i + 1, qSegs: this.linkTextSegments(r.q), mark: r.ok ? '✓' : '✗',
       markColor: r.ok ? 'color:#3a9e5c;' : 'color:#d0342c;',
       bg: r.ok ? 'color-mix(in srgb, #3a9e5c 8%, var(--color-surface))' : 'color-mix(in srgb, #d0342c 8%, var(--color-surface))',
-      correctLabel: r.correctLabel, pickedLabel: r.pickedLabel, explain: r.e || '', hasExplain: !!r.e,
+      correctLabel: r.correctLabel, pickedLabel: r.pickedLabel, hasExplain: !!r.e, explainSegs: this.linkTextSegments(r.e || ''),
     }));
     const examBest = (s.settings.exams || {});
     const examBestVals = Object.keys(examBest).map(k => examBest[k]);
