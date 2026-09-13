@@ -1938,6 +1938,14 @@ textarea.input { min-height: 90px; resize: vertical; }
               </div>
               <span style="opacity:0.4;">›</span>
             </div>
+            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goTechTerms }}">
+              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"></path></svg>
+              <div style="flex:1;min-width:0;">
+                <div class="card-title" style="font-size:15px;">ពាក្យបច្ចេកទេស</div>
+                <div class="card-body" style="font-size:11px;">ខ្មែរ ⇄ ជប៉ុន — បង្ហាញពេលចុចក្នុងតេស្ត</div>
+              </div>
+              <span style="opacity:0.4;">›</span>
+            </div>
             <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goBooks }}">
               <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
               <div style="flex:1;min-width:0;">
@@ -2150,6 +2158,71 @@ textarea.input { min-height: 90px; resize: vertical; }
             <div style="font-size:11px;opacity:0.6;line-height:1.7;">ចម្លងតែពាក្យដែលបានបន្ថែមក្នុងកម្មវិធី រួច paste ក្រោមជួរចុងក្រោយក្នុង Google Sheet។ ក្រោយ sync ចូល សូមលុបវាចេញពីទីនេះ ដើម្បីកុំឲ្យស្ទួន។</div>
             <button class="btn btn-secondary btn-block" style="margin-top:6px;" sc-camel-on-click="{{ exportAllWords }}">📥 ចម្លងពាក្យទាំងអស់ (ជំនួស Sheet)</button>
             <div style="font-size:11px;opacity:0.6;line-height:1.7;">ចម្លងពាក្យទាំងអស់ក្នុងកម្មវិធី (រួមទាំងពាក្យថ្មី និង ការកែ)។ បើក Google Sheet → ជ្រើសតារាងទាំងមូល → លុប → paste ចាប់ពីប្រអប់ A1។ មានជួរក្បាល (header) រួចស្រាប់។</div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isTechTerms }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px 30px;display:flex;flex-direction:column;gap:14px;">
+          <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
+          <h1 style="font-size:26px;margin:0;">ពាក្យបច្ចេកទេស</h1>
+          <div style="font-size:12px;opacity:0.6;line-height:1.6;">កំណត់ថា ឃ្លាខ្មែរណាមួយ (ដូចលេចនៅក្នុងតេស្ត) ត្រូវនឹងពាក្យជប៉ុនណា។ ពេលធ្វើតេស្ត សិស្សអាចចុចលើឃ្លានោះ ដើម្បីមើលពាក្យជប៉ុន និងរូបភាព។</div>
+
+          <div class="card">
+            <div class="card-kicker">បន្ថែមថ្មី</div>
+            <div class="field"><label>ឃ្លាខ្មែរ (ដូចលេចនៅក្នុងតេស្ត)</label>
+              <input class="input" type="text" value="{{ ttKm }}" sc-camel-on-change="{{ onTtKm }}" placeholder="ឧ. សញ្ញាដៃ"></div>
+            <div class="field"><label>ពាក្យជប៉ុន</label>
+              <input class="input" type="text" value="{{ ttJp }}" sc-camel-on-change="{{ onTtJp }}" placeholder="ឧ. 手信号"></div>
+            <div class="field"><label>តំណភ្ជាប់រូបភាព (ស្រេចចិត្ត · Drive ក៏បាន)</label>
+              <input class="input" type="text" value="{{ ttImg }}" sc-camel-on-change="{{ onTtImg }}" placeholder="https://…"></div>
+            <sc-if value="{{ hasTtError }}"><div style="font-size:12px;color:#c0392b;">{{ ttError }}</div></sc-if>
+            <sc-if value="{{ hasTtMsg }}"><div style="font-size:12px;color:var(--color-accent-700);">{{ ttMsg }}</div></sc-if>
+            <button class="btn btn-primary btn-block" style="margin-top:0;" sc-camel-on-click="{{ saveTechTerm }}">{{ ttSaveLabel }}</button>
+          </div>
+
+          <div class="card-kicker" style="margin-top:4px;">{{ ttCountLabel }}</div>
+          <sc-if value="{{ ttEmpty }}"><div style="text-align:center;padding:30px 0;opacity:0.5;font-size:13px;">មិនទាន់មានពាក្យបច្ចេកទេសទេ</div></sc-if>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <sc-for list="{{ ttList }}" as="t" hint-placeholder-count="4">
+              <sc-if value="{{ t.isEditing }}">
+                <div class="card">
+                  <div class="field"><label>ឃ្លាខ្មែរ</label><input class="input" type="text" value="{{ t.editKm }}" sc-camel-on-change="{{ t.onEditKm }}"></div>
+                  <div class="field"><label>ពាក្យជប៉ុន</label><input class="input" type="text" value="{{ t.editJp }}" sc-camel-on-change="{{ t.onEditJp }}"></div>
+                  <div class="field"><label>តំណភ្ជាប់រូបភាព</label><input class="input" type="text" value="{{ t.editImg }}" sc-camel-on-change="{{ t.onEditImg }}"></div>
+                  <div style="display:flex;gap:8px;">
+                    <button class="btn btn-secondary" style="flex:1;margin-top:0;" sc-camel-on-click="{{ t.onCancel }}">បោះបង់</button>
+                    <button class="btn btn-primary" style="flex:1;margin-top:0;" sc-camel-on-click="{{ t.onSaveEdit }}">រក្សាទុក</button>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ t.isNotEditing }}">
+                <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:10px;">
+                  <sc-if value="{{ t.hasImg }}"><img src="{{ t.img }}" alt="" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex:none;background:var(--color-surface);"></sc-if>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-size:14px;font-weight:600;">{{ t.km }}</div>
+                    <div style="font-size:13px;opacity:0.7;font-family:var(--font-heading);">{{ t.jp }}</div>
+                  </div>
+                  <a href="#" style="font-size:12px;color:var(--color-accent-700);flex:none;" sc-camel-on-click="{{ t.onEdit }}">កែ</a>
+                  <a href="#" style="font-size:12px;color:#c0392b;flex:none;" sc-camel-on-click="{{ t.onDelete }}">លុប</a>
+                </div>
+              </sc-if>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isTermPopupOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;background:color-mix(in srgb, var(--color-neutral-900) 45%, transparent);z-index:40;display:flex;align-items:flex-end;" sc-camel-on-click="{{ closeTermPopup }}">
+          <div style="background:var(--color-bg);width:100%;border-radius:20px 20px 0 0;padding:22px 22px 28px;box-shadow:var(--shadow-lg);max-height:70%;overflow-y:auto;box-sizing:border-box;" sc-camel-on-click="{{ stopProp }}">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
+              <div style="min-width:0;">
+                <div style="font-size:12px;opacity:0.6;">{{ termPopup.km }}</div>
+                <div style="font-family:var(--font-heading);font-weight:600;font-size:26px;line-height:1.15;">{{ termPopup.jp }}</div>
+              </div>
+              <button sc-camel-on-click="{{ closeTermPopup }}" aria-label="បិទ" style="width:38px;height:38px;border:1px solid var(--color-divider);border-radius:10px;background:var(--color-surface);cursor:pointer;font-size:16px;flex:none;">✕</button>
+            </div>
+            <sc-if value="{{ termPopup.hasImg }}"><img src="{{ termPopup.img }}" alt="" style="display:block;max-width:100%;max-height:44vh;margin:0 auto;border-radius:12px;object-fit:contain;"></sc-if>
           </div>
         </div>
         </sc-if>
@@ -8397,6 +8470,51 @@ function rebuildIndexes(){
 }
 rebuildIndexes();
 
+// ពាក្យបច្ចេកទេស — a small admin-curated Khmer↔Japanese technical-term
+// glossary, separate from WORDS (that dictionary's Khmer field is a full
+// meaning/description, not a clean phrase to match on, and mixing this in
+// would leak into search/tests). Loaded from Supabase alongside custom
+// words; used only to link a Khmer technical term back to its real Japanese
+// name inside translated test text.
+let TECH_TERMS = [];
+let TERM_LINKABLE = new Map();
+let TERM_BY_ID = new Map();
+function buildTermLinkable(){
+  const byFirst = new Map();
+  for (const t of TECH_TERMS) {
+    const km = t.km; if (!km) continue;
+    if (!byFirst.has(km[0])) byFirst.set(km[0], []);
+    byFirst.get(km[0]).push(t);
+  }
+  for (const arr of byFirst.values()) arr.sort((a, b) => b.km.length - a.km.length);
+  return byFirst;
+}
+function applyTechTerms(rows){
+  TECH_TERMS = (rows || []).map(r => ({ id: r.id, km: (r.km || '').trim(), jp: (r.jp || '').trim(), img: r.img || '' }))
+    .filter(t => t.km && t.jp);
+  TERM_LINKABLE = buildTermLinkable();
+  TERM_BY_ID = new Map(TECH_TERMS.map(t => [t.id, t]));
+}
+// same longest-match scan as linkSegments(), but over Khmer phrases instead
+// of Japanese headwords — Khmer test text has ordinary spaces, but a
+// technical term can itself contain a space, so it still needs scanning
+// rather than a naive word split.
+function linkKmSegments(sentence){
+  const segs = []; let buf = '', i = 0;
+  while (i < sentence.length) {
+    const cands = TERM_LINKABLE.get(sentence[i]);
+    let hit = null;
+    if (cands) for (const t of cands) { if (sentence.startsWith(t.km, i)) { hit = t; break; } }
+    if (hit) {
+      if (buf) { segs.push({ text: buf, isLink: false }); buf = ''; }
+      segs.push({ text: hit.km, isLink: true, id: hit.id });
+      i += hit.km.length;
+    } else { buf += sentence[i]; i++; }
+  }
+  if (buf) segs.push({ text: buf, isLink: false });
+  return segs;
+}
+
 // Words an admin typed in (stored in Supabase, never in RAW_WORDS). Merged into
 // WORDS at load and after each add, keyed by a "c-" id so re-applying is safe.
 // A Google Drive "share" link is not an <img> src; rewrite it to the thumbnail
@@ -9479,6 +9597,11 @@ function makeSupabaseBackend(){
     },
     async updateCustomWord(id, patch){ const { error } = await client.from('custom_words').update(patch).eq('id', id); return { error: error ? error.message : null }; },
     async deleteCustomWord(id){ const { error } = await client.from('custom_words').delete().eq('id', id); return { error: error ? error.message : null }; },
+    // ពាក្យបច្ចេកទេស — Khmer↔Japanese technical-term glossary
+    async listTechTerms(){ const { data } = await client.from('technical_terms').select('*').order('created_at'); return { rows: data || [] }; },
+    async addTechTerm(row){ const res = await client.from('technical_terms').insert(row).select().single(); return { row: res.data, error: res.error ? res.error.message : null }; },
+    async updateTechTerm(id, patch){ const { error } = await client.from('technical_terms').update(patch).eq('id', id); return { error: error ? error.message : null }; },
+    async deleteTechTerm(id){ const { error } = await client.from('technical_terms').delete().eq('id', id); return { error: error ? error.message : null }; },
     async getBookSettings(){ const { data } = await client.from('book_settings').select('book,locked,all_schools,schools'); return { rows: data || [] }; },
     async saveBookSetting(row){ const { error } = await client.from('book_settings').upsert(row, { onConflict: 'book' }); return { error: error ? error.message : null }; },
     // — authored books (បណ្ណាល័យ, Admin) —
@@ -9636,6 +9759,15 @@ function makeDemoBackend(){
     },
     async updateCustomWord(id, patch){ const rows = (await this.listCustomWords()).rows; const r = rows.find(x => x.id === id); if (r) Object.assign(r, patch); localStorage.setItem('dict_demo_customwords', JSON.stringify(rows)); return { error: null }; },
     async deleteCustomWord(id){ const rows = (await this.listCustomWords()).rows.filter(x => x.id !== id); localStorage.setItem('dict_demo_customwords', JSON.stringify(rows)); return { error: null }; },
+    async listTechTerms(){ try { return { rows: JSON.parse(localStorage.getItem('dict_demo_techterms') || '[]') }; } catch(e){ return { rows: [] }; } },
+    async addTechTerm(row){
+      const rows = (await this.listTechTerms()).rows;
+      const rec = { id: 'tt-' + Date.now(), created_at: new Date().toISOString(), ...row };
+      rows.push(rec); localStorage.setItem('dict_demo_techterms', JSON.stringify(rows));
+      return { row: rec, error: null };
+    },
+    async updateTechTerm(id, patch){ const rows = (await this.listTechTerms()).rows; const r = rows.find(x => x.id === id); if (r) Object.assign(r, patch); localStorage.setItem('dict_demo_techterms', JSON.stringify(rows)); return { error: null }; },
+    async deleteTechTerm(id){ const rows = (await this.listTechTerms()).rows.filter(x => x.id !== id); localStorage.setItem('dict_demo_techterms', JSON.stringify(rows)); return { error: null }; },
     async getBookSettings(){ try { return { rows: JSON.parse(localStorage.getItem('dict_demo_booksettings') || '[]') }; } catch(e){ return { rows: [] }; } },
     async saveBookSetting(row){
       const rows = (await this.getBookSettings()).rows.filter(r => r.book !== row.book);
@@ -9709,6 +9841,11 @@ class Component extends DCLogic {
     awJp: '', awKana: '', awKanaMap: {}, awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [],
     awRelated: [], awLevel: '', awLink: '', awIsConj: false,
     awBusy: false, awMsg: '', awError: '',
+    // admin: ពាក្យបច្ចេកទេស (Khmer↔Japanese technical-term glossary)
+    ttKm: '', ttJp: '', ttImg: '', ttBusy: false, ttMsg: '', ttError: '',
+    ttEditId: null, ttEditKm: '', ttEditJp: '', ttEditImg: '',
+    // tap a technical term while taking a test → a small JP+picture popup
+    termPopupId: null,
     screen: 'home', search: '', catFilter: 'all', searchMode: 'general', pageFilter: null, pageInput: '',
     bookFilter: BOOKS[0] || DEFAULT_BOOK,
     pendingHide: [],   // just-ticked words, still shown for a moment
@@ -10174,9 +10311,10 @@ class Component extends DCLogic {
   // Book visibility rules + admin-typed words. Rebuilds the indexes once both
   // are in, and nudges the selected book to one this viewer is allowed to see.
   async loadBooksAndCustom(){
-    const [cw, bs] = await Promise.all([Backend.listCustomWords(), Backend.getBookSettings()]);
+    const [cw, bs, tt] = await Promise.all([Backend.listCustomWords(), Backend.getBookSettings(), Backend.listTechTerms()]);
     setBookVis(bs.rows || []);
     applyCustomWords(cw.rows || []);
+    applyTechTerms(tt.rows || []);
     rebuildIndexes();
     const vis = BOOKS.filter(bookBrowsable);
     this.setState(st => ({ overridesRev: st.overridesRev + 1,
@@ -10954,6 +11092,52 @@ class Component extends DCLogic {
     this.setState(st => ({ awBusy: false, awMsg: `បន្ថែម «${jp}»${related.length ? ` + ${related.length} ពាក្យពាក់ព័ន្ធ` : ''} រួចរាល់ ✓`, overridesRev: st.overridesRev + 1,
       awJp: '', awKana: '', awKanaMap: {}, awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [], awRelated: [], awLevel: '', awLink: '', awIsConj: false }));
   }
+  // ពាក្យបច្ចេកទេស — Khmer↔Japanese technical-term glossary (admin CRUD),
+  // separate from the main word dictionary so it never leaks into search or
+  // tests; only used to link a Khmer term in test text back to its real
+  // Japanese name.
+  goTechTerms(){ this.setState({ screen: 'techterms', ttKm: '', ttJp: '', ttImg: '', ttError: '', ttMsg: '', ttEditId: null }); }
+  onTtKm(e){ this.setState({ ttKm: e.target.value }); }
+  onTtJp(e){ this.setState({ ttJp: e.target.value }); }
+  onTtImg(e){ this.setState({ ttImg: e.target.value }); }
+  async saveTechTerm(){
+    if (this.state.ttBusy) return;
+    const km = (this.state.ttKm || '').trim(), jp = (this.state.ttJp || '').trim();
+    if (!km || !jp) { this.setState({ ttError: 'ត្រូវការទាំងឃ្លាខ្មែរ និងពាក្យជប៉ុន', ttMsg: '' }); return; }
+    this.setState({ ttBusy: true, ttError: '', ttMsg: '' });
+    const row = { km, jp, img: normalizeImgUrl((this.state.ttImg || '').trim()) };
+    const { row: saved, error } = await Backend.addTechTerm(row);
+    if (error) { this.setState({ ttBusy: false, ttError: error }); return; }
+    applyTechTerms([...TECH_TERMS, saved || { id: 'tt-' + Date.now(), ...row }]);
+    this.setState({ ttBusy: false, ttKm: '', ttJp: '', ttImg: '', ttMsg: `បន្ថែម «${km}» → «${jp}» រួចរាល់ ✓` });
+  }
+  startEditTechTerm(id){ const t = TERM_BY_ID.get(id); if (!t) return; this.setState({ ttEditId: id, ttEditKm: t.km, ttEditJp: t.jp, ttEditImg: t.img || '', ttError: '' }); }
+  onTtEditKm(e){ this.setState({ ttEditKm: e.target.value }); }
+  onTtEditJp(e){ this.setState({ ttEditJp: e.target.value }); }
+  onTtEditImg(e){ this.setState({ ttEditImg: e.target.value }); }
+  cancelEditTechTerm(){ this.setState({ ttEditId: null }); }
+  async saveEditTechTerm(){
+    const id = this.state.ttEditId; if (!id) return;
+    const km = (this.state.ttEditKm || '').trim(), jp = (this.state.ttEditJp || '').trim();
+    if (!km || !jp) { this.setState({ ttError: 'ត្រូវការទាំងឃ្លាខ្មែរ និងពាក្យជប៉ុន' }); return; }
+    const patch = { km, jp, img: normalizeImgUrl((this.state.ttEditImg || '').trim()) };
+    const { error } = await Backend.updateTechTerm(id, patch);
+    if (error) { this.setState({ ttError: error }); return; }
+    applyTechTerms(TECH_TERMS.map(t => t.id === id ? { ...t, ...patch } : t));
+    this.setState({ ttEditId: null, ttMsg: 'កែរួចរាល់ ✓' });
+  }
+  async deleteTechTerm(id){
+    const t = TERM_BY_ID.get(id); if (!t) return;
+    if (!window.confirm(`លុប «${t.km}» → «${t.jp}» មែនទេ?`)) return;
+    const { error } = await Backend.deleteTechTerm(id);
+    if (error) { this.showToast(error); return; }
+    applyTechTerms(TECH_TERMS.filter(x => x.id !== id));
+    this.setState(st => ({ overridesRev: st.overridesRev + 1 }));
+  }
+  // tap a Khmer technical term inside a test question → a small card with the
+  // real Japanese term (+ picture), without leaving the test
+  openTermPopup(id){ this.setState({ termPopupId: id }); }
+  closeTermPopup(){ this.setState({ termPopupId: null }); }
   // copy text to the clipboard, with an execCommand fallback for embedded browsers
   copyText(text){
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -13807,12 +13991,17 @@ class Component extends DCLogic {
     const examMc = examQ && examQ.t === 'mc' ? examQ.o.map((text, i) => ({
       text, badge: EXAM_LETTERS[i] || '?', boxStyle: examSelStyle(examPicked === i), onSelect: () => this.pickExam(i),
     })) : [];
-    // tap a dictionary word right in the question to see its translation —
-    // same word-linking the practice-exercise screen already has
-    const examSegments = examQ ? linkSegments(examQ.q).map(sg => ({
+    // tap a word right in the question to see its translation — a Japanese
+    // question links dictionary words (same as the practice-exercise screen);
+    // a Khmer-language question (translated law text) instead links any
+    // curated technical term back to its real Japanese name + picture
+    const examSegments = examQ ? (HAS_JP.test(examQ.q) ? linkSegments(examQ.q).map(sg => ({
       text: sg.text, isLink: !!sg.isLink, isPlain: !sg.isLink,
       onOpen: sg.isLink ? (() => this.openDetail(sg.id)) : (() => {}),
-    })) : [];
+    })) : linkKmSegments(examQ.q).map(sg => ({
+      text: sg.text, isLink: !!sg.isLink, isPlain: !sg.isLink,
+      onOpen: sg.isLink ? (() => this.openTermPopup(sg.id)) : (() => {}),
+    }))) : [];
     const examPct = examCount ? Math.round(s.examScore / examCount * 100) : 0;
     const examPassed = examPct >= EXAM_PASS;
     const examReview = (s.examResults || []).map((r, i) => ({
@@ -14886,6 +15075,31 @@ class Component extends DCLogic {
       hasAwError: !!s.awError, awError: s.awError,
       hasAwDup: !!awDupHit,
       awDupLabel: awDupHit ? `${awDupHit.jp}${awDupHit.kana ? ' ('+awDupHit.kana+')' : ''} · ${awDupHit.km} · ${awDupHit.book}` : '',
+
+      // — Admin: ពាក្យបច្ចេកទេស (Khmer↔Japanese technical-term glossary) —
+      isTechTerms: s.screen === 'techterms', goTechTerms: () => this.goTechTerms(),
+      ttKm: s.ttKm, onTtKm: e => this.onTtKm(e),
+      ttJp: s.ttJp, onTtJp: e => this.onTtJp(e),
+      ttImg: s.ttImg, onTtImg: e => this.onTtImg(e),
+      saveTechTerm: () => this.saveTechTerm(),
+      ttSaveLabel: s.ttBusy ? 'កំពុងរក្សាទុក…' : 'បន្ថែម',
+      hasTtMsg: !!s.ttMsg, ttMsg: s.ttMsg,
+      hasTtError: !!s.ttError, ttError: s.ttError,
+      ttCountLabel: `ពាក្យដែលមាន (${TECH_TERMS.length})`,
+      ttEmpty: TECH_TERMS.length === 0,
+      ttList: TECH_TERMS.map(t => ({
+        id: t.id, km: t.km, jp: t.jp, img: t.img, hasImg: !!t.img,
+        isEditing: s.ttEditId === t.id, isNotEditing: s.ttEditId !== t.id,
+        editKm: s.ttEditKm, editJp: s.ttEditJp, editImg: s.ttEditImg,
+        onEditKm: e => this.onTtEditKm(e), onEditJp: e => this.onTtEditJp(e), onEditImg: e => this.onTtEditImg(e),
+        onEdit: () => this.startEditTechTerm(t.id), onCancel: () => this.cancelEditTechTerm(),
+        onSaveEdit: () => this.saveEditTechTerm(), onDelete: () => this.deleteTechTerm(t.id),
+      })),
+      // tap a Khmer term in a test → JP + picture popup, over whatever screen is open
+      isTermPopupOpen: !!s.termPopupId,
+      termPopup: (() => { const t = s.termPopupId ? TERM_BY_ID.get(s.termPopupId) : null;
+        return { km: t ? t.km : '', jp: t ? t.jp : '', img: t ? t.img : '', hasImg: !!(t && t.img) }; })(),
+      closeTermPopup: () => this.closeTermPopup(),
 
       // — Admin: book visibility —
       isBooks: s.screen === 'books', goBooks: () => this.goBooks(),
