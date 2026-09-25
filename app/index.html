@@ -1354,6 +1354,17 @@ textarea.input { min-height: 90px; resize: vertical; }
               </sc-for>
             </div>
             </sc-if>
+            <sc-if value="{{ lawSec.open }}">
+            <div class="card elev-sm" style="padding:4px 14px 8px;margin-bottom:12px;">
+              <div style="font-size:12px;font-weight:700;padding:8px 0 2px;">{{ lawSec.label }}</div>
+              <sc-for list="{{ lawSec.attempts }}" as="a" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--color-divider);font-size:13px;{{ a.rowStyle }}" sc-camel-on-click="{{ a.onOpen }}">
+                  <span style="display:flex;align-items:center;gap:7px;min-width:0;"><sc-if value="{{ a.canOpen }}"><span style="color:var(--color-accent-700);font-size:14px;flex:none;">⬇</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span></span>
+                  <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+                </div>
+              </sc-for>
+            </div>
+            </sc-if>
 
             <div style="font-size:11px;letter-spacing:0.08em;opacity:0.5;margin:6px 0 3px;">រយៈពេលប្រើប្រាស់</div>
             <div style="font-size:11.5px;opacity:0.55;margin-bottom:12px;">ថ្ងៃនេះ {{ monitorUsageTodayLabel }} · ៧ ថ្ងៃ {{ monitorUsageWeekLabel }} · ចុចលើសរសរ ដើម្បីមើលតាមម៉ោង</div>
@@ -1679,6 +1690,17 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <div class="card elev-sm" style="padding:4px 14px 8px;margin-top:12px;">
                   <div style="font-size:12px;font-weight:700;padding:8px 0 2px;">{{ myExamSec.label }}</div>
                   <sc-for list="{{ myExamSec.attempts }}" as="a" hint-placeholder-count="3">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--color-divider);font-size:13px;">
+                      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">{{ a.label }}</span>
+                      <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+                    </div>
+                  </sc-for>
+                </div>
+                </sc-if>
+                <sc-if value="{{ myLawSec.open }}">
+                <div class="card elev-sm" style="padding:4px 14px 8px;margin-top:12px;">
+                  <div style="font-size:12px;font-weight:700;padding:8px 0 2px;">{{ myLawSec.label }}</div>
+                  <sc-for list="{{ myLawSec.attempts }}" as="a" hint-placeholder-count="3">
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--color-divider);font-size:13px;">
                       <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">{{ a.label }}</span>
                       <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
@@ -13313,10 +13335,11 @@ class Component extends DCLogic {
     const dir = h.mode === 'mc_km' ? 'ខ្មែរ → ជប៉ុន' : 'ជប៉ុន → ខ្មែរ';
     const lessonLabel = h.mix ? 'ច្របល់' : `លំហាត់ទី ${h.lesson}`;
     const title = h.mode === 'exam' ? 'ប្រឡងសាកល្បង'
+      : h.mode === 'law' ? `តេស្តច្បាប់ចរាចរណ៍ · ${h.lawLabel || ''}`
       : h.mode === 'quiz' ? `លំហាត់ · ${lessonLabel}`
       : h.mode === 'imgquiz' ? `លំហាត់រូបភាព · ${lessonLabel}`
       : `ជ្រើសរើសពាក្យត្រូវ · ${dir} · ${h.mix ? 'ច្របល់' : 'មេរៀនទី ' + h.lesson}`;
-    const scoreLabel = h.mode === 'exam' ? `${h.score} / ${h.total} · ${pct}%` : `${pct}%`;
+    const scoreLabel = (h.mode === 'exam' || h.mode === 'law') ? `${h.score} / ${h.total} · ${pct}%` : `${pct}%`;
     this._printReport({ title, date: h.date, scoreLabel, items, dur: h.dur });
   }
 
@@ -14131,7 +14154,8 @@ class Component extends DCLogic {
     const myImgSec = mkMySection('img', 'លំហាត់រូបភាព', ownAttemptList(['imgquiz'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const myHazardSec = mkMySection('hazard', 'ព្យាករណ៍គ្រោះថ្នាក់', ownAttemptList(['hazard'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const myExamSec = mkMySection('exam', 'ប្រឡងសាកល្បង', ownAttemptList(['exam'], (h, seq) => `លំហាត់ទី ${seq}`));
-    const myRings = [myWordSec, myQuizSec, myImgSec, myHazardSec, myExamSec].map(sec => ({ label: sec.label, fraction: sec.fraction, pct: sec.pct, pctLabel: sec.pctLabel, ringColor: sec.ringColor, ringDash: sec.ringDash, hasAny: sec.hasAny, dim: sec.dim, open: sec.open, toggle: sec.toggle }));
+    const myLawSec = mkMySection('law', 'តេស្តច្បាប់ចរាចរណ៍', ownAttemptList(['law'], h => h.lawLabel || 'ច្បាប់ចរាចរណ៍'));
+    const myRings = [myWordSec, myQuizSec, myImgSec, myHazardSec, myExamSec, myLawSec].map(sec => ({ label: sec.label, fraction: sec.fraction, pct: sec.pct, pctLabel: sec.pctLabel, ringColor: sec.ringColor, ringDash: sec.ringDash, hasAny: sec.hasAny, dim: sec.dim, open: sec.open, toggle: sec.toggle }));
     // hour-by-hour breakdown for the tapped day on the own profile
     const profHour = (() => {
       const dk = s.profHourDay;
@@ -14367,6 +14391,7 @@ class Component extends DCLogic {
     const imgSec = mkSection('img', 'លំហាត់រូបភាព', attemptList(['imgquiz'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const hazardSec = mkSection('hazard', 'ព្យាករណ៍គ្រោះថ្នាក់', attemptList(['hazard'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const examSec = mkSection('exam', 'ប្រឡងសាកល្បង', attemptList(['exam'], (h, seq) => `លំហាត់ទី ${seq}`));
+    const lawSec = mkSection('law', 'តេស្តច្បាប់ចរាចរណ៍', attemptList(['law'], h => h.lawLabel || 'ច្បាប់ចរាចរណ៍'));
 
     const ROLE_LABEL = { admin: 'អ្នកគ្រប់គ្រង', school: 'សាលា/សាខា', teacher: 'គ្រូ', student: 'សិស្ស' };
     const ROLE_TAG = { admin: 'tag tag-accent', school: 'tag tag-outline', teacher: 'tag tag-accent-2', student: 'tag tag-neutral' };
@@ -14857,7 +14882,7 @@ class Component extends DCLogic {
       hasExamReport: s.role === 'admin' && !!(s.viewingExamReport && s.viewingExamReport.items),
       // collapsible per-category boxes: every attempt (pass + fail together),
       // each openable as a PDF (admin). Tap the title to hide/show the list.
-      wordSec, quizSec, imgSec, hazardSec, examSec,
+      wordSec, quizSec, imgSec, hazardSec, examSec, lawSec,
       hasAnyAttempts: wordSec.hasAny || quizSec.hasAny || imgSec.hasAny || hazardSec.hasAny || examSec.hasAny,
       attemptsHint: (s.role === 'admin' || this.featureGrantedForMe('pdf')) ? 'ចុចលើការធ្វើនីមួយៗ ដើម្បីទាញយក PDF' : 'រាល់ការធ្វើរបស់សិស្ស',
       monitorUsageDays: monitorChart.days.map(d => ({ ...d, selected: s.monHourDay === d.dayKey, selectedStyle: s.monHourDay === d.dayKey ? 'outline:2px solid var(--color-accent-700);outline-offset:1px;' : '', onTap: () => this.openHourDetail(d.dayKey) })),
@@ -14900,7 +14925,7 @@ class Component extends DCLogic {
           monHeroWords: `${monitorOverallViewed} / ${monitorTotal}`,
           monHeroHours: fmtDuration(usageDetail.totalSecs),
           monHeroActiveDays: String(usageDetail.activeDays),
-          monRings: [wordSec, quizSec, imgSec, hazardSec, examSec].map(sec => ({
+          monRings: [wordSec, quizSec, imgSec, hazardSec, examSec, lawSec].map(sec => ({
             label: sec.label, fraction: sec.fraction, pct: sec.pct, pctLabel: sec.pctLabel,
             ringColor: sec.ringColor, ringDash: sec.ringDash, hasAny: sec.hasAny, dim: sec.hasAny ? '' : 'opacity:0.55;',
             open: sec.open, toggle: sec.toggle,
@@ -14923,7 +14948,7 @@ class Component extends DCLogic {
       hasBranch: !!(s.mySchoolId && schoolName(s.mySchoolId)),
       bookStats, usageDays, usageTodayLabel, usageWeekLabel, myLessonSummary,
       // test rings + attempt panels + hour drill-down (profile, matching the monitor)
-      myRings, myWordSec, myQuizSec, myImgSec, myHazardSec, myExamSec,
+      myRings, myWordSec, myQuizSec, myImgSec, myHazardSec, myExamSec, myLawSec,
       closeProfHour: () => this.setState({ profHourDay: null }),
       ...profHour,
       myQuizSummary, hasMyQuiz: myQuizSummary.hasAny,
