@@ -1356,13 +1356,25 @@ textarea.input { min-height: 90px; resize: vertical; }
             </sc-if>
             <sc-if value="{{ lawSec.open }}">
             <div class="card elev-sm" style="padding:4px 14px 8px;margin-bottom:12px;">
-              <div style="font-size:12px;font-weight:700;padding:8px 0 2px;">{{ lawSec.label }}</div>
-              <sc-for list="{{ lawSec.attempts }}" as="a" hint-placeholder-count="3">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--color-divider);font-size:13px;{{ a.rowStyle }}" sc-camel-on-click="{{ a.onOpen }}">
-                  <span style="display:flex;align-items:center;gap:7px;min-width:0;"><sc-if value="{{ a.canOpen }}"><span style="color:var(--color-accent-700);font-size:14px;flex:none;">⬇</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span></span>
-                  <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
-                </div>
-              </sc-for>
+              <sc-if value="{{ inMonLawFolders }}">
+                <div style="font-size:12px;font-weight:700;padding:8px 0 2px;">{{ lawSec.label }}</div>
+                <sc-for list="{{ lawFolders }}" as="f" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--color-divider);font-size:13px;cursor:pointer;{{ f.dim }}" sc-camel-on-click="{{ f.onOpen }}">
+                    <span style="display:flex;align-items:center;gap:7px;min-width:0;"><span style="opacity:0.6;">📁</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ f.label }}</span></span>
+                    <span style="opacity:0.7;font-size:12px;flex:none;">{{ f.countLabel }}</span>
+                  </div>
+                </sc-for>
+              </sc-if>
+              <sc-if value="{{ inMonLawSub }}">
+                <div style="display:flex;align-items:center;gap:6px;padding:8px 0 2px;cursor:pointer;color:var(--color-accent-700);font-size:12px;" sc-camel-on-click="{{ closeMonLawSub }}">← {{ lawSec.label }}</div>
+                <div style="font-size:12px;font-weight:700;padding:4px 0 2px;">{{ lawSubLabel }}</div>
+                <sc-for list="{{ lawSubAttempts }}" as="a" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--color-divider);font-size:13px;{{ a.rowStyle }}" sc-camel-on-click="{{ a.onOpen }}">
+                    <span style="display:flex;align-items:center;gap:7px;min-width:0;"><sc-if value="{{ a.canOpen }}"><span style="color:var(--color-accent-700);font-size:14px;flex:none;">⬇</span></sc-if><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span></span>
+                    <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+                  </div>
+                </sc-for>
+              </sc-if>
             </div>
             </sc-if>
 
@@ -1699,13 +1711,25 @@ textarea.input { min-height: 90px; resize: vertical; }
                 </sc-if>
                 <sc-if value="{{ myLawSec.open }}">
                 <div class="card elev-sm" style="padding:4px 14px 8px;margin-top:12px;">
-                  <div style="font-size:12px;font-weight:700;padding:8px 0 2px;">{{ myLawSec.label }}</div>
-                  <sc-for list="{{ myLawSec.attempts }}" as="a" hint-placeholder-count="3">
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--color-divider);font-size:13px;">
-                      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">{{ a.label }}</span>
-                      <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
-                    </div>
-                  </sc-for>
+                  <sc-if value="{{ inProfLawFolders }}">
+                    <div style="font-size:12px;font-weight:700;padding:8px 0 2px;">{{ myLawSec.label }}</div>
+                    <sc-for list="{{ myLawFolders }}" as="f" hint-placeholder-count="4">
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--color-divider);font-size:13px;cursor:pointer;{{ f.dim }}" sc-camel-on-click="{{ f.onOpen }}">
+                        <span style="display:flex;align-items:center;gap:7px;min-width:0;"><span style="opacity:0.6;">📁</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ f.label }}</span></span>
+                        <span style="opacity:0.7;font-size:12px;flex:none;">{{ f.countLabel }}</span>
+                      </div>
+                    </sc-for>
+                  </sc-if>
+                  <sc-if value="{{ inProfLawSub }}">
+                    <div style="display:flex;align-items:center;gap:6px;padding:8px 0 2px;cursor:pointer;color:var(--color-accent-700);font-size:12px;" sc-camel-on-click="{{ closeProfLawSub }}">← {{ myLawSec.label }}</div>
+                    <div style="font-size:12px;font-weight:700;padding:4px 0 2px;">{{ myLawSubLabel }}</div>
+                    <sc-for list="{{ myLawSubAttempts }}" as="a" hint-placeholder-count="3">
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--color-divider);font-size:13px;">
+                        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">{{ a.label }}</span>
+                        <span style="display:flex;gap:10px;align-items:center;flex:none;"><span style="opacity:0.7;font-size:12px;">{{ a.scoreLabel }} · {{ a.dateLabel }}</span><span style="font-weight:700;{{ a.verdictColor }}">{{ a.verdict }}</span></span>
+                      </div>
+                    </sc-for>
+                  </sc-if>
                 </div>
                 </sc-if>
               </div>
@@ -8691,6 +8715,10 @@ function lawSetLabel(s, useKh){
 }
 // storage key for a law test's best score — one per sitting
 function lawKeyOf(lang, key, set){ return `${lang}_${key}#${set || 1}`; }
+// the test-type (標識/練習/仮免/本免) a logged law attempt belongs to, out of
+// its stored lawKey ("km_kari#3") — used to group history/PDF-download rows
+// into their own folders, same split as the test hub and the PDF screen
+function lawTypeOf(h){ const m = /^[a-z]+_([a-z]+)#/.exec((h && h.lawKey) || ''); return m ? m[1] : ''; }
 const MODE_LABEL = { mc_jp:'ជប៉ុន → ខ្មែរ', mc_km:'ខ្មែរ → ជប៉ុន' };
 
 // — Exercises (លំហាត់): true/false and A/B/C questions from the SSW problem
@@ -9825,6 +9853,7 @@ class Component extends DCLogic {
     profileEmail: '', usage: {},
     profOpen: { progress: true, tests: true, avatar: false },   // collapsible profile sections
     profTestOpen: [],   // which test-ring categories are expanded on the profile
+    profLawSub: null,   // which law test-type folder (標識/練習/仮免/本免) is open, on the profile
     profHourDay: null,  // day tapped in the profile's own usage chart (hour drill-down)
     expandedSchools: [],
     monCollapsed: [],   // branches an admin has folded away on the leaderboard
@@ -9840,7 +9869,7 @@ class Component extends DCLogic {
     // teacher monitor
     students: [], selectedStudent: null, selectedStudentName: '', viewingViewed: [],
     viewingUsage: {}, viewingListen: {}, viewingUsageHours: {}, monHourDay: null, viewingAvatarAnimal: '', viewingAvatarColor: '', viewingLastSeen: null, monChartWeek: '', viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {},
-    viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingExamReport: null, viewingSchoolId: null, viewingSchoolName: '', viewingSchoolLogo: '', viewingHistory: [], monExpandedChip: null, monOpenSections: [],
+    viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingExamReport: null, viewingSchoolId: null, viewingSchoolName: '', viewingSchoolLogo: '', viewingHistory: [], monExpandedChip: null, monOpenSections: [], monLawSub: null,
     leaderboard: [],   // student standings, name + level only
 
     // self sign-up through a branch invite link
@@ -10125,7 +10154,13 @@ class Component extends DCLogic {
   // collapse / reveal a profile section (progress · tests · avatar)
   toggleProfSection(k){ const o = { ...this.state.profOpen }; o[k] = !o[k]; this.setState({ profOpen: o }); }
   // expand/collapse one test-ring category on the profile; tap a day for the hour drill-down
-  toggleProfTest(k){ const a = this.state.profTestOpen || []; this.setState({ profTestOpen: a.indexOf(k) !== -1 ? a.filter(x => x !== k) : [...a, k] }); }
+  toggleProfTest(k){ const a = this.state.profTestOpen || [];
+    // the law-test ring drills into its own test-type folders (標識/練習/仮免/本免)
+    // rather than a flat list — always land back on the folder list, not
+    // wherever the student happened to leave it last
+    this.setState({ profTestOpen: a.indexOf(k) !== -1 ? a.filter(x => x !== k) : [...a, k], ...(k === 'law' ? { profLawSub: null } : {}) }); }
+  openProfLawSub(key){ this.setState({ profLawSub: key }); }
+  closeProfLawSub(){ this.setState({ profLawSub: null }); }
   openProfHour(dayK){ this.setState({ profHourDay: this.state.profHourDay === dayK ? null : dayK }); }
   // the learner's chosen avatar: a zodiac animal + a background colour, saved in settings
   setAvatarAnimal(a){ const settings = { ...this.state.settings, avatarAnimal: a }; this.setState({ settings }, () => this.persist()); }
@@ -12922,7 +12957,7 @@ class Component extends DCLogic {
       viewingExamLog: (st.settings && Array.isArray(st.settings.examLog)) ? st.settings.examLog : [],
       viewingExamReport: (st.settings && st.settings.examReport) || null,
       viewingSchoolId: st.school_id || null, viewingSchoolName: '', viewingSchoolLogo: '', viewingHistory: Array.isArray(st.history) ? st.history : [],
-      monExpandedChip: null, monOpenSections: [] });
+      monExpandedChip: null, monOpenSections: [], monLawSub: null });
     this._resolveViewingBrand(st.school_id || null);
   }
   // Resolve the student's branch name + logo for the results PDF header. Admin
@@ -12938,7 +12973,7 @@ class Component extends DCLogic {
       .then(b => { if (b && this.state.viewingSchoolId === schoolId) this.setState({ viewingSchoolName: b.full_name || '', viewingSchoolLogo: b.logo || '' }); })
       .catch(() => {});
   }
-  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingListen: {}, viewingUsageHours: {}, monHourDay: null, viewingAvatarAnimal: '', viewingAvatarColor: '', viewingLastSeen: null, monChartWeek: '', viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingSchoolName: '', viewingSchoolLogo: '', monExpandedChip: null, monOpenSections: [] }); }
+  backToStudentList(){ this.setState({ selectedStudent: null, viewingViewed: [], viewingUsage: {}, viewingListen: {}, viewingUsageHours: {}, monHourDay: null, viewingAvatarAnimal: '', viewingAvatarColor: '', viewingLastSeen: null, monChartWeek: '', viewingLessons: {}, viewingLessonDetails: {}, viewingQuizzes: {}, viewingQuizDetails: {}, viewingImgQuizzes: {}, viewingImgQuizDetails: {}, viewingExamLog: [], viewingSchoolName: '', viewingSchoolLogo: '', monExpandedChip: null, monOpenSections: [], monLawSub: null }); }
   // tap a day in the weekly bar chart → reveal that day's hour-by-hour breakdown (toggles)
   openHourDetail(dayK){ this.setState({ monHourDay: this.state.monHourDay === dayK ? null : dayK }); }
   // week-scrubber on the monitor's weekly chart: a tappable date jumps to that
@@ -12948,7 +12983,10 @@ class Component extends DCLogic {
   prevMonChartWeek(){ const m = this._monChartMonday(); m.setDate(m.getDate() - 7); this.setState({ monChartWeek: dayKey(m) }); }
   nextMonChartWeek(){ const m = this._monChartMonday(); m.setDate(m.getDate() + 7); this.setState({ monChartWeek: dayKey(m) }); }
   toggleMonChip(key){ this.setState(s => ({ monExpandedChip: s.monExpandedChip === key ? null : key })); }
-  toggleMonSection(key){ this.setState(s => ({ monOpenSections: (s.monOpenSections || []).includes(key) ? s.monOpenSections.filter(k => k !== key) : [...(s.monOpenSections || []), key] })); }
+  toggleMonSection(key){ this.setState(s => ({ monOpenSections: (s.monOpenSections || []).includes(key) ? s.monOpenSections.filter(k => k !== key) : [...(s.monOpenSections || []), key],
+    ...(key === 'law' ? { monLawSub: null } : {}) })); }
+  openMonLawSub(key){ this.setState({ monLawSub: key }); }
+  closeMonLawSub(){ this.setState({ monLawSub: null }); }
 
   // — Printable worksheets: the same exercises, as a blank sheet for class —
   goWorksheets(){ this.stopSpeech(); this.setState({ screen: 'worksheets', wsGroup: null, wsCat: null, wsSub: null, wsPick: null, playerPlaying: false }); }
@@ -14139,8 +14177,9 @@ class Component extends DCLogic {
     const _attemptDateTime = d => `${d.getDate()}/${d.getMonth() + 1} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     // seq = this attempt's order within its category (oldest = 1), so the exam
     // list can name each run លំហាត់ទី 1 / លំហាត់ទី 2 …
-    const ownAttemptList = (modes, labeler) => {
-      const rows = (s.history || []).map((h, i) => ({ h, i })).filter(x => modes.indexOf(x.h.mode) !== -1);
+    const ownAttemptList = (modes, labeler, extra) => {
+      const pred = extra || (() => true);
+      const rows = (s.history || []).map((h, i) => ({ h, i })).filter(x => modes.indexOf(x.h.mode) !== -1 && pred(x.h));
       return rows.map((x, k) => ({ h: x.h, seq: k + 1 })).reverse()
         .map(({ h, seq }) => { const pct = h.total ? Math.round(h.score / h.total * 100) : 0; const passed = pct >= PASS_PCT; const d = new Date(h.date);
           return { label: labeler(h, seq), passed, scoreLabel: `${h.score}/${h.total}`, dateLabel: _attemptDateTime(d),
@@ -14155,6 +14194,16 @@ class Component extends DCLogic {
     const myHazardSec = mkMySection('hazard', 'ព្យាករណ៍គ្រោះថ្នាក់', ownAttemptList(['hazard'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const myExamSec = mkMySection('exam', 'ប្រឡងសាកល្បង', ownAttemptList(['exam'], (h, seq) => `លំហាត់ទី ${seq}`));
     const myLawSec = mkMySection('law', 'តេស្តច្បាប់ចរាចរណ៍', ownAttemptList(['law'], h => h.lawLabel || 'ច្បាប់ចរាចរណ៍'));
+    // the law ring drills into its own test-type folders (標識/練習/仮免/本免) —
+    // a flat list would get unwieldy once a student has run several 仮免/本免 sittings
+    const myLawSubLists = {};
+    LAW_TESTS.forEach(t => { myLawSubLists[t.key] = ownAttemptList(['law'], h => h.lawLabel || '', h => lawTypeOf(h) === t.key); });
+    const myLawFolders = LAW_TESTS.map(t => { const attempts = myLawSubLists[t.key]; const pass = attempts.filter(a => a.passed).length, total = attempts.length;
+      return { key: t.key, label: `${t.label} · ${t.kh}`, countLabel: total ? `ជាប់ ${pass} / ${total}` : 'មិនទាន់ធ្វើ', hasAny: total > 0, dim: total > 0 ? '' : 'opacity:0.55;', onOpen: () => this.openProfLawSub(t.key) }; });
+    const myLawSubT = LAW_TESTS.find(t => t.key === s.profLawSub);
+    const inProfLawFolders = !s.profLawSub, inProfLawSub = !!s.profLawSub;
+    const myLawSubLabel = myLawSubT ? `${myLawSubT.label} · ${myLawSubT.kh}` : '';
+    const myLawSubAttempts = s.profLawSub ? (myLawSubLists[s.profLawSub] || []) : [];
     const myRings = [myWordSec, myQuizSec, myImgSec, myHazardSec, myExamSec, myLawSec].map(sec => ({ label: sec.label, fraction: sec.fraction, pct: sec.pct, pctLabel: sec.pctLabel, ringColor: sec.ringColor, ringDash: sec.ringDash, hasAny: sec.hasAny, dim: sec.dim, open: sec.open, toggle: sec.toggle }));
     // hour-by-hour breakdown for the tapped day on the own profile
     const profHour = (() => {
@@ -14347,8 +14396,9 @@ class Component extends DCLogic {
     // Every attempt of every kind (pass or fail), newest first. Each row opens
     // that exact run as an A4 PDF — this is how the admin reviews/downloads any
     // single test the student did, not just the best score.
-    const attemptList = (modes, labeler) => {
-      const rows = (s.viewingHistory || []).map((h, i) => ({ h, i })).filter(x => modes.indexOf(x.h.mode) !== -1);
+    const attemptList = (modes, labeler, extra) => {
+      const pred = extra || (() => true);
+      const rows = (s.viewingHistory || []).map((h, i) => ({ h, i })).filter(x => modes.indexOf(x.h.mode) !== -1 && pred(x.h));
       return rows.map((x, k) => ({ h: x.h, i: x.i, seq: k + 1 })).reverse()
       .map(({ h, i, seq }) => {
         const pct = h.total ? Math.round(h.score / h.total * 100) : 0;
@@ -14392,6 +14442,14 @@ class Component extends DCLogic {
     const hazardSec = mkSection('hazard', 'ព្យាករណ៍គ្រោះថ្នាក់', attemptList(['hazard'], h => h.mix ? 'លំហាត់ច្របល់ 🎲' : `លំហាត់ទី ${h.lesson}`));
     const examSec = mkSection('exam', 'ប្រឡងសាកល្បង', attemptList(['exam'], (h, seq) => `លំហាត់ទី ${seq}`));
     const lawSec = mkSection('law', 'តេស្តច្បាប់ចរាចរណ៍', attemptList(['law'], h => h.lawLabel || 'ច្បាប់ចរាចរណ៍'));
+    const lawSubLists = {};
+    LAW_TESTS.forEach(t => { lawSubLists[t.key] = attemptList(['law'], h => h.lawLabel || '', h => lawTypeOf(h) === t.key); });
+    const lawFolders = LAW_TESTS.map(t => { const attempts = lawSubLists[t.key]; const pass = attempts.filter(a => a.passed).length, total = attempts.length;
+      return { key: t.key, label: `${t.label} · ${t.kh}`, countLabel: total ? `ជាប់ ${pass} / ${total}` : 'មិនទាន់ធ្វើ', hasAny: total > 0, dim: total > 0 ? '' : 'opacity:0.55;', onOpen: () => this.openMonLawSub(t.key) }; });
+    const lawSubT = LAW_TESTS.find(t => t.key === s.monLawSub);
+    const inMonLawFolders = !s.monLawSub, inMonLawSub = !!s.monLawSub;
+    const lawSubLabel = lawSubT ? `${lawSubT.label} · ${lawSubT.kh}` : '';
+    const lawSubAttempts = s.monLawSub ? (lawSubLists[s.monLawSub] || []) : [];
 
     const ROLE_LABEL = { admin: 'អ្នកគ្រប់គ្រង', school: 'សាលា/សាខា', teacher: 'គ្រូ', student: 'សិស្ស' };
     const ROLE_TAG = { admin: 'tag tag-accent', school: 'tag tag-outline', teacher: 'tag tag-accent-2', student: 'tag tag-neutral' };
@@ -14883,6 +14941,7 @@ class Component extends DCLogic {
       // collapsible per-category boxes: every attempt (pass + fail together),
       // each openable as a PDF (admin). Tap the title to hide/show the list.
       wordSec, quizSec, imgSec, hazardSec, examSec, lawSec,
+      lawFolders, inMonLawFolders, inMonLawSub, lawSubLabel, lawSubAttempts, closeMonLawSub: () => this.closeMonLawSub(),
       hasAnyAttempts: wordSec.hasAny || quizSec.hasAny || imgSec.hasAny || hazardSec.hasAny || examSec.hasAny,
       attemptsHint: (s.role === 'admin' || this.featureGrantedForMe('pdf')) ? 'ចុចលើការធ្វើនីមួយៗ ដើម្បីទាញយក PDF' : 'រាល់ការធ្វើរបស់សិស្ស',
       monitorUsageDays: monitorChart.days.map(d => ({ ...d, selected: s.monHourDay === d.dayKey, selectedStyle: s.monHourDay === d.dayKey ? 'outline:2px solid var(--color-accent-700);outline-offset:1px;' : '', onTap: () => this.openHourDetail(d.dayKey) })),
@@ -14949,6 +15008,7 @@ class Component extends DCLogic {
       bookStats, usageDays, usageTodayLabel, usageWeekLabel, myLessonSummary,
       // test rings + attempt panels + hour drill-down (profile, matching the monitor)
       myRings, myWordSec, myQuizSec, myImgSec, myHazardSec, myExamSec, myLawSec,
+      myLawFolders, inProfLawFolders, inProfLawSub, myLawSubLabel, myLawSubAttempts, closeProfLawSub: () => this.closeProfLawSub(),
       closeProfHour: () => this.setState({ profHourDay: null }),
       ...profHour,
       myQuizSummary, hasMyQuiz: myQuizSummary.hasAny,
