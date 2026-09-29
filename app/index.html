@@ -3096,6 +3096,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <div style="flex:2;padding:6px 7px;border-right:1px solid #eef1f6;color:#111;line-height:1.5;display:flex;flex-direction:column;justify-content:center;">
                   <div class="qcell">{{ it.q }}</div>
                   <sc-if value="{{ it.hasImg }}"><img src="{{ it.img }}" alt="" style="margin-top:5px;max-width:150px;max-height:110px;border-radius:6px;border:1px solid #d7deea;object-fit:contain;display:block;"></sc-if>
+                  <sc-if value="{{ it.hasExplain }}"><div style="font-size:11px;line-height:1.6;margin-top:5px;padding:5px 8px;border-radius:6px;background:#f5f7fb;border-left:3px solid #1a4b8c;color:#333;"><span style="opacity:0.6;">ការពន្យល់៖ </span>{{ it.explain }}</div></sc-if>
                 </div>
                 <div style="flex:1.5;padding:6px 7px;border-right:1px solid #eef1f6;font-weight:600;display:flex;align-items:center;{{ it.pickedColor }}">{{ it.picked }}</div>
                 <div style="flex:1.5;padding:6px 7px;border-right:1px solid #eef1f6;font-weight:600;color:#1558b0;display:flex;align-items:center;">{{ it.correct }}</div>
@@ -13212,6 +13213,7 @@ class Component extends DCLogic {
       hasPicked: it.picked != null && it.picked !== '', picked: it.picked || '', pickedColor: it.ok ? 'color:#1558b0;' : 'color:#c0392b;',
       hasCorrect: it.correct != null && it.correct !== '', correct: it.correct || '',
       hasImg: !!it.img, img: it.img || '',
+      hasExplain: !!it.e, explain: it.e || '',
     }));
     this._clearPrintMount();   // drop any stale clone from a previous print
     this._printSourceHTML = null;
@@ -13730,7 +13732,7 @@ class Component extends DCLogic {
     const passed = pct >= EXAM_PASS;
     const settings = { ...this.state.settings };
     const now2 = new Date().toISOString();
-    const attemptItems2 = results.map((r, i) => ({ q: r.q, ok: r.ok, picked: r.pickedFull, correct: r.correctFull, img: examQuestions[i].img || '' }));
+    const attemptItems2 = results.map((r, i) => ({ q: r.q, ok: r.ok, picked: r.pickedFull, correct: r.correctFull, img: examQuestions[i].img || '', e: r.e }));
     if (this.state.examSource === 'law') {
       // traffic-law tests keep their own best-score map, separate from the mock exam
       const lr = { ...(settings.lawResults || {}) };
@@ -13749,7 +13751,7 @@ class Component extends DCLogic {
     const now = new Date().toISOString();
     settings.examLog = [...(settings.examLog || []), { block: examBlock, score, total, pct, passed, date: now }].slice(-50);
     // the latest attempt's full per-question record, for the admin PDF
-    const attemptItems = results.map((r, i) => ({ q: r.q, ok: r.ok, picked: r.pickedFull, correct: r.correctFull, img: examQuestions[i].img || '' }));
+    const attemptItems = results.map((r, i) => ({ q: r.q, ok: r.ok, picked: r.pickedFull, correct: r.correctFull, img: examQuestions[i].img || '', e: r.e }));
     settings.examReport = { block: examBlock, score, total, date: now, items: attemptItems, dur: this._attemptDur() };
     // log every exam attempt with its full detail, so any single run is openable
     const entry = { mode: 'exam', lesson: examBlock, score, total, date: now, items: attemptItems, dur: this._attemptDur() };
