@@ -506,6 +506,16 @@ textarea.input { min-height: 90px; resize: vertical; }
   display: flex; flex-direction: column; gap: var(--space-2);
   padding: var(--space-3); border-radius: var(--radius-md); background: transparent; border: 1px solid var(--color-divider);
 }
+/* tap feedback for the ~36 clickable cards (dictionary rows, folder/menu
+   navigation, quiz launchers, …) — scoped to cards actually marked
+   cursor:pointer so static/display-only cards are untouched. The dc-runtime
+   sets style properties individually, so the live attribute always reads
+   back as "cursor: pointer" (space after the colon) regardless of the
+   source markup's spacing — match that, not the source string. transform
+   (not background) carries the feedback so it still shows even on the few
+   cards that set their own inline background. */
+.card[style*="cursor: pointer"] { transition: transform 0.08s ease; }
+.card[style*="cursor: pointer"]:active { transform: scale(0.98); background: color-mix(in srgb, var(--color-text) 6%, transparent); }
 .card-kicker { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); }
 .card-title {
   font-family: var(--font-heading); font-weight: var(--font-heading-weight);
@@ -669,7 +679,11 @@ textarea.input { min-height: 90px; resize: vertical; }
     html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:#e5e3e0;
       /* Text size is controlled only by the in-app setting, so stop the browser
          from scaling it: no double-tap zoom, no iOS text inflation. */
-      touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+      touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%;
+      /* replace the browser's own (grey box on Android, none at all on iOS)
+         tap flash with our own :active styling, so feedback is instant and
+         consistent across platforms instead of inconsistent or missing. */
+      -webkit-tap-highlight-color:transparent;}
     a{color:var(--color-accent-700);text-decoration:none;}
     a:hover{color:var(--color-accent-800);}
     /* iOS zooms the page when a focused field is smaller than 16px — keep
