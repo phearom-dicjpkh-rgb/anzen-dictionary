@@ -445,7 +445,10 @@ figcaption {
   background: transparent; border: 1px solid transparent;
   padding: var(--space-2) calc(var(--space-3) * 1.2);
   border-radius: var(--radius-md);
+  transition: transform 0.08s ease; /* same press feedback as .card, incl.
+     the base "btn" variant which otherwise has no active state at all */
 }
+.btn:active:not(:disabled) { transform: scale(0.97); }
 .btn svg { display: block; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn-primary { color: var(--color-accent); border-color: var(--color-accent); }
