@@ -6,16 +6,16 @@
  *   node tools/sync-law.js           # fetch + write
  *   node tools/sync-law.js --check   # report counts only
  *
- * 標識/練習 (sign/prac) still come from the original two single-language
- * workbooks (Khmer + Japanese), one tab per test:
+ * 標識 (sign) still comes from the original two single-language workbooks
+ * (Khmer + Japanese), one tab per test:
  *   A=ID  B=問題  C=正しい(○/×/letter)  D=誤り  E=イラスト(image)  F=解説
  *
- * 仮免/本免 (kari/hon) now come from ONE bilingual workbook — the author
- * keeps Japanese and Khmer side by side per row instead of two separate
- * sheets, which used to make cross-checking a translation error a chore.
- * Each test is pre-split into same-size tabs (本免１〜５, 仮免1〜10); they're
- * concatenated in order into one flat list per language, exactly like the
- * old sheets, so lawSets() downstream is unaffected:
+ * 練習/仮免/本免 (prac/kari/hon) each come from their OWN bilingual workbook —
+ * the author keeps Japanese and Khmer side by side per row instead of two
+ * separate sheets, which used to make cross-checking a translation error a
+ * chore. Each test's tabs (topic-named for 練習, pre-split numbered sets for
+ * 仮免/本免) are concatenated in order into one flat list per language,
+ * exactly like the old sheets, so lawSets() downstream is unaffected:
  *   A=ID  B=問題（日本語）  C=問題（クメール語）
  *   D=解説（日本語）        E=解説（クメール語）
  *   F=正しい(○/×/letter)   G=誤り              H=イラスト(image)
@@ -29,14 +29,21 @@ const SHEETS = {
   km: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR1JdK3TSiNLCV-6lMUwpr9BR-Hqiel4UCLh4OaJYwqpg6ichaFIdgZ-lTFJiMbOc9LWVq5D3Z1AzGW/pub',
   ja: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdffF7laIKJoFC8prR2FjzjhX0HC9wJbXN4CGms3RFkEhsbPtW_bK2ongDzeeaDS91Ra4VL7DJP_d2/pub',
 };
-const SOLO_TABS = { sign: '2054593913', prac: '675506127' };   // still single-language sheets
+const SOLO_TABS = { sign: '2054593913' };   // still a single-language sheet
 
-// bilingual 仮免/本免 workbook — one row holds both languages; tabs are
-// pre-split sets, concatenated in tab order to rebuild the full list
-const BILINGUAL_SHEET = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR98cZ7zTTlR1v6Ljq1dgFTdwUmepWPNHv4iaHPqsnCc9u44KvIQMy8yzoYPsl0xjudbX5Mb8TXM2py/pub';
-const BILINGUAL_TABS = {
-  hon:  ['1478524770', '2089886942', '1478705144', '1568819820', '257353815'],
-  kari: ['879488848', '1864785491', '137344612', '346036271', '342699340', '152075713', '478501841', '1193618611', '210136720', '197200791'],
+// bilingual workbooks — one row holds both languages; each test's own tabs
+// (topic-named for 練習, pre-split numbered sets for 仮免/本免), concatenated
+// in tab order to rebuild that test's full list
+const BILINGUAL = {
+  hon: { base: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR98cZ7zTTlR1v6Ljq1dgFTdwUmepWPNHv4iaHPqsnCc9u44KvIQMy8yzoYPsl0xjudbX5Mb8TXM2py/pub',
+    tabs: ['1478524770', '2089886942', '1478705144', '1568819820', '257353815'] },
+  kari: { base: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR98cZ7zTTlR1v6Ljq1dgFTdwUmepWPNHv4iaHPqsnCc9u44KvIQMy8yzoYPsl0xjudbX5Mb8TXM2py/pub',
+    tabs: ['879488848', '1864785491', '137344612', '346036271', '342699340', '152075713', '478501841', '1193618611', '210136720', '197200791'] },
+  prac: { base: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vThofEPgk2Lf2Te1O541_j34z7jSmF0ujXtwfw346SWZSIrH8ojIzqcUg_a2Phy2FcQRyt7LCrv9s4U/pub',
+    tabs: ['2110633815', '0', '1397364153', '2030120179', '94896380', '754783368', '915545004', '1617441431',
+      '1216486470', '88652787', '76164775', '1553103002', '1659349048', '1093870509', '597960986', '296363223',
+      '1300311985', '337749613', '1665691495', '599455193', '87952145', '1546520847', '578093460', '868439107',
+      '1904341202', '1162374493', '609551000', '287727861'] },
 };
 
 const csvUrl = (base, gid) => `${base}?gid=${gid}&single=true&output=csv`;
@@ -136,10 +143,10 @@ function toQuestionsBilingual(rows) {
       console.log(`${lang}.${key}: ${data[lang][key].length} questions`);
     }
   }
-  for (const key of Object.keys(BILINGUAL_TABS)) {
+  for (const [key, { base, tabs }] of Object.entries(BILINGUAL)) {
     data.km[key] = []; data.ja[key] = [];
-    for (const gid of BILINGUAL_TABS[key]) {
-      const csv = await get(csvUrl(BILINGUAL_SHEET, gid));
+    for (const gid of tabs) {
+      const csv = await get(csvUrl(base, gid));
       const { ja, km } = toQuestionsBilingual(parseCSV(csv));
       data.ja[key].push(...ja); data.km[key].push(...km);
     }
