@@ -64,7 +64,9 @@ function parseCSV(s) {
   if (cur.length > 1 || cur[0] !== '') rows.push(cur);
   return rows;
 }
-const OPT_LETTER = /[Ⓐ-Ⓩ]|[Ａ-Ｚ]|[A-Za-z]/;
+// circled/full-width only — NOT plain ascii A-Za-z, which collides with real
+// sign terminology that happens to start with a latin letter (T形, Y形, …)
+const OPT_LETTER = /[Ⓐ-Ⓩ]|[Ａ-Ｚ]/;
 function letterIdx(ch) { if (ch >= 'Ⓐ' && ch <= 'Ⓩ') return ch.codePointAt(0) - 0x24B6; if (ch >= 'Ａ' && ch <= 'Ｚ') return ch.codePointAt(0) - 0xFF21; return ch.toUpperCase().charCodeAt(0) - 65; }
 function opt(s) { s = (s || '').trim(); const m = s.match(new RegExp('^(' + OPT_LETTER.source + ')[\\s.、．)）:：]*([\\s\\S]*)$')); return m ? { idx: letterIdx(m[1]), text: m[2].trim() } : { idx: -1, text: s }; }
 function splitInline(q) {
