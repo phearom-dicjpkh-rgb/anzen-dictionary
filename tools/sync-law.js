@@ -6,35 +6,29 @@
  *   node tools/sync-law.js           # fetch + write
  *   node tools/sync-law.js --check   # report counts only
  *
- * 標識 (sign) still comes from the original two single-language workbooks
- * (Khmer + Japanese), one tab per test:
- *   A=ID  B=問題  C=正しい(○/×/letter)  D=誤り  E=イラスト(image)  F=解説
- *
- * 練習/仮免/本免 (prac/kari/hon) each come from their OWN bilingual workbook —
- * the author keeps Japanese and Khmer side by side per row instead of two
- * separate sheets, which used to make cross-checking a translation error a
- * chore. Each test's tabs (topic-named for 練習, pre-split numbered sets for
- * 仮免/本免) are concatenated in order into one flat list per language,
- * exactly like the old sheets, so lawSets() downstream is unaffected:
+ * 標識/練習/仮免/本免 each come from their OWN bilingual workbook — the author
+ * keeps Japanese and Khmer side by side per row instead of two separate
+ * sheets, which used to make cross-checking a translation error a chore.
+ * Each test's tabs (topic/set-numbered) are concatenated in order into one
+ * flat list per language:
  *   A=ID  B=問題（日本語）  C=問題（クメール語）
  *   D=解説（日本語）        E=解説（クメール語）
- *   F=正しい(○/×/letter)   G=誤り              H=イラスト(image)
- * Readings are KEPT (these are law tests, like the mock exam).
+ *   F=正しい(○/×/letter/plain text)   G=誤り   H=イラスト(image)
+ * F/G are either ○/× (true-false), a lettered option (Ⓐ/Ⓑ/Ⓒ…) with the
+ * rest in G, or — for 標識's "what does this sign mean?" questions — plain
+ * answer text with no letter at all, G holding the wrong answers one per
+ * line. Readings are KEPT (these are law tests, like the mock exam).
  */
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const SHEETS = {
-  km: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR1JdK3TSiNLCV-6lMUwpr9BR-Hqiel4UCLh4OaJYwqpg6ichaFIdgZ-lTFJiMbOc9LWVq5D3Z1AzGW/pub',
-  ja: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdffF7laIKJoFC8prR2FjzjhX0HC9wJbXN4CGms3RFkEhsbPtW_bK2ongDzeeaDS91Ra4VL7DJP_d2/pub',
-};
-const SOLO_TABS = { sign: '2054593913' };   // still a single-language sheet
-
 // bilingual workbooks — one row holds both languages; each test's own tabs
-// (topic-named for 練習, pre-split numbered sets for 仮免/本免), concatenated
+// (topic-named for 標識/練習, pre-split numbered sets for 仮免/本免), concatenated
 // in tab order to rebuild that test's full list
 const BILINGUAL = {
+  sign: { base: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTHoctqARb2IEtELlmixxry3kjLahwFpuPs-GFEELFRIqBpUcVDkfgC6o-L_sV1Wugd3kwTMXUDceMj/pub',
+    tabs: ['2110633815', '1801495243', '1461729969'] },
   hon: { base: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR98cZ7zTTlR1v6Ljq1dgFTdwUmepWPNHv4iaHPqsnCc9u44KvIQMy8yzoYPsl0xjudbX5Mb8TXM2py/pub',
     tabs: ['1478524770', '2089886942', '1478705144', '1568819820', '257353815'] },
   kari: { base: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR98cZ7zTTlR1v6Ljq1dgFTdwUmepWPNHv4iaHPqsnCc9u44KvIQMy8yzoYPsl0xjudbX5Mb8TXM2py/pub',
@@ -81,6 +75,16 @@ function splitInline(q) {
 }
 function normalizeImg(url) { if (!url) return ''; const m = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#]*&)?id=|thumbnail\?(?:[^#]*&)?id=)([\w-]{20,})/); return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000` : url; }
 const LABELS = ['A', 'B', 'C', 'D', 'E'];
+// deterministic shuffle (seeded from the question itself) for option sets
+// that have no author-assigned letter order — keeps the answer position from
+// always landing on the first option, without reordering on every re-sync of
+// an unchanged sheet (which would otherwise spam the GitHub Action bot's diff)
+function seededShuffle(arr, seed) {
+  let h = 0; for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { h = (Math.imul(h, 1103515245) + 12345) >>> 0; const j = h % (i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
 // build one question from already-extracted column values (kept separate
 // from the row-column layout so the same logic serves both the single-
 // language sheets and the bilingual one, whose columns are numbered
@@ -105,19 +109,17 @@ function buildQuestion(rawQ, c, d, img, explain) {
       correctIdx = all.findIndex(o => o.idx === co.idx);
     }
     item.t = 'mc'; item.o = all.map(o => o.text); item.a = correctIdx;
+  } else if (c) {
+    // plain-text options, no letter prefixes at all (標識's "what does this
+    // sign mean?" questions) — c is the correct answer, d holds the wrong
+    // ones one per line
+    const wrongs = d.split(/\n+/).map(x => x.trim()).filter(Boolean);
+    const all = seededShuffle([c, ...wrongs], rawQ + img);
+    item.t = 'mc'; item.o = all; item.a = all.indexOf(c);
   } else return null;
   if (img) item.img = img;
   if (explain) item.e = explain;
   return item;
-}
-// A=ID B=問題 C=正しい D=誤り E=イラスト F=解説 (single-language sheets)
-function toQuestions(rows) {
-  const out = [];
-  for (const r of rows.slice(1)) {
-    const q = buildQuestion(r[1], r[2], r[3], r[4], r[5]);
-    if (q) out.push(q);
-  }
-  return out;
 }
 // A=ID B=問題(JP) C=問題(KM) D=解説(JP) E=解説(KM) F=正しい G=誤り H=イラスト
 // (bilingual sheet) — returns { ja: [...], km: [...] }, one question pair
@@ -136,13 +138,6 @@ function toQuestionsBilingual(rows) {
 (async () => {
   const check = process.argv.includes('--check');
   const data = { km: {}, ja: {} };
-  for (const lang of Object.keys(SHEETS)) {
-    for (const key of Object.keys(SOLO_TABS)) {
-      const csv = await get(csvUrl(SHEETS[lang], SOLO_TABS[key]));
-      data[lang][key] = toQuestions(parseCSV(csv));
-      console.log(`${lang}.${key}: ${data[lang][key].length} questions`);
-    }
-  }
   for (const [key, { base, tabs }] of Object.entries(BILINGUAL)) {
     data.km[key] = []; data.ja[key] = [];
     for (const gid of tabs) {
