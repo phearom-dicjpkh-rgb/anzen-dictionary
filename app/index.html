@@ -3133,6 +3133,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                       </div>
                     </sc-for>
                   </div>
+                  <sc-if value="{{ it.hasExplain }}"><div style="font-size:11px;line-height:1.6;margin-top:7px;padding:6px 9px;border-radius:6px;background:#f5f7fb;border-left:3px solid #1a4b8c;color:#333;"><span style="opacity:0.6;">ការពន្យល់៖ </span>{{ it.explain }}</div></sc-if>
                 </div>
               </div>
             </sc-for>
@@ -13156,7 +13157,10 @@ class Component extends DCLogic {
         opts: opts.map(o => ({ label: o.label, text: o.text,
           // the answer key marks the right choice; the blank sheet looks identical minus the mark
           optStyle: (withAnswers && o.ok) ? 'border:1.5px solid #1a7f37;background:#eaf7ee;color:#1a7f37;font-weight:700;' : 'border:1px solid #c7d0e0;color:#222;',
-          mark: (withAnswers && o.ok) ? ' ✓' : '' })) };
+          mark: (withAnswers && o.ok) ? ' ✓' : '' })),
+        // the explanation (解説) column from the sheet — only on the answer key,
+        // never the blank sheet students practice on
+        hasExplain: withAnswers && !!q.e, explain: q.e || '' };
     });
     const report = {
       appName: this.state.appName || 'វចនានុក្រម', logo: this.state.appLogo || '',
