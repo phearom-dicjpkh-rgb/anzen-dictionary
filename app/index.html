@@ -1541,6 +1541,10 @@ textarea.input { min-height: 90px; resize: vertical; }
           </sc-if>
           <sc-if value="{{ noSelectedStudent }}" hint-placeholder-val="{{ true }}">
             <h1 style="font-size:26px;margin:0 0 14px;">ចំណាត់ថ្នាក់</h1>
+            <div style="display:flex;gap:0;background:var(--color-neutral-100);border-radius:10px;padding:3px;margin-bottom:14px;max-width:320px;">
+              <div style="flex:1;text-align:center;padding:8px 0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;{{ monRankTabSkillStyle }}" sc-camel-on-click="{{ monRankTabSkill }}">ជំនាញ</div>
+              <div style="flex:1;text-align:center;padding:8px 0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;{{ monRankTabLawStyle }}" sc-camel-on-click="{{ monRankTabLaw }}">ច្បាប់ចរាចរណ៍</div>
+            </div>
             <sc-if value="{{ hasStudents }}">
             <div style="border-radius:16px;overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow-md);border:1px solid var(--color-divider);">
               <div style="background:linear-gradient(135deg, var(--color-accent-700), var(--color-accent));color:#f3f2f2;padding:16px 18px 20px;">
@@ -1622,6 +1626,10 @@ textarea.input { min-height: 90px; resize: vertical; }
         <sc-if value="{{ isRanking }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;">
           <h1 style="font-size:26px;margin:0 0 14px;">ចំណាត់ថ្នាក់</h1>
+          <div style="display:flex;gap:0;background:var(--color-neutral-100);border-radius:10px;padding:3px;margin-bottom:14px;max-width:320px;">
+            <div style="flex:1;text-align:center;padding:8px 0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;{{ rankTabSkillStyle }}" sc-camel-on-click="{{ rankTabSkill }}">ជំនាញ</div>
+            <div style="flex:1;text-align:center;padding:8px 0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;{{ rankTabLawStyle }}" sc-camel-on-click="{{ rankTabLaw }}">ច្បាប់ចរាចរណ៍</div>
+          </div>
           <sc-if value="{{ showLeaderboard }}">
           <div style="border-radius:16px;overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow-md);border:1px solid var(--color-divider);">
             <div style="background:linear-gradient(135deg, var(--color-accent-700), var(--color-accent));color:#f3f2f2;padding:16px 18px 20px;">
@@ -1629,7 +1637,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ rankSchoolLabel }}</div>
                 <sc-if value="{{ hasMyRank }}"><div style="font-size:12px;opacity:0.9;">{{ myRankLabel }}</div></sc-if>
               </div>
-              <div style="font-size:12px;opacity:0.85;margin-top:2px;">កម្រិតរបស់អ្នក · {{ myLevel }} លំហាត់ជាប់</div>
+              <div style="font-size:12px;opacity:0.85;margin-top:2px;">{{ myLevelCaption }}</div>
 
               <div style="display:flex;justify-content:center;align-items:flex-end;gap:10px;margin-top:18px;">
                 <sc-for list="{{ podium }}" as="p" hint-placeholder-count="3">
@@ -1657,7 +1665,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               </sc-for>
             </div>
           </div>
-          <div style="text-align:center;font-size:11px;opacity:0.5;line-height:1.7;">កម្រិត = ចំនួនលំហាត់ដែលបានជាប់។<br>ធ្វើតេស្តបន្ថែម ដើម្បីឡើងចំណាត់ថ្នាក់!</div>
+          <div style="text-align:center;font-size:11px;opacity:0.5;line-height:1.7;">{{ rankFooterLine1 }}<br>{{ rankFooterLine2 }}</div>
           </sc-if>
           <sc-if value="{{ noLeaderboard }}" hint-placeholder-val="{{ false }}">
             <div style="text-align:center;padding:50px 20px;opacity:0.55;font-size:13px;line-height:1.8;">មិនទាន់មានទិន្នន័យចំណាត់ថ្នាក់នៅឡើយទេ<br>ចាប់ផ្តើមធ្វើតេស្តដើម្បីឡើងកម្រិត</div>
@@ -9539,6 +9547,14 @@ function computeLevel(settings, usageSecs, viewedCount){
 }
 // a star for every time the exam was passed (each passing attempt in the log)
 function examStars(settings){ const log = (settings || {}).examLog; return Array.isArray(log) ? log.filter(a => a && a.passed).length : 0; }
+// a student's traffic-law ranking is kept separate from the skill level above —
+// one point per passed sitting (any 標識/練習/仮免/本免 set, any language),
+// counted straight off lawResults' best-score map
+function computeLawLevel(settings){
+  const lr = (settings || {}).lawResults || {};
+  let n = 0; for (const k of Object.keys(lr)) if (lr[k] >= PASS_PCT) n++;
+  return n;
+}
 // "⭐", "⭐ ×2", … after a name; empty when the exam was never passed
 function starLabel(n){ return n >= 2 ? `⭐ ×${n}` : (n === 1 ? '⭐' : ''); }
 
@@ -9797,6 +9813,7 @@ function makeDemoBackend(){
       const schoolName=sch?(sch.full_name||sch.email||''):'';
       const rows=all.filter(x=>x.role==='student' && x.school_id && x.school_id===me.school_id).map(u=>({
         full_name: u.full_name||'', level: computeLevel(u.settings||{}, totalUsageSecs(u.usage), Array.isArray(u.viewed)?u.viewed.length:0), stars: examStars(u.settings||{}),
+        law_level: computeLawLevel(u.settings||{}),
         progress: Array.isArray(u.viewed)?u.viewed.length:0, is_me: u.id===me.id, school_name:schoolName,
         avatar: (u.settings && u.settings.avatarAnimal) || '', avatar_color: (u.settings && u.settings.avatarColor) || '' }));
       return { rows }; },
@@ -9917,6 +9934,8 @@ class Component extends DCLogic {
     profHourDay: null,  // day tapped in the profile's own usage chart (hour drill-down)
     expandedSchools: [],
     monCollapsed: [],   // branches an admin has folded away on the leaderboard
+    rankTab: 'skill',      // student's own ranking screen: 'skill' or 'law'
+    monRankTab: 'skill',   // teacher/admin's ranking screen: 'skill' or 'law'
     // admin (create accounts)
     adminFullName: '', adminEmail: '', adminPassword: '', adminRole: 'student', adminTeacherId: '', adminSchoolId: '',
     adminGender: '', adminBirthDate: '', createDialogOpen: false,
@@ -10865,6 +10884,8 @@ class Component extends DCLogic {
   }
   toggleSchoolGroup(id){ this.setState(s => ({ expandedSchools: s.expandedSchools.includes(id) ? s.expandedSchools.filter(x => x !== id) : [...s.expandedSchools, id] })); }
   toggleMonSchool(id){ this.setState(s => ({ monCollapsed: s.monCollapsed.includes(id) ? s.monCollapsed.filter(x => x !== id) : [...s.monCollapsed, id] })); }
+  setRankTab(tab){ if (this.state.rankTab !== tab) this.setState({ rankTab: tab }); }
+  setMonRankTab(tab){ if (this.state.monRankTab !== tab) this.setState({ monRankTab: tab }); }
   setAdminRoleSchool(){ this.setState({ adminRole: 'school', adminTeacherId: '', adminSchoolId: '' }); }
   setEditRoleSchool(){ this.setState({ editRole: 'school', editTeacherId: '', editSchoolId: '' }); }
   toggleSchoolMenu(which){ this.setState(s => ({ schoolMenu: s.schoolMenu === which ? null : which })); }
@@ -14311,42 +14332,58 @@ class Component extends DCLogic {
       dateLabel: (() => { const d = new Date(a.date); return `${d.getDate()}/${d.getMonth() + 1}`; })(),
     }));
     const myLevel = computeLevel(s.settings, totalUsageSecs(s.usage), (s.viewed || []).length);
+    const myLawLevel = computeLawLevel(s.settings);
 
     // — the student leaderboard —
-    // Rank by level, break ties on words seen, then name. The top three wear a
-    // medal; the learner's own row is lit up wherever it lands.
+    // Two separate boards (ជំនាញ / ច្បាប់ចរាចរណ៍) built off the same leaderboard
+    // rows, just ranked by a different field — rankTab picks which one feeds
+    // the shared template below. Rank by level, break ties on words seen, then
+    // name. The top three wear a medal; the learner's own row is lit up
+    // wherever it lands.
     const MEDALS = ['🥇', '🥈', '🥉'];
-    const ranked = (s.leaderboard || []).slice()
-      .sort((a, b) => (b.level - a.level) || ((b.progress || 0) - (a.progress || 0))
-                      || String(a.full_name).localeCompare(String(b.full_name)));
-    const rankRows = ranked.map((r, i) => ({
-      rank: i + 1,
-      medal: MEDALS[i] || '',
-      isTop3: i < 3,
-      badge: MEDALS[i] || String(i + 1),
-      name: (r.full_name || '').trim() || 'សិស្ស',
-      levelLabel: `កម្រិត ${r.level}`,
-      stars: starLabel(r.stars || 0), hasStars: (r.stars || 0) > 0,
-      isMe: !!r.is_me,
-      avatarGlyph: r.avatar || ((r.full_name || '?').trim().charAt(0).toUpperCase()),
-      avatarBg: r.avatar_color || 'var(--color-accent)',
-      rowStyle: r.is_me
-        ? 'background:color-mix(in srgb, var(--color-accent) 14%, transparent);border-color:var(--color-accent);'
-        : '',
-      badgeStyle: i < 3
-        ? 'font-size:20px;'
-        : 'font-size:13px;font-weight:600;color:var(--color-accent-700);background:var(--color-neutral-200);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;',
-    }));
-    const myRow = rankRows.find(r => r.isMe) || null;
-    // top three, arranged 2-1-3 for a podium
-    const podiumOrder = [1, 0, 2];
-    const podium = podiumOrder.map(i => rankRows[i]).filter(Boolean).map(r => ({
-      ...r,
-      podiumHeight: r.rank === 1 ? '78px' : r.rank === 2 ? '58px' : '46px',
-      podiumBg: r.rank === 1 ? 'var(--color-accent)' : 'var(--color-neutral-300)',
-      avSize: r.rank === 1 ? '56px' : '44px',
-      avFont: r.rank === 1 ? (r.avatarGlyph && r.avatarGlyph.length > 1 ? '30px' : '24px') : (r.avatarGlyph && r.avatarGlyph.length > 1 ? '25px' : '19px'),
-    }));
+    const buildRankBoard = (levelOf, levelLabelOf, starsOf) => {
+      const ranked = (s.leaderboard || []).slice()
+        .sort((a, b) => (levelOf(b) - levelOf(a)) || ((b.progress || 0) - (a.progress || 0))
+                        || String(a.full_name).localeCompare(String(b.full_name)));
+      const rows = ranked.map((r, i) => ({
+        rank: i + 1,
+        medal: MEDALS[i] || '',
+        isTop3: i < 3,
+        badge: MEDALS[i] || String(i + 1),
+        name: (r.full_name || '').trim() || 'សិស្ស',
+        levelLabel: levelLabelOf(r),
+        stars: starLabel(starsOf(r) || 0), hasStars: (starsOf(r) || 0) > 0,
+        isMe: !!r.is_me,
+        avatarGlyph: r.avatar || ((r.full_name || '?').trim().charAt(0).toUpperCase()),
+        avatarBg: r.avatar_color || 'var(--color-accent)',
+        rowStyle: r.is_me
+          ? 'background:color-mix(in srgb, var(--color-accent) 14%, transparent);border-color:var(--color-accent);'
+          : '',
+        badgeStyle: i < 3
+          ? 'font-size:20px;'
+          : 'font-size:13px;font-weight:600;color:var(--color-accent-700);background:var(--color-neutral-200);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;',
+      }));
+      const myRow = rows.find(r => r.isMe) || null;
+      // top three, arranged 2-1-3 for a podium
+      const podiumOrder = [1, 0, 2];
+      const podium = podiumOrder.map(i => rows[i]).filter(Boolean).map(r => ({
+        ...r,
+        podiumHeight: r.rank === 1 ? '78px' : r.rank === 2 ? '58px' : '46px',
+        podiumBg: r.rank === 1 ? 'var(--color-accent)' : 'var(--color-neutral-300)',
+        avSize: r.rank === 1 ? '56px' : '44px',
+        avFont: r.rank === 1 ? (r.avatarGlyph && r.avatarGlyph.length > 1 ? '30px' : '24px') : (r.avatarGlyph && r.avatarGlyph.length > 1 ? '25px' : '19px'),
+      }));
+      return { rows, myRow, podium };
+    };
+    const skillBoard = buildRankBoard(r => r.level || 0, r => `កម្រិត ${r.level || 0}`, r => r.stars || 0);
+    const lawBoard = buildRankBoard(r => r.law_level || 0, r => `ជាប់ ${r.law_level || 0} ឈុត`, () => 0);
+    const rankBoard = s.rankTab === 'law' ? lawBoard : skillBoard;
+    const rankRows = rankBoard.rows, myRow = rankBoard.myRow, podium = rankBoard.podium;
+    const rankTabSkillStyle = s.rankTab === 'law' ? 'color:color-mix(in srgb, var(--color-text) 65%, transparent);' : 'background:var(--color-accent-700);color:#fff;';
+    const rankTabLawStyle = s.rankTab === 'law' ? 'background:var(--color-accent-700);color:#fff;' : 'color:color-mix(in srgb, var(--color-text) 65%, transparent);';
+    const myLevelCaption = s.rankTab === 'law' ? `ចំណាត់ថ្នាក់ច្បាប់ចរាចរណ៍ · ${myLawLevel} ឈុតជាប់` : `កម្រិតរបស់អ្នក · ${myLevel} លំហាត់ជាប់`;
+    const rankFooterLine1 = s.rankTab === 'law' ? 'ចំណាត់ថ្នាក់នេះគិតតាមចំនួនឈុតតេស្តច្បាប់ចរាចរណ៍ដែលបានជាប់។' : 'កម្រិត = ចំនួនលំហាត់ដែលបានជាប់។';
+    const rankFooterLine2 = s.rankTab === 'law' ? 'ធ្វើតេស្តច្បាប់ចរាចរណ៍បន្ថែម ដើម្បីឡើងចំណាត់ថ្នាក់!' : 'ធ្វើតេស្តបន្ថែម ដើម្បីឡើងចំណាត់ថ្នាក់!';
 
     // the same two panels again, for whichever student is being followed
     // total usage stats (hero tiles) always cover the full recorded history
@@ -14541,24 +14578,9 @@ class Component extends DCLogic {
     //   student sees, but every row opens that student's full detail, and an
     //   admin's list is split by branch. Level and word count come straight
     //   from s.students (a teacher may read them; a student may not).
-    const monEntries = s.students.map(st => {
-      const keys = new Set();
-      for (const id of (Array.isArray(st.viewed) ? st.viewed : [])) {
-        const k = WORD_KEY.get(id);
-        if (k) keys.add(k);
-      }
-      return {
-        schoolId: st.school_id || '',
-        name: (st.full_name || st.email || '').trim() || 'សិស្ស',
-        level: computeLevel(st.settings || {}, totalUsageSecs(st.usage), Array.isArray(st.viewed) ? st.viewed.length : 0),
-        stars: examStars(st.settings || {}),
-        words: keys.size,
-        avatar: (st.settings && st.settings.avatarAnimal) || '',
-        avatarColor: (st.settings && st.settings.avatarColor) || '',
-        st,
-      };
-    }).sort((a, b) => (b.level - a.level) || (b.words - a.words) || a.name.localeCompare(b.name));
-
+    // Two separate boards (ជំនាញ / ច្បាប់ចរាចរណ៍), same shape as the student's
+    // own ranking screen — monRankTab picks which one feeds monRows/monGroups/
+    // monPodium below.
     const monRowOf = (e, i) => ({
       rank: i + 1,
       medal: MEDALS[i] || '',
@@ -14567,7 +14589,7 @@ class Component extends DCLogic {
         ? 'font-size:20px;'
         : 'font-size:13px;font-weight:600;color:var(--color-accent-700);background:var(--color-neutral-200);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;',
       name: e.name,
-      levelLabel: `កម្រិត ${e.level} · ${e.words} ពាក្យ`,
+      levelLabel: e.levelLabel,
       stars: starLabel(e.stars || 0), hasStars: (e.stars || 0) > 0,
       avatar: e.avatar || '', avatarColor: e.avatarColor || '',
       avatarGlyph: e.avatar || (e.name || '?').trim().charAt(0).toUpperCase(),
@@ -14575,38 +14597,74 @@ class Component extends DCLogic {
       online: isOnlineAt(e.st.last_seen),
       onSelect: () => this.selectStudentToView(e.st),
     });
-
-    const monSchoolIds = [...new Set(monEntries.map(e => e.schoolId))];
-    const monGrouped = monSchoolIds.length > 1;     // only an admin sees several branches
-    let monRows = [], monGroups = [];
-    if (monGrouped) {
-      monGroups = monSchoolIds
-        .map(id => {
-          const rows = monEntries.filter(e => e.schoolId === id).map(monRowOf);
-          const collapsed = s.monCollapsed.includes(id);   // tap the name to fold a branch away
-          return {
-            id, name: schoolName(id) || 'មិនទាន់មានសាលា/សាខា',
-            rows, open: !collapsed,
-            countLabel: `${rows.length} សិស្ស`,
-            chevron: collapsed ? '▸' : '▾',
-            onToggle: () => this.toggleMonSchool(id),
-          };
-        })
-        .sort((a, b) => a.name.localeCompare(b.name));
-    } else {
-      monRows = monEntries.map(monRowOf);
-    }
-    // the top-3 podium is shown for everyone now (admins included), on the overall ranking
-    const monTop3 = monEntries.slice(0, 3).map((e, i) => monRowOf(e, i));
-    const monPodium = [1, 0, 2].map(i => monTop3[i]).filter(Boolean).map(r => ({
-      ...r,
-      podiumHeight: r.rank === 1 ? '78px' : r.rank === 2 ? '58px' : '46px',
-      podiumBg: r.rank === 1 ? 'var(--color-accent)' : 'var(--color-neutral-300)',
-      avatarGlyph: r.avatar || (r.name || '?').trim().charAt(0),
-      avSize: r.rank === 1 ? '56px' : '46px',
-      avFont: r.rank === 1 ? (r.avatar ? '30px' : '24px') : (r.avatar ? '25px' : '19px'),
-    }));
-    const monShowPodium = monPodium.length > 0;
+    const buildMonBoard = (entries) => {
+      entries = entries.slice().sort((a, b) => (b.level - a.level) || (b.tieBreak - a.tieBreak) || a.name.localeCompare(b.name));
+      const schoolIds = [...new Set(entries.map(e => e.schoolId))];
+      const grouped = schoolIds.length > 1;     // only an admin sees several branches
+      let rows = [], groups = [];
+      if (grouped) {
+        groups = schoolIds
+          .map(id => {
+            const grows = entries.filter(e => e.schoolId === id).map(monRowOf);
+            const collapsed = s.monCollapsed.includes(id);   // tap the name to fold a branch away
+            return {
+              id, name: schoolName(id) || 'មិនទាន់មានសាលា/សាខា',
+              rows: grows, open: !collapsed,
+              countLabel: `${grows.length} សិស្ស`,
+              chevron: collapsed ? '▸' : '▾',
+              onToggle: () => this.toggleMonSchool(id),
+            };
+          })
+          .sort((a, b) => a.name.localeCompare(b.name));
+      } else {
+        rows = entries.map(monRowOf);
+      }
+      // the top-3 podium is shown for everyone now (admins included), on the overall ranking
+      const top3 = entries.slice(0, 3).map((e, i) => monRowOf(e, i));
+      const podium = [1, 0, 2].map(i => top3[i]).filter(Boolean).map(r => ({
+        ...r,
+        podiumHeight: r.rank === 1 ? '78px' : r.rank === 2 ? '58px' : '46px',
+        podiumBg: r.rank === 1 ? 'var(--color-accent)' : 'var(--color-neutral-300)',
+        avatarGlyph: r.avatar || (r.name || '?').trim().charAt(0),
+        avSize: r.rank === 1 ? '56px' : '46px',
+        avFont: r.rank === 1 ? (r.avatar ? '30px' : '24px') : (r.avatar ? '25px' : '19px'),
+      }));
+      return { rows, groups, grouped, podium, showPodium: podium.length > 0 };
+    };
+    const monSkillEntries = s.students.map(st => {
+      const keys = new Set();
+      for (const id of (Array.isArray(st.viewed) ? st.viewed : [])) {
+        const k = WORD_KEY.get(id);
+        if (k) keys.add(k);
+      }
+      const level = computeLevel(st.settings || {}, totalUsageSecs(st.usage), Array.isArray(st.viewed) ? st.viewed.length : 0);
+      return {
+        schoolId: st.school_id || '',
+        name: (st.full_name || st.email || '').trim() || 'សិស្ស',
+        level, tieBreak: keys.size, levelLabel: `កម្រិត ${level} · ${keys.size} ពាក្យ`,
+        stars: examStars(st.settings || {}),
+        avatar: (st.settings && st.settings.avatarAnimal) || '',
+        avatarColor: (st.settings && st.settings.avatarColor) || '',
+        st,
+      };
+    });
+    const monLawEntries = s.students.map(st => {
+      const level = computeLawLevel(st.settings || {});
+      return {
+        schoolId: st.school_id || '',
+        name: (st.full_name || st.email || '').trim() || 'សិស្ស',
+        level, tieBreak: 0, levelLabel: `ជាប់ ${level} ឈុត`,
+        stars: 0,
+        avatar: (st.settings && st.settings.avatarAnimal) || '',
+        avatarColor: (st.settings && st.settings.avatarColor) || '',
+        st,
+      };
+    });
+    const monBoard = buildMonBoard(s.monRankTab === 'law' ? monLawEntries : monSkillEntries);
+    const monRows = monBoard.rows, monGroups = monBoard.groups, monGrouped = monBoard.grouped,
+      monPodium = monBoard.podium, monShowPodium = monBoard.showPodium;
+    const monRankTabSkillStyle = s.monRankTab === 'law' ? 'color:color-mix(in srgb, var(--color-text) 65%, transparent);' : 'background:var(--color-accent-700);color:#fff;';
+    const monRankTabLawStyle = s.monRankTab === 'law' ? 'background:var(--color-accent-700);color:#fff;' : 'color:color-mix(in srgb, var(--color-text) 65%, transparent);';
     const monTitle = s.role === 'admin' ? 'សិស្សទាំងអស់'
       : s.role === 'school' ? (s.profileName || 'សិស្សក្នុងសាលា/សាខារបស់អ្នក')   // a branch is its own name
       : (schoolName(s.mySchoolId) || 'សិស្សក្នុងសាលា/សាខារបស់អ្នក');
@@ -14875,8 +14933,10 @@ class Component extends DCLogic {
       monitorPageProgress, monitorOverallViewed, monitorOverallPct, overallTotal: monitorTotal,
       // leaderboard-style follow list
       monRows, monGroups, monPodium, monShowPodium, monGrouped, monFlat: !monGrouped,
-      monTitle, monCountLabel: `${monEntries.length} សិស្ស`,
-      hasStudents: monEntries.length > 0, noStudents: monEntries.length === 0,
+      monRankTabSkill: () => this.setMonRankTab('skill'), monRankTabLaw: () => this.setMonRankTab('law'),
+      monRankTabSkillStyle, monRankTabLawStyle,
+      monTitle, monCountLabel: `${s.students.length} សិស្ស`,
+      hasStudents: s.students.length > 0, noStudents: s.students.length === 0,
       hasSelectedStudent: !!s.selectedStudent, noSelectedStudent: !s.selectedStudent, selectedStudent: s.selectedStudentName,
       backToStudentList: () => this.backToStudentList(),
       canMonitor: ['teacher','school','admin'].includes(s.role),
@@ -15144,6 +15204,8 @@ class Component extends DCLogic {
       myLevel, rankRows, podium,
       hasMyRank: !!myRow,
       myRankLabel: myRow ? `ចំណាត់ថ្នាក់ទី ${myRow.rank} / ${rankRows.length}` : '',
+      rankTabSkill: () => this.setRankTab('skill'), rankTabLaw: () => this.setRankTab('law'),
+      rankTabSkillStyle, rankTabLawStyle, myLevelCaption, rankFooterLine1, rankFooterLine2,
 
       // — Printable worksheets (PDF) —
       ...(() => {
