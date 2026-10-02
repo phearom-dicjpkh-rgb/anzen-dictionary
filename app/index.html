@@ -705,9 +705,110 @@ textarea.input { min-height: 90px; resize: vertical; }
     }
     @keyframes shakeX{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
   </style>
+  <style>
+    /* ===== Skins (រូបរាង) =====================================================
+       The user picks one in Settings; it is saved on their account and set as
+       data-skin on <html>. No data-skin = the original look. Each skin is a
+       token set (colours, radii, shadows, fonts) plus a few structural rules
+       for the tab bar and cards. */
+    html[data-skin]{ --skin-sans:"DictNum",-apple-system,BlinkMacSystemFont,"SF Pro Text",var(--font-jp),system-ui,sans-serif; }
+    html[data-skin] body{ font-family:var(--skin-sans); }
+    html[data-skin]{ --font-body:var(--skin-sans); --font-heading:var(--skin-sans); }
+    html[data-skin] .card{ background:var(--color-surface); border-color:transparent; }
+    html[data-skin] .set-group{ box-shadow:none; }
+    /* sticky headers (search bar etc.) turn translucent so content blurs under them */
+    html[data-skin] [data-scroll="main"] [style*="position: sticky"]{ background:color-mix(in srgb, var(--color-bg) 84%, transparent) !important; backdrop-filter:blur(18px) saturate(1.6); -webkit-backdrop-filter:blur(18px) saturate(1.6); }
+
+    /* — 01 · iOS Light — */
+    html[data-skin="ios-light"]{
+      --color-bg:#F2F2F7; --color-surface:#FFFFFF; --color-text:#000000; --color-accent:#007AFF; --color-accent-2:#FF9500;
+      --color-divider:rgba(60,60,67,.18);
+      --color-neutral-100:#FFFFFF; --color-neutral-200:#E5E5EA; --color-neutral-300:#D1D1D6; --color-neutral-400:#C7C7CC; --color-neutral-500:#AEAEB2; --color-neutral-600:#8E8E93; --color-neutral-700:#636366; --color-neutral-800:#48484A; --color-neutral-900:#1C1C1E;
+      --color-accent-100:#E5F1FF; --color-accent-200:#CCE4FF; --color-accent-300:#99C9FF; --color-accent-400:#4DA3FF; --color-accent-500:#1A8CFF; --color-accent-600:#007AFF; --color-accent-700:#0062CC; --color-accent-800:#004A99; --color-accent-900:#003166;
+      --radius-sm:8px; --radius-md:12px; --radius-lg:20px;
+      --shadow-sm:0 1px 2px rgba(0,0,0,.05); --shadow-md:0 4px 14px rgba(0,0,0,.08); --shadow-lg:0 14px 40px rgba(0,0,0,.16);
+    }
+    /* — 02 · iOS Dark (OLED) — */
+    html[data-skin="ios-dark"]{
+      color-scheme:dark;
+      --color-bg:#000000; --color-surface:#1C1C1E; --color-text:#FFFFFF; --color-accent:#0A84FF; --color-accent-2:#FF9F0A;
+      --color-divider:rgba(84,84,88,.6);
+      --color-neutral-100:#1C1C1E; --color-neutral-200:#2C2C2E; --color-neutral-300:#3A3A3C; --color-neutral-400:#48484A; --color-neutral-500:#636366; --color-neutral-600:#8E8E93; --color-neutral-700:#AEAEB2; --color-neutral-800:#C7C7CC; --color-neutral-900:#E5E5EA;
+      --color-accent-100:#0A2A4D; --color-accent-200:#0C3B6E; --color-accent-300:#1260AA; --color-accent-400:#2F7FD6; --color-accent-500:#0A84FF; --color-accent-600:#0A84FF; --color-accent-700:#4DA3FF; --color-accent-800:#7DBBFF; --color-accent-900:#B0D6FF;
+      --radius-sm:8px; --radius-md:12px; --radius-lg:20px;
+      --shadow-sm:0 0 0 transparent; --shadow-md:0 4px 14px rgba(0,0,0,.5); --shadow-lg:0 14px 40px rgba(0,0,0,.7);
+    }
+    html[data-skin="ios-dark"] select.input{ background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>"); }
+    /* — 04 · iOS Notes Cream — */
+    html[data-skin="ios-notes"]{
+      --skin-serif:"New York","Iowan Old Style",Georgia,"Noto Serif Khmer",var(--font-jp),serif;
+      --color-bg:#F8F2E2; --color-surface:#FFFDF6; --color-text:#1C1C1E; --color-accent:#E3A100; --color-accent-2:#7C6A3A;
+      --color-divider:rgba(120,100,40,.2);
+      --color-neutral-100:#FFFDF6; --color-neutral-200:#F0E8D0; --color-neutral-300:#E2D8BA; --color-neutral-400:#CFC29B; --color-neutral-500:#ADA07A; --color-neutral-600:#8A7E5E; --color-neutral-700:#665C42; --color-neutral-800:#443D2B; --color-neutral-900:#2A261B;
+      --color-accent-100:#FFF4D1; --color-accent-200:#FFE7A3; --color-accent-300:#FFD76B; --color-accent-400:#F5BE2B; --color-accent-500:#E3A100; --color-accent-600:#C98A00; --color-accent-700:#8A5A00; --color-accent-800:#6B4500; --color-accent-900:#4A2F00;
+      --radius-sm:8px; --radius-md:14px; --radius-lg:22px;
+      --shadow-sm:0 1px 2px rgba(110,90,30,.08); --shadow-md:0 4px 14px rgba(110,90,30,.12); --shadow-lg:0 14px 40px rgba(110,90,30,.2);
+    }
+    html[data-skin="ios-notes"] h1, html[data-skin="ios-notes"] h2{ font-family:var(--skin-serif); }
+    /* — 03 · iOS Liquid Glass — */
+    html[data-skin="ios-glass"]{
+      --color-bg:#E3E9FF; --color-surface:rgba(255,255,255,.62); --color-text:#0B1020; --color-accent:#0A7CFF; --color-accent-2:#FF6FA8;
+      --color-divider:rgba(255,255,255,.7);
+      --color-neutral-100:rgba(255,255,255,.55); --color-neutral-200:rgba(255,255,255,.7); --color-neutral-300:#C9D2EE; --color-neutral-400:#AAB5D8; --color-neutral-500:#8893BA; --color-neutral-600:#656F96; --color-neutral-700:#4A5378; --color-neutral-800:#323A5C; --color-neutral-900:#1B2140;
+      --color-accent-100:#E3EEFF; --color-accent-200:#C8DDFF; --color-accent-300:#93BCFF; --color-accent-400:#4F96FF; --color-accent-500:#1A82FF; --color-accent-600:#0A7CFF; --color-accent-700:#0A5FD0; --color-accent-800:#0847A0; --color-accent-900:#063070;
+      --radius-sm:10px; --radius-md:22px; --radius-lg:30px;
+      --shadow-sm:0 4px 18px rgba(80,90,170,.14); --shadow-md:0 8px 28px rgba(80,90,170,.18); --shadow-lg:0 18px 48px rgba(70,80,160,.26);
+    }
+    html[data-skin="ios-glass"] .app-bg{
+      background:radial-gradient(circle at 12% 34%, rgba(110,164,255,.55), transparent 42%), radial-gradient(circle at 92% 68%, rgba(255,143,192,.5), transparent 44%), linear-gradient(165deg,#CFE0FF 0%,#E6DCFF 48%,#FFDFEE 100%) !important;
+    }
+    html[data-skin="ios-glass"] .card, html[data-skin="ios-glass"] .set-group{
+      background:rgba(255,255,255,.52); border:1px solid rgba(255,255,255,.8);
+      backdrop-filter:blur(18px) saturate(1.7); -webkit-backdrop-filter:blur(18px) saturate(1.7);
+      box-shadow:0 6px 22px rgba(80,90,170,.14), inset 0 1px 0 rgba(255,255,255,.9);
+    }
+    /* — 08 · Pixel Expressive — */
+    html[data-skin="pixel"]{
+      --color-bg:#FFF6F1; --color-surface:#FFE9DF; --color-text:#2B1710; --color-accent:#FF5B3A; --color-accent-2:#2F9E6B;
+      --color-divider:rgba(43,23,16,.12);
+      --color-neutral-100:#FFEDE4; --color-neutral-200:#FFE0D3; --color-neutral-300:#F3CDBD; --color-neutral-400:#DDB3A2; --color-neutral-500:#B8917F; --color-neutral-600:#8F6B5A; --color-neutral-700:#6C4A3C; --color-neutral-800:#4A2F25; --color-neutral-900:#2B1710;
+      --color-accent-100:#FFE4DC; --color-accent-200:#FFCABC; --color-accent-300:#FFA894; --color-accent-400:#FF8567; --color-accent-500:#FF5B3A; --color-accent-600:#E8431F; --color-accent-700:#B82E10; --color-accent-800:#8A210B; --color-accent-900:#5C1607;
+      --radius-sm:12px; --radius-md:28px; --radius-lg:36px;
+      --shadow-sm:0 2px 0 rgba(43,23,16,.05); --shadow-md:0 8px 20px rgba(184,46,16,.14); --shadow-lg:0 18px 44px rgba(184,46,16,.22);
+    }
+    html[data-skin="pixel"] h1{ font-weight:800; letter-spacing:-.4px; }
+    html[data-skin="pixel"] .card{ box-shadow:none; }
+    html[data-skin="pixel"] .set-group{ border-radius:28px; }
+
+    /* ----- bottom tab bar ----- */
+    html[data-skin="ios-light"] .tabbar, html[data-skin="ios-dark"] .tabbar, html[data-skin="ios-notes"] .tabbar{
+      background:color-mix(in srgb, var(--color-surface) 86%, transparent) !important; backdrop-filter:blur(22px) saturate(1.8); -webkit-backdrop-filter:blur(22px) saturate(1.8);
+      border-top:.5px solid var(--color-divider) !important;
+    }
+    html[data-skin="ios-glass"] .tabbar{
+      left:14px !important; right:14px !important; bottom:calc(14px + env(safe-area-inset-bottom, 0px)) !important; border-radius:34px;
+      padding:7px !important; background:rgba(255,255,255,.58) !important; border:1px solid rgba(255,255,255,.88) !important;
+      backdrop-filter:blur(22px) saturate(1.8); -webkit-backdrop-filter:blur(22px) saturate(1.8);
+      box-shadow:0 10px 32px rgba(70,80,160,.26), inset 0 1px 0 #fff;
+    }
+    html[data-skin="ios-glass"] .tabbar button{ border-radius:26px !important; padding:6px 2px !important; }
+    html[data-skin="ios-glass"] .tabbar button[style*="accent-700"]{ background:rgba(255,255,255,.88) !important; box-shadow:inset 0 0 0 1px #fff, 0 2px 8px rgba(60,80,160,.2); }
+    html[data-skin="pixel"] .tabbar{
+      left:12px !important; right:12px !important; bottom:calc(12px + env(safe-area-inset-bottom, 0px)) !important; border-radius:34px;
+      padding:8px 10px !important; background:#2B1710 !important; border:none !important; align-items:center; justify-content:space-between;
+      box-shadow:0 12px 30px rgba(43,23,16,.35);
+    }
+    html[data-skin="pixel"] .tabbar button{ flex:0 0 auto !important; flex-direction:row !important; gap:6px !important; height:46px; padding:0 11px !important; border-radius:24px !important; color:#EBD9CF !important; font-weight:700; }
+    html[data-skin="pixel"] .tabbar button svg{ stroke:currentColor !important; width:22px; height:22px; }
+    html[data-skin="pixel"] .tabbar button span{ display:none; }
+    html[data-skin="pixel"] .tabbar button[style*="accent-700"]{ background:#FF5B3A !important; color:#fff !important; padding:0 15px 0 13px !important; }
+    html[data-skin="pixel"] .tabbar button[style*="accent-700"] span{ display:inline; font-size:12px !important; }
+    html[data-skin="ios-glass"] [data-scroll="main"], html[data-skin="pixel"] [data-scroll="main"]{ padding-bottom:calc(104px + env(safe-area-inset-bottom, 0px)) !important; }
+    html[data-skin="ios-glass"] button.btn[aria-label="ថយក្រោយ"], html[data-skin="pixel"] button.btn[aria-label="ថយក្រោយ"]{ bottom:calc(100px + env(safe-area-inset-bottom, 0px)) !important; }
+  </style>
 </helmet>
-<div style="height:100vh;height:100dvh;width:100%;overflow:hidden;background:var(--color-bg);display:flex;justify-content:center;font-family:var(--font-body);">
-  <div style="height:100%;width:100%;position:relative;display:flex;flex-direction:column;background:var(--color-bg);overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,0.05);">
+<div class="app-bg" style="height:100vh;height:100dvh;width:100%;overflow:hidden;background:var(--color-bg);display:flex;justify-content:center;font-family:var(--font-body);">
+  <div class="app-bg" style="height:100%;width:100%;position:relative;display:flex;flex-direction:column;background:var(--color-bg);overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,0.05);">
     <sc-if value="{{ showInstall }}" hint-placeholder-val="{{ false }}">
     <div style="flex:none;width:100%;padding:calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;box-sizing:border-box;background:var(--color-accent-100);border-bottom:1px solid var(--color-divider);display:flex;align-items:center;gap:10px;z-index:25;">
       <div style="width:30px;height:30px;flex:none;border-radius:7px;background:var(--color-accent);color:#f3f2f2;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:17px;line-height:1;">辞</div>
@@ -2014,112 +2115,89 @@ textarea.input { min-height: 90px; resize: vertical; }
         <sc-if value="{{ isMenu }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;">
           <h1 style="font-size:26px;margin:0 0 16px;">ម៉ីនុយ</h1>
-          <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="set-group" style="margin-bottom:22px;">
+            <div class="set-row" style="cursor:pointer;padding:12px 14px;" sc-camel-on-click="{{ goSettings }}">
+              <div style="width:56px;height:56px;flex:none;border-radius:50%;background:{{ avatarColor }};color:{{ avatarTextColor }};display:flex;align-items:center;justify-content:center;font-size:29px;font-family:var(--font-heading);{{ avatarRing }}">{{ avatarGlyph }}</div>
+              <div class="set-tx" style="flex:1;"><b style="font-size:18px;">{{ profileDisplayName }}</b><s style="font-size:12.5px;">{{ profileRoleLabel }} · ការកំណត់ គណនី និងរូបរាង</s></div>
+              <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
+            </div>
+          </div>
+          <div class="set-group" style="margin-bottom:22px;">
             <sc-if value="{{ playerInMenu }}">
-            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ openPlayer }}">
-              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
-              <div style="flex:1;min-width:0;">
-                <div class="card-title" style="font-size:15px;">ចាក់ពាក្យ 🎧</div>
-                <div class="card-body" style="font-size:11px;">ស្ដាប់ពាក្យជប៉ុន និង ន័យខ្មែរ ដោយស្វ័យប្រវត្តិ</div>
-              </div>
-              <span style="opacity:0.4;">›</span>
+            <div class="set-row" style="cursor:pointer;" sc-camel-on-click="{{ openPlayer }}">
+              <div class="set-ico" style="background:#FF2D55;color:#fff;"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg></div>
+              <div class="set-tx" style="flex:1;"><b>ចាក់ពាក្យ 🎧</b><s>ស្ដាប់ពាក្យជប៉ុន និង ន័យខ្មែរ ដោយស្វ័យប្រវត្តិ</s></div>
+              <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
             </div>
             </sc-if>
-            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goReadBooks }}">
-              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"></path><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"></path></svg>
-              <div style="flex:1;min-width:0;">
-                <div class="card-title" style="font-size:15px;">អានសៀវភៅ</div>
-                <div class="card-body" style="font-size:11px;">សៀវភៅសិក្សា — ចុចដើម្បីអាន</div>
-              </div>
-              <span style="opacity:0.4;">›</span>
+            <div class="set-row" style="cursor:pointer;" sc-camel-on-click="{{ goReadBooks }}">
+              <div class="set-ico" style="background:#FF9500;color:#fff;"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"></path><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"></path></svg></div>
+              <div class="set-tx" style="flex:1;"><b>អានសៀវភៅ</b><s>សៀវភៅសិក្សា — ចុចដើម្បីអាន</s></div>
+              <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
             </div>
-            <sc-if value="{{ isAdmin }}">
-            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goAddWord }}">
-              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
-              <div style="flex:1;min-width:0;">
-                <div class="card-title" style="font-size:15px;">បញ្ចូលពាក្យថ្មី</div>
-                <div class="card-body" style="font-size:11px;">បន្ថែមពាក្យ ឬ វេយ្យាករណ៍ថ្មី</div>
-              </div>
-              <span style="opacity:0.4;">›</span>
-            </div>
-            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goEditWords }}">
-              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-              <div style="flex:1;min-width:0;">
-                <div class="card-title" style="font-size:15px;">កែពាក្យ</div>
-                <div class="card-body" style="font-size:11px;">ស្វែងរក រួចកែតម្រូវពាក្យ ឬ ឧទាហរណ៍</div>
-              </div>
-              <span style="opacity:0.4;">›</span>
-            </div>
-            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goTechTerms }}">
-              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"></path></svg>
-              <div style="flex:1;min-width:0;">
-                <div class="card-title" style="font-size:15px;">ពាក្យបច្ចេកទេស</div>
-                <div class="card-body" style="font-size:11px;">ខ្មែរ ⇄ ជប៉ុន — បង្ហាញពេលចុចក្នុងតេស្ត</div>
-              </div>
-              <span style="opacity:0.4;">›</span>
-            </div>
-            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goBooks }}">
-              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
-              <div style="flex:1;min-width:0;">
-                <div class="card-title" style="font-size:15px;">ការកំណត់សិទ្ធ</div>
-                <div class="card-body" style="font-size:11px;">ចាក់សោ ឬ ដោះសោ ធនធានតាមសាលា</div>
-              </div>
-              <span style="opacity:0.4;">›</span>
-            </div>
-            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goLibrary }}">
-              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"></path><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"></path></svg>
-              <div style="flex:1;min-width:0;">
-                <div class="card-title" style="font-size:15px;">បណ្ណាល័យសៀវភៅ</div>
-                <div class="card-body" style="font-size:11px;">និពន្ធសៀវភៅ (អក្សរ + រូបភាព) សម្រាប់សិស្ស</div>
-              </div>
-              <span style="opacity:0.4;">›</span>
-            </div>
-            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goShare }}">
-              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg>
-              <div style="flex:1;min-width:0;">
-                <div class="card-title" style="font-size:15px;">រូបភាពចែករំលែក</div>
-                <div class="card-body" style="font-size:11px;">បង្កើតរូបភាពពាក្យ សម្រាប់បណ្ដាញសង្គម</div>
-              </div>
-              <span style="opacity:0.4;">›</span>
-            </div>
-            </sc-if>
-            <sc-if value="{{ menuHasAccounts }}">
-            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goAdmin }}">
-              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg>
-              <div style="flex:1;min-width:0;">
-                <div class="card-title" style="font-size:15px;">គណនី</div>
-                <div class="card-body" style="font-size:11px;">បង្កើត និង គ្រប់គ្រងអ្នកប្រើប្រាស់</div>
-              </div>
-              <span style="opacity:0.4;">›</span>
-            </div>
-            </sc-if>
             <sc-if value="{{ isStudent }}">
-            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goFavorites }}">
-              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-              <div style="flex:1;min-width:0;">
-                <div class="card-title" style="font-size:15px;">សំណព្វ</div>
-                <div class="card-body" style="font-size:11px;">ពាក្យដែលបានរក្សាទុក</div>
-              </div>
-              <span style="opacity:0.4;">›</span>
+            <div class="set-row" style="cursor:pointer;" sc-camel-on-click="{{ goFavorites }}">
+              <div class="set-ico" style="background:#FFB800;color:#fff;"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg></div>
+              <div class="set-tx" style="flex:1;"><b>សំណព្វ</b><s>ពាក្យដែលបានរក្សាទុក</s></div>
+              <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
             </div>
             </sc-if>
+          </div>
+          <sc-if value="{{ isAdmin }}">
+          <div class="set-group" style="margin-bottom:22px;">
+            <div class="set-row" style="cursor:pointer;" sc-camel-on-click="{{ goAddWord }}">
+              <div class="set-ico" style="background:#34C759;color:#fff;"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></div>
+              <div class="set-tx" style="flex:1;"><b>បញ្ចូលពាក្យថ្មី</b><s>បន្ថែមពាក្យ ឬ វេយ្យាករណ៍ថ្មី</s></div>
+              <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
+            </div>
+            <div class="set-row" style="cursor:pointer;" sc-camel-on-click="{{ goEditWords }}">
+              <div class="set-ico" style="background:#007AFF;color:#fff;"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></div>
+              <div class="set-tx" style="flex:1;"><b>កែពាក្យ</b><s>ស្វែងរក រួចកែតម្រូវពាក្យ ឬ ឧទាហរណ៍</s></div>
+              <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
+            </div>
+            <div class="set-row" style="cursor:pointer;" sc-camel-on-click="{{ goTechTerms }}">
+              <div class="set-ico" style="background:#30B0C7;color:#fff;"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"></path></svg></div>
+              <div class="set-tx" style="flex:1;"><b>ពាក្យបច្ចេកទេស</b><s>ខ្មែរ ⇄ ជប៉ុន — បង្ហាញពេលចុចក្នុងតេស្ត</s></div>
+              <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
+            </div>
+            <div class="set-row" style="cursor:pointer;" sc-camel-on-click="{{ goBooks }}">
+              <div class="set-ico" style="background:#FF3B30;color:#fff;"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg></div>
+              <div class="set-tx" style="flex:1;"><b>ការកំណត់សិទ្ធ</b><s>ចាក់សោ ឬ ដោះសោ ធនធានតាមសាលា</s></div>
+              <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
+            </div>
+            <div class="set-row" style="cursor:pointer;" sc-camel-on-click="{{ goLibrary }}">
+              <div class="set-ico" style="background:#AF52DE;color:#fff;"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"></path><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"></path></svg></div>
+              <div class="set-tx" style="flex:1;"><b>បណ្ណាល័យសៀវភៅ</b><s>និពន្ធសៀវភៅ (អក្សរ + រូបភាព) សម្រាប់សិស្ស</s></div>
+              <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
+            </div>
+            <div class="set-row" style="cursor:pointer;" sc-camel-on-click="{{ goShare }}">
+              <div class="set-ico" style="background:#5856D6;color:#fff;"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg></div>
+              <div class="set-tx" style="flex:1;"><b>រូបភាពចែករំលែក</b><s>បង្កើតរូបភាពពាក្យ សម្រាប់បណ្ដាញសង្គម</s></div>
+              <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
+            </div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ menuHasAccounts }}">
+          <div class="set-group" style="margin-bottom:22px;">
+            <div class="set-row" style="cursor:pointer;" sc-camel-on-click="{{ goAdmin }}">
+              <div class="set-ico" style="background:#32ADE6;color:#fff;"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg></div>
+              <div class="set-tx" style="flex:1;"><b>គណនី</b><s>បង្កើត និង គ្រប់គ្រងអ្នកប្រើប្រាស់</s></div>
+              <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
+            </div>
+          </div>
+          </sc-if>
+          <div class="set-group" style="margin-bottom:22px;">
             <sc-if value="{{ menuHasProfile }}">
-            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goProfile }}">
-              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-              <div style="flex:1;min-width:0;">
-                <div class="card-title" style="font-size:15px;">ប្រវត្តិរូប</div>
-                <div class="card-body" style="font-size:11px;">វឌ្ឍនភាព លទ្ធផលតេស្ត និង រយៈពេលប្រើប្រាស់</div>
-              </div>
-              <span style="opacity:0.4;">›</span>
+            <div class="set-row" style="cursor:pointer;" sc-camel-on-click="{{ goProfile }}">
+              <div class="set-ico" style="background:#34C759;color:#fff;"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+              <div class="set-tx" style="flex:1;"><b>ប្រវត្តិរូប</b><s>វឌ្ឍនភាព លទ្ធផលតេស្ត និង រយៈពេលប្រើប្រាស់</s></div>
+              <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
             </div>
             </sc-if>
-            <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:13px;cursor:pointer;" sc-camel-on-click="{{ goSettings }}">
-              <svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
-              <div style="flex:1;min-width:0;">
-                <div class="card-title" style="font-size:15px;">ការកំណត់</div>
-                <div class="card-body" style="font-size:11px;">ឈ្មោះ រូបសញ្ញា ទំហំអក្សរ សំឡេង</div>
-              </div>
-              <span style="opacity:0.4;">›</span>
+            <div class="set-row" style="cursor:pointer;" sc-camel-on-click="{{ goSettings }}">
+              <div class="set-ico" style="background:#8E8E93;color:#fff;"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"></path></svg></div>
+              <div class="set-tx" style="flex:1;"><b>ការកំណត់</b><s>ឈ្មោះ រូបសញ្ញា ទំហំអក្សរ សំឡេង រូបរាង</s></div>
+              <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
             </div>
           </div>
         </div>
@@ -2961,6 +3039,19 @@ textarea.input { min-height: 90px; resize: vertical; }
               </label>
             </div>
           </div>
+
+          <div class="set-ghead">រូបរាង (Skin)</div>
+          <div class="set-group">
+            <sc-for list="{{ skinOptions }}" as="k" hint-placeholder-count="6">
+              <div class="set-row" style="cursor:pointer;{{ k.rowStyle }}" sc-camel-on-click="{{ k.onPick }}">
+                <div style="display:flex;flex:none;width:52px;height:34px;border-radius:9px;overflow:hidden;border:1px solid var(--color-divider);box-sizing:border-box;">
+                  <sc-for list="{{ k.sw }}" as="d" hint-placeholder-count="4"><span style="flex:1;background:{{ d.c }};"></span></sc-for>
+                </div>
+                <div class="set-tx" style="flex:1;"><b>{{ k.label }}</b><s>{{ k.sub }}</s></div>
+                <span style="flex:none;font-size:17px;font-weight:700;color:var(--color-accent-700);width:18px;text-align:center;">{{ k.check }}</span>
+              </div>
+            </sc-for>
+          </div>
         </div>
         </sc-if>
 
@@ -2979,7 +3070,7 @@ textarea.input { min-height: 90px; resize: vertical; }
     </sc-if>
 
     <sc-if value="{{ showTabBar }}" hint-placeholder-val="{{ true }}">
-    <div style="position:absolute;left:0;right:0;bottom:0;display:flex;background:var(--color-surface);border-top:1px solid var(--color-divider);padding:5px 6px calc(5px + env(safe-area-inset-bottom, 0px));z-index:20;">
+    <div class="tabbar" style="position:absolute;left:0;right:0;bottom:0;display:flex;background:var(--color-surface);border-top:1px solid var(--color-divider);padding:5px 6px calc(5px + env(safe-area-inset-bottom, 0px));z-index:20;">
       <button style="flex:1;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:{{ homeColor }};" sc-camel-on-click="{{ goHome }}">
         <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{ homeColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         <span style="font-size:10px;">ស្វែងរក</span>
@@ -9555,6 +9646,16 @@ function computeLawLevel(settings){
   let n = 0; for (const k of Object.keys(lr)) if (lr[k] >= PASS_PCT) n++;
   return n;
 }
+// Skins the user can pick in Settings → រូបរាង. id '' is the original look; the
+// rest are token sets in the "Skins" <style> block (html[data-skin="…"]).
+const SKINS = [
+  { id: '',          label: 'ដើម (Classic)',         sub: 'រូបរាងដើមរបស់កម្មវិធី',                       sw: ['#F3F2F2', '#EAE9E9', '#2F6FB0', '#201F1D'] },
+  { id: 'ios-light', label: 'iOS Light',             sub: 'ខៀវប្រព័ន្ធ បញ្ជីមូលជ្រុង ម៉ឺនុយថ្លាព្រាល',    sw: ['#F2F2F7', '#FFFFFF', '#007AFF', '#000000'] },
+  { id: 'ios-dark',  label: 'iOS Dark (OLED)',       sub: 'ខ្មៅសុទ្ធ សន្សំថ្ម ស្រួលភ្នែកពេលយប់',            sw: ['#000000', '#1C1C1E', '#0A84FF', '#FFFFFF'] },
+  { id: 'ios-glass', label: 'iOS Liquid Glass',      sub: 'កញ្ចក់ព្រាល gradient ទន់ ម៉ឺនុយអណ្ដែត',         sw: ['#CFE0FF', '#FFFFFF', '#0A7CFF', '#FFDFEE'] },
+  { id: 'ios-notes', label: 'iOS Notes Cream',       sub: 'ក្រដាសក្រែម លឿង Notes ចំណងជើង serif',            sw: ['#F8F2E2', '#FFFDF6', '#E3A100', '#1C1C1E'] },
+  { id: 'pixel',     label: 'Pixel Expressive',      sub: 'Coral ដិត កាតមូលធំ ម៉ឺនុយអណ្ដែតរាងគ្រាប់',       sw: ['#FFF6F1', '#FFE9DF', '#FF5B3A', '#2B1710'] },
+];
 // "⭐", "⭐ ×2", … after a name; empty when the exam was never passed
 function starLabel(n){ return n >= 2 ? `⭐ ×${n}` : (n === 1 ? '⭐' : ''); }
 
@@ -10362,7 +10463,21 @@ class Component extends DCLogic {
     const readerOpen = (s.screen === 'library' && s.libMode === 'read') || (s.screen === 'readbooks' && s.rbMode === 'read');
     if (!readerOpen) this._clearBodyOverlay();
   }
+  // set (or clear) the skin on <html>; remembered locally too so the login
+  // screen and the next launch don't flash the original look first
+  _applySkin(id){
+    try {
+      const el = document.documentElement;
+      if (id && SKINS.some(k => k.id === id)) el.setAttribute('data-skin', id); else el.removeAttribute('data-skin');
+      localStorage.setItem('dict_skin', id || '');
+    } catch(e) {}
+  }
+  setSkin(id){
+    this._applySkin(id);
+    this.setState({ settings: { ...this.state.settings, skin: id } }, () => this.persist());
+  }
   async componentDidMount(){
+    try { this._applySkin(localStorage.getItem('dict_skin') || ''); } catch(e) {}
     this.primeVoices();
     this.startUsageTracking();
     this.setupInstall();
@@ -10437,6 +10552,7 @@ class Component extends DCLogic {
       settings:  Object.assign({ fontScale:1, autoAudio:false }, p.settings || {}),
       authStage: 'app', screen, email:'', password:'', authBusy:false, authError:'',
     }, () => {
+      if (typeof this.state.settings.skin === 'string') this._applySkin(this.state.settings.skin);   // the account's own choice follows it across devices
       this._lastLevel = computeLevel(this.state.settings, totalUsageSecs(this.state.usage), (this.state.viewed || []).length);   // baseline so only real rises pop
       this.loadAnnouncements();
       if (p.role === 'admin')   this.loadAdminData();
@@ -15648,6 +15764,8 @@ class Component extends DCLogic {
       syncButtonLabel: s.syncing ? 'កំពុងទាញ…' : 'ធ្វើសមកាលកម្មឥឡូវនេះ',
       startSync: () => this.startSync(),
       fontScale: s.settings.fontScale, onFontScaleChange: e => this.onFontScaleChange(e),
+      skinOptions: SKINS.map(k => { const on = (s.settings.skin || '') === k.id;
+        return { label: k.label, sub: k.sub, sw: k.sw.map(c => ({ c })), check: on ? '✓' : '', rowStyle: on ? 'background:color-mix(in srgb, var(--color-accent) 9%, transparent);' : '', onPick: () => this.setSkin(k.id) }; }),
       autoAudio: s.settings.autoAudio, autoAudioClass: s.settings.autoAudio ? 'on' : '', onAutoAudioChange: e => this.onAutoAudioChange(e),
 
       isDetailOpen: !!s.detailWordId, detailWord,
