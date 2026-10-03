@@ -1973,29 +1973,6 @@ textarea.input { min-height: 90px; resize: vertical; }
             </sc-if>
           </div>
 
-          <!-- 4 · avatar & colour (collapsible) -->
-          <div style="border-bottom:1px solid var(--color-divider);">
-            <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:16px 0;" sc-camel-on-click="{{ toggleProfAvatar }}">
-              <span style="font-size:11px;letter-spacing:0.1em;opacity:0.5;">រូបតំណាង & ពណ៌</span>
-              <span style="opacity:0.4;font-size:12px;">{{ profAvatarChevron }}</span>
-            </div>
-            <sc-if value="{{ profAvatarOpen }}">
-              <div style="padding-bottom:20px;">
-                <div style="font-size:11px;opacity:0.5;margin-bottom:10px;">សត្វទាំង ១២ នៃឆ្នាំ</div>
-                <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;">
-                  <sc-for list="{{ avatarAnimals }}" as="a" hint-placeholder-count="12">
-                    <button title="{{ a.title }}" style="aspect-ratio:1;border:1px solid var(--color-divider);background:var(--color-surface);border-radius:50%;font-size:19px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;{{ a.style }}" sc-camel-on-click="{{ a.onSelect }}">{{ a.emoji }}</button>
-                  </sc-for>
-                </div>
-                <div style="font-size:11px;opacity:0.5;margin:16px 0 10px;">ពណ៌ផ្ទៃ</div>
-                <div style="display:flex;gap:12px;flex-wrap:wrap;">
-                  <sc-for list="{{ avatarColors }}" as="c" hint-placeholder-count="9">
-                    <button aria-label="ពណ៌" style="width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;padding:0;background:{{ c.color }};{{ c.style }}" sc-camel-on-click="{{ c.onSelect }}"></button>
-                  </sc-for>
-                </div>
-              </div>
-            </sc-if>
-          </div>
         </div>
         </sc-if>
 
@@ -3037,6 +3014,28 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <input type="checkbox" checked="{{ autoAudio }}" sc-camel-on-change="{{ onAutoAudioChange }}">
                 <span class="track"></span><span class="thumb"></span>
               </label>
+            </div>
+          </div>
+
+          <div class="set-ghead">រូបតំណាង &amp; ពណ៌</div>
+          <div class="set-group">
+            <div class="set-row" style="flex-direction:column;align-items:stretch;gap:0;padding:14px;">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+                <div style="width:56px;height:56px;flex:none;border-radius:50%;background:{{ avatarColor }};color:{{ avatarTextColor }};display:flex;align-items:center;justify-content:center;font-size:29px;font-family:var(--font-heading);{{ avatarRing }}">{{ avatarGlyph }}</div>
+                <div class="set-tx"><b>{{ profileDisplayName }}</b><s>ជ្រើសសត្វ និងពណ៌ផ្ទៃ</s></div>
+              </div>
+              <div style="font-size:11px;opacity:0.5;margin-bottom:10px;">សត្វទាំង ១២ នៃឆ្នាំ</div>
+              <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;">
+                <sc-for list="{{ avatarAnimals }}" as="a" hint-placeholder-count="12">
+                  <button title="{{ a.title }}" style="aspect-ratio:1;border:1px solid var(--color-divider);background:var(--color-surface);border-radius:50%;font-size:19px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;{{ a.style }}" sc-camel-on-click="{{ a.onSelect }}">{{ a.emoji }}</button>
+                </sc-for>
+              </div>
+              <div style="font-size:11px;opacity:0.5;margin:16px 0 10px;">ពណ៌ផ្ទៃ</div>
+              <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                <sc-for list="{{ avatarColors }}" as="c" hint-placeholder-count="9">
+                  <button aria-label="ពណ៌" style="width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;padding:0;background:{{ c.color }};{{ c.style }}" sc-camel-on-click="{{ c.onSelect }}"></button>
+                </sc-for>
+              </div>
             </div>
           </div>
 
