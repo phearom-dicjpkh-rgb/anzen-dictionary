@@ -2496,6 +2496,11 @@ textarea.input { min-height: 90px; resize: vertical; }
               <input class="input" type="text" value="{{ vmTitle }}" sc-camel-on-change="{{ onVmTitle }}"></div>
             <div class="field"><label>ក្រុម / មេរៀន (ស្រេចចិត្ត)</label>
               <input class="input" type="text" value="{{ vmGroup }}" sc-camel-on-change="{{ onVmGroup }}" placeholder="ឧ. SSW-Truck · មេរៀនទី ១"></div>
+            <sc-if value="{{ vmHasGroups }}"><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px;">
+              <sc-for list="{{ vmGroupChips }}" as="gc" hint-placeholder-count="3">
+                <button style="padding:5px 11px;border-radius:99px;border:1.5px solid;font-size:12px;cursor:pointer;{{ gc.style }}" sc-camel-on-click="{{ gc.onPick }}">{{ gc.label }}</button>
+              </sc-for>
+            </div></sc-if>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;">
               <span>មើលចប់ជាកាតព្វកិច្ច</span>
               <label class="switch {{ vmMandatoryClass }}"><input type="checkbox" checked="{{ vmMandatory }}" sc-camel-on-change="{{ onVmMandatory }}"><span class="track"></span><span class="thumb"></span></label>
@@ -11078,7 +11083,7 @@ class Component extends DCLogic {
     const { error } = await Backend.addVideo(row);
     if (error) { this.setState({ vmBusy: false, vmErr: error }); return; }
     await this.loadVideos();
-    this.setState({ vmBusy: false, vmUrl: '', vmTitle: '', vmGroup: '', vmYt: '', vmDur: 0, vmMandatory: false, vmAllSchools: true, vmSchoolIds: [], vmMsg: `បន្ថែម «${title}» រួចរាល់ ✓` });
+    this.setState({ vmBusy: false, vmUrl: '', vmTitle: '', vmYt: '', vmDur: 0, vmMandatory: false, vmAllSchools: true, vmSchoolIds: [], vmMsg: `បន្ថែម «${title}» រួចរាល់ ✓` });
   }
   async toggleVideoActive(v){ const { error } = await Backend.updateVideo(v.id, { active: !(v.active !== false) }); if (error) { this.showToast(error); return; } await this.loadVideos(); }
   async moveVideo(v, dir){
@@ -16448,6 +16453,8 @@ class Component extends DCLogic {
           style: flt === k ? 'background:var(--color-surface);box-shadow:0 1px 3px rgba(0,0,0,.15);' : 'opacity:0.65;' }));
         // admin manager
         const dayLbl = v => [v.grp, v.duration ? fmtClock(v.duration) : '', v.mandatory ? 'កាតព្វកិច្ច' : '', (Array.isArray(v.school_ids) && v.school_ids.length) ? `${v.school_ids.length} សាខា` : ''].filter(Boolean).join(' · ');
+        // groups already used, newest first — tap one to reuse it
+        const vmGroups = []; for (const v of vids.slice().reverse()) { const g = (v.grp || '').trim(); if (g && !vmGroups.includes(g)) vmGroups.push(g); }
         const vmList = vids.map((v, i) => {
           const ed = s.vmEditId === v.id, e = s.vmEdit || {};
           return { title: v.title, sub: dayLbl(v), thumbStyle: thumbOf(v), dim: v.active === false ? 'opacity:0.55;' : '',
@@ -16486,6 +16493,9 @@ class Component extends DCLogic {
           vmDurLabel: s.vmDur ? fmtClock(s.vmDur) : 'កំពុងអាន… (ឬអានមិនបាន — ប្រព័ន្ធនឹងដឹងពេលចាក់ដំបូង)',
           vmMandatory: s.vmMandatory, vmMandatoryClass: s.vmMandatory ? 'on' : '', onVmMandatory: e => this.onVmMandatory(e),
           vmAllSchools: s.vmAllSchools, vmAllSchoolsClass: s.vmAllSchools ? 'on' : '', onVmAllSchools: e => this.onVmAllSchools(e),
+          vmHasGroups: vmGroups.length > 0,
+          vmGroupChips: vmGroups.map(g => ({ label: g, onPick: () => this.setState({ vmGroup: s.vmGroup === g ? '' : g }),
+            style: s.vmGroup === g ? 'background:var(--color-accent);color:#fff;border-color:var(--color-accent);' : 'background:var(--color-surface);color:var(--color-text);border-color:var(--color-divider);' })),
           vmPickSchools: !s.vmAllSchools,
           vmSchoolList: (s.schools || []).map(sc => ({ name: sc.full_name || sc.email, check: s.vmSchoolIds.includes(sc.id) ? '✓' : '', onToggle: () => this.toggleVmSchool(sc.id) })),
           hasVmErr: !!s.vmErr, vmErr: s.vmErr, hasVmMsg: !!s.vmMsg, vmMsg: s.vmMsg,
