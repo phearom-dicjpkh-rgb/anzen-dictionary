@@ -879,9 +879,14 @@ textarea.input { min-height: 90px; resize: vertical; }
     .vw-stage.vw-hide .vw-fsui *{ pointer-events:none !important; }
     .vw-stage:fullscreen{ width:100%; height:100%; } .vw-stage:-webkit-full-screen{ width:100%; height:100%; }
     .vw-fsui .t{ position:absolute; left:calc(18px + env(safe-area-inset-left, 0px)); right:calc(18px + env(safe-area-inset-right, 0px)); top:12px; display:flex; justify-content:space-between; gap:10px; font-size:14px; font-weight:600; }
-    .vw-fsui .m{ position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); display:flex; justify-content:center; align-items:center; gap:46px; }
-    .vw-fsui .m button{ width:50px; height:50px; border-radius:50%; border:none; background:rgba(255,255,255,.22); color:#fff; font-size:13px; font-weight:700; cursor:pointer; }
-    .vw-fsui .m button.p{ width:68px; height:68px; font-size:26px; background:rgba(255,255,255,.3); }
+    .vw-fsui .m{ position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); display:flex; justify-content:center; align-items:center; gap:36px; }
+    .vw-fsui .m button{ width:46px; height:46px; border-radius:50%; border:none; background:rgba(255,255,255,.22); color:#fff; font-size:13px; font-weight:700; cursor:pointer; }
+    .vw-fsui .m button.p{ width:62px; height:62px; font-size:24px; background:rgba(255,255,255,.3); }
+    .vw-fsui .fsbtns{ display:flex; gap:8px; }
+    .vw-fsui .fsrate{ display:flex; justify-content:flex-end; gap:8px; margin-bottom:8px; }
+    .vw-fsui .fsrate .vw-pill{ pointer-events:auto; min-width:52px; text-align:center; }
+    .vw-fsui .vw-pill{ padding:8px 15px; font-size:13px; border-radius:99px; }
+    .vw-fsui .vw-pill b{ font-size:13px; }
     .vw-fsui .b{ position:absolute; left:calc(22px + env(safe-area-inset-left, 0px)); right:calc(22px + env(safe-area-inset-right, 0px)); bottom:12px; }
     .vw-fsui .b .vw-seek{ background:rgba(255,255,255,.3); }
     .vw-fsui .b .r{ display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:12px; gap:8px; flex-wrap:wrap; }
@@ -10864,7 +10869,7 @@ class Component extends DCLogic {
       completed: !!rec.completed, completedAt: rec.completed_at || null, rate: 1, lastT: start, lastPos: start, counted: false, lastSave: Date.now(), dirty: false, seekAt: 0, state: -1,
       asked: rec.checks_asked || 0, askOk: rec.checks_ok || 0, asking: false };
     try { vw.details = localStorage.getItem('dict_vw_details') === '1'; } catch(e) { vw.details = false; }     // remembered between videos
-    vw.speedOpen = false;
+    vw.speedOpen = false; vw.fsSpeedOpen = false;
     vw.checkAt = vw.watch;                 // the 20-minute "still watching?" clock runs on playing time, from now
     const root = document.createElement('div'); root.className = 'vw-root';
     const rates = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -10878,10 +10883,11 @@ class Component extends DCLogic {
         <div class="vw-shield" data-a="shield"></div>
         ${start ? `<div class="vw-badge" id="vw-badge">បន្តពី ${fmtClock(start)}</div>` : ''}
         <div class="vw-fsui">
-          <div class="t"><span>${this._esc(v.title)}</span><span class="vw-pill js-ratelbl">1×</span></div>
+          <div class="t"><span>${this._esc(v.title)}</span></div>
           <div class="m"><button data-a="b10">-10</button><button class="p js-play" data-a="play">▶</button><button data-a="f10">+10</button></div>
           <div class="b"><div class="vw-seek js-seek"></div>
-            <div class="r"><span class="js-clock"></span><span style="display:flex;gap:5px;flex-wrap:wrap;">${pills('')}</span><button class="vw-pill" data-a="fs">⛶ ចេញ</button></div></div>
+            <div class="fsrate js-fsspeeds" hidden>${pills('')}</div>
+            <div class="r"><span class="js-clock"></span><span class="fsbtns"><button class="vw-pill js-fsspbtn" data-a="fsspeed">ល្បឿន <b class="js-ratelbl">1×</b> <span class="js-fschev">▾</span></button><button class="vw-pill" data-a="fs">⛶ ចេញ</button></span></div></div>
         </div>
       </div>
       <div class="vw-body">
@@ -10996,7 +11002,8 @@ class Component extends DCLogic {
     else if (act === 'shield') { vw.stage.classList.toggle('vw-hide'); if (!vw.stage.classList.contains('vw-hide')) this._vwKickHide(); }
     else if (act === 'b10') this._vwSeek(cur - 10);
     else if (act === 'f10') this._vwSeek(cur + 10);
-    else if (act === 'rate') { const r = parseFloat(a.dataset.r); vw.rate = r; try { vw.player.setPlaybackRate(r); } catch(x) {} vw.dirty = true; vw.speedOpen = false; this._vwSync(); this._vwPaint(); }
+    else if (act === 'rate') { const r = parseFloat(a.dataset.r); vw.rate = r; try { vw.player.setPlaybackRate(r); } catch(x) {} vw.dirty = true; vw.speedOpen = false; vw.fsSpeedOpen = false; this._vwSync(); this._vwPaint(); }
+    else if (act === 'fsspeed') { vw.fsSpeedOpen = !vw.fsSpeedOpen; this._vwSync(); }
     else if (act === 'speedtoggle') { vw.speedOpen = !vw.speedOpen; this._vwSync(); }
     else if (act === 'details') { vw.details = !vw.details; try { localStorage.setItem('dict_vw_details', vw.details ? '1' : '0'); } catch(x) {} this._vwSync(); }
     else if (act === 'fs') this._vwToggleFs();
@@ -11045,6 +11052,8 @@ class Component extends DCLogic {
     const vw = this._vw; if (!vw) return; const r = vw.root;
     const sp = r.querySelector('.js-speeds'), dt = r.querySelector('.js-details');
     if (sp) sp.hidden = !vw.speedOpen; if (dt) dt.hidden = !vw.details;
+    const fsr = r.querySelector('.js-fsspeeds'), fb = r.querySelector('.js-fsspbtn'), fc = r.querySelector('.js-fschev');
+    if (fsr) fsr.hidden = !vw.fsSpeedOpen; if (fb) fb.classList.toggle('on', vw.fsSpeedOpen); if (fc) fc.textContent = vw.fsSpeedOpen ? '▴' : '▾';
     const sb = r.querySelector('.js-spbtn'), db = r.querySelector('.js-detbtn');
     if (sb) sb.classList.toggle('on', vw.speedOpen); if (db) db.classList.toggle('on', vw.details);
     const sc = r.querySelector('.js-spchev'), dc = r.querySelector('.js-detchev');
