@@ -2654,10 +2654,18 @@ textarea.input { min-height: 90px; resize: vertical; }
             <button class="btn btn-icon btn-ghost" sc-camel-on-click="{{ closeMr }}" aria-label="បិទ" style="font-size:16px;">✕</button>
           </div>
           <div style="font-size:11.5px;opacity:0.65;line-height:1.6;"><b>{{ mrWhoName }}</b> · វិភាគម៉ោងរៀន ថ្ងៃសកម្ម លទ្ធផលតេស្ត ចំណុចខ្សោយ វីដេអូ និងប្រៀបធៀបខែមុន</div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-            <sc-for list="{{ mrMonths }}" as="m" hint-placeholder-count="6">
-              <div style="text-align:center;padding:8px 0;border-radius:10px;background:var(--color-surface);border:1.5px solid var(--color-divider);font-size:12.5px;font-weight:600;cursor:pointer;{{ m.style }}" sc-camel-on-click="{{ m.onSelect }}">{{ m.label }}<div style="font-size:9.5px;font-weight:400;opacity:0.75;">{{ m.sub }}</div></div>
-            </sc-for>
+          <div style="background:var(--color-surface);border:1px solid var(--color-divider);border-radius:14px;padding:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <button style="width:34px;height:34px;border-radius:50%;border:none;background:var(--color-bg);color:var(--color-text);font-size:18px;cursor:pointer;padding:0;{{ mrPrevYearStyle }}" sc-camel-on-click="{{ mrPrevYear }}" aria-label="ឆ្នាំមុន">‹</button>
+              <b style="font-size:15px;">{{ mrYearLabel }}</b>
+              <button style="width:34px;height:34px;border-radius:50%;border:none;background:var(--color-bg);color:var(--color-text);font-size:18px;cursor:pointer;padding:0;{{ mrNextYearStyle }}" sc-camel-on-click="{{ mrNextYear }}" aria-label="ឆ្នាំបន្ទាប់">›</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+              <sc-for list="{{ mrMonths }}" as="m" hint-placeholder-count="12">
+                <div style="text-align:center;padding:9px 0 7px;border-radius:10px;background:var(--color-bg);border:1.5px solid transparent;font-size:12.5px;font-weight:600;cursor:pointer;{{ m.style }}" sc-camel-on-click="{{ m.onSelect }}">{{ m.label }}<div style="font-size:9px;font-weight:400;opacity:0.75;line-height:1.3;">{{ m.sub }}</div></div>
+              </sc-for>
+            </div>
+            <div style="font-size:11px;opacity:0.6;text-align:center;margin-top:8px;">● មានទិន្នន័យ · ខែដែលបានជ្រើស៖ <b>{{ mrSelLabel }}</b></div>
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:6px;">
             <sc-for list="{{ mrOptList }}" as="o" hint-placeholder-count="5">
@@ -10467,7 +10475,7 @@ class Component extends DCLogic {
     adminFullName: '', adminEmail: '', adminPassword: '', adminRole: 'student', adminTeacherId: '', adminSchoolId: '',
     adminGender: '', adminBirthDate: '', createDialogOpen: false,
     qrOpen: false, qrImg: '', qrName: '', qrLink: '', qrMsg: '',
-    mrOpen: false, mrWho: '', mrMonth: '', mrProg: [], mrBusy: false, mrOpts: { time: true, tests: true, weak: true, compare: true, video: true },
+    mrOpen: false, mrWho: '', mrMonth: '', mrYear: 0, mrProg: [], mrBusy: false, mrOpts: { time: true, tests: true, weak: true, compare: true, video: true },
     adminOwnerName: '', adminColor: '#2f6fb0', adminLogo: '', adminLogoBlob: null,   // school/branch: owner name, colour, logo
     adminBusy: false, adminMsg: '', adminError: '', teachers: [], accounts: [], schools: [],
     // admin (edit account dialog)
@@ -14048,24 +14056,27 @@ class Component extends DCLogic {
     return { who, uid: s.selectedStudent, name: s.selectedStudentName || '—', roleLabel: 'សិស្ស', branch: branch || s.appName || '',
       usage: s.viewingUsage || {}, listen: s.viewingListen || {}, hours: s.viewingUsageHours || {}, history: s.viewingHistory || [] };
   }
-  _mrHas(src, prog, ym){
-    const pre = ym + '-';
-    for (const k in src.usage) if (k.startsWith(pre) && src.usage[k] > 0) return true;
-    for (const x of src.history) { const d = new Date(x.date); if (!isNaN(d) && ymOf(d) === ym) return true; }
-    for (const p of prog) { const d = new Date(p.updated_at); if (!isNaN(d) && ymOf(d) === ym) return true; }
-    return false;
+  // every YYYY-MM that has anything to report (usage, a test attempt, a video watched)
+  _mrMonthSet(src, prog){
+    const set = new Set();
+    for (const k in src.usage) if (src.usage[k] > 0 && /^\d{4}-\d{2}-/.test(k)) set.add(k.slice(0, 7));
+    for (const x of src.history) { const d = new Date(x.date); if (!isNaN(d)) set.add(ymOf(d)); }
+    for (const p of prog) { const d = new Date(p.updated_at); if (!isNaN(d)) set.add(ymOf(d)); }
+    return set;
   }
+  _mrHas(src, prog, ym){ return this._mrMonthSet(src, prog).has(ym); }
   async openMonthlyReport(who){
     if (this.state.mrBusy) return;
     const src = this._mrSource(who); if (!src.uid) return;
     this.setState({ mrBusy: true });
     let prog = []; try { const r = await Backend.listMyVideoProgress(src.uid); prog = r.rows || []; } catch(e) {}
-    const cur = ymOf(new Date()); let sel = cur;
-    if (!this._mrHas(src, prog, cur)) for (let i = 1; i < 6; i++) { const y = ymShift(cur, -i); if (this._mrHas(src, prog, y)) { sel = y; break; } }
-    this.setState({ mrOpen: true, mrWho: who, mrProg: prog, mrMonth: sel, mrBusy: false });
+    const cur = ymOf(new Date()), set = this._mrMonthSet(src, prog); let sel = cur;
+    if (!set.has(cur)) { const past = [...set].filter(m => m < cur).sort(); if (past.length) sel = past[past.length - 1]; }
+    this.setState({ mrOpen: true, mrWho: who, mrProg: prog, mrMonth: sel, mrYear: +sel.slice(0, 4), mrBusy: false });
   }
   closeMonthlyReport(){ this.setState({ mrOpen: false }); }
   setMrMonth(ym){ this.setState({ mrMonth: ym }); }
+  stepMrYear(d){ this.setState(s => ({ mrYear: s.mrYear + d })); }
   toggleMrOpt(k){ this.setState(s => ({ mrOpts: { ...s.mrOpts, [k]: !s.mrOpts[k] } })); }
   downloadMonthlyReport(){
     const s = this.state, src = this._mrSource(s.mrWho);
@@ -16697,16 +16708,19 @@ class Component extends DCLogic {
       mrOpen: s.mrOpen, closeMr: () => this.closeMonthlyReport(), downloadMr: () => this.downloadMonthlyReport(),
       mrWhoName: s.mrOpen ? this._mrSource(s.mrWho).name : '',
       ...(() => {
-        if (!s.mrOpen) return { mrMonths: [], mrOptList: [], mrNoData: false, mrCanDownload: false };
-        const src = this._mrSource(s.mrWho), cur = ymOf(new Date());
-        const mrMonths = [0, 1, 2, 3, 4, 5].map(i => { const ym = ymShift(cur, -i), has = this._mrHas(src, s.mrProg || [], ym), on = s.mrMonth === ym, p = ym.split('-');
-          return { label: KH_MONTHS[+p[1] - 1], sub: p[0] + (i === 0 ? ' · ខែនេះ' : (has ? '' : ' · គ្មាន')), onSelect: has ? (() => this.setMrMonth(ym)) : (() => {}),
-            style: on ? 'background:var(--color-accent);border-color:var(--color-accent);color:#fff;' : (has ? '' : 'opacity:0.4;') }; });
+        if (!s.mrOpen) return { mrMonths: [], mrOptList: [], mrNoData: false, mrCanDownload: false, mrYearLabel: '', mrPrevYearStyle: '', mrNextYearStyle: '', mrSelLabel: '', mrPrevYear: () => {}, mrNextYear: () => {} };
+        const src = this._mrSource(s.mrWho), cur = ymOf(new Date()), set = this._mrMonthSet(src, s.mrProg || []);
+        const curY = +cur.slice(0, 4), minY = Math.min(curY, ...[...set].map(m => +m.slice(0, 4))), yr = s.mrYear || curY;
+        const mrMonths = KH_MONTHS.map((nm, i) => { const ym = yr + '-' + String(i + 1).padStart(2, '0'), has = set.has(ym), on = s.mrMonth === ym, isCur = ym === cur;
+          return { label: nm, sub: isCur ? 'ខែនេះ' : (has ? '●' : '·'), onSelect: has ? (() => this.setMrMonth(ym)) : (() => {}),
+            style: (on ? 'background:var(--color-accent);color:#fff;' : (has ? '' : 'opacity:0.38;cursor:default;')) + 'border-color:' + ((on || isCur) ? 'var(--color-accent)' : 'transparent') + ';' }; });
+        const mrYearLabel = String(yr), mrPrevYearStyle = yr <= minY ? 'opacity:0.25;pointer-events:none;' : '', mrNextYearStyle = yr >= curY ? 'opacity:0.25;pointer-events:none;' : '';
+        const mrSelLabel = s.mrMonth ? ymLabel(s.mrMonth) : '';
         const OPTS = [['time', 'ម៉ោងរៀន'], ['tests', 'លទ្ធផលតេស្ត'], ['weak', 'ចំណុចខ្សោយ'], ['compare', 'ប្រៀបធៀបខែមុន'], ['video', 'វីដេអូលម្អិត']];
         const mrOptList = OPTS.map(o => ({ label: (s.mrOpts[o[0]] ? '✓ ' : '') + o[1], onToggle: () => this.toggleMrOpt(o[0]),
           style: s.mrOpts[o[0]] ? 'background:var(--color-accent-100);border-color:var(--color-accent);color:var(--color-accent-800);font-weight:600;' : '' }));
         const hasSel = this._mrHas(src, s.mrProg || [], s.mrMonth);
-        return { mrMonths, mrOptList, mrNoData: !hasSel, mrCanDownload: hasSel };
+        return { mrMonths, mrOptList, mrNoData: !hasSel, mrCanDownload: hasSel, mrYearLabel, mrPrevYearStyle, mrNextYearStyle, mrSelLabel, mrPrevYear: () => this.stepMrYear(-1), mrNextYear: () => this.stepMrYear(1) };
       })(),
       qrOpen: s.qrOpen, qrImg: s.qrImg, qrName: s.qrName, qrMsg: s.qrMsg, hasQrMsg: !!s.qrMsg, qrCanShare: !!(navigator.share && navigator.canShare),
       closeQr: () => this.closeQr(), downloadQr: () => this.downloadQr(), shareQr: () => this.shareQr(), copyQrLink: () => this.copyQrLink(),
