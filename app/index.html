@@ -2673,7 +2673,7 @@ textarea.input { min-height: 90px; resize: vertical; }
             </sc-for>
           </div>
           <sc-if value="{{ mrNoData }}"><div style="font-size:12px;opacity:0.6;text-align:center;">ខែនេះគ្មានទិន្នន័យទេ</div></sc-if>
-          <sc-if value="{{ mrCanDownload }}"><button class="btn btn-block" style="background:var(--color-accent);color:#fff;border:none;height:44px;" sc-camel-on-click="{{ downloadMr }}">⬇ ទាញយក PDF</button></sc-if>
+          <sc-if value="{{ mrCanDownload }}"><button class="btn btn-block" style="background:var(--color-accent);color:#fff;border:none;height:44px;" sc-camel-on-click="{{ downloadMr }}">👁 មើលជាមុន</button></sc-if>
         </div>
         </div>
         </sc-if>
@@ -14082,7 +14082,37 @@ class Component extends DCLogic {
     const s = this.state, src = this._mrSource(s.mrWho);
     const html = this._mrBuild(src, s.mrMonth, s.mrOpts, s.videos || [], s.mrProg || []);
     const title = 'របាយការណ៍ប្រចាំខែ ' + ymLabel(s.mrMonth) + ' - ' + src.name;
-    this.setState({ mrOpen: false }, () => this._downloadBookPdf(title, html, 40, 1));
+    this.setState({ mrOpen: false }, () => {
+      try { this._mrShowPreview(title, this._bookPagesHtml(html, 40, 1)); }
+      catch(e) { this.showToast('មិនអាចបង្កើតរបាយការណ៍បានទេ'); }
+    });
+  }
+  // full-screen preview of the paginated report; ⬇ there opens Save as PDF
+  _mrShowPreview(title, pagesHtml){
+    this._mrClosePreview();
+    const ov = document.createElement('div'); ov.id = 'mr-preview';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:80;background:#6b6e75;display:flex;flex-direction:column;font-family:var(--font-body);';
+    const bar = document.createElement('div');
+    bar.style.cssText = 'flex:none;display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top, 0px)) 12px 8px;background:#1f2430;color:#fff;';
+    const mk = (txt, css, fn) => { const b = document.createElement('button'); b.textContent = txt; b.style.cssText = 'border:none;cursor:pointer;font:inherit;' + css; b.onclick = fn; return b; };
+    const back = mk('‹', 'width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;font-size:22px;line-height:1;padding:0;flex:none;', () => this._mrClosePreview());
+    const ttl = document.createElement('div'); ttl.style.cssText = 'flex:1;min-width:0;font-size:13px;font-weight:600;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'; ttl.textContent = 'មើលជាមុន · ' + title;
+    const dl = mk('⬇ ទាញយក PDF', 'flex:none;height:36px;padding:0 14px;border-radius:18px;background:var(--color-accent);color:#fff;font-size:13px;font-weight:700;', () => this._printPagesHtml(title, pagesHtml));
+    bar.appendChild(back); bar.appendChild(ttl); bar.appendChild(dl);
+    const sc = document.createElement('div'); sc.style.cssText = 'flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px 0 calc(16px + env(safe-area-inset-bottom, 0px));';
+    sc.innerHTML = pagesHtml;
+    const z = Math.min(1, (window.innerWidth - 20) / 794);
+    const pgs = [...sc.querySelectorAll('.a4page')];
+    pgs.forEach((p, i) => { p.style.zoom = z; p.style.margin = '0 auto 12px'; p.style.boxShadow = '0 2px 12px rgba(0,0,0,.4)'; });
+    const cnt = document.createElement('div'); cnt.style.cssText = 'text-align:center;color:#d6d8de;font-size:11px;padding:2px 0 10px;'; cnt.textContent = pgs.length + ' ទំព័រ · A4';
+    ov.appendChild(bar); ov.appendChild(sc); sc.appendChild(cnt);
+    this._mrKey = e => { if (e.key === 'Escape') this._mrClosePreview(); };
+    document.addEventListener('keydown', this._mrKey);
+    document.body.appendChild(ov);
+  }
+  _mrClosePreview(){
+    const ov = document.getElementById('mr-preview'); if (ov) ov.remove();
+    if (this._mrKey) { document.removeEventListener('keydown', this._mrKey); this._mrKey = null; }
   }
   // the report body: top-level blocks (header, sections…) that _downloadBookPdf flows onto A4 pages
   _mrBuild(src, ym, opts, videos, prog){
@@ -14614,6 +14644,22 @@ class Component extends DCLogic {
   // an in-app preview step, so this goes straight to window.print().
   _downloadBookPdf(title, html, margin, startPage){
     try {
+      this._printPagesHtml(title, this._bookPagesHtml(html, margin, startPage));
+    } catch(e) { this.showToast('មិនអាចទាញយកជា PDF បានទេ'); }
+  }
+  // print an already-paginated set of A4 pages (the string _bookPagesHtml returns)
+  _printPagesHtml(title, pagesHtml){
+    this._clearPrintMount();
+    this._printSourceHTML = pagesHtml;
+    // most browsers suggest document.title as the "Save as PDF" filename
+    const prevTitle = document.title;
+    document.title = title || prevTitle;
+    this.doPrint();
+    setTimeout(() => { document.title = prevTitle; }, 1000);
+  }
+  // flow `html` (a run of top-level blocks) onto true-size A4 pages and return them as one HTML string
+  _bookPagesHtml(html, margin, startPage){
+    {
       const A4W = 794, A4H = 1123, PAD = margin || 48, START = startPage || 1;
       const src = document.createElement('div'); src.innerHTML = html || '';
       this._edStripJpSpacesIn(src);
@@ -14649,15 +14695,10 @@ class Component extends DCLogic {
       });
       const wrap = document.createElement('div'); wrap.className = 'book-pdf-pages';
       pages.forEach(p => wrap.appendChild(p));
-      this._clearPrintMount();
-      this._printSourceHTML = wrap.outerHTML;
+      const out = wrap.outerHTML;
       mount.remove();
-      // most browsers suggest document.title as the "Save as PDF" filename
-      const prevTitle = document.title;
-      document.title = title || prevTitle;
-      this.doPrint();
-      setTimeout(() => { document.title = prevTitle; }, 1000);
-    } catch(e) { this.showToast('មិនអាចទាញយកជា PDF បានទេ'); }
+      return out;
+    }
   }
   _clearPrintMount(){ document.body.classList.remove('printing'); const m = document.getElementById('print-mount'); if (m) m.innerHTML = ''; }
   closePrint(){ this._clearPrintMount(); this._printSourceHTML = null; this._setPrintViewport(false); this.setState({ printOpen: false }); }
