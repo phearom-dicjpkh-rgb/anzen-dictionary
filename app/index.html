@@ -2526,7 +2526,19 @@ textarea.input { min-height: 90px; resize: vertical; }
           <div class="card-kicker" style="margin-top:4px;">{{ vmCountLabel }}</div>
           <sc-if value="{{ vmEmpty }}"><div style="text-align:center;padding:30px 0;opacity:0.5;font-size:13px;">មិនទាន់មានវីដេអូទេ</div></sc-if>
           <div style="display:flex;flex-direction:column;gap:8px;">
-            <sc-for list="{{ vmList }}" as="v" hint-placeholder-count="3">
+            <sc-for list="{{ vmGroupList }}" as="g" hint-placeholder-count="2">
+              <sc-if value="{{ g.showHead }}">
+              <div style="display:flex;align-items:center;gap:8px;padding:8px 4px 0;">
+                <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;cursor:pointer;" sc-camel-on-click="{{ g.onToggle }}">
+                  <span style="flex:none;opacity:0.6;font-size:12px;">{{ g.chevron }}</span>
+                  <span style="flex:1;min-width:0;font-size:12px;font-weight:700;letter-spacing:0.04em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ g.label }}</span>
+                  <span style="flex:none;font-size:11px;opacity:0.5;">{{ g.countLabel }}</span>
+                </div>
+                <label class="switch {{ g.activeClass }}" title="បង្ហាញដល់សិស្សទាំងក្រុម"><input type="checkbox" checked="{{ g.active }}" sc-camel-on-change="{{ g.onToggleActive }}"><span class="track"></span><span class="thumb"></span></label>
+              </div>
+              </sc-if>
+              <sc-if value="{{ g.open }}">
+            <sc-for list="{{ g.items }}" as="v" hint-placeholder-count="3">
               <sc-if value="{{ v.isEditing }}">
                 <div class="card">
                   <div class="field"><label>ចំណងជើង</label><input class="input" type="text" value="{{ v.editTitle }}" sc-camel-on-change="{{ v.onEditTitle }}"></div>
@@ -2559,6 +2571,8 @@ textarea.input { min-height: 90px; resize: vertical; }
                     <a href="#" style="color:#c0392b;" sc-camel-on-click="{{ v.onDelete }}">លុប</a>
                   </div>
                 </div>
+              </sc-if>
+            </sc-for>
               </sc-if>
             </sc-for>
           </div>
@@ -2666,7 +2680,16 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <div style="flex:1;text-align:center;font-size:12px;padding:6px 0;border-radius:7px;cursor:pointer;font-weight:600;{{ f.style }}" sc-camel-on-click="{{ f.onSelect }}">{{ f.label }}</div>
               </sc-for>
             </div>
-            <sc-for list="{{ videoCards }}" as="v" hint-placeholder-count="3">
+            <sc-for list="{{ videoGroups }}" as="g" hint-placeholder-count="2">
+              <sc-if value="{{ g.showHead }}">
+              <div style="display:flex;align-items:center;gap:8px;padding:4px 2px 8px;cursor:pointer;" sc-camel-on-click="{{ g.onToggle }}">
+                <span style="flex:none;opacity:0.6;font-size:12px;">{{ g.chevron }}</span>
+                <span style="flex:1;min-width:0;font-size:12px;font-weight:700;letter-spacing:0.04em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ g.label }}</span>
+                <span style="flex:none;font-size:11px;opacity:0.55;">{{ g.countLabel }}</span>
+              </div>
+              </sc-if>
+              <sc-if value="{{ g.open }}">
+            <sc-for list="{{ g.cards }}" as="v" hint-placeholder-count="3">
               <div class="card elev-sm vl-card" style="flex-direction:row;" sc-camel-on-click="{{ v.onOpen }}">
                 <div class="vl-thumb" style="{{ v.thumbStyle }}">
                   <span class="pl">▶</span>
@@ -2679,6 +2702,8 @@ textarea.input { min-height: 90px; resize: vertical; }
                   <span class="vl-st" style="{{ v.stStyle }}">{{ v.stLabel }}</span>
                 </div>
               </div>
+            </sc-for>
+              </sc-if>
             </sc-for>
             <sc-if value="{{ videoEmpty }}"><div style="text-align:center;padding:50px 20px;opacity:0.55;font-size:13px;line-height:1.8;">មិនទាន់មានវីដេអូ</div></sc-if>
           </sc-if>
@@ -10300,7 +10325,7 @@ function makeDemoBackend(){
       rows.push(rec); localStorage.setItem('dict_demo_videos', JSON.stringify(rows));
       return { row: rec, error: null };
     },
-    async updateVideo(id, patch){ const rows = (await this.listVideos()).rows; const r = rows.find(x => x.id === id); if (r) Object.assign(r, patch); localStorage.setItem('dict_demo_videos', JSON.stringify(rows)); return { error: null }; },
+    async updateVideo(id, patch){ let rows = []; try { rows = JSON.parse(localStorage.getItem('dict_demo_videos') || '[]'); } catch(e) {} const r = rows.find(x => x.id === id); /* read + write in one tick so parallel updates don't overwrite each other */ if (r) Object.assign(r, patch); localStorage.setItem('dict_demo_videos', JSON.stringify(rows)); return { error: null }; },
     async deleteVideo(id){ const rows = (await this.listVideos()).rows.filter(x => x.id !== id); localStorage.setItem('dict_demo_videos', JSON.stringify(rows)); return { error: null }; },
     _vp(){ try { return JSON.parse(localStorage.getItem('dict_demo_videoprog') || '[]'); } catch(e){ return []; } },
     async listMyVideoProgress(uid){ return { rows: this._vp().filter(r => r.user_id === uid) }; },
@@ -10348,7 +10373,7 @@ class Component extends DCLogic {
     rankTab: 'skill',      // student's own ranking screen: 'skill' or 'law'
     monRankTab: 'skill',   // teacher/admin's ranking screen: 'skill' or 'law'
     // វីដេអូ (YouTube lessons)
-    videos: [], videoProg: {}, videoFilter: 'all',
+    videos: [], videoProg: {}, videoFilter: 'all', vmCollapsed: [], vpCollapsed: [],
     vmUrl: '', vmTitle: '', vmGroup: '', vmMandatory: false, vmAllSchools: true, vmSchoolIds: [], vmDur: 0, vmYt: '', vmBusy: false, vmErr: '', vmMsg: '', vmEditId: null, vmEdit: null,
     vrVideoId: null, vrRows: [], vrBusy: false,
     // admin (create accounts)
@@ -11046,6 +11071,16 @@ class Component extends DCLogic {
     vw.root.remove(); this._vw = null;
   }
   setVideoFilter(f){ this.setState({ videoFilter: f }); }
+  toggleVmGroup(name){ this.setState(s => ({ vmCollapsed: s.vmCollapsed.includes(name) ? s.vmCollapsed.filter(x => x !== name) : [...s.vmCollapsed, name] })); }
+  toggleVpGroup(name){ this.setState(s => ({ vpCollapsed: s.vpCollapsed.includes(name) ? s.vpCollapsed.filter(x => x !== name) : [...s.vpCollapsed, name] })); }
+  // show / hide a whole group to students: everything on -> all off, otherwise all on
+  async toggleGroupActive(name){
+    const vs = (this.state.videos || []).filter(v => (v.grp || '').trim() === name);
+    const turnOn = !vs.every(v => v.active !== false);
+    const rs = await Promise.all(vs.map(v => Backend.updateVideo(v.id, { active: turnOn })));
+    const bad = rs.find(r => r && r.error); if (bad) this.showToast(bad.error);
+    await this.loadVideos();
+  }
   // — admin: គ្រប់គ្រងវីដេអូ —
   goVideoMgr(){
     this._closeVideo();
@@ -16441,13 +16476,20 @@ class Component extends DCLogic {
         const cnt = f => withState.filter(x => f === 'all' || (f === 'prog' ? x.st.state === 'prog' : x.st.state === 'done')).length;
         const flt = s.videoFilter || 'all';
         const ST = { new: ['មិនទាន់មើល', 'background:var(--color-neutral-200);color:var(--color-neutral-700);'], prog: [null, 'background:var(--color-accent-100);color:var(--color-accent-800);'], done: ['មើលចប់ ✓', 'background:#e3f4e8;color:#2a7a45;'] };
-        const videoCards = withState.filter(x => flt === 'all' || x.st.state === flt).map(({ v, st, rec }) => ({
+        const cardOf = ({ v, st, rec }) => ({
           title: v.title, thumbStyle: thumbOf(v), hasDur: !!v.duration, durLabel: v.duration ? fmtClock(v.duration) : '',
           hasPct: st.pct > 0, barStyle: `width:${st.pct}%;`,
           sub: [v.grp, st.state === 'prog' && rec && rec.last_pos > 5 ? `បន្តពី ${fmtClock(rec.last_pos)}` : '', st.state === 'done' && rec && rec.plays > 1 ? `មើល ${rec.plays} ដង` : '', v.mandatory ? 'កាតព្វកិច្ច' : ''].filter(Boolean).join(' · '),
           stLabel: st.state === 'prog' ? `កំពុងមើល ${st.pct}%` : ST[st.state][0], stStyle: ST[st.state][1],
           onOpen: () => this.openVideo(v.id),
-        }));
+        });
+        const shown = withState.filter(x => flt === 'all' || x.st.state === flt);
+        const videoCards = shown.map(cardOf);
+        // grouped by ក្រុម / មេរៀន (first appearance order); a group folds away on tap
+        const groupBy = (items, grpOf) => { const order = [], map = {}; for (const it of items) { const g = (grpOf(it) || '').trim(); if (!(g in map)) { map[g] = []; order.push(g); } map[g].push(it); } return order.map(g => ({ name: g, items: map[g] })); };
+        const vpGroups = groupBy(shown, x => x.v.grp);
+        const videoGroups = vpGroups.map(g => { const open = !(s.vpCollapsed || []).includes(g.name); const done = g.items.filter(x => x.st.state === 'done').length;
+          return { label: g.name || 'គ្មានក្រុម', showHead: !(vpGroups.length === 1 && !g.name), open, chevron: open ? '▾' : '▸', countLabel: `${done}/${g.items.length} ចប់`, onToggle: () => this.toggleVpGroup(g.name), cards: g.items.map(cardOf) }; });
         const fl = [['all', `ទាំងអស់ (${cnt('all')})`], ['prog', `កំពុងមើល (${cnt('prog')})`], ['done', `មើលចប់ (${cnt('done')})`]];
         const videoFilters = fl.map(([k, label]) => ({ label, onSelect: () => this.setVideoFilter(k),
           style: flt === k ? 'background:var(--color-surface);box-shadow:0 1px 3px rgba(0,0,0,.15);' : 'opacity:0.65;' }));
@@ -16455,7 +16497,7 @@ class Component extends DCLogic {
         const dayLbl = v => [v.grp, v.duration ? fmtClock(v.duration) : '', v.mandatory ? 'កាតព្វកិច្ច' : '', (Array.isArray(v.school_ids) && v.school_ids.length) ? `${v.school_ids.length} សាខា` : ''].filter(Boolean).join(' · ');
         // groups already used, newest first — tap one to reuse it
         const vmGroups = []; for (const v of vids.slice().reverse()) { const g = (v.grp || '').trim(); if (g && !vmGroups.includes(g)) vmGroups.push(g); }
-        const vmList = vids.map((v, i) => {
+        const vmItemOf = (v) => {
           const ed = s.vmEditId === v.id, e = s.vmEdit || {};
           return { title: v.title, sub: dayLbl(v), thumbStyle: thumbOf(v), dim: v.active === false ? 'opacity:0.55;' : '',
             active: v.active !== false, activeClass: v.active !== false ? 'on' : '', onToggleActive: () => this.toggleVideoActive(v),
@@ -16465,7 +16507,11 @@ class Component extends DCLogic {
             onEditGrp: ev => this.setState(st => ({ vmEdit: { ...st.vmEdit, grp: ev.target.value } })),
             onEditMandatory: ev => this.setState(st => ({ vmEdit: { ...st.vmEdit, mandatory: ev.target.checked } })),
             onCancel: () => this.setState({ vmEditId: null, vmEdit: null }), onSaveEdit: () => this.saveEditVideo() };
-        });
+        };
+        const vmGroupsRaw = groupBy(vids, v => v.grp);
+        const vmGroupList = vmGroupsRaw.map(g => { const open = !(s.vmCollapsed || []).includes(g.name); const all = g.items.every(v => v.active !== false);
+          return { label: g.name || 'គ្មានក្រុម', showHead: !(vmGroupsRaw.length === 1 && !g.name), open, chevron: open ? '▾' : '▸', countLabel: `${g.items.length} វីដេអូ`,
+            active: all, activeClass: all ? 'on' : '', onToggle: () => this.toggleVmGroup(g.name), onToggleActive: () => this.toggleGroupActive(g.name), items: g.items.map(vmItemOf) }; });
         // staff report
         const rv = vids.find(v => v.id === s.vrVideoId) || null, rdur = rv ? (rv.duration || 0) : 0;
         const byUser = {}; for (const r of (s.vrRows || [])) byUser[r.user_id] = r;
@@ -16486,7 +16532,7 @@ class Component extends DCLogic {
         }) : [];
         const startedN = vrCardsAll.filter(c => c.hasRec).length;
         return {
-          playerIsVideo: s.playerSrc === 'video', videoFilters, videoCards, videoEmpty: videoCards.length === 0,
+          playerIsVideo: s.playerSrc === 'video', videoFilters, videoGroups, videoEmpty: videoCards.length === 0,
           isVidMgr: s.screen === 'vidmgr', goVideoMgr: () => this.goVideoMgr(),
           vmUrl: s.vmUrl, onVmUrl: e => this.onVmUrl(e), vmTitle: s.vmTitle, onVmTitle: e => this.onVmTitle(e), vmGroup: s.vmGroup, onVmGroup: e => this.onVmGroup(e),
           vmHasYt: !!s.vmYt, vmThumbStyle: s.vmYt ? `background-image:url('https://i.ytimg.com/vi/${s.vmYt}/mqdefault.jpg');` : '',
@@ -16500,7 +16546,7 @@ class Component extends DCLogic {
           vmSchoolList: (s.schools || []).map(sc => ({ name: sc.full_name || sc.email, check: s.vmSchoolIds.includes(sc.id) ? '✓' : '', onToggle: () => this.toggleVmSchool(sc.id) })),
           hasVmErr: !!s.vmErr, vmErr: s.vmErr, hasVmMsg: !!s.vmMsg, vmMsg: s.vmMsg,
           saveVideo: () => this.saveVideo(), vmSaveLabel: s.vmBusy ? 'កំពុងរក្សាទុក…' : '＋ បន្ថែមវីដេអូ',
-          vmCountLabel: `វីដេអូដែលមាន (${vids.length})`, vmEmpty: vids.length === 0, vmList,
+          vmCountLabel: `វីដេអូដែលមាន (${vids.length})`, vmEmpty: vids.length === 0, vmGroupList,
           canVideoReport: ['admin', 'school', 'teacher'].includes(s.role), goVideoRep: () => this.goVideoRep(),
           isVidRep: s.screen === 'vidrep', vrNoVideos: vids.length === 0, vrHasVideos: vids.length > 0, vrBusy: s.vrBusy,
           vrOptions: vids.map(v => ({ title: v.title, sub: dayLbl(v), check: v.id === s.vrVideoId ? '✓' : '', rowStyle: v.id === s.vrVideoId ? 'background:color-mix(in srgb, var(--color-accent) 9%, transparent);' : '', onPick: () => this.pickReportVideo(v.id) })),
