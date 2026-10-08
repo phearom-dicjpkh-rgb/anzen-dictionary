@@ -813,7 +813,20 @@ textarea.input { min-height: 90px; resize: vertical; }
     .vw-top button{ width:34px; height:34px; border:none; border-radius:9px; background:rgba(255,255,255,.22); color:#fff; font-size:20px; line-height:1; cursor:pointer; flex:none; }
     .vw-top b{ font-size:15px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:var(--font-heading); }
     .vw-stage{ position:relative; flex:none; width:100%; aspect-ratio:16/9; background:#000; overflow:hidden; }
-    .vw-stage iframe, .vw-stage #vw-yt{ position:absolute; inset:0; width:100%; height:100%; border:0; }
+    /* The YouTube player draws its title / channel / share / logo at the edges of
+       its own box, not of the picture. So the iframe is made taller than the
+       16:9 picture (the picture letterboxes in the middle) and .vw-view clips
+       away the extra top and bottom — that chrome lands in the clipped bars. */
+    .vw-view{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); height:100%; max-width:100%; aspect-ratio:16/9; overflow:hidden; background:#000; }
+    .vw-view iframe, .vw-view #vw-yt{ position:absolute; left:0; top:-34%; width:100%; height:168%; border:0; }
+    /* our own cover while nothing is playing (hides YouTube's start / end screens) */
+    .vw-poster{ position:absolute; inset:0; z-index:1; display:none; align-items:center; justify-content:center; background:#000 center/cover no-repeat; pointer-events:none; }
+    .vw-poster::before{ content:""; position:absolute; inset:0; background:rgba(0,0,0,.35); }
+    .vw-pbtn{ position:relative; width:58px; height:58px; border-radius:50%; background:rgba(255,255,255,.28); color:#fff; display:flex; align-items:center; justify-content:center; font-size:26px; padding-left:4px; backdrop-filter:blur(4px); }
+    .vw-stage.vw-idle .vw-poster{ display:flex; }
+    .vw-spin{ position:absolute; left:50%; top:50%; width:34px; height:34px; margin:-17px 0 0 -17px; z-index:2; border:3px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:vwspin .8s linear infinite; display:none; pointer-events:none; }
+    .vw-stage.vw-buf .vw-spin{ display:block; }
+    @keyframes vwspin{ to{ transform:rotate(360deg); } }
     .vw-shield{ position:absolute; inset:0; z-index:2; cursor:pointer; }
     .vw-badge{ position:absolute; right:8px; bottom:8px; z-index:3; background:var(--color-accent); color:#fff; font-size:11px; font-weight:700; padding:3px 10px; border-radius:99px; pointer-events:none; }
     .vw-msg{ position:absolute; inset:0; z-index:4; display:flex; align-items:center; justify-content:center; text-align:center; padding:20px; color:#fff; font-size:13px; line-height:1.7; background:rgba(0,0,0,.7); }
@@ -10758,6 +10771,7 @@ class Component extends DCLogic {
     const prog = {};
     if (st.role === 'student' && st.userId) { const p = await Backend.listMyVideoProgress(st.userId); for (const x of (p.rows || [])) prog[x.video_id] = x; }
     this.setState({ videos: vids, videoProg: prog });
+    if (vids.length) this._ytApi().catch(() => {});      // warm the player script up so the first video starts sooner
   }
   _ytApi(){
     if (window.YT && window.YT.Player) return Promise.resolve();
@@ -10803,8 +10817,11 @@ class Component extends DCLogic {
     const pills = cls => rates.map(r => `<button class="vw-pill js-rate ${cls}" data-a="rate" data-r="${r}">${r}×</button>`).join('');
     root.innerHTML = `
       <div class="vw-top"><button data-a="close" aria-label="ថយក្រោយ">‹</button><b>${this._esc(v.title)}</b></div>
-      <div class="vw-stage" id="vw-stage">
-        <div id="vw-yt"></div><div class="vw-shield" data-a="shield"></div>
+      <div class="vw-stage vw-idle vw-buf" id="vw-stage">
+        <div class="vw-view"><div id="vw-yt"></div></div>
+        <div class="vw-poster" style="background-image:url('https://i.ytimg.com/vi/${this._esc(v.yt_id)}/hqdefault.jpg');"><span class="vw-pbtn">▶</span></div>
+        <div class="vw-spin"></div>
+        <div class="vw-shield" data-a="shield"></div>
         ${start ? `<div class="vw-badge" id="vw-badge">បន្តពី ${fmtClock(start)}</div>` : ''}
         <div class="vw-fsui">
           <div class="t"><span>${this._esc(v.title)}</span><span class="vw-pill js-ratelbl">1×</span></div>
@@ -10847,10 +10864,10 @@ class Component extends DCLogic {
   _vwMsg(t){ const vw = this._vw; if (!vw) return; let m = vw.stage.querySelector('.vw-msg'); if (!m) { m = document.createElement('div'); m.className = 'vw-msg'; vw.stage.appendChild(m); } m.textContent = t; }
   _vwInit(){
     const vw = this._vw; if (!vw) return;
-    vw.player = new YT.Player('vw-yt', { videoId: vw.v.yt_id,
-      playerVars: { playsinline: 1, controls: 0, rel: 0, modestbranding: 1, disablekb: 1, fs: 0, iv_load_policy: 3, start: Math.floor(vw.start) },
+    vw.player = new YT.Player('vw-yt', { videoId: vw.v.yt_id, host: 'https://www.youtube-nocookie.com',
+      playerVars: { playsinline: 1, controls: 0, rel: 0, modestbranding: 1, disablekb: 1, fs: 0, iv_load_policy: 3, cc_load_policy: 0, start: Math.floor(vw.start) },
       events: {
-        onReady: e => { const d = e.target.getDuration(); if (d > 0) this._vwSetDur(d); vw.timer = setInterval(() => this._vwTick(), 500); this._vwPaint(vw.start); },
+        onReady: e => { vw.stage.classList.remove('vw-buf'); const d = e.target.getDuration(); if (d > 0) this._vwSetDur(d); vw.timer = setInterval(() => this._vwTick(), 500); this._vwPaint(vw.start); },
         onStateChange: e => this._vwState(e.data),
         onError: () => this._vwMsg('វីដេអូនេះចាក់ក្នុងកម្មវិធីមិនបាន (ម្ចាស់មិនអនុញ្ញាតឲ្យបង្កប់ ឬ link ខុស)'),
       } });
@@ -10885,6 +10902,9 @@ class Component extends DCLogic {
   _vwMarkSkip(a, b){ const vw = this._vw; for (const g of uncovered(a, b, vw.ranges)) if (g[1] - g[0] >= 2) vw.skips.push(g); vw.skips = mergeRanges(vw.skips, 0.5); vw.dirty = true; }
   _vwState(s){
     const vw = this._vw; if (!vw) return; vw.state = s;
+    vw.stage.classList.toggle('vw-idle', s === 0 || s === -1 || s === 5);     // cover YouTube's start / end screens with our own
+    vw.stage.classList.toggle('vw-buf', s === 3);
+    const pb = vw.stage.querySelector('.vw-pbtn'); if (pb) pb.textContent = s === 0 ? '↻' : '▶';
     if (s === 1) {
       if (!vw.counted) { vw.counted = true; vw.plays++; vw.dirty = true; }
       try { vw.lastT = vw.player.getCurrentTime(); const d = vw.player.getDuration(); if (d > 0) this._vwSetDur(d); } catch(e) {}
@@ -10970,13 +10990,16 @@ class Component extends DCLogic {
     const rr = rs => rs.map(r => [Math.round(r[0]), Math.round(r[1])]);
     const row = { user_id: this.state.userId, video_id: vw.v.id, ranges: rr(vw.ranges), skips: rr(vw.skips), last_pos: Math.floor(vw.lastPos || 0),
       plays: vw.plays, watch_secs: Math.round(vw.watch), completed: vw.completed, completed_at: vw.completedAt, rate: vw.rate, updated_at: new Date().toISOString() };
-    this.setState(s => ({ videoProg: { ...s.videoProg, [row.video_id]: row } }));
+    vw.lastRow = row;
+    // re-rendering the whole app while the video plays costs frames — only do it when paused / closing
+    if (force && vw.state !== 1) this.setState(s => ({ videoProg: { ...s.videoProg, [row.video_id]: row } }));
     Backend.saveVideoProgress(row);
   }
   _closeVideo(){
     const vw = this._vw; if (!vw) return;
     clearInterval(vw.timer); clearTimeout(vw.hideT);
     this._vwSave(true);
+    if (vw.lastRow) this.setState(s => ({ videoProg: { ...s.videoProg, [vw.lastRow.video_id]: vw.lastRow } }));
     try { if (document.fullscreenElement || document.webkitFullscreenElement) (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch(e) {}
     try { screen.orientation.unlock(); } catch(e) {}
     document.removeEventListener('fullscreenchange', vw.onFs); document.removeEventListener('webkitfullscreenchange', vw.onFs);
