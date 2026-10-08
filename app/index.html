@@ -806,6 +806,73 @@ textarea.input { min-height: 90px; resize: vertical; }
     html[data-skin="ios-glass"] [data-scroll="main"], html[data-skin="pixel"] [data-scroll="main"]{ padding-bottom:calc(104px + env(safe-area-inset-bottom, 0px)) !important; }
     html[data-skin="ios-glass"] button.btn[aria-label="ថយក្រោយ"], html[data-skin="pixel"] button.btn[aria-label="ថយក្រោយ"]{ bottom:calc(100px + env(safe-area-inset-bottom, 0px)) !important; }
   </style>
+  <style>
+    /* ===== វីដេអូ watch overlay (built in JS, themed by the tokens) ===== */
+    .vw-root{ position:fixed; inset:0; z-index:60; display:flex; flex-direction:column; background:var(--color-bg); color:var(--color-text); font-family:var(--font-body); overflow-y:auto; -webkit-overflow-scrolling:touch; }
+    .vw-top{ flex:none; display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top, 0px)) 14px 10px; background:var(--color-accent); color:#fff; }
+    .vw-top button{ width:34px; height:34px; border:none; border-radius:9px; background:rgba(255,255,255,.22); color:#fff; font-size:20px; line-height:1; cursor:pointer; flex:none; }
+    .vw-top b{ font-size:15px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:var(--font-heading); }
+    .vw-stage{ position:relative; flex:none; width:100%; aspect-ratio:16/9; background:#000; overflow:hidden; }
+    .vw-stage iframe, .vw-stage #vw-yt{ position:absolute; inset:0; width:100%; height:100%; border:0; }
+    .vw-shield{ position:absolute; inset:0; z-index:2; cursor:pointer; }
+    .vw-badge{ position:absolute; right:8px; bottom:8px; z-index:3; background:var(--color-accent); color:#fff; font-size:11px; font-weight:700; padding:3px 10px; border-radius:99px; pointer-events:none; }
+    .vw-msg{ position:absolute; inset:0; z-index:4; display:flex; align-items:center; justify-content:center; text-align:center; padding:20px; color:#fff; font-size:13px; line-height:1.7; background:rgba(0,0,0,.7); }
+    .vw-body{ padding:12px 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
+    .vw-seek{ position:relative; height:12px; border-radius:7px; background:var(--color-neutral-300); overflow:hidden; touch-action:none; cursor:pointer; }
+    .vw-seek i{ position:absolute; top:0; bottom:0; }
+    .vw-seek .w{ background:#3a9e5c; }
+    .vw-seek .s{ background:repeating-linear-gradient(45deg, rgba(208,52,44,.6) 0 3px, rgba(208,52,44,.18) 3px 6px); }
+    .vw-seek .c{ width:3px; margin-left:-1px; background:var(--color-text); }
+    .vw-times{ display:flex; justify-content:space-between; font-size:11px; opacity:.6; margin:5px 1px 8px; }
+    .vw-legend{ display:flex; gap:12px; font-size:10.5px; opacity:.65; margin-bottom:6px; }
+    .vw-legend span::before{ content:""; display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px; vertical-align:-1px; background:#3a9e5c; }
+    .vw-legend span.s::before{ background:rgba(208,52,44,.55); }
+    .vw-legend span.u::before{ background:var(--color-neutral-300); }
+    .vw-ctl{ display:flex; justify-content:center; align-items:center; gap:18px; margin:12px 0 10px; }
+    .vw-ctl button{ width:44px; height:44px; border-radius:50%; border:none; background:var(--color-surface); color:var(--color-text); font-size:12px; font-weight:700; cursor:pointer; box-shadow:var(--shadow-sm); }
+    .vw-ctl button.p{ width:58px; height:58px; background:var(--color-accent); color:#fff; font-size:22px; box-shadow:var(--shadow-md); }
+    .vw-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+    .vw-pill{ padding:7px 12px; border-radius:99px; border:1px solid var(--color-divider); background:var(--color-surface); color:var(--color-text); font-size:12.5px; font-weight:700; cursor:pointer; }
+    .vw-pill.on{ background:var(--color-accent); border-color:var(--color-accent); color:#fff; }
+    .vw-card{ background:var(--color-surface); border:1px solid var(--color-divider); border-radius:var(--radius-md); padding:12px 14px; margin-bottom:10px; }
+    .vw-card h4{ font-size:13px; margin:0 0 6px; font-family:var(--font-heading); }
+    .vw-kv{ display:flex; justify-content:space-between; gap:10px; font-size:12.5px; padding:3px 0; }
+    .vw-kv b{ color:var(--color-accent-700); text-align:right; }
+    .vw-go{ display:block; width:100%; padding:11px; border:none; border-radius:var(--radius-md); background:var(--color-accent-100); color:var(--color-accent-800); font-weight:700; font-size:13px; cursor:pointer; margin-bottom:10px; }
+    /* landscape / fullscreen layer */
+    .vw-fsui{ display:none; position:absolute; inset:0; z-index:5; color:#fff; background:linear-gradient(180deg,rgba(0,0,0,.55),transparent 28%,transparent 60%,rgba(0,0,0,.7)); }
+    .vw-stage.vw-fs, .vw-stage.vw-pfs{ aspect-ratio:auto; }
+    .vw-stage.vw-pfs{ position:fixed; inset:0; z-index:70; width:100vw; height:100vh; height:100dvh; }
+    /* no native fullscreen (iPhone): in portrait, turn the player on its side so it reads as landscape */
+    @media (orientation:portrait){
+      .vw-stage.vw-pfs{ inset:auto; top:0; left:100vw; width:100vh; width:100dvh; height:100vw; transform:rotate(90deg); transform-origin:0 0; }
+    }
+    .vw-stage.vw-fs .vw-fsui, .vw-stage.vw-pfs .vw-fsui{ display:block; }
+    .vw-fsui{ pointer-events:none; transition:opacity .2s; }
+    .vw-fsui .m button, .vw-fsui .b, .vw-fsui .t .vw-pill{ pointer-events:auto; }
+    .vw-stage.vw-fs.vw-hide .vw-fsui, .vw-stage.vw-pfs.vw-hide .vw-fsui{ opacity:0; }
+    .vw-stage.vw-hide .vw-fsui *{ pointer-events:none !important; }
+    .vw-stage:fullscreen{ width:100%; height:100%; } .vw-stage:-webkit-full-screen{ width:100%; height:100%; }
+    .vw-fsui .t{ position:absolute; left:calc(18px + env(safe-area-inset-left, 0px)); right:calc(18px + env(safe-area-inset-right, 0px)); top:12px; display:flex; justify-content:space-between; gap:10px; font-size:14px; font-weight:600; }
+    .vw-fsui .m{ position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); display:flex; justify-content:center; align-items:center; gap:46px; }
+    .vw-fsui .m button{ width:50px; height:50px; border-radius:50%; border:none; background:rgba(255,255,255,.22); color:#fff; font-size:13px; font-weight:700; cursor:pointer; }
+    .vw-fsui .m button.p{ width:68px; height:68px; font-size:26px; background:rgba(255,255,255,.3); }
+    .vw-fsui .b{ position:absolute; left:calc(22px + env(safe-area-inset-left, 0px)); right:calc(22px + env(safe-area-inset-right, 0px)); bottom:12px; }
+    .vw-fsui .b .vw-seek{ background:rgba(255,255,255,.3); }
+    .vw-fsui .b .r{ display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:12px; gap:8px; flex-wrap:wrap; }
+    .vw-fsui .vw-pill{ background:rgba(255,255,255,.22); border-color:transparent; color:#fff; padding:5px 10px; font-size:12px; }
+    .vw-fsui .vw-pill.on{ background:var(--color-accent); }
+    .vw-fsui .vw-seek .c{ background:#fff; }
+    .vw-stage.vw-fs ~ .vw-body, .vw-stage.vw-pfs ~ .vw-body{ visibility:hidden; }
+    /* the list inside ចាក់ពាក្យ */
+    .vl-card{ display:flex; gap:11px; padding:9px; margin-bottom:9px; cursor:pointer; align-items:center; }
+    .vl-thumb{ position:relative; flex:none; width:118px; height:66px; border-radius:9px; overflow:hidden; background:#222 center/cover no-repeat; }
+    .vl-thumb .d{ position:absolute; right:4px; bottom:4px; background:rgba(0,0,0,.72); color:#fff; font-size:9.5px; padding:1px 5px; border-radius:5px; }
+    .vl-thumb .pb{ position:absolute; left:0; right:0; bottom:0; height:3px; background:rgba(255,255,255,.35); }
+    .vl-thumb .pb i{ display:block; height:100%; background:var(--color-accent); }
+    .vl-thumb .pl{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; text-shadow:0 1px 6px rgba(0,0,0,.6); }
+    .vl-st{ display:inline-block; margin-top:5px; font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:99px; }
+  </style>
 </helmet>
 <div class="app-bg" style="height:100vh;height:100dvh;width:100%;overflow:hidden;background:var(--color-bg);display:flex;justify-content:center;font-family:var(--font-body);">
   <div class="app-bg" style="height:100%;width:100%;position:relative;display:flex;flex-direction:column;background:var(--color-bg);overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,0.05);">
@@ -2152,6 +2219,20 @@ textarea.input { min-height: 90px; resize: vertical; }
               <div class="set-tx" style="flex:1;"><b>រូបភាពចែករំលែក</b><s>បង្កើតរូបភាពពាក្យ សម្រាប់បណ្ដាញសង្គម</s></div>
               <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
             </div>
+            <div class="set-row" style="cursor:pointer;" sc-camel-on-click="{{ goVideoMgr }}">
+              <div class="set-ico" style="background:#FF6B35;color:#fff;"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"></rect><polygon points="10 9 15 12 10 15 10 9"></polygon></svg></div>
+              <div class="set-tx" style="flex:1;"><b>គ្រប់គ្រងវីដេអូ</b><s>ដាក់ link YouTube សម្រាប់សិស្សមើលក្នុងកម្មវិធី</s></div>
+              <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
+            </div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ canVideoReport }}">
+          <div class="set-group" style="margin-bottom:22px;">
+            <div class="set-row" style="cursor:pointer;" sc-camel-on-click="{{ goVideoRep }}">
+              <div class="set-ico" style="background:#FF9F0A;color:#fff;"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M7 15l4-4 3 3 5-6"></path></svg></div>
+              <div class="set-tx" style="flex:1;"><b>របាយការណ៍វីដេអូ</b><s>សិស្សមើលដល់ត្រឹមណា ប៉ុន្មានដង រំលង មើលចប់ឬនៅ</s></div>
+              <span class="set-chev"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></span>
+            </div>
           </div>
           </sc-if>
           <sc-if value="{{ menuHasAccounts }}">
@@ -2379,6 +2460,126 @@ textarea.input { min-height: 90px; resize: vertical; }
         </div>
         </sc-if>
 
+        <sc-if value="{{ isVidMgr }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px 30px;display:flex;flex-direction:column;gap:14px;">
+          <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
+          <h1 style="font-size:26px;margin:0;">គ្រប់គ្រងវីដេអូ</h1>
+          <div style="font-size:12px;opacity:0.6;line-height:1.6;">បិទភ្ជាប់ link YouTube។ សិស្សមើលក្នុងកម្មវិធី (ចាក់ពាក្យ → វីដេអូ) ហើយប្រព័ន្ធកត់ត្រាថាមើលដល់ត្រឹមណា ប៉ុន្មានដង រំលង និងមើលចប់ឬនៅ។</div>
+
+          <div class="card">
+            <div class="card-kicker">បន្ថែមថ្មី</div>
+            <div class="field"><label>link YouTube</label>
+              <input class="input" type="text" value="{{ vmUrl }}" sc-camel-on-change="{{ onVmUrl }}" placeholder="https://youtu.be/…"></div>
+            <sc-if value="{{ vmHasYt }}">
+              <div style="display:flex;gap:11px;align-items:center;">
+                <div class="vl-thumb" style="{{ vmThumbStyle }}"></div>
+                <div style="font-size:12px;line-height:1.7;">រកឃើញវីដេអូ ✓<br><span style="opacity:0.6;">ថិរវេលា៖ {{ vmDurLabel }}</span></div>
+              </div>
+            </sc-if>
+            <div class="field"><label>ចំណងជើង (កែបាន)</label>
+              <input class="input" type="text" value="{{ vmTitle }}" sc-camel-on-change="{{ onVmTitle }}"></div>
+            <div class="field"><label>ក្រុម / មេរៀន (ស្រេចចិត្ត)</label>
+              <input class="input" type="text" value="{{ vmGroup }}" sc-camel-on-change="{{ onVmGroup }}" placeholder="ឧ. SSW-Truck · មេរៀនទី ១"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;">
+              <span>មើលចប់ជាកាតព្វកិច្ច</span>
+              <label class="switch {{ vmMandatoryClass }}"><input type="checkbox" checked="{{ vmMandatory }}" sc-camel-on-change="{{ onVmMandatory }}"><span class="track"></span><span class="thumb"></span></label>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;">
+              <span>បង្ហាញដល់គ្រប់សាលា/សាខា</span>
+              <label class="switch {{ vmAllSchoolsClass }}"><input type="checkbox" checked="{{ vmAllSchools }}" sc-camel-on-change="{{ onVmAllSchools }}"><span class="track"></span><span class="thumb"></span></label>
+            </div>
+            <sc-if value="{{ vmPickSchools }}">
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <sc-for list="{{ vmSchoolList }}" as="sc" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--color-divider);border-radius:10px;cursor:pointer;font-size:13px;" sc-camel-on-click="{{ sc.onToggle }}">
+                    <span style="width:20px;font-weight:700;color:var(--color-accent-700);">{{ sc.check }}</span><span>{{ sc.name }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ hasVmErr }}"><div style="font-size:12px;color:#c0392b;">{{ vmErr }}</div></sc-if>
+            <sc-if value="{{ hasVmMsg }}"><div style="font-size:12px;color:var(--color-accent-700);">{{ vmMsg }}</div></sc-if>
+            <button class="btn btn-primary btn-block" style="margin-top:0;" sc-camel-on-click="{{ saveVideo }}">{{ vmSaveLabel }}</button>
+          </div>
+
+          <div class="card-kicker" style="margin-top:4px;">{{ vmCountLabel }}</div>
+          <sc-if value="{{ vmEmpty }}"><div style="text-align:center;padding:30px 0;opacity:0.5;font-size:13px;">មិនទាន់មានវីដេអូទេ</div></sc-if>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <sc-for list="{{ vmList }}" as="v" hint-placeholder-count="3">
+              <sc-if value="{{ v.isEditing }}">
+                <div class="card">
+                  <div class="field"><label>ចំណងជើង</label><input class="input" type="text" value="{{ v.editTitle }}" sc-camel-on-change="{{ v.onEditTitle }}"></div>
+                  <div class="field"><label>ក្រុម / មេរៀន</label><input class="input" type="text" value="{{ v.editGrp }}" sc-camel-on-change="{{ v.onEditGrp }}"></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;">
+                    <span>មើលចប់ជាកាតព្វកិច្ច</span>
+                    <label class="switch {{ v.editMandatoryClass }}"><input type="checkbox" checked="{{ v.editMandatory }}" sc-camel-on-change="{{ v.onEditMandatory }}"><span class="track"></span><span class="thumb"></span></label>
+                  </div>
+                  <div style="display:flex;gap:8px;">
+                    <button class="btn btn-secondary" style="flex:1;margin-top:0;" sc-camel-on-click="{{ v.onCancel }}">បោះបង់</button>
+                    <button class="btn btn-primary" style="flex:1;margin-top:0;" sc-camel-on-click="{{ v.onSaveEdit }}">រក្សាទុក</button>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ v.isNotEditing }}">
+                <div class="card elev-sm" style="gap:9px;{{ v.dim }}">
+                  <div style="display:flex;gap:11px;align-items:center;">
+                    <div class="vl-thumb" style="width:92px;height:52px;{{ v.thumbStyle }}"></div>
+                    <div style="min-width:0;flex:1;">
+                      <div style="font-size:13.5px;font-weight:600;line-height:1.35;">{{ v.title }}</div>
+                      <div style="font-size:11px;opacity:0.6;margin-top:2px;">{{ v.sub }}</div>
+                    </div>
+                    <label class="switch {{ v.activeClass }}" title="បើក/បិទ"><input type="checkbox" checked="{{ v.active }}" sc-camel-on-change="{{ v.onToggleActive }}"><span class="track"></span><span class="thumb"></span></label>
+                  </div>
+                  <div style="display:flex;gap:16px;align-items:center;font-size:12px;">
+                    <a href="#" style="color:var(--color-accent-700);" sc-camel-on-click="{{ v.onUp }}">▲</a>
+                    <a href="#" style="color:var(--color-accent-700);" sc-camel-on-click="{{ v.onDown }}">▼</a>
+                    <span style="flex:1;"></span>
+                    <a href="#" style="color:var(--color-accent-700);" sc-camel-on-click="{{ v.onEdit }}">កែ</a>
+                    <a href="#" style="color:#c0392b;" sc-camel-on-click="{{ v.onDelete }}">លុប</a>
+                  </div>
+                </div>
+              </sc-if>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isVidRep }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 20px 30px;display:flex;flex-direction:column;gap:12px;">
+          <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
+          <h1 style="font-size:26px;margin:0;">របាយការណ៍វីដេអូ</h1>
+          <sc-if value="{{ vrNoVideos }}"><div style="text-align:center;padding:40px 0;opacity:0.5;font-size:13px;">មិនទាន់មានវីដេអូទេ</div></sc-if>
+          <sc-if value="{{ vrHasVideos }}">
+            <div class="set-group">
+              <sc-for list="{{ vrOptions }}" as="o" hint-placeholder-count="3">
+                <div class="set-row" style="cursor:pointer;{{ o.rowStyle }}" sc-camel-on-click="{{ o.onPick }}">
+                  <div class="set-tx" style="flex:1;"><b>{{ o.title }}</b><s>{{ o.sub }}</s></div>
+                  <span style="font-weight:700;color:var(--color-accent-700);">{{ o.check }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+              <div class="card elev-sm" style="align-items:center;padding:10px 6px;gap:2px;"><b style="font-size:19px;color:var(--color-accent-700);">{{ vrStatDone }}</b><span style="font-size:10.5px;opacity:0.6;">មើលចប់</span></div>
+              <div class="card elev-sm" style="align-items:center;padding:10px 6px;gap:2px;"><b style="font-size:19px;color:var(--color-accent-700);">{{ vrStatAvg }}</b><span style="font-size:10.5px;opacity:0.6;">មធ្យមបានមើល</span></div>
+              <div class="card elev-sm" style="align-items:center;padding:10px 6px;gap:2px;"><b style="font-size:19px;color:var(--color-accent-700);">{{ vrStatSkip }}</b><span style="font-size:10.5px;opacity:0.6;">មានរំលង</span></div>
+            </div>
+            <sc-if value="{{ vrBusy }}"><div style="text-align:center;padding:14px;opacity:0.5;font-size:12px;">កំពុងផ្ទុក…</div></sc-if>
+            <sc-for list="{{ vrCards }}" as="c" hint-placeholder-count="4">
+              <div class="card elev-sm" style="gap:7px;padding:10px 12px;">
+                <div style="display:flex;align-items:center;gap:9px;">
+                  <div style="width:28px;height:28px;border-radius:50%;background:{{ c.avatarBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none;">{{ c.avatarGlyph }}</div>
+                  <div style="flex:1;min-width:0;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ c.name }}</div>
+                  <span class="vl-st" style="margin:0;{{ c.stStyle }}">{{ c.stLabel }}</span>
+                </div>
+                <div class="vw-seek"><sc-for list="{{ c.segs }}" as="g" hint-placeholder-count="2"><i class="{{ g.cls }}" style="{{ g.style }}"></i></sc-for></div>
+                <div style="font-size:11px;opacity:0.65;line-height:1.7;">{{ c.meta }}</div>
+                <sc-if value="{{ c.hasExtra }}"><div style="font-size:11px;line-height:1.7;padding:6px 9px;border-radius:8px;background:var(--color-accent-100);color:var(--color-accent-800);">{{ c.extra }}</div></sc-if>
+              </div>
+            </sc-for>
+          </sc-if>
+        </div>
+        </sc-if>
+
         <sc-if value="{{ isTermPopupOpen }}" hint-placeholder-val="{{ false }}">
         <div style="position:absolute;inset:0;background:color-mix(in srgb, var(--color-neutral-900) 45%, transparent);z-index:40;display:flex;align-items:flex-end;" sc-camel-on-click="{{ closeTermPopup }}">
           <div style="background:var(--color-bg);width:100%;border-radius:20px 20px 0 0;padding:22px 22px 28px;box-shadow:var(--shadow-lg);max-height:70%;overflow-y:auto;box-sizing:border-box;" sc-camel-on-click="{{ stopProp }}">
@@ -2436,6 +2637,29 @@ textarea.input { min-height: 90px; resize: vertical; }
                 </sc-if>
               </div>
             </div>
+          </sc-if>
+
+          <sc-if value="{{ playerIsVideo }}">
+            <div style="display:flex;background:var(--color-neutral-200);border-radius:9px;padding:2px;margin-bottom:12px;">
+              <sc-for list="{{ videoFilters }}" as="f" hint-placeholder-count="3">
+                <div style="flex:1;text-align:center;font-size:12px;padding:6px 0;border-radius:7px;cursor:pointer;font-weight:600;{{ f.style }}" sc-camel-on-click="{{ f.onSelect }}">{{ f.label }}</div>
+              </sc-for>
+            </div>
+            <sc-for list="{{ videoCards }}" as="v" hint-placeholder-count="3">
+              <div class="card elev-sm vl-card" style="flex-direction:row;" sc-camel-on-click="{{ v.onOpen }}">
+                <div class="vl-thumb" style="{{ v.thumbStyle }}">
+                  <span class="pl">▶</span>
+                  <sc-if value="{{ v.hasDur }}"><span class="d">{{ v.durLabel }}</span></sc-if>
+                  <sc-if value="{{ v.hasPct }}"><span class="pb"><i style="{{ v.barStyle }}"></i></span></sc-if>
+                </div>
+                <div style="min-width:0;flex:1;">
+                  <div style="font-size:13.5px;font-weight:600;line-height:1.35;">{{ v.title }}</div>
+                  <div style="font-size:11px;opacity:0.6;margin-top:2px;">{{ v.sub }}</div>
+                  <span class="vl-st" style="{{ v.stStyle }}">{{ v.stLabel }}</span>
+                </div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ videoEmpty }}"><div style="text-align:center;padding:50px 20px;opacity:0.55;font-size:13px;line-height:1.8;">មិនទាន់មានវីដេអូ</div></sc-if>
           </sc-if>
 
           <sc-if value="{{ playerHasWord }}">
@@ -9645,6 +9869,43 @@ function computeLawLevel(settings){
   let n = 0; for (const k of Object.keys(lr)) if (lr[k] >= PASS_PCT) n++;
   return n;
 }
+// — វីដេអូ (YouTube) helpers: ranges are [[from,to],…] in seconds —
+const VIDEO_DONE_PCT = 90;          // % really watched for a video to count as finished
+function ytIdFrom(url){
+  const s = String(url || '').trim();
+  if (/^[\w-]{11}$/.test(s)) return s;
+  const m = s.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/|v\/))([\w-]{11})/);
+  return m ? m[1] : '';
+}
+function mergeRanges(rs, gap){
+  gap = gap == null ? 1.5 : gap;
+  const a = (rs || []).filter(r => r && r[1] > r[0]).map(r => [r[0], r[1]]).sort((x, y) => x[0] - y[0]);
+  const out = [];
+  for (const r of a) { const l = out[out.length - 1]; if (l && r[0] <= l[1] + gap) l[1] = Math.max(l[1], r[1]); else out.push(r); }
+  return out;
+}
+function rangesTotal(rs){ let t = 0; for (const r of (rs || [])) t += Math.max(0, r[1] - r[0]); return t; }
+// the parts of [a,b] that none of `rs` covers
+function uncovered(a, b, rs){
+  let cur = a; const out = [];
+  for (const r of mergeRanges(rs, 0)) { if (r[1] <= cur) continue; if (r[0] >= b) break; if (r[0] > cur) out.push([cur, Math.min(r[0], b)]); cur = Math.max(cur, r[1]); if (cur >= b) break; }
+  if (cur < b) out.push([cur, b]);
+  return out;
+}
+// `rs` with the stretch [a,b] cut out of it
+function cutRange(rs, a, b){
+  const out = [];
+  for (const r of (rs || [])) { if (r[1] <= a || r[0] >= b) { out.push(r); continue; } if (r[0] < a) out.push([r[0], a]); if (r[1] > b) out.push([b, r[1]]); }
+  return out;
+}
+function fmtClock(sec){ sec = Math.max(0, Math.floor(sec || 0)); const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60; const p = n => String(n).padStart(2, '0'); return h ? `${h}:${p(m)}:${p(s)}` : `${p(m)}:${p(s)}`; }
+// pct really watched + state ('new' | 'prog' | 'done') for one progress row
+function videoState(rec, dur){
+  const got = rec ? rangesTotal(rec.ranges) : 0;
+  const pct = dur ? Math.min(100, Math.round(got / dur * 100)) : 0;
+  const done = !!(rec && rec.completed);
+  return { pct: done ? Math.max(pct, VIDEO_DONE_PCT) : pct, state: done ? 'done' : (got > 0 ? 'prog' : 'new') };
+}
 // Skins the user can pick in Settings → រូបរាង. id '' is the original look; the
 // rest are token sets in the "Skins" <style> block (html[data-skin="…"]).
 const SKINS = [
@@ -9828,6 +10089,14 @@ function makeSupabaseBackend(){
     async addTechTerm(row){ const res = await client.from('technical_terms').insert(row).select().single(); return { row: res.data, error: res.error ? res.error.message : null }; },
     async updateTechTerm(id, patch){ const { error } = await client.from('technical_terms').update(patch).eq('id', id); return { error: error ? error.message : null }; },
     async deleteTechTerm(id){ const { error } = await client.from('technical_terms').delete().eq('id', id); return { error: error ? error.message : null }; },
+    // វីដេអូមេរៀន (YouTube) + per-student watch progress
+    async listVideos(){ const { data } = await client.from('video_lessons').select('*').order('sort').order('created_at'); return { rows: data || [] }; },
+    async addVideo(row){ const res = await client.from('video_lessons').insert(row).select().single(); return { row: res.data, error: res.error ? res.error.message : null }; },
+    async updateVideo(id, patch){ const { error } = await client.from('video_lessons').update(patch).eq('id', id); return { error: error ? error.message : null }; },
+    async deleteVideo(id){ const { error } = await client.from('video_lessons').delete().eq('id', id); return { error: error ? error.message : null }; },
+    async listMyVideoProgress(uid){ const { data } = await client.from('video_progress').select('*').eq('user_id', uid); return { rows: data || [] }; },
+    async saveVideoProgress(row){ const { error } = await client.from('video_progress').upsert(row, { onConflict: 'user_id,video_id' }); return { error: error ? error.message : null }; },
+    async listVideoProgress(videoId){ const { data } = await client.from('video_progress').select('*').eq('video_id', videoId); return { rows: data || [] }; },
     async getBookSettings(){ const { data } = await client.from('book_settings').select('book,locked,all_schools,schools'); return { rows: data || [] }; },
     async saveBookSetting(row){ const { error } = await client.from('book_settings').upsert(row, { onConflict: 'book' }); return { error: error ? error.message : null }; },
     // — authored books (បណ្ណាល័យ, Admin) —
@@ -9995,6 +10264,19 @@ function makeDemoBackend(){
     },
     async updateTechTerm(id, patch){ const rows = (await this.listTechTerms()).rows; const r = rows.find(x => x.id === id); if (r) Object.assign(r, patch); localStorage.setItem('dict_demo_techterms', JSON.stringify(rows)); return { error: null }; },
     async deleteTechTerm(id){ const rows = (await this.listTechTerms()).rows.filter(x => x.id !== id); localStorage.setItem('dict_demo_techterms', JSON.stringify(rows)); return { error: null }; },
+    async listVideos(){ try { return { rows: JSON.parse(localStorage.getItem('dict_demo_videos') || '[]') }; } catch(e){ return { rows: [] }; } },
+    async addVideo(row){
+      const rows = (await this.listVideos()).rows;
+      const rec = { id: 'vd-' + Date.now(), created_at: new Date().toISOString(), active: true, mandatory: false, school_ids: [], sort: rows.length, ...row };
+      rows.push(rec); localStorage.setItem('dict_demo_videos', JSON.stringify(rows));
+      return { row: rec, error: null };
+    },
+    async updateVideo(id, patch){ const rows = (await this.listVideos()).rows; const r = rows.find(x => x.id === id); if (r) Object.assign(r, patch); localStorage.setItem('dict_demo_videos', JSON.stringify(rows)); return { error: null }; },
+    async deleteVideo(id){ const rows = (await this.listVideos()).rows.filter(x => x.id !== id); localStorage.setItem('dict_demo_videos', JSON.stringify(rows)); return { error: null }; },
+    _vp(){ try { return JSON.parse(localStorage.getItem('dict_demo_videoprog') || '[]'); } catch(e){ return []; } },
+    async listMyVideoProgress(uid){ return { rows: this._vp().filter(r => r.user_id === uid) }; },
+    async saveVideoProgress(row){ const rows = this._vp().filter(r => !(r.user_id === row.user_id && r.video_id === row.video_id)); rows.push(row); localStorage.setItem('dict_demo_videoprog', JSON.stringify(rows)); return { error: null }; },
+    async listVideoProgress(videoId){ return { rows: this._vp().filter(r => r.video_id === videoId) }; },
     async getBookSettings(){ try { return { rows: JSON.parse(localStorage.getItem('dict_demo_booksettings') || '[]') }; } catch(e){ return { rows: [] }; } },
     async saveBookSetting(row){
       const rows = (await this.getBookSettings()).rows.filter(r => r.book !== row.book);
@@ -10036,6 +10318,10 @@ class Component extends DCLogic {
     monCollapsed: [],   // branches an admin has folded away on the leaderboard
     rankTab: 'skill',      // student's own ranking screen: 'skill' or 'law'
     monRankTab: 'skill',   // teacher/admin's ranking screen: 'skill' or 'law'
+    // វីដេអូ (YouTube lessons)
+    videos: [], videoProg: {}, videoFilter: 'all',
+    vmUrl: '', vmTitle: '', vmGroup: '', vmMandatory: false, vmAllSchools: true, vmSchoolIds: [], vmDur: 0, vmYt: '', vmBusy: false, vmErr: '', vmMsg: '', vmEditId: null, vmEdit: null,
+    vrVideoId: null, vrRows: [], vrBusy: false,
     // admin (create accounts)
     adminFullName: '', adminEmail: '', adminPassword: '', adminRole: 'student', adminTeacherId: '', adminSchoolId: '',
     adminGender: '', adminBirthDate: '', createDialogOpen: false,
@@ -10462,6 +10748,316 @@ class Component extends DCLogic {
     const readerOpen = (s.screen === 'library' && s.libMode === 'read') || (s.screen === 'readbooks' && s.rbMode === 'read');
     if (!readerOpen) this._clearBodyOverlay();
   }
+  // ===== វីដេអូ (YouTube): loading, watching in-app, per-student tracking =====
+  async loadVideos(){
+    const r = await Backend.listVideos();
+    const st = this.state, admin = st.role === 'admin', mine = st.mySchoolId || st.userId;
+    const vids = (r.rows || [])
+      .filter(v => admin || (v.active !== false && !(Array.isArray(v.school_ids) && v.school_ids.length && !v.school_ids.includes(mine))))
+      .sort((a, b) => (a.sort || 0) - (b.sort || 0) || String(a.created_at).localeCompare(String(b.created_at)));
+    const prog = {};
+    if (st.role === 'student' && st.userId) { const p = await Backend.listMyVideoProgress(st.userId); for (const x of (p.rows || [])) prog[x.video_id] = x; }
+    this.setState({ videos: vids, videoProg: prog });
+  }
+  _ytApi(){
+    if (window.YT && window.YT.Player) return Promise.resolve();
+    if (this._ytP) return this._ytP;
+    this._ytP = new Promise((res, rej) => {
+      const prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => { try { prev && prev(); } catch(e) {} res(); };
+      const t = document.createElement('script'); t.src = 'https://www.youtube.com/iframe_api';
+      t.onerror = () => { this._ytP = null; rej(new Error('yt')); };
+      document.head.appendChild(t);
+      setTimeout(() => { if (!(window.YT && window.YT.Player)) { this._ytP = null; rej(new Error('timeout')); } }, 15000);
+    });
+    return this._ytP;
+  }
+  // length of a video, read by briefly loading it (muted, off-screen) — 0 when it can't be read
+  async _probeYtDuration(ytId){
+    try { await this._ytApi(); } catch(e) { return 0; }
+    return new Promise(res => {
+      const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:-9999px;top:0;width:220px;height:124px;';
+      const inner = document.createElement('div'); inner.id = 'yt-probe-' + Date.now(); host.appendChild(inner); document.body.appendChild(host);
+      let done = false, p = null, timer = null;
+      const fin = d => { if (done) return; done = true; clearTimeout(timer); try { p && p.destroy(); } catch(e) {} host.remove(); res(d || 0); };
+      timer = setTimeout(() => fin(0), 9000);
+      try {
+        p = new YT.Player(inner.id, { videoId: ytId, playerVars: { controls: 0, playsinline: 1 }, events: {
+          onReady: e => { const d = Math.round(e.target.getDuration() || 0); if (d > 0) fin(d); else { try { e.target.mute(); e.target.playVideo(); } catch(x) { fin(0); } } },
+          onStateChange: e => { if (e.data === 1) fin(Math.round(e.target.getDuration() || 0)); },
+          onError: () => fin(0),
+        } });
+      } catch(e) { fin(0); }
+    });
+  }
+  openVideo(id){
+    const v = (this.state.videos || []).find(x => x.id === id); if (!v) return;
+    this._closeVideo();
+    const rec = this.state.videoProg[id] || {};
+    const dur = v.duration || 0, lp = rec.last_pos || 0;
+    const start = (lp > 5 && (!dur || lp < dur - 5)) ? lp : 0;
+    const vw = this._vw = { v, dur, start, ranges: mergeRanges(rec.ranges || []), skips: mergeRanges(rec.skips || [], 0.5), plays: rec.plays || 0, watch: rec.watch_secs || 0,
+      completed: !!rec.completed, completedAt: rec.completed_at || null, rate: 1, lastT: start, lastPos: start, counted: false, lastSave: Date.now(), dirty: false, seekAt: 0, state: -1 };
+    const root = document.createElement('div'); root.className = 'vw-root';
+    const rates = [0.5, 0.75, 1, 1.25, 1.5, 2];
+    const pills = cls => rates.map(r => `<button class="vw-pill js-rate ${cls}" data-a="rate" data-r="${r}">${r}×</button>`).join('');
+    root.innerHTML = `
+      <div class="vw-top"><button data-a="close" aria-label="ថយក្រោយ">‹</button><b>${this._esc(v.title)}</b></div>
+      <div class="vw-stage" id="vw-stage">
+        <div id="vw-yt"></div><div class="vw-shield" data-a="shield"></div>
+        ${start ? `<div class="vw-badge" id="vw-badge">បន្តពី ${fmtClock(start)}</div>` : ''}
+        <div class="vw-fsui">
+          <div class="t"><span>${this._esc(v.title)}</span><span class="vw-pill js-ratelbl">1×</span></div>
+          <div class="m"><button data-a="b10">-10</button><button class="p js-play" data-a="play">▶</button><button data-a="f10">+10</button></div>
+          <div class="b"><div class="vw-seek js-seek"></div>
+            <div class="r"><span class="js-clock"></span><span style="display:flex;gap:5px;flex-wrap:wrap;">${pills('')}</span><button class="vw-pill" data-a="fs">⛶ ចេញ</button></div></div>
+        </div>
+      </div>
+      <div class="vw-body">
+        <div class="vw-seek js-seek"></div>
+        <div class="vw-times"><span class="js-cur">00:00</span><span class="js-dur">--:--</span></div>
+        <div class="vw-legend"><span>បានមើល</span><span class="s">រំលង</span><span class="u">មិនទាន់មើល</span></div>
+        <div class="vw-ctl"><button data-a="b10">-10</button><button class="p js-play" data-a="play">▶</button><button data-a="f10">+10</button></div>
+        <div class="vw-row"><button class="vw-pill" data-a="fs">⛶ ផ្ដេកពេញអេក្រង់</button></div>
+        <div class="vw-row" style="gap:5px;">${pills('')}</div>
+        <div class="vw-card js-stats"></div>
+        <button class="vw-go js-go" data-a="goskip" style="display:none;">↩ ត្រឡប់ទៅមើលកន្លែងដែលរំលង</button>
+      </div>`;
+    document.body.appendChild(root); vw.root = root;
+    vw.stage = root.querySelector('#vw-stage');
+    root.addEventListener('click', e => this._vwClick(e));
+    root.querySelectorAll('.js-seek').forEach(el => {
+      const calc = ev => {
+        const r = el.getBoundingClientRect();
+        const turned = vw.stage.classList.contains('vw-pfs') && window.matchMedia('(orientation:portrait)').matches;   // player rotated 90° → its bar runs down the screen
+        const f = turned ? (ev.clientY - r.top) / r.height : (ev.clientX - r.left) / r.width;
+        return Math.max(0, Math.min(1, f)) * (vw.dur || 0);
+      };
+      const mark = ev => { const c = el.querySelector('.c'); if (c && vw.dur) c.style.left = (calc(ev) / vw.dur * 100) + '%'; };
+      el.addEventListener('pointerdown', ev => { if (!vw.dur) return; vw.drag = true; try { el.setPointerCapture(ev.pointerId); } catch(e) {} mark(ev); ev.preventDefault(); });
+      el.addEventListener('pointermove', ev => { if (vw.drag) mark(ev); });
+      el.addEventListener('pointerup', ev => { if (!vw.drag) return; vw.drag = false; this._vwSeek(calc(ev)); });
+      el.addEventListener('pointercancel', () => { vw.drag = false; });
+    });
+    vw.onFs = () => { const on = (document.fullscreenElement || document.webkitFullscreenElement) === vw.stage; vw.stage.classList.toggle('vw-fs', on); if (on) this._vwKickHide(); else { vw.stage.classList.remove('vw-hide'); try { screen.orientation.unlock(); } catch(e) {} } };
+    document.addEventListener('fullscreenchange', vw.onFs); document.addEventListener('webkitfullscreenchange', vw.onFs);
+    this._vwPaint(start);
+    this._ytApi().then(() => this._vwInit()).catch(() => this._vwMsg('មិនអាចផ្ទុក player បានទេ — សូមពិនិត្យអ៊ីនធឺណិត'));
+  }
+  _vwMsg(t){ const vw = this._vw; if (!vw) return; let m = vw.stage.querySelector('.vw-msg'); if (!m) { m = document.createElement('div'); m.className = 'vw-msg'; vw.stage.appendChild(m); } m.textContent = t; }
+  _vwInit(){
+    const vw = this._vw; if (!vw) return;
+    vw.player = new YT.Player('vw-yt', { videoId: vw.v.yt_id,
+      playerVars: { playsinline: 1, controls: 0, rel: 0, modestbranding: 1, disablekb: 1, fs: 0, iv_load_policy: 3, start: Math.floor(vw.start) },
+      events: {
+        onReady: e => { const d = e.target.getDuration(); if (d > 0) this._vwSetDur(d); vw.timer = setInterval(() => this._vwTick(), 500); this._vwPaint(vw.start); },
+        onStateChange: e => this._vwState(e.data),
+        onError: () => this._vwMsg('វីដេអូនេះចាក់ក្នុងកម្មវិធីមិនបាន (ម្ចាស់មិនអនុញ្ញាតឲ្យបង្កប់ ឬ link ខុស)'),
+      } });
+  }
+  _vwSetDur(d){
+    const vw = this._vw; if (!vw || !(d > 0)) return; d = Math.round(d);
+    if (vw.dur !== d) { vw.dur = d; if (this.state.role === 'admin' && !vw.v.duration) { vw.v.duration = d; Backend.updateVideo(vw.v.id, { duration: d }); this.setState(s => ({ videos: s.videos.map(x => x.id === vw.v.id ? { ...x, duration: d } : x) })); } }
+    this._vwPaint();
+  }
+  _vwTick(){
+    const vw = this._vw; if (!vw || !vw.player || !vw.player.getCurrentTime) return;
+    let t; try { t = vw.player.getCurrentTime(); } catch(e) { return; }
+    if (!vw.dur) { try { this._vwSetDur(vw.player.getDuration()); } catch(e) {} }
+    const settling = Date.now() - vw.seekAt < 1500;    // just seeked: the player may still report the old time
+    if (vw.state === 1 && !vw.drag) {
+      let rate = 1; try { rate = vw.player.getPlaybackRate() || 1; } catch(e) {}
+      if (!settling && vw.lastT != null) {
+        const dt = t - vw.lastT;
+        if (dt >= 0 && dt <= 0.5 * rate + 1.2) this._vwAddRange(vw.lastT, t);
+        else if (dt > 0) this._vwMarkSkip(vw.lastT, t);      // jumped forward on its own
+      }
+      vw.watch += 0.5; vw.dirty = true;
+    }
+    if (!settling || vw.state !== 1) vw.lastT = t;
+    vw.lastPos = t;
+    if (!vw.completed && vw.dur && rangesTotal(vw.ranges) / vw.dur * 100 >= VIDEO_DONE_PCT) {
+      vw.completed = true; vw.completedAt = new Date().toISOString(); vw.dirty = true; this._vwSave(true); this.showToast('មើលចប់ហើយ ✓');
+    }
+    this._vwSave(false); this._vwPaint(t);
+  }
+  _vwAddRange(a, b){ const vw = this._vw; if (!(b > a)) return; vw.ranges = mergeRanges([...vw.ranges, [a, b]]); vw.skips = cutRange(vw.skips, a, b); }
+  _vwMarkSkip(a, b){ const vw = this._vw; for (const g of uncovered(a, b, vw.ranges)) if (g[1] - g[0] >= 2) vw.skips.push(g); vw.skips = mergeRanges(vw.skips, 0.5); vw.dirty = true; }
+  _vwState(s){
+    const vw = this._vw; if (!vw) return; vw.state = s;
+    if (s === 1) {
+      if (!vw.counted) { vw.counted = true; vw.plays++; vw.dirty = true; }
+      try { vw.lastT = vw.player.getCurrentTime(); const d = vw.player.getDuration(); if (d > 0) this._vwSetDur(d); } catch(e) {}
+      const b = vw.root.querySelector('#vw-badge'); if (b) b.remove();
+      this._vwKickHide();
+    } else if (s === 0) { vw.counted = false; this._vwSave(true); }
+    else if (s === 2) { this._vwSave(true); }
+    this._vwPaint();
+  }
+  _vwSeek(t, opt){
+    const vw = this._vw; if (!vw || !vw.player) return;
+    if (vw.dur) t = Math.min(t, vw.dur - 0.5);
+    t = Math.max(0, t);
+    const from = vw.lastPos || 0;
+    if (!(opt && opt.nomark) && t > from + 3) this._vwMarkSkip(from, t);
+    try { vw.player.seekTo(t, true); } catch(e) {}
+    vw.lastT = t; vw.lastPos = t; vw.seekAt = Date.now(); vw.dirty = true; this._vwPaint(t);
+  }
+  _vwClick(e){
+    const vw = this._vw; if (!vw) return;
+    const a = e.target.closest('[data-a]'); if (!a) return;
+    const act = a.dataset.a, cur = vw.lastPos || 0;
+    if (act === 'close') this._closeVideo();
+    else if (act === 'play' || (act === 'shield' && !vw.stage.classList.contains('vw-fs') && !vw.stage.classList.contains('vw-pfs'))) this._vwToggle();
+    else if (act === 'shield') { vw.stage.classList.toggle('vw-hide'); if (!vw.stage.classList.contains('vw-hide')) this._vwKickHide(); }
+    else if (act === 'b10') this._vwSeek(cur - 10);
+    else if (act === 'f10') this._vwSeek(cur + 10);
+    else if (act === 'rate') { const r = parseFloat(a.dataset.r); vw.rate = r; try { vw.player.setPlaybackRate(r); } catch(x) {} vw.dirty = true; this._vwPaint(); }
+    else if (act === 'fs') this._vwToggleFs();
+    else if (act === 'goskip') { if (vw.skips.length) this._vwSeek(Math.max(0, vw.skips[0][0] - 2), { nomark: true }); }
+    if (vw.stage.classList.contains('vw-fs') || vw.stage.classList.contains('vw-pfs')) { if (act !== 'shield') this._vwKickHide(); }
+  }
+  _vwToggle(){ const vw = this._vw; if (!vw || !vw.player) return; try { if (vw.state === 1) vw.player.pauseVideo(); else vw.player.playVideo(); } catch(e) {} }
+  _vwKickHide(){
+    const vw = this._vw; if (!vw) return;
+    clearTimeout(vw.hideT); vw.stage.classList.remove('vw-hide');
+    vw.hideT = setTimeout(() => { if (this._vw === vw && vw.state === 1) vw.stage.classList.add('vw-hide'); }, 3000);
+  }
+  _vwToggleFs(){
+    const vw = this._vw; if (!vw) return; const stage = vw.stage;
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if (fsEl || stage.classList.contains('vw-pfs')) {
+      if (fsEl) { try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch(e) {} }
+      stage.classList.remove('vw-pfs', 'vw-hide'); try { screen.orientation.unlock(); } catch(e) {}
+      return;
+    }
+    const req = stage.requestFullscreen || stage.webkitRequestFullscreen;
+    const pseudo = () => { stage.classList.add('vw-pfs'); this._vwKickHide(); };
+    if (!req) { pseudo(); return; }
+    let p; try { p = req.call(stage); } catch(e) { pseudo(); return; }
+    Promise.resolve(p).then(() => { try { const o = screen.orientation; if (o && o.lock) o.lock('landscape').catch(() => {}); } catch(e) {} }).catch(pseudo);
+  }
+  _vwPaint(cur){
+    const vw = this._vw; if (!vw) return;
+    const dur = vw.dur || 0; if (cur == null) cur = vw.lastPos || 0;
+    const pc = x => dur ? Math.max(0, Math.min(100, x / dur * 100)) : 0;
+    let h = '';
+    for (const r of vw.ranges) h += `<i class="w" style="left:${pc(r[0])}%;width:${pc(r[1]) - pc(r[0])}%"></i>`;
+    for (const r of vw.skips) h += `<i class="s" style="left:${pc(r[0])}%;width:${pc(r[1]) - pc(r[0])}%"></i>`;
+    h += `<i class="c" style="left:${pc(cur)}%"></i>`;
+    const root = vw.root, playing = vw.state === 1;
+    if (!vw.drag) root.querySelectorAll('.js-seek').forEach(e => { e.innerHTML = h; });
+    root.querySelectorAll('.js-cur').forEach(e => { e.textContent = fmtClock(cur); });
+    root.querySelectorAll('.js-dur').forEach(e => { e.textContent = dur ? fmtClock(dur) : '--:--'; });
+    root.querySelectorAll('.js-clock').forEach(e => { e.textContent = `${fmtClock(cur)} / ${dur ? fmtClock(dur) : '--:--'}`; });
+    root.querySelectorAll('.js-play').forEach(e => { e.textContent = playing ? '❚❚' : '▶'; });
+    root.querySelectorAll('.js-rate').forEach(e => { e.classList.toggle('on', parseFloat(e.dataset.r) === vw.rate); });
+    root.querySelectorAll('.js-ratelbl').forEach(e => { e.textContent = vw.rate + '×'; });
+    const got = rangesTotal(vw.ranges), pct = dur ? Math.min(100, Math.round(got / dur * 100)) : 0;
+    const sk = vw.skips.slice(0, 3).map(r => `${fmtClock(r[0])} – ${fmtClock(r[1])}`).join(' · ') + (vw.skips.length > 3 ? ` · +${vw.skips.length - 3}` : '');
+    const st = root.querySelector('.js-stats');
+    if (st) st.innerHTML = `<h4>វឌ្ឍនភាពរបស់អ្នក</h4>
+      <div class="vw-kv"><span>មើលបាន</span><b>${pct}%${vw.completed ? ' · មើលចប់ ✓' : ''}</b></div>
+      <div class="vw-kv"><span>ចាប់ផ្តើមមើល</span><b>${vw.plays} ដង</b></div>
+      <div class="vw-kv"><span>រំលង</span><b>${vw.skips.length ? vw.skips.length + ' កន្លែង (' + sk + ')' : 'មិនមាន'}</b></div>`;
+    const go = root.querySelector('.js-go'); if (go) go.style.display = vw.skips.length ? 'block' : 'none';
+  }
+  _vwSave(force){
+    const vw = this._vw; if (!vw) return;
+    if (!force && (!vw.dirty || Date.now() - vw.lastSave < 12000)) return;
+    vw.lastSave = Date.now(); vw.dirty = false;
+    if (this.state.role !== 'student' || !this.state.userId) return;      // only students are tracked
+    const rr = rs => rs.map(r => [Math.round(r[0]), Math.round(r[1])]);
+    const row = { user_id: this.state.userId, video_id: vw.v.id, ranges: rr(vw.ranges), skips: rr(vw.skips), last_pos: Math.floor(vw.lastPos || 0),
+      plays: vw.plays, watch_secs: Math.round(vw.watch), completed: vw.completed, completed_at: vw.completedAt, rate: vw.rate, updated_at: new Date().toISOString() };
+    this.setState(s => ({ videoProg: { ...s.videoProg, [row.video_id]: row } }));
+    Backend.saveVideoProgress(row);
+  }
+  _closeVideo(){
+    const vw = this._vw; if (!vw) return;
+    clearInterval(vw.timer); clearTimeout(vw.hideT);
+    this._vwSave(true);
+    try { if (document.fullscreenElement || document.webkitFullscreenElement) (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch(e) {}
+    try { screen.orientation.unlock(); } catch(e) {}
+    document.removeEventListener('fullscreenchange', vw.onFs); document.removeEventListener('webkitfullscreenchange', vw.onFs);
+    try { vw.player && vw.player.destroy(); } catch(e) {}
+    vw.root.remove(); this._vw = null;
+  }
+  setVideoFilter(f){ this.setState({ videoFilter: f }); }
+  // — admin: គ្រប់គ្រងវីដេអូ —
+  goVideoMgr(){
+    this._closeVideo();
+    this.setState({ screen: 'vidmgr', vmUrl: '', vmTitle: '', vmGroup: '', vmMandatory: false, vmAllSchools: true, vmSchoolIds: [], vmDur: 0, vmYt: '', vmBusy: false, vmErr: '', vmMsg: '', vmEditId: null });
+    this.loadVideos();
+  }
+  onVmUrl(e){
+    const url = e.target.value, id = ytIdFrom(url);
+    this.setState({ vmUrl: url, vmYt: id, vmErr: '', vmMsg: '', vmDur: 0 });
+    if (id) this._vmProbe(id);
+  }
+  async _vmProbe(id){
+    this._vmProbeId = id;
+    const meta = fetch('https://www.youtube.com/oembed?url=' + encodeURIComponent('https://youtu.be/' + id) + '&format=json').then(r => r.ok ? r.json() : null).catch(() => null);
+    const dur = this._probeYtDuration(id);
+    const m = await meta;
+    if (this._vmProbeId === id && m && m.title && !(this.state.vmTitle || '').trim()) this.setState({ vmTitle: m.title });
+    const d = await dur;
+    if (this._vmProbeId === id) this.setState({ vmDur: d });
+  }
+  onVmTitle(e){ this.setState({ vmTitle: e.target.value }); }
+  onVmGroup(e){ this.setState({ vmGroup: e.target.value }); }
+  onVmMandatory(e){ this.setState({ vmMandatory: e.target.checked }); }
+  onVmAllSchools(e){ this.setState({ vmAllSchools: e.target.checked }); }
+  toggleVmSchool(id){ this.setState(s => ({ vmSchoolIds: s.vmSchoolIds.includes(id) ? s.vmSchoolIds.filter(x => x !== id) : [...s.vmSchoolIds, id] })); }
+  async saveVideo(){
+    const s = this.state; if (s.vmBusy) return;
+    const yt = ytIdFrom(s.vmUrl), title = (s.vmTitle || '').trim();
+    if (!yt) { this.setState({ vmErr: 'link YouTube មិនត្រឹមត្រូវ', vmMsg: '' }); return; }
+    if (!title) { this.setState({ vmErr: 'សូមដាក់ចំណងជើង', vmMsg: '' }); return; }
+    if (!s.vmAllSchools && !s.vmSchoolIds.length) { this.setState({ vmErr: 'សូមជ្រើសរើសសាលា/សាខាយ៉ាងហោចណាស់មួយ', vmMsg: '' }); return; }
+    this.setState({ vmBusy: true, vmErr: '', vmMsg: '' });
+    const row = { yt_id: yt, title, grp: (s.vmGroup || '').trim(), duration: s.vmDur || null, mandatory: !!s.vmMandatory, active: true,
+      school_ids: s.vmAllSchools ? [] : s.vmSchoolIds, sort: (s.videos || []).length };
+    const { error } = await Backend.addVideo(row);
+    if (error) { this.setState({ vmBusy: false, vmErr: error }); return; }
+    await this.loadVideos();
+    this.setState({ vmBusy: false, vmUrl: '', vmTitle: '', vmGroup: '', vmYt: '', vmDur: 0, vmMandatory: false, vmAllSchools: true, vmSchoolIds: [], vmMsg: `បន្ថែម «${title}» រួចរាល់ ✓` });
+  }
+  async toggleVideoActive(v){ const { error } = await Backend.updateVideo(v.id, { active: !(v.active !== false) }); if (error) { this.showToast(error); return; } await this.loadVideos(); }
+  async moveVideo(v, dir){
+    const list = (this.state.videos || []).slice(), i = list.findIndex(x => x.id === v.id), j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j], list[i]];
+    await Promise.all(list.map((x, k) => (x.sort === k ? null : Backend.updateVideo(x.id, { sort: k }))));
+    await this.loadVideos();
+  }
+  startEditVideo(v){ this.setState({ vmEditId: v.id, vmEdit: { title: v.title, grp: v.grp || '', mandatory: !!v.mandatory }, vmErr: '' }); }
+  async saveEditVideo(){
+    const id = this.state.vmEditId, e = this.state.vmEdit; if (!id || !e) return;
+    if (!(e.title || '').trim()) { this.setState({ vmErr: 'សូមដាក់ចំណងជើង' }); return; }
+    const { error } = await Backend.updateVideo(id, { title: e.title.trim(), grp: (e.grp || '').trim(), mandatory: !!e.mandatory });
+    if (error) { this.setState({ vmErr: error }); return; }
+    await this.loadVideos(); this.setState({ vmEditId: null, vmEdit: null, vmMsg: 'កែរួចរាល់ ✓' });
+  }
+  async deleteVideo(v){
+    if (!window.confirm(`លុប «${v.title}» មែនទេ? (ទិន្នន័យមើលរបស់សិស្សនឹងបាត់ដែរ)`)) return;
+    const { error } = await Backend.deleteVideo(v.id); if (error) { this.showToast(error); return; }
+    await this.loadVideos();
+  }
+  // — admin / school / teacher: របាយការណ៍វីដេអូ —
+  async goVideoRep(){
+    this._closeVideo();
+    this.setState({ screen: 'vidrep', vrRows: [], vrVideoId: null });
+    if (!(this.state.students || []).length) this.loadStudents();
+    await this.loadVideos();
+    const first = (this.state.videos || [])[0];
+    if (first) this.pickReportVideo(first.id);
+  }
+  async pickReportVideo(id){
+    this.setState({ vrVideoId: id, vrBusy: true, vrRows: [] });
+    const r = await Backend.listVideoProgress(id);
+    if (this.state.vrVideoId === id) this.setState({ vrRows: r.rows || [], vrBusy: false });
+  }
   // set (or clear) the skin on <html>; remembered locally too so the login
   // screen and the next launch don't flash the original look first
   _applySkin(id){
@@ -10477,6 +11073,9 @@ class Component extends DCLogic {
   }
   async componentDidMount(){
     try { this._applySkin(localStorage.getItem('dict_skin') || ''); } catch(e) {}
+    // keep the video progress safe when the app is backgrounded or closed
+    document.addEventListener('visibilitychange', () => { if (document.hidden) this._vwSave(true); });
+    window.addEventListener('pagehide', () => this._vwSave(true));
     this.primeVoices();
     this.startUsageTracking();
     this.setupInstall();
@@ -10554,6 +11153,7 @@ class Component extends DCLogic {
       if (typeof this.state.settings.skin === 'string') this._applySkin(this.state.settings.skin);   // the account's own choice follows it across devices
       this._lastLevel = computeLevel(this.state.settings, totalUsageSecs(this.state.usage), (this.state.viewed || []).length);   // baseline so only real rises pop
       this.loadAnnouncements();
+      this.loadVideos();
       if (p.role === 'admin')   this.loadAdminData();
       if (['teacher','school','admin'].includes(p.role)) this.loadStudents();
       this.loadBooksAndCustom();
@@ -10978,6 +11578,7 @@ class Component extends DCLogic {
     await this.loadForUser(session.user.id);
   }
   async logout(){
+    this._closeVideo();
     // always flush, not only when a save was already pending — the last minute
     // of usage would otherwise be lost on sign-out
     if (this._saveT) clearTimeout(this._saveT);
@@ -14287,7 +14888,8 @@ class Component extends DCLogic {
     const examBestLabel = examBestVals.length ? `ពិន្ទុល្អបំផុត: ${Math.max.apply(null, examBestVals)}%` : 'មិនទាន់ធ្វើ';
 
     // — ចាក់ពាក្យ (word player) render locals —
-    const PLAYER_SRCS = [{ k: 'book', label: 'សៀវភៅ' }, { k: 'fav', label: 'សំណព្វ' }, { k: 'star', label: 'ផ្កាយ' }, { k: 'lesson', label: 'មេរៀន' }];
+    const PLAYER_SRCS = [{ k: 'book', label: 'សៀវភៅ' }, { k: 'fav', label: 'សំណព្វ' }, { k: 'star', label: 'ផ្កាយ' }, { k: 'lesson', label: 'មេរៀន' },
+      ...((s.videos || []).length ? [{ k: 'video', label: 'វីដេអូ' }] : [])];
     const playerSrcChips = PLAYER_SRCS.map(x => ({ label: x.label, onSelect: () => this.setPlayerSrc(x.k),
       style: s.playerSrc === x.k ? 'background:var(--color-accent);color:#f3f2f2;border-color:var(--color-accent);'
         : 'background:var(--color-surface);border-color:var(--color-divider);color:var(--color-text);' }));
@@ -15068,7 +15670,7 @@ class Component extends DCLogic {
       goMenu: () => this.goMenu(),
       // the menu tab stays lit on any screen it leads to, which differs by role
       menuColor: (() => {
-        const set = ['menu','settings'];
+        const set = ['menu','settings','vidmgr','vidrep'];
         if (s.role === 'student') set.push('favorites','profile');
         if (s.role === 'teacher') set.push('profile');
         if (s.role === 'school')  set.push('admin','profile');
@@ -15729,7 +16331,7 @@ class Component extends DCLogic {
       playerBookLabel, playerBookMenu, playerBookOpen: s.playerBookOpen, togglePlayerBook: () => this.togglePlayerBook(),
       playerLessonLabel: heardSet.has(s.playerLesson) ? `មេរៀនទី ${s.playerLesson} ✓` : `មេរៀនទី ${s.playerLesson}`, playerLessonMenu, playerLessonOpen: s.playerLessonOpen, togglePlayerLesson: () => this.togglePlayerLesson(),
       onPlayerRate: e => this.onPlayerRate(e),
-      playerHasWord: !!pw, playerEmpty: s.playerList.length === 0,
+      playerHasWord: !!pw && s.playerSrc !== 'video', playerEmpty: s.playerList.length === 0 && s.playerSrc !== 'video',
       playerNowKana: pw ? pw.kana : '', playerNowJp: pw ? pw.jp : '', playerNowKm: pw ? pw.km : '',
       playerPos: s.playerList.length ? (s.playerIdx + 1) : 0, playerTotal: s.playerList.length,
       playerToggle: () => this.playerToggle(), playerNext: () => this.playerNext(), playerPrev: () => this.playerPrev(),
@@ -15763,6 +16365,77 @@ class Component extends DCLogic {
       syncButtonLabel: s.syncing ? 'កំពុងទាញ…' : 'ធ្វើសមកាលកម្មឥឡូវនេះ',
       startSync: () => this.startSync(),
       fontScale: s.settings.fontScale, onFontScaleChange: e => this.onFontScaleChange(e),
+      ...(() => {
+        // — វីដេអូ: student list, admin manager, staff report —
+        const vids = s.videos || [], prog = s.videoProg || {};
+        const thumbOf = v => `background-image:url('https://i.ytimg.com/vi/${v.yt_id}/mqdefault.jpg');`;
+        const withState = vids.map(v => ({ v, st: videoState(prog[v.id], v.duration || 0), rec: prog[v.id] }));
+        const cnt = f => withState.filter(x => f === 'all' || (f === 'prog' ? x.st.state === 'prog' : x.st.state === 'done')).length;
+        const flt = s.videoFilter || 'all';
+        const ST = { new: ['មិនទាន់មើល', 'background:var(--color-neutral-200);color:var(--color-neutral-700);'], prog: [null, 'background:var(--color-accent-100);color:var(--color-accent-800);'], done: ['មើលចប់ ✓', 'background:#e3f4e8;color:#2a7a45;'] };
+        const videoCards = withState.filter(x => flt === 'all' || x.st.state === flt).map(({ v, st, rec }) => ({
+          title: v.title, thumbStyle: thumbOf(v), hasDur: !!v.duration, durLabel: v.duration ? fmtClock(v.duration) : '',
+          hasPct: st.pct > 0, barStyle: `width:${st.pct}%;`,
+          sub: [v.grp, st.state === 'prog' && rec && rec.last_pos > 5 ? `បន្តពី ${fmtClock(rec.last_pos)}` : '', st.state === 'done' && rec && rec.plays > 1 ? `មើល ${rec.plays} ដង` : '', v.mandatory ? 'កាតព្វកិច្ច' : ''].filter(Boolean).join(' · '),
+          stLabel: st.state === 'prog' ? `កំពុងមើល ${st.pct}%` : ST[st.state][0], stStyle: ST[st.state][1],
+          onOpen: () => this.openVideo(v.id),
+        }));
+        const fl = [['all', `ទាំងអស់ (${cnt('all')})`], ['prog', `កំពុងមើល (${cnt('prog')})`], ['done', `មើលចប់ (${cnt('done')})`]];
+        const videoFilters = fl.map(([k, label]) => ({ label, onSelect: () => this.setVideoFilter(k),
+          style: flt === k ? 'background:var(--color-surface);box-shadow:0 1px 3px rgba(0,0,0,.15);' : 'opacity:0.65;' }));
+        // admin manager
+        const dayLbl = v => [v.grp, v.duration ? fmtClock(v.duration) : '', v.mandatory ? 'កាតព្វកិច្ច' : '', (Array.isArray(v.school_ids) && v.school_ids.length) ? `${v.school_ids.length} សាខា` : ''].filter(Boolean).join(' · ');
+        const vmList = vids.map((v, i) => {
+          const ed = s.vmEditId === v.id, e = s.vmEdit || {};
+          return { title: v.title, sub: dayLbl(v), thumbStyle: thumbOf(v), dim: v.active === false ? 'opacity:0.55;' : '',
+            active: v.active !== false, activeClass: v.active !== false ? 'on' : '', onToggleActive: () => this.toggleVideoActive(v),
+            onUp: () => this.moveVideo(v, -1), onDown: () => this.moveVideo(v, 1), onEdit: () => this.startEditVideo(v), onDelete: () => this.deleteVideo(v),
+            isEditing: ed, isNotEditing: !ed, editTitle: e.title || '', editGrp: e.grp || '', editMandatory: !!e.mandatory, editMandatoryClass: e.mandatory ? 'on' : '',
+            onEditTitle: ev => this.setState(st => ({ vmEdit: { ...st.vmEdit, title: ev.target.value } })),
+            onEditGrp: ev => this.setState(st => ({ vmEdit: { ...st.vmEdit, grp: ev.target.value } })),
+            onEditMandatory: ev => this.setState(st => ({ vmEdit: { ...st.vmEdit, mandatory: ev.target.checked } })),
+            onCancel: () => this.setState({ vmEditId: null, vmEdit: null }), onSaveEdit: () => this.saveEditVideo() };
+        });
+        // staff report
+        const rv = vids.find(v => v.id === s.vrVideoId) || null, rdur = rv ? (rv.duration || 0) : 0;
+        const byUser = {}; for (const r of (s.vrRows || [])) byUser[r.user_id] = r;
+        const RS = { new: ['មិនទាន់', 'background:var(--color-neutral-200);color:var(--color-neutral-700);'], prog: [null, 'background:var(--color-accent-100);color:var(--color-accent-800);'], done: ['ចប់ ✓', 'background:#e3f4e8;color:#2a7a45;'], skipy: ['រំលងច្រើន', 'background:#fbe4e1;color:#b8322a;'] };
+        const vrCardsAll = rv ? (s.students || []).map(st => {
+          const rec = byUser[st.id], ranges = rec ? mergeRanges(rec.ranges || []) : [], skips = rec ? mergeRanges(rec.skips || [], 0.5) : [];
+          const scale = rdur || Math.max(1, ...ranges.map(r => r[1]), ...skips.map(r => r[1]));
+          const vs = videoState(rec, rdur || scale), skipSecs = rangesTotal(skips);
+          const key = vs.state === 'done' ? 'done' : (vs.state === 'new' ? 'new' : (skipSecs / scale > 0.2 ? 'skipy' : 'prog'));
+          const pc = x => Math.max(0, Math.min(100, x / scale * 100));
+          const segs = [...ranges.map(r => ({ cls: 'w', style: `left:${pc(r[0])}%;width:${pc(r[1]) - pc(r[0])}%;` })), ...skips.map(r => ({ cls: 's', style: `left:${pc(r[0])}%;width:${pc(r[1]) - pc(r[0])}%;` }))];
+          const name = (st.full_name || st.email || '').trim() || 'សិស្ស';
+          const sks = skips.slice(0, 3).map(r => `${fmtClock(r[0])} – ${fmtClock(r[1])}`).join(' · ');
+          return { name, avatarGlyph: (st.settings && st.settings.avatarAnimal) || name.charAt(0).toUpperCase(), avatarBg: (st.settings && st.settings.avatarColor) || 'var(--color-accent)',
+            stLabel: key === 'prog' ? `${vs.pct}%` : (key === 'skipy' ? `${RS.skipy[0]} · ${vs.pct}%` : RS[key][0]), stStyle: RS[key][1], segs, pct: vs.pct, hasRec: !!rec, skipN: skips.length, done: vs.state === 'done',
+            meta: rec ? `ចាប់ផ្តើម ${rec.plays || 0} ដង · រំលង ${skips.length ? skips.length + ' កន្លែង' : 'មិនមាន'} · ចុងក្រោយ ${fmtClock(rec.last_pos)} · ម៉ោងមើលសរុប ${Math.max(1, Math.round((rec.watch_secs || 0) / 60))} នាទី` : 'មិនទាន់ចាប់ផ្តើម',
+            hasExtra: !!(rec && (skips.length || rec.rate)), extra: rec ? [skips.length ? `📌 រំលង ${sks}${skips.length > 3 ? ' …' : ''}` : '', rec.rate ? `ល្បឿនចុងក្រោយ ${rec.rate}×` : '', rec.updated_at ? this._fmtDate(rec.updated_at) : ''].filter(Boolean).join(' · ') : '' };
+        }) : [];
+        const startedN = vrCardsAll.filter(c => c.hasRec).length;
+        return {
+          playerIsVideo: s.playerSrc === 'video', videoFilters, videoCards, videoEmpty: videoCards.length === 0,
+          isVidMgr: s.screen === 'vidmgr', goVideoMgr: () => this.goVideoMgr(),
+          vmUrl: s.vmUrl, onVmUrl: e => this.onVmUrl(e), vmTitle: s.vmTitle, onVmTitle: e => this.onVmTitle(e), vmGroup: s.vmGroup, onVmGroup: e => this.onVmGroup(e),
+          vmHasYt: !!s.vmYt, vmThumbStyle: s.vmYt ? `background-image:url('https://i.ytimg.com/vi/${s.vmYt}/mqdefault.jpg');` : '',
+          vmDurLabel: s.vmDur ? fmtClock(s.vmDur) : 'កំពុងអាន… (ឬអានមិនបាន — ប្រព័ន្ធនឹងដឹងពេលចាក់ដំបូង)',
+          vmMandatory: s.vmMandatory, vmMandatoryClass: s.vmMandatory ? 'on' : '', onVmMandatory: e => this.onVmMandatory(e),
+          vmAllSchools: s.vmAllSchools, vmAllSchoolsClass: s.vmAllSchools ? 'on' : '', onVmAllSchools: e => this.onVmAllSchools(e),
+          vmPickSchools: !s.vmAllSchools,
+          vmSchoolList: (s.schools || []).map(sc => ({ name: sc.full_name || sc.email, check: s.vmSchoolIds.includes(sc.id) ? '✓' : '', onToggle: () => this.toggleVmSchool(sc.id) })),
+          hasVmErr: !!s.vmErr, vmErr: s.vmErr, hasVmMsg: !!s.vmMsg, vmMsg: s.vmMsg,
+          saveVideo: () => this.saveVideo(), vmSaveLabel: s.vmBusy ? 'កំពុងរក្សាទុក…' : '＋ បន្ថែមវីដេអូ',
+          vmCountLabel: `វីដេអូដែលមាន (${vids.length})`, vmEmpty: vids.length === 0, vmList,
+          canVideoReport: ['admin', 'school', 'teacher'].includes(s.role), goVideoRep: () => this.goVideoRep(),
+          isVidRep: s.screen === 'vidrep', vrNoVideos: vids.length === 0, vrHasVideos: vids.length > 0, vrBusy: s.vrBusy,
+          vrOptions: vids.map(v => ({ title: v.title, sub: dayLbl(v), check: v.id === s.vrVideoId ? '✓' : '', rowStyle: v.id === s.vrVideoId ? 'background:color-mix(in srgb, var(--color-accent) 9%, transparent);' : '', onPick: () => this.pickReportVideo(v.id) })),
+          vrStatDone: `${vrCardsAll.filter(c => c.done).length}/${vrCardsAll.length}`,
+          vrStatAvg: vrCardsAll.length ? Math.round(vrCardsAll.reduce((a, c) => a + c.pct, 0) / vrCardsAll.length) + '%' : '—',
+          vrStatSkip: String(vrCardsAll.filter(c => c.skipN > 0).length), vrCards: vrCardsAll, vrStarted: startedN,
+        };
+      })(),
       skinOptions: SKINS.map(k => { const on = (s.settings.skin || '') === k.id;
         return { label: k.label, sub: k.sub, sw: k.sw.map(c => ({ c })), check: on ? '✓' : '', rowStyle: on ? 'background:color-mix(in srgb, var(--color-accent) 9%, transparent);' : '', onPick: () => this.setSkin(k.id) }; }),
       autoAudio: s.settings.autoAudio, autoAudioClass: s.settings.autoAudio ? 'on' : '', onAutoAudioChange: e => this.onAutoAudioChange(e),
