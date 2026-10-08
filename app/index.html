@@ -828,6 +828,9 @@ textarea.input { min-height: 90px; resize: vertical; }
     .vw-stage.vw-buf .vw-spin{ display:block; }
     @keyframes vwspin{ to{ transform:rotate(360deg); } }
     .vw-shield{ position:absolute; inset:0; z-index:2; cursor:pointer; }
+    .vw-ask{ position:absolute; inset:0; z-index:9; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.82); color:#fff; text-align:center; padding:16px; }
+    .vw-ask b{ font-size:17px; } .vw-ask p{ font-size:12px; opacity:.75; margin:6px 0 14px; }
+    .vw-ask button{ border:none; border-radius:99px; background:var(--color-accent); color:#fff; font-size:15px; font-weight:700; padding:11px 30px; cursor:pointer; }
     .vw-badge{ position:absolute; right:8px; bottom:8px; z-index:3; background:var(--color-accent); color:#fff; font-size:11px; font-weight:700; padding:3px 10px; border-radius:99px; pointer-events:none; }
     .vw-msg{ position:absolute; inset:0; z-index:4; display:flex; align-items:center; justify-content:center; text-align:center; padding:20px; color:#fff; font-size:13px; line-height:1.7; background:rgba(0,0,0,.7); }
     .vw-body{ padding:12px 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
@@ -9884,6 +9887,7 @@ function computeLawLevel(settings){
 }
 // — វីដេអូ (YouTube) helpers: ranges are [[from,to],…] in seconds —
 const VIDEO_DONE_PCT = 90;          // % really watched for a video to count as finished
+const VIDEO_CHECK_SECS = 1200;      // every 20 min of playing, pause and ask "still watching?"
 function ytIdFrom(url){
   const s = String(url || '').trim();
   if (/^[\w-]{11}$/.test(s)) return s;
@@ -10108,7 +10112,14 @@ function makeSupabaseBackend(){
     async updateVideo(id, patch){ const { error } = await client.from('video_lessons').update(patch).eq('id', id); return { error: error ? error.message : null }; },
     async deleteVideo(id){ const { error } = await client.from('video_lessons').delete().eq('id', id); return { error: error ? error.message : null }; },
     async listMyVideoProgress(uid){ const { data } = await client.from('video_progress').select('*').eq('user_id', uid); return { rows: data || [] }; },
-    async saveVideoProgress(row){ const { error } = await client.from('video_progress').upsert(row, { onConflict: 'user_id,video_id' }); return { error: error ? error.message : null }; },
+    async saveVideoProgress(row){
+      let res = await client.from('video_progress').upsert(row, { onConflict: 'user_id,video_id' });
+      if (res.error && /checks_(asked|ok)/.test(res.error.message || '')) {          // supabase/35 not run yet — save the rest
+        const { checks_asked, checks_ok, ...rest } = row;
+        res = await client.from('video_progress').upsert(rest, { onConflict: 'user_id,video_id' });
+      }
+      return { error: res.error ? res.error.message : null };
+    },
     async listVideoProgress(videoId){ const { data } = await client.from('video_progress').select('*').eq('video_id', videoId); return { rows: data || [] }; },
     async getBookSettings(){ const { data } = await client.from('book_settings').select('book,locked,all_schools,schools'); return { rows: data || [] }; },
     async saveBookSetting(row){ const { error } = await client.from('book_settings').upsert(row, { onConflict: 'book' }); return { error: error ? error.message : null }; },
@@ -10811,7 +10822,9 @@ class Component extends DCLogic {
     const dur = v.duration || 0, lp = rec.last_pos || 0;
     const start = (lp > 5 && (!dur || lp < dur - 5)) ? lp : 0;
     const vw = this._vw = { v, dur, start, ranges: mergeRanges(rec.ranges || []), skips: mergeRanges(rec.skips || [], 0.5), plays: rec.plays || 0, watch: rec.watch_secs || 0,
-      completed: !!rec.completed, completedAt: rec.completed_at || null, rate: 1, lastT: start, lastPos: start, counted: false, lastSave: Date.now(), dirty: false, seekAt: 0, state: -1 };
+      completed: !!rec.completed, completedAt: rec.completed_at || null, rate: 1, lastT: start, lastPos: start, counted: false, lastSave: Date.now(), dirty: false, seekAt: 0, state: -1,
+      asked: rec.checks_asked || 0, askOk: rec.checks_ok || 0, asking: false };
+    vw.checkAt = vw.watch;                 // the 20-minute "still watching?" clock runs on playing time, from now
     const root = document.createElement('div'); root.className = 'vw-root';
     const rates = [0.5, 0.75, 1, 1.25, 1.5, 2];
     const pills = cls => rates.map(r => `<button class="vw-pill js-rate ${cls}" data-a="rate" data-r="${r}">${r}×</button>`).join('');
@@ -10890,6 +10903,7 @@ class Component extends DCLogic {
         else if (dt > 0) this._vwMarkSkip(vw.lastT, t);      // jumped forward on its own
       }
       vw.watch += 0.5; vw.dirty = true;
+      if (!vw.asking && vw.watch - vw.checkAt >= VIDEO_CHECK_SECS) this._vwAsk();
     }
     if (!settling || vw.state !== 1) vw.lastT = t;
     vw.lastPos = t;
@@ -10927,6 +10941,8 @@ class Component extends DCLogic {
     const vw = this._vw; if (!vw) return;
     const a = e.target.closest('[data-a]'); if (!a) return;
     const act = a.dataset.a, cur = vw.lastPos || 0;
+    if (act === 'askok') { this._vwAskOk(); return; }
+    if (vw.asking && act !== 'close') return;                  // answer the question first
     if (act === 'close') this._closeVideo();
     else if (act === 'play' || (act === 'shield' && !vw.stage.classList.contains('vw-fs') && !vw.stage.classList.contains('vw-pfs'))) this._vwToggle();
     else if (act === 'shield') { vw.stage.classList.toggle('vw-hide'); if (!vw.stage.classList.contains('vw-hide')) this._vwKickHide(); }
@@ -10937,7 +10953,24 @@ class Component extends DCLogic {
     else if (act === 'goskip') { if (vw.skips.length) this._vwSeek(Math.max(0, vw.skips[0][0] - 2), { nomark: true }); }
     if (vw.stage.classList.contains('vw-fs') || vw.stage.classList.contains('vw-pfs')) { if (act !== 'shield') this._vwKickHide(); }
   }
-  _vwToggle(){ const vw = this._vw; if (!vw || !vw.player) return; try { if (vw.state === 1) vw.player.pauseVideo(); else vw.player.playVideo(); } catch(e) {} }
+  // "still watching?" — the video pauses and nothing counts until the student taps
+  _vwAsk(){
+    const vw = this._vw; if (!vw || vw.asking) return;
+    vw.asking = true; vw.asked++; vw.dirty = true;
+    try { vw.player.pauseVideo(); } catch(e) {}
+    const box = document.createElement('div'); box.className = 'vw-ask';
+    box.innerHTML = `<div><b>កំពុងមើលដែរឬទេ?</b><p>វីដេអូផ្អាកសិន ដើម្បីបញ្ជាក់ថាអ្នកកំពុងតាមដាន</p><button data-a="askok">បន្តមើល</button></div>`;
+    vw.stage.appendChild(box); vw.askBox = box;
+    this._vwSave(true);
+  }
+  _vwAskOk(){
+    const vw = this._vw; if (!vw || !vw.asking) return;
+    vw.asking = false; vw.askOk++; vw.checkAt = vw.watch; vw.dirty = true;
+    if (vw.askBox) { vw.askBox.remove(); vw.askBox = null; }
+    this._vwSave(true);
+    try { vw.player.playVideo(); } catch(e) {}
+  }
+  _vwToggle(){ const vw = this._vw; if (!vw || !vw.player || vw.asking) return; try { if (vw.state === 1) vw.player.pauseVideo(); else vw.player.playVideo(); } catch(e) {} }
   _vwKickHide(){
     const vw = this._vw; if (!vw) return;
     clearTimeout(vw.hideT); vw.stage.classList.remove('vw-hide');
@@ -10989,7 +11022,8 @@ class Component extends DCLogic {
     if (this.state.role !== 'student' || !this.state.userId) return;      // only students are tracked
     const rr = rs => rs.map(r => [Math.round(r[0]), Math.round(r[1])]);
     const row = { user_id: this.state.userId, video_id: vw.v.id, ranges: rr(vw.ranges), skips: rr(vw.skips), last_pos: Math.floor(vw.lastPos || 0),
-      plays: vw.plays, watch_secs: Math.round(vw.watch), completed: vw.completed, completed_at: vw.completedAt, rate: vw.rate, updated_at: new Date().toISOString() };
+      plays: vw.plays, watch_secs: Math.round(vw.watch), completed: vw.completed, completed_at: vw.completedAt, rate: vw.rate, updated_at: new Date().toISOString(),
+      checks_asked: vw.asked, checks_ok: vw.askOk };
     vw.lastRow = row;
     // re-rendering the whole app while the video plays costs frames — only do it when paused / closing
     if (force && vw.state !== 1) this.setState(s => ({ videoProg: { ...s.videoProg, [row.video_id]: row } }));
@@ -11097,7 +11131,13 @@ class Component extends DCLogic {
   async componentDidMount(){
     try { this._applySkin(localStorage.getItem('dict_skin') || ''); } catch(e) {}
     // keep the video progress safe when the app is backgrounded or closed
-    document.addEventListener('visibilitychange', () => { if (document.hidden) this._vwSave(true); });
+    // leaving the app (or locking the screen) pauses the video — a video playing
+    // to an empty room must not count as watched
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) return;
+      const vw = this._vw; if (vw && vw.state === 1) { try { vw.player.pauseVideo(); } catch(e) {} }
+      this._vwSave(true);
+    });
     window.addEventListener('pagehide', () => this._vwSave(true));
     this.primeVoices();
     this.startUsageTracking();
@@ -16434,8 +16474,8 @@ class Component extends DCLogic {
           const sks = skips.slice(0, 3).map(r => `${fmtClock(r[0])} – ${fmtClock(r[1])}`).join(' · ');
           return { name, avatarGlyph: (st.settings && st.settings.avatarAnimal) || name.charAt(0).toUpperCase(), avatarBg: (st.settings && st.settings.avatarColor) || 'var(--color-accent)',
             stLabel: key === 'prog' ? `${vs.pct}%` : (key === 'skipy' ? `${RS.skipy[0]} · ${vs.pct}%` : RS[key][0]), stStyle: RS[key][1], segs, pct: vs.pct, hasRec: !!rec, skipN: skips.length, done: vs.state === 'done',
-            meta: rec ? `ចាប់ផ្តើម ${rec.plays || 0} ដង · រំលង ${skips.length ? skips.length + ' កន្លែង' : 'មិនមាន'} · ចុងក្រោយ ${fmtClock(rec.last_pos)} · ម៉ោងមើលសរុប ${Math.max(1, Math.round((rec.watch_secs || 0) / 60))} នាទី` : 'មិនទាន់ចាប់ផ្តើម',
-            hasExtra: !!(rec && (skips.length || rec.rate)), extra: rec ? [skips.length ? `📌 រំលង ${sks}${skips.length > 3 ? ' …' : ''}` : '', rec.rate ? `ល្បឿនចុងក្រោយ ${rec.rate}×` : '', rec.updated_at ? this._fmtDate(rec.updated_at) : ''].filter(Boolean).join(' · ') : '' };
+            meta: rec ? `ចាប់ផ្តើម ${rec.plays || 0} ដង · រំលង ${skips.length ? skips.length + ' កន្លែង' : 'មិនមាន'} · ចុងក្រោយ ${fmtClock(rec.last_pos)} · ម៉ោងមើលសរុប ${Math.max(1, Math.round((rec.watch_secs || 0) / 60))} នាទី${rec.checks_asked ? ` · បញ្ជាក់ ${rec.checks_ok || 0}/${rec.checks_asked}` : ''}` : 'មិនទាន់ចាប់ផ្តើម',
+            hasExtra: !!(rec && (skips.length || rec.rate || (rec.checks_asked || 0) > (rec.checks_ok || 0))), extra: rec ? [skips.length ? `📌 រំលង ${sks}${skips.length > 3 ? ' …' : ''}` : '', (rec.checks_asked || 0) > (rec.checks_ok || 0) ? `⚠ មិនបានឆ្លើយ "កំពុងមើលដែរឬទេ?" ${(rec.checks_asked || 0) - (rec.checks_ok || 0)} ដង (ប្រហែលទុកចាក់ចោល)` : '', rec.rate ? `ល្បឿនចុងក្រោយ ${rec.rate}×` : '', rec.updated_at ? this._fmtDate(rec.updated_at) : ''].filter(Boolean).join(' · ') : '' };
         }) : [];
         const startedN = vrCardsAll.filter(c => c.hasRec).length;
         return {
