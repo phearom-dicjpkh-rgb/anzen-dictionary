@@ -3082,6 +3082,26 @@ textarea.input { min-height: 90px; resize: vertical; }
           </div>
           </sc-if>
 
+          <sc-if value="{{ qrOpen }}">
+          <div style="position:fixed;inset:0;z-index:65;background:color-mix(in srgb, var(--color-neutral-900) 55%, transparent);display:flex;align-items:flex-end;" sc-camel-on-click="{{ closeQr }}">
+          <div style="background:var(--color-bg);width:100%;border-radius:20px 20px 0 0;padding:18px 20px 24px;box-shadow:var(--shadow-lg);max-height:92%;overflow-y:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;" sc-camel-on-click="{{ stopProp }}">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <h2 style="font-size:18px;margin:0;font-family:var(--font-heading);">បង្កើតគណនីជោគជ័យ ✓</h2>
+              <button class="btn btn-icon btn-ghost" sc-camel-on-click="{{ closeQr }}" aria-label="បិទ" style="font-size:16px;">✕</button>
+            </div>
+            <div style="font-size:12px;opacity:0.7;line-height:1.6;">ឲ្យ <b>{{ qrName }}</b> ស្កេន QR នេះ ដើម្បីចូលគណនីតែម្ដង។ ទាញយករូបទុក ឬ ផ្ញើឲ្យគាត់។</div>
+            <img src="{{ qrImg }}" alt="QR" style="display:block;width:100%;max-width:300px;margin:0 auto;border-radius:12px;border:1px solid var(--color-divider);background:#fff;">
+            <button class="btn btn-block" style="background:var(--color-accent);color:#fff;border:none;" sc-camel-on-click="{{ downloadQr }}">⬇ ទាញយក QR</button>
+            <div style="display:flex;gap:8px;">
+              <sc-if value="{{ qrCanShare }}"><button class="btn btn-ghost" style="flex:1;border:1px solid var(--color-divider);" sc-camel-on-click="{{ shareQr }}">ចែករំលែក</button></sc-if>
+              <button class="btn btn-ghost" style="flex:1;border:1px solid var(--color-divider);" sc-camel-on-click="{{ copyQrLink }}">ចម្លងតំណ</button>
+            </div>
+            <sc-if value="{{ hasQrMsg }}"><div style="font-size:12px;color:var(--color-accent-700);text-align:center;">{{ qrMsg }}</div></sc-if>
+            <div style="font-size:11px;color:#b8322a;line-height:1.6;">⚠ QR នេះមានពាក្យសម្ងាត់នៅខាងក្នុង — អ្នកណាមាន QR នេះអាចចូលគណនីបាន។ ផ្ញើឲ្យតែម្ចាស់គណនីប៉ុណ្ណោះ។ ពេលបិទផ្ទាំងនេះ នឹងមិនអាចមើល QR ឡើងវិញបានទេ។</div>
+          </div>
+          </div>
+          </sc-if>
+
           <sc-if value="{{ isSchoolRole }}">
           <div class="card elev-sm" style="margin-bottom:18px;gap:10px;">
             <div class="card-kicker">តំណអញ្ជើញ</div>
@@ -10412,6 +10432,7 @@ class Component extends DCLogic {
     // admin (create accounts)
     adminFullName: '', adminEmail: '', adminPassword: '', adminRole: 'student', adminTeacherId: '', adminSchoolId: '',
     adminGender: '', adminBirthDate: '', createDialogOpen: false,
+    qrOpen: false, qrImg: '', qrName: '', qrLink: '', qrMsg: '',
     adminOwnerName: '', adminColor: '#2f6fb0', adminLogo: '', adminLogoBlob: null,   // school/branch: owner name, colour, logo
     adminBusy: false, adminMsg: '', adminError: '', teachers: [], accounts: [], schools: [],
     // admin (edit account dialog)
@@ -10537,6 +10558,90 @@ class Component extends DCLogic {
       synth.getVoices();
       if ('onvoiceschanged' in synth) synth.addEventListener('voiceschanged', () => { synth.getVoices(); });
     } catch(e) {}
+  }
+
+  // — Login QR: a new account's email + password ride in the URL *fragment*
+  // (#qr=…), which the browser never sends to any server. Scanning it signs the
+  // student straight in, and the fragment is wiped from the address bar. —
+  qrLoginLink(email, password){
+    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify({ e: email, p: password }))));
+    return location.origin + location.pathname + '#qr=' + b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  async checkQrLogin(){
+    let raw = '';
+    try { const m = /[#&]qr=([A-Za-z0-9_-]+)/.exec(location.hash); raw = m ? m[1] : ''; } catch(e) {}
+    if (!raw) return false;
+    try { history.replaceState(null, '', location.pathname + location.search); } catch(e) {}
+    let cred = null;
+    try { cred = JSON.parse(decodeURIComponent(escape(atob(raw.replace(/-/g, '+').replace(/_/g, '/'))))); } catch(e) {}
+    if (!cred || !cred.e || !cred.p) { this.setState({ authStage: 'login', authError: 'QR មិនត្រឹមត្រូវ' }); return true; }
+    this.setState({ authStage: 'loading', authBusy: true, authError: '' });
+    try { await Backend.signOut(); } catch(e) {}      // whoever was signed in on this phone makes way for the QR's owner
+    const { error } = await Backend.signIn(cred.e, cred.p);
+    if (error) { this.setState({ authStage: 'login', authBusy: false, email: cred.e, authError: 'QR នេះចូលមិនបានទេ — ពាក្យសម្ងាត់ប្រហែលត្រូវបានប្តូរ' }); return true; }
+    const session = await Backend.currentSession();
+    if (!session) { this.setState({ authStage: 'login', authBusy: false, authError: 'ចូលមិនបានសម្រេច' }); return true; }
+    this.setState({ authBusy: false });
+    await this.loadForUser(session.user.id);
+    return true;
+  }
+  _loadQrLib(){
+    if (window.qrcode) return Promise.resolve();
+    if (this._qrP) return this._qrP;
+    this._qrP = new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'vendor/qrcode-4c79be1679.js';
+      s.onload = () => res(); s.onerror = () => { this._qrP = null; rej(new Error('qr lib')); };
+      document.head.appendChild(s);
+    });
+    return this._qrP;
+  }
+  // a printable card: app name, the person's name, the QR, a one-line hint
+  async makeQrCard(name, roleLabel, link){
+    await this._loadQrLib();
+    const qr = window.qrcode(0, 'M'); qr.addData(link); qr.make();
+    const n = qr.getModuleCount(), quiet = 4, cell = Math.max(3, Math.floor(560 / (n + quiet * 2)));
+    const qs = (n + quiet * 2) * cell, W = 720, H = qs + 300;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const g = cv.getContext('2d');
+    const ff = getComputedStyle(document.body).fontFamily || 'sans-serif';
+    g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim() || '#2f6fb0';
+    g.fillStyle = accent; g.fillRect(0, 0, W, 16);
+    const fit = (txt, px, wt, maxW) => { g.font = wt + ' ' + px + 'px ' + ff; let t = txt; while (t.length > 1 && g.measureText(t).width > maxW) t = t.slice(0, -1); return t === txt ? t : t + '…'; };
+    g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+    g.fillStyle = '#6b6b6b'; g.fillText(fit(this.state.appName || DEFAULT_APP_NAME, 26, '600', W - 80), W / 2, 70);
+    g.fillStyle = '#111'; g.fillText(fit(name || '—', 44, '700', W - 80), W / 2, 130);
+    g.fillStyle = '#6b6b6b'; g.fillText(fit(roleLabel, 24, '400', W - 80), W / 2, 168);
+    const x0 = Math.round((W - qs) / 2), y0 = 196;
+    g.fillStyle = '#000';
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) g.fillRect(x0 + (c + quiet) * cell, y0 + (r + quiet) * cell, cell, cell);
+    g.fillStyle = '#111'; g.fillText(fit('ស្កេន QR នេះដើម្បីចូលគណនីភ្លាម', 28, '600', W - 60), W / 2, y0 + qs + 52);
+    g.fillStyle = '#b8322a'; g.fillText(fit('សម្ងាត់ — ផ្ញើឲ្យតែម្ចាស់គណនីប៉ុណ្ណោះ', 22, '400', W - 60), W / 2, y0 + qs + 90);
+    return cv.toDataURL('image/png');
+  }
+  async showAccountQr(name, role, email, password){
+    try {
+      const link = this.qrLoginLink(email, password);
+      const img = await this.makeQrCard(name, (role === 'teacher' ? 'គ្រូ · ' : 'សិស្ស · ') + email, link);
+      this.setState({ qrOpen: true, qrImg: img, qrName: name, qrLink: link, qrMsg: '' });
+    } catch(e) { this.setState({ adminMsg: 'បង្កើតគណនីជោគជ័យ ✓ (បង្កើត QR មិនបាន)' }); }
+  }
+  closeQr(){ this.setState({ qrOpen: false, qrImg: '', qrLink: '', qrName: '', qrMsg: '' }); }
+  _qrFileName(){ return 'QR-' + ((this.state.qrName || 'account').replace(/[\\/:*?"<>|]/g, '').trim() || 'account') + '.png'; }
+  downloadQr(){
+    const a = document.createElement('a'); a.href = this.state.qrImg; a.download = this._qrFileName();
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+  async shareQr(){
+    try {
+      const blob = await (await fetch(this.state.qrImg)).blob();
+      const file = new File([blob], this._qrFileName(), { type: 'image/png' });
+      await navigator.share({ files: [file], title: this.state.qrName });
+    } catch(e) {}
+  }
+  async copyQrLink(){
+    try { await navigator.clipboard.writeText(this.state.qrLink); this.setState({ qrMsg: 'ចម្លងតំណរួច ✓' }); }
+    catch(e) { this.setState({ qrMsg: 'សូមទាញយករូប QR ជំនួស' }); }
   }
 
   // ?join=TOKEN opens the sign-up form for that branch instead of the app
@@ -11239,12 +11344,14 @@ class Component extends DCLogic {
       this._vwSave(true);
     });
     window.addEventListener('pagehide', () => this._vwSave(true));
+    window.addEventListener('hashchange', () => { if (/[#&]qr=/.test(location.hash)) this.checkQrLogin(); });
     this.primeVoices();
     this.startUsageTracking();
     this.setupInstall();
     this.loadOverrides();
     this.loadAppSettings();
     try {
+      if (await this.checkQrLogin()) return;     // arrived by scanning a student's login QR
       if (await this.checkInvite()) return;      // arrived through an invite link
       const session = await Backend.currentSession();
       if (!session) { this.setState({ authStage: 'login' }); return; }
@@ -11830,6 +11937,7 @@ class Component extends DCLogic {
       if (adminLogoBlob) { const up = await Backend.uploadSchoolLogo(adminLogoBlob); if (up.error) { this.setState({ adminBusy: false, adminError: up.error }); return; } if (up.url) settings.logo = up.url; }
     }
     const email = adminEmail.trim();
+    const qrName = adminFullName.trim(), qrPass = adminPassword;
     const { error } = await Backend.createAccount({ email, password: adminPassword, full_name: adminFullName.trim(), role: adminRole, teacher_id: null, school_id: isSchool ? null : schoolId, settings });
     if (error) { this.setState({ adminBusy: false, adminError: error }); return; }
     // On the real backend the Edge Function doesn't store settings, so stamp the
@@ -11838,7 +11946,7 @@ class Component extends DCLogic {
       try { const { rows } = await Backend.listAccounts(); const made = (rows || []).find(a => (a.email || '').toLowerCase() === email.toLowerCase());
         if (made && made.id) await Backend.updateAccount(made.id, { settings }); } catch(e) {}
     }
-    this.setState({ adminBusy: false, createDialogOpen: false, adminMsg: 'បង្កើតគណនីជោគជ័យ ✓', adminEmail: '', adminPassword: '', adminFullName: '', adminGender: '', adminBirthDate: '', adminOwnerName: '', adminLogo: '', adminLogoBlob: null, adminColor: '#2f6fb0' }, () => this.loadAdminData());
+    this.setState({ adminBusy: false, createDialogOpen: false, adminMsg: 'បង្កើតគណនីជោគជ័យ ✓', adminEmail: '', adminPassword: '', adminFullName: '', adminGender: '', adminBirthDate: '', adminOwnerName: '', adminLogo: '', adminLogoBlob: null, adminColor: '#2f6fb0' }, () => { this.loadAdminData(); if (!isSchool) this.showAccountQr(qrName, adminRole, email, qrPass); });
   }
   goAdmin(){ this.setState({ screen: 'admin', adminMsg:'', adminError:'' }, () => { this.loadAdminData(); this.loadInviteLink(); }); }
 
@@ -16329,6 +16437,8 @@ class Component extends DCLogic {
       createBtnLabel: s.adminBusy ? 'កំពុងបង្កើត…' : 'បង្កើតគណនី',
       hasAdminError: !!s.adminError, adminError: s.adminError,
       hasAdminMsg: !!s.adminMsg, adminMsg: s.adminMsg,
+      qrOpen: s.qrOpen, qrImg: s.qrImg, qrName: s.qrName, qrMsg: s.qrMsg, hasQrMsg: !!s.qrMsg, qrCanShare: !!(navigator.share && navigator.canShare),
+      closeQr: () => this.closeQr(), downloadQr: () => this.downloadQr(), shareQr: () => this.shareQr(), copyQrLink: () => this.copyQrLink(),
       isEditingAccount: !!s.editingId,
       editFullName: s.editFullName, onEditFullName: e => this.onEditFullName(e),
       isEditRoleStudent: s.editRole === 'student', isEditRoleTeacher: s.editRole === 'teacher',
