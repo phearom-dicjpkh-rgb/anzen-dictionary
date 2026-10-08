@@ -1514,6 +1514,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               </div>
             </div>
 
+            <sc-if value="{{ canMrMonitor }}"><button style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:42px;border-radius:12px;background:var(--color-surface);border:1.5px solid var(--color-accent);color:var(--color-accent-700);font:inherit;font-weight:700;font-size:13.5px;cursor:pointer;box-shadow:var(--shadow-sm);margin:0 0 14px;" sc-camel-on-click="{{ openMrViewing }}">📊 របាយការណ៍វិភាគប្រចាំខែ (PDF)</button></sc-if>
             <!-- test rings (tap a ring to reveal its attempts) -->
             <div style="font-size:11px;letter-spacing:0.08em;opacity:0.5;margin:2px 0 12px;">លទ្ធផលតេស្ត · {{ attemptsHint }}</div>
             <div style="font-size:10.5px;letter-spacing:0.08em;opacity:0.45;margin-bottom:8px;">តេស្តជំនាញ</div>
@@ -1886,6 +1887,7 @@ textarea.input { min-height: 90px; resize: vertical; }
             </div>
           </div>
 
+          <button style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:42px;border-radius:12px;background:var(--color-surface);border:1.5px solid var(--color-accent);color:var(--color-accent-700);font:inherit;font-weight:700;font-size:13.5px;cursor:pointer;box-shadow:var(--shadow-sm);margin:0 0 14px;margin:14px 0 0;" sc-camel-on-click="{{ openMrOwn }}">📊 របាយការណ៍វិភាគប្រចាំខែ (PDF)</button>
           <!-- 1 · test results (collapsible) -->
           <div style="border-bottom:1px solid var(--color-divider);">
             <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:16px 0;" sc-camel-on-click="{{ toggleProfTests }}">
@@ -2641,6 +2643,30 @@ textarea.input { min-height: 90px; resize: vertical; }
             </div>
             <sc-if value="{{ termPopup.hasImg }}"><img src="{{ termPopup.img }}" alt="" style="display:block;max-width:100%;max-height:44vh;margin:0 auto;border-radius:12px;object-fit:contain;"></sc-if>
           </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ mrOpen }}">
+        <div style="position:fixed;inset:0;z-index:66;background:color-mix(in srgb, var(--color-neutral-900) 50%, transparent);display:flex;align-items:flex-end;" sc-camel-on-click="{{ closeMr }}">
+        <div style="background:var(--color-bg);width:100%;border-radius:20px 20px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom, 0px));box-shadow:var(--shadow-lg);max-height:92%;overflow-y:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;" sc-camel-on-click="{{ stopProp }}">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h2 style="font-size:17px;margin:0;font-family:var(--font-heading);">📊 របាយការណ៍ប្រចាំខែ</h2>
+            <button class="btn btn-icon btn-ghost" sc-camel-on-click="{{ closeMr }}" aria-label="បិទ" style="font-size:16px;">✕</button>
+          </div>
+          <div style="font-size:11.5px;opacity:0.65;line-height:1.6;"><b>{{ mrWhoName }}</b> · វិភាគម៉ោងរៀន ថ្ងៃសកម្ម លទ្ធផលតេស្ត ចំណុចខ្សោយ វីដេអូ និងប្រៀបធៀបខែមុន</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+            <sc-for list="{{ mrMonths }}" as="m" hint-placeholder-count="6">
+              <div style="text-align:center;padding:8px 0;border-radius:10px;background:var(--color-surface);border:1.5px solid var(--color-divider);font-size:12.5px;font-weight:600;cursor:pointer;{{ m.style }}" sc-camel-on-click="{{ m.onSelect }}">{{ m.label }}<div style="font-size:9.5px;font-weight:400;opacity:0.75;">{{ m.sub }}</div></div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            <sc-for list="{{ mrOptList }}" as="o" hint-placeholder-count="5">
+              <span style="font-size:11px;padding:5px 10px;border-radius:99px;background:var(--color-surface);border:1px solid var(--color-divider);cursor:pointer;{{ o.style }}" sc-camel-on-click="{{ o.onToggle }}">{{ o.label }}</span>
+            </sc-for>
+          </div>
+          <sc-if value="{{ mrNoData }}"><div style="font-size:12px;opacity:0.6;text-align:center;">ខែនេះគ្មានទិន្នន័យទេ</div></sc-if>
+          <sc-if value="{{ mrCanDownload }}"><button class="btn btn-block" style="background:var(--color-accent);color:#fff;border:none;height:44px;" sc-camel-on-click="{{ downloadMr }}">⬇ ទាញយក PDF</button></sc-if>
+        </div>
         </div>
         </sc-if>
 
@@ -10070,6 +10096,14 @@ function fmtDuration(sec){
   return h ? (h + ' ម៉ោង ' + m + ' នាទី') : (m + ' នាទី');
 }
 
+// — របាយការណ៍ប្រចាំខែ (monthly learning report) helpers —
+const KH_MONTHS = ['មករា','កុម្ភៈ','មីនា','មេសា','ឧសភា','មិថុនា','កក្កដា','សីហា','កញ្ញា','តុលា','វិច្ឆិកា','ធ្នូ'];
+function ymOf(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+function ymShift(ym, n){ const p = ym.split('-').map(Number); return ymOf(new Date(p[0], p[1] - 1 + n, 1)); }
+function ymLabel(ym){ const p = ym.split('-').map(Number); return KH_MONTHS[p[1] - 1] + ' ' + p[0]; }
+function ymDays(ym){ const p = ym.split('-').map(Number); return new Date(p[0], p[1], 0).getDate(); }
+const escHtml = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
 function makeSupabaseBackend(){
   const client = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
   async function fnError(error){
@@ -10433,6 +10467,7 @@ class Component extends DCLogic {
     adminFullName: '', adminEmail: '', adminPassword: '', adminRole: 'student', adminTeacherId: '', adminSchoolId: '',
     adminGender: '', adminBirthDate: '', createDialogOpen: false,
     qrOpen: false, qrImg: '', qrName: '', qrLink: '', qrMsg: '',
+    mrOpen: false, mrWho: '', mrMonth: '', mrProg: [], mrBusy: false, mrOpts: { time: true, tests: true, weak: true, compare: true, video: true },
     adminOwnerName: '', adminColor: '#2f6fb0', adminLogo: '', adminLogoBlob: null,   // school/branch: owner name, colour, logo
     adminBusy: false, adminMsg: '', adminError: '', teachers: [], accounts: [], schools: [],
     // admin (edit account dialog)
@@ -13996,6 +14031,226 @@ class Component extends DCLogic {
     this.setState({ adminMsg: 'បានលុបគណនី ✓' }, () => this.loadAdminData());
   }
 
+  // — របាយការណ៍វិភាគការរៀនប្រចាំខែ (A4 PDF, via the same print pipeline as the book export) —
+  _mrSource(who){
+    const s = this.state;
+    if (who === 'own') {
+      const nm = (s.profileName || '').includes('@') ? s.profileName.split('@')[0] : (s.profileName || '');
+      const sc = (s.schools || []).find(x => x.id === s.mySchoolId);
+      return { who, uid: s.userId, name: nm || '—', roleLabel: ({ student: 'សិស្ស', teacher: 'គ្រូ', school: 'សាលា/សាខា', admin: 'អ្នកគ្រប់គ្រង' })[s.role] || '',
+        branch: (s.role === 'school' ? s.profileName : (sc && (sc.full_name || sc.email))) || s.appName || '',
+        usage: s.usage || {}, listen: (s.settings && s.settings.usageListen) || {}, hours: (s.settings && s.settings.usageHours) || {}, history: s.history || [] };
+    }
+    const schoolRec = (s.schools || []).find(x => x.id === s.viewingSchoolId);
+    let branch = schoolRec ? (schoolRec.full_name || schoolRec.email || '') : '';
+    if (!branch && s.role === 'school') branch = s.profileName || '';
+    if (!branch) branch = s.viewingSchoolName || '';
+    return { who, uid: s.selectedStudent, name: s.selectedStudentName || '—', roleLabel: 'សិស្ស', branch: branch || s.appName || '',
+      usage: s.viewingUsage || {}, listen: s.viewingListen || {}, hours: s.viewingUsageHours || {}, history: s.viewingHistory || [] };
+  }
+  _mrHas(src, prog, ym){
+    const pre = ym + '-';
+    for (const k in src.usage) if (k.startsWith(pre) && src.usage[k] > 0) return true;
+    for (const x of src.history) { const d = new Date(x.date); if (!isNaN(d) && ymOf(d) === ym) return true; }
+    for (const p of prog) { const d = new Date(p.updated_at); if (!isNaN(d) && ymOf(d) === ym) return true; }
+    return false;
+  }
+  async openMonthlyReport(who){
+    if (this.state.mrBusy) return;
+    const src = this._mrSource(who); if (!src.uid) return;
+    this.setState({ mrBusy: true });
+    let prog = []; try { const r = await Backend.listMyVideoProgress(src.uid); prog = r.rows || []; } catch(e) {}
+    const cur = ymOf(new Date()); let sel = cur;
+    if (!this._mrHas(src, prog, cur)) for (let i = 1; i < 6; i++) { const y = ymShift(cur, -i); if (this._mrHas(src, prog, y)) { sel = y; break; } }
+    this.setState({ mrOpen: true, mrWho: who, mrProg: prog, mrMonth: sel, mrBusy: false });
+  }
+  closeMonthlyReport(){ this.setState({ mrOpen: false }); }
+  setMrMonth(ym){ this.setState({ mrMonth: ym }); }
+  toggleMrOpt(k){ this.setState(s => ({ mrOpts: { ...s.mrOpts, [k]: !s.mrOpts[k] } })); }
+  downloadMonthlyReport(){
+    const s = this.state, src = this._mrSource(s.mrWho);
+    const html = this._mrBuild(src, s.mrMonth, s.mrOpts, s.videos || [], s.mrProg || []);
+    const title = 'របាយការណ៍ប្រចាំខែ ' + ymLabel(s.mrMonth) + ' - ' + src.name;
+    this.setState({ mrOpen: false }, () => this._downloadBookPdf(title, html, 40, 1));
+  }
+  // the report body: top-level blocks (header, sections…) that _downloadBookPdf flows onto A4 pages
+  _mrBuild(src, ym, opts, videos, prog){
+    const A = '#2f6fb0', D = '#1d4f86';
+    const prevYm = ymShift(ym, -1), nDays = ymDays(ym);
+    const inMonth = (d, m) => { const x = new Date(d); return !isNaN(x) && ymOf(x) === m; };
+    const sumDays = (map, m) => { let t = 0, act = 0; for (const k in map) if (k.startsWith(m + '-')) { const v = map[k] || 0; t += v; if (v >= 60) act++; } return { t, act }; };
+    const cur = sumDays(src.usage, ym), prv = sumDays(src.usage, prevYm);
+    const lis = sumDays(src.listen, ym), lisP = sumDays(src.listen, prevYm);
+    const avg = x => x.act ? Math.round(x.t / x.act) : 0;
+    const cmp = !!opts.compare;
+    const dlt = (c, p, fmt, hasPrev) => {
+      if (!cmp || !hasPrev) return '';
+      const d = c - p;
+      if (d === 0) return '<em style="font-style:normal;font-size:10.5px;color:#888;display:block;margin-top:1px;">= ដូចខែមុន</em>';
+      return '<em style="font-style:normal;font-size:10.5px;display:block;margin-top:1px;color:' + (d > 0 ? '#2e8b57' : '#c0392b') + ';">' + (d > 0 ? '▲ +' : '▼ −') + fmt(Math.abs(d)) + '</em>';
+    };
+    const kp = (val, label, extra) => '<div style="border:1px solid #d8e2ef;background:#f5f9fe;border-radius:8px;padding:8px 10px;"><b style="font-size:17px;color:' + D + ';display:block;line-height:1.25;">' + val + '</b><span style="font-size:11px;color:#555;">' + label + '</span>' + (extra || '') + '</div>';
+    const h2 = (n, t, sub) => '<h2 style="font-size:14px;margin:14px 0 6px;color:' + D + ';border-left:4px solid ' + A + ';padding-left:8px;font-weight:700;">' + n + '. ' + t + (sub ? ' <span style="font-weight:400;color:#777;font-size:11px;">' + sub + '</span>' : '') + '</h2>';
+    const hasPrevUse = prv.t > 0 || Object.keys(src.usage).some(k => k.startsWith(prevYm + '-'));
+    const prevLbl = ymLabel(prevYm).split(' ')[0];
+    let n = 0; const out = [];
+    const now = new Date(), p2 = v => String(v).padStart(2, '0');
+
+    // ---- tests this month / last month ----
+    const CATS = [
+      { modes: ['mc_jp', 'mc_km'], label: 'តេស្តពាក្យ' }, { modes: ['quiz'], label: 'លំហាត់' }, { modes: ['imgquiz'], label: 'លំហាត់រូបភាព' },
+      { modes: ['hazard'], label: 'ព្យាករណ៍គ្រោះថ្នាក់' }, { modes: ['exam'], label: 'ប្រឡងសាកល្បង' }, { modes: ['law'], label: 'តេស្តច្បាប់ចរាចរណ៍' },
+    ];
+    const pctOf = x => x.total ? Math.round(x.score / x.total * 100) : 0;
+    const histIn = m => src.history.filter(x => inMonth(x.date, m));
+    const hM = histIn(ym), hP = histIn(prevYm);
+    const stat = (rows) => ({ c: rows.length, pass: rows.filter(x => pctOf(x) >= PASS_PCT).length, avg: rows.length ? Math.round(rows.reduce((a, x) => a + pctOf(x), 0) / rows.length) : 0, best: rows.reduce((a, x) => Math.max(a, pctOf(x)), 0), dur: rows.reduce((a, x) => a + (x.dur || 0), 0) });
+    const cats = CATS.map(c => ({ label: c.label, m: stat(hM.filter(x => c.modes.includes(x.mode))), p: stat(hP.filter(x => c.modes.includes(x.mode))) }));
+    const tm = stat(hM);
+    const lawPass = hM.filter(x => x.mode === 'law' && pctOf(x) >= PASS_PCT).length;
+
+    // ---- videos ----
+    const vidMap = {}; for (const v of videos) if (v && v.active !== false) vidMap[v.id] = v;
+    const pg = {}; for (const p of prog) pg[p.video_id] = p;
+    const vInfo = v => { const p = pg[v.id]; const dur = v.duration || 0; const got = p ? rangesTotal(mergeRanges(p.ranges || [])) : 0;
+      const pct = p ? (dur ? Math.min(100, Math.round(got / dur * 100)) : (p.completed ? 100 : 0)) : 0;
+      return { v, p, dur, pct, skips: p ? mergeRanges(p.skips || [], 0.5) : [], done: !!(p && (p.completed || pct >= VIDEO_DONE_PCT)) }; };
+    const vAll = Object.keys(vidMap).map(id => vInfo(vidMap[id]));
+    const vMonth = vAll.filter(x => x.p && inMonth(x.p.updated_at, ym));
+    const doneThis = vAll.filter(x => x.p && x.p.completed_at && inMonth(x.p.completed_at, ym)).length;
+    const donePrev = vAll.filter(x => x.p && x.p.completed_at && inMonth(x.p.completed_at, prevYm)).length;
+    const showVideo = !!opts.video && vMonth.length > 0;
+
+    // ---- header ----
+    out.push('<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid ' + A + ';padding-bottom:10px;margin-bottom:12px;">'
+      + '<div><div style="font-size:22px;font-weight:700;line-height:1.4;">របាយការណ៍វិភាគការរៀនប្រចាំខែ</div><div style="color:#666;font-size:12px;">' + escHtml(this.state.appName || 'វចនានុក្រម') + (src.branch && src.branch !== this.state.appName ? ' · ' + escHtml(src.branch) : '') + '</div></div>'
+      + '<div style="text-align:right;font-size:12px;color:#444;line-height:1.6;"><b style="font-size:17px;color:' + D + ';display:block;">' + ymLabel(ym) + '</b>' + escHtml(src.name) + (src.roleLabel ? ' · ' + src.roleLabel : '') + '<br>បង្កើតថ្ងៃទី ' + p2(now.getDate()) + '/' + p2(now.getMonth() + 1) + '/' + now.getFullYear() + '</div></div>');
+
+    // ---- 1 time ----
+    if (opts.time) {
+      n++;
+      out.push(h2(n, 'សង្ខេបប្រចាំខែ', cmp && hasPrevUse ? '(ប្រៀបធៀបខែ' + prevLbl + ')' : ''));
+      out.push('<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">'
+        + kp(fmtDuration(cur.t), 'ម៉ោងរៀនសរុប', dlt(cur.t, prv.t, fmtDuration, hasPrevUse))
+        + kp(cur.act + ' / ' + nDays, 'ថ្ងៃសកម្ម', dlt(cur.act, prv.act, v => v + ' ថ្ងៃ', hasPrevUse))
+        + kp(fmtDuration(avg(cur)), 'មធ្យមក្នុងមួយថ្ងៃសកម្ម', dlt(avg(cur), avg(prv), fmtDuration, hasPrevUse))
+        + kp(fmtDuration(lis.t), 'ពេលស្តាប់ (ចាក់ពាក្យ)', dlt(lis.t, lisP.t, fmtDuration, hasPrevUse)) + '</div>');
+      // daily minutes
+      const days = []; let mx = 0;
+      for (let d = 1; d <= nDays; d++) { const v = Math.round((src.usage[ym + '-' + p2(d)] || 0) / 60); days.push(v); if (v > mx) mx = v; }
+      n++;
+      out.push(h2(n, 'ម៉ោងរៀនតាមថ្ងៃ', '(នាទី · ខ្ពស់បំផុត ' + mx + ' នាទី)'));
+      out.push('<div style="display:flex;align-items:flex-end;gap:3px;height:96px;border-bottom:1px solid #999;padding:0 2px;">'
+        + days.map(v => '<i style="display:block;flex:1;border-radius:2px 2px 0 0;background:' + (v ? A : '#e3e3e3') + ';height:' + (v ? Math.max(3, Math.round(v / (mx || 1) * 94)) : 2) + 'px;"></i>').join('') + '</div>'
+        + '<div style="display:flex;justify-content:space-between;font-size:10px;color:#777;margin-top:2px;">' + [1, 5, 10, 15, 20, 25, nDays].map(v => '<span>' + v + '</span>').join('') + '</div>');
+      // hour of day + activity
+      const hrs = new Array(24).fill(0);
+      for (const k in src.hours) if (k.startsWith(ym + '-')) { const rec = src.hours[k] || {}; for (const hr in rec) hrs[+hr] += rec[hr] || 0; }
+      const hrMax = Math.max.apply(null, hrs), hasHrs = hrMax > 0;
+      let bestStart = 0, bestSum = -1; for (let i = 0; i < 24; i++) { const sm = hrs[i] + hrs[(i + 1) % 24]; if (sm > bestSum) { bestSum = sm; bestStart = i; } }
+      const hrBlock = hasHrs
+        ? '<div style="display:flex;align-items:flex-end;gap:2px;height:56px;border-bottom:1px solid #999;">' + hrs.map(v => '<i style="display:block;flex:1;border-radius:2px 2px 0 0;background:' + (v >= hrMax * 0.8 ? A : '#7fa9d6') + ';height:' + Math.max(2, Math.round(v / hrMax * 54)) + 'px;"></i>').join('') + '</div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:10px;color:#777;margin-top:2px;">' + [0, 6, 12, 18, 23].map(v => '<span>' + v + 'h</span>').join('') + '</div>'
+          + '<div style="font-size:11.5px;margin-top:4px;">ច្រើនជាងគេ៖ <b>' + p2(bestStart) + ':00 – ' + p2((bestStart + 2) % 24) + ':00</b></div>'
+        : '<div style="font-size:11.5px;color:#777;padding:14px 0;">គ្មានទិន្នន័យម៉ោងក្នុងថ្ងៃ (កម្មវិធីរក្សាទុកតែ ~៣១ ថ្ងៃចុងក្រោយ)</div>';
+      const row = (a, b) => '<tr><td style="border:1px solid #d3dce8;padding:5px 8px;font-size:12px;">' + a + '</td><td style="border:1px solid #d3dce8;padding:5px 8px;font-size:12px;text-align:right;">' + b + '</td></tr>';
+      const act = [];
+      if (showVideo) act.push(row('វីដេអូមើលចប់ <span style="color:#777;">(លម្អិតខាងក្រោយ)</span>', '<b>' + vMonth.filter(x => x.done).length + '</b> / ' + vMonth.length));
+      act.push(row('ការធ្វើតេស្តសរុប', '<b>' + tm.c + '</b> ដង'));
+      act.push(row('ពេលធ្វើតេស្ត', '<b>' + fmtDuration(tm.dur) + '</b>'));
+      act.push(row('ការធ្វើច្បាប់ចរាចរណ៍ជាប់', '<b>' + lawPass + '</b> ដង'));
+      n++; const n3 = n; n++; const n4 = n;
+      out.push('<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;"><div>' + h2(n3, 'ម៉ោងដែលរៀនច្រើនបំផុត') + hrBlock + '</div><div>' + h2(n4, 'សកម្មភាពរៀន') + '<table style="width:100%;border-collapse:collapse;">' + act.join('') + '</table></div></div>');
+    }
+
+    // ---- tests table ----
+    if (opts.tests) {
+      n++;
+      out.push(h2(n, 'លទ្ធផលតេស្តក្នុងខែ'));
+      const rowsHtml = cats.filter(c => c.m.c > 0).map(c => {
+        let d = '<td style="border:1px solid #d3dce8;padding:5px 8px;text-align:right;color:#888;">—</td>';
+        if (cmp && c.p.c > 0) { const dd = c.m.avg - c.p.avg; d = '<td style="border:1px solid #d3dce8;padding:5px 8px;text-align:right;font-weight:600;color:' + (dd > 0 ? '#2e8b57' : dd < 0 ? '#c0392b' : '#888') + ';">' + (dd > 0 ? '▲ +' : dd < 0 ? '▼ −' : '= ') + Math.abs(dd) + '%</td>'; }
+        const td = (v, b) => '<td style="border:1px solid #d3dce8;padding:5px 8px;text-align:right;' + (b ? 'font-weight:700;' : '') + '">' + v + '</td>';
+        return '<tr><td style="border:1px solid #d3dce8;padding:5px 8px;">' + c.label + '</td>' + td(c.m.c) + td(c.m.pass) + td(c.m.avg + '%') + td(c.m.best + '%') + d + '</tr>';
+      }).join('');
+      const th = (t, r) => '<th style="background:#eef3f9;border:1px solid #d3dce8;padding:5px 8px;font-size:12px;color:#222;' + (r ? 'text-align:right;' : 'text-align:left;') + '">' + t + '</th>';
+      out.push(rowsHtml
+        ? '<table style="width:100%;border-collapse:collapse;font-size:12px;"><tr>' + th('ប្រភេទតេស្ត') + th('ធ្វើ (ដង)', 1) + th('ជាប់', 1) + th('មធ្យម', 1) + th('ខ្ពស់បំផុត', 1) + th(cmp ? 'ធៀបខែមុន' : '', 1) + '</tr>' + rowsHtml + '</table>'
+        : '<div style="font-size:12px;color:#777;padding:6px 0;">មិនមានការធ្វើតេស្តក្នុងខែនេះទេ</div>');
+    }
+
+    // ---- weak points ----
+    if (opts.weak) {
+      const wrong = {};
+      for (const x of hM) for (const it of (x.items || [])) { if (it && it.ok === false && it.q) { const key = String(it.q).slice(0, 90); wrong[key] = (wrong[key] || 0) + 1; } }
+      const top = Object.keys(wrong).map(k => ({ q: k, c: wrong[k] })).sort((a, b) => b.c - a.c).slice(0, 3);
+      n++;
+      out.push(h2(n, 'ចំណុចខ្សោយ', '— សំណួរ/ពាក្យដែលឆ្លើយខុសច្រើនបំផុតក្នុងខែ'));
+      out.push(top.length
+        ? '<ol style="margin:0 0 0 18px;padding:0;">' + top.map(t => '<li style="font-size:12px;margin-bottom:4px;line-height:1.6;">' + escHtml(t.q) + ' <span style="color:#c0392b;">(ខុស ' + t.c + ' ដង)</span></li>').join('') + '</ol>'
+        : '<div style="font-size:12px;color:#777;">មិនមានចំណុចខ្សោយច្បាស់លាស់ក្នុងខែនេះ</div>');
+    }
+
+    // ---- summary note ----
+    const notes = [];
+    if (opts.time && cmp && hasPrevUse) {
+      if (cur.t > prv.t) notes.push('ម៉ោងរៀនកើនឡើង <b>' + fmtDuration(cur.t - prv.t) + '</b> ធៀបខែ' + prevLbl);
+      else if (cur.t < prv.t) notes.push('ម៉ោងរៀនថយចុះ <b>' + fmtDuration(prv.t - cur.t) + '</b> ធៀបខែ' + prevLbl);
+    }
+    if (opts.tests && cmp) {
+      const diffs = cats.filter(c => c.m.c > 0 && c.p.c > 0).map(c => ({ l: c.label, d: c.m.avg - c.p.avg }));
+      const up = diffs.slice().sort((a, b) => b.d - a.d)[0], dn = diffs.slice().sort((a, b) => a.d - b.d)[0];
+      if (up && up.d >= 3) notes.push('<b>' + up.l + '</b> ប្រសើរឡើង +' + up.d + '%');
+      if (dn && dn.d <= -3) notes.push('គួរលើកកម្ពស់ <b>' + dn.l + '</b> (ធ្លាក់ −' + Math.abs(dn.d) + '%)');
+    }
+    if (opts.time && cur.act && cur.act < nDays / 3) notes.push('ចំនួនថ្ងៃសកម្មនៅតិច (' + cur.act + ' ថ្ងៃ) — គួរបន្ថែមភាពទៀងទាត់');
+    if (notes.length) out.push('<div style="font-size:11.5px;background:#fff8e6;border:1px solid #f0dca6;border-radius:8px;padding:8px 10px;margin-top:10px;line-height:1.8;"><b>ការវិភាគសង្ខេប៖</b> ' + notes.join(' · ') + ' ។</div>');
+    const oldMonth = (Date.now() - new Date(ym + '-01').getTime()) > 31 * 86400000;
+    if (oldMonth && (opts.time || opts.tests)) out.push('<div style="font-size:10.5px;color:#888;margin-top:8px;">កំណត់សម្គាល់៖ ខែចាស់អាចមានទិន្នន័យមិនពេញលេញ (ការធ្វើតេស្តរក្សាទុកបាន ២០០ ដងចុងក្រោយ ហើយម៉ោងក្នុងថ្ងៃ ~៣១ ថ្ងៃ) ។</div>');
+
+    // ---- video detail (page 2) ----
+    if (showVideo) {
+      out.push('<div class="pgbrk"></div>');
+      out.push('<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid ' + A + ';padding-bottom:10px;margin-bottom:12px;"><div><div style="font-size:22px;font-weight:700;line-height:1.4;">របាយការណ៍វិភាគការរៀនប្រចាំខែ</div><div style="color:#666;font-size:12px;">' + escHtml(this.state.appName || 'វចនានុក្រម') + (src.branch && src.branch !== this.state.appName ? ' · ' + escHtml(src.branch) : '') + '</div></div><div style="text-align:right;font-size:12px;color:#444;line-height:1.6;"><b style="font-size:17px;color:' + D + ';display:block;">' + ymLabel(ym) + '</b>' + escHtml(src.name) + '</div></div>');
+      n++;
+      const watch = vMonth.reduce((a, x) => a + (x.p.watch_secs || 0), 0);
+      const skipN = vMonth.reduce((a, x) => a + x.skips.length, 0);
+      out.push(h2(n, 'ការមើលវីដេអូមេរៀន'));
+      out.push('<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">'
+        + kp(vMonth.length, 'វីដេអូដែលបានមើលក្នុងខែ', '<em style="font-style:normal;font-size:10.5px;color:#888;display:block;margin-top:1px;">ក្នុងចំណោម ' + vAll.length + ' ទាំងអស់</em>')
+        + kp(doneThis + ' / ' + vMonth.length, 'មើលចប់ (≥ ' + VIDEO_DONE_PCT + '%)', dlt(doneThis, donePrev, v => v + ' ធៀបខែមុន', donePrev > 0 || cmp))
+        + kp(fmtDuration(watch), 'ម៉ោងមើលសរុប', '<em style="font-style:normal;font-size:10.5px;color:#888;display:block;margin-top:1px;">សរុបគិតដល់ពេលនេះ</em>')
+        + kp(skipN + ' កន្លែង', 'ចំនួនដងរំលង', '<em style="font-style:normal;font-size:10.5px;color:' + (skipN ? '#c0392b' : '#2e8b57') + ';display:block;margin-top:1px;">' + (skipN ? 'គួរត្រឡប់ទៅមើល' : 'មិនមានរំលង') + '</em>') + '</div>');
+      n++;
+      out.push(h2(n, 'តារាងវីដេអូនីមួយៗ'));
+      const unseen = vAll.filter(x => !x.p).slice(0, 6);
+      const pill = (t, bg, c) => '<span style="display:inline-block;padding:1px 8px;border-radius:99px;font-size:10.5px;font-weight:700;background:' + bg + ';color:' + c + ';">' + t + '</span>';
+      const vrow = x => {
+        const st = x.done ? pill('មើលចប់', '#e3f4ea', '#1f7a47') : x.p ? pill('កំពុងមើល', '#fff2d6', '#9a6200') : pill('មិនទាន់មើល', '#eee', '#666');
+        const sk = x.skips.length ? x.skips.slice(0, 2).map(r => fmtClock(r[0]) + '–' + fmtClock(r[1])).join(', ') + (x.skips.length > 2 ? ' +' + (x.skips.length - 2) : '') : '—';
+        const asked = x.p ? (x.p.checks_asked || 0) : 0;
+        const c = 'border:1px solid #d3dce8;padding:5px 8px;font-size:11.5px;';
+        return '<tr><td style="' + c + '">' + escHtml(x.v.title) + (x.v.grp ? ' <span style="color:#777;">(' + escHtml(x.v.grp) + ')</span>' : '') + '</td><td style="' + c + 'text-align:right;">' + (x.dur ? fmtClock(x.dur) : '—') + '</td>'
+          + '<td style="' + c + 'white-space:nowrap;"><span style="display:inline-block;width:60px;height:8px;border-radius:4px;background:#e3e3e3;vertical-align:middle;overflow:hidden;margin-right:5px;"><i style="display:block;height:100%;width:' + x.pct + '%;background:' + (x.done ? '#2e8b57' : '#d08a1f') + ';"></i></span>' + x.pct + '%</td>'
+          + '<td style="' + c + 'text-align:right;">' + (x.p ? (x.p.plays || 0) : 0) + '</td><td style="' + c + '">' + sk + '</td><td style="' + c + 'text-align:right;">' + (asked ? (x.p.checks_ok || 0) + ' / ' + asked : '—') + '</td><td style="' + c + '">' + st + '</td></tr>';
+      };
+      const th2 = (t, r) => '<th style="background:#eef3f9;border:1px solid #d3dce8;padding:5px 8px;font-size:11.5px;color:#222;text-align:' + (r ? 'right' : 'left') + ';">' + t + '</th>';
+      out.push('<table style="width:100%;border-collapse:collapse;"><tr>' + th2('វីដេអូ (ក្រុម)') + th2('រយៈពេល', 1) + th2('បានមើល') + th2('ចាប់ផ្តើម', 1) + th2('រំលង') + th2('សួរបញ្ជាក់', 1) + th2('ស្ថានភាព') + '</tr>'
+        + vMonth.concat(unseen).map(vrow).join('') + '</table>');
+      n++;
+      out.push(h2(n, 'ការសង្កេត'));
+      const askT = vMonth.reduce((a, x) => a + (x.p.checks_asked || 0), 0), askOk = vMonth.reduce((a, x) => a + (x.p.checks_ok || 0), 0);
+      const withSkip = vMonth.filter(x => x.skips.length);
+      const li = t => '<li style="font-size:12px;margin-bottom:4px;line-height:1.7;">' + t + '</li>';
+      out.push('<ul style="margin:0 0 0 18px;padding:0;">'
+        + li(withSkip.length ? '<b>រំលង ' + skipN + ' កន្លែង</b>៖ ' + withSkip.slice(0, 3).map(x => escHtml(x.v.title) + ' (' + fmtClock(x.skips[0][0]) + '–' + fmtClock(x.skips[0][1]) + ')').join(' និង ') + ' — ផ្នែកនោះមិនទាន់បានមើលពិត ។' : '<b>មិនមានការរំលង</b>ក្នុងវីដេអូដែលបានមើល ។')
+        + (askT ? li('<b>សួរបញ្ជាក់ «នៅមើលទេ?»</b>៖ ឆ្លើយ ' + askOk + ' / ' + askT + ' ដង' + (askOk < askT ? ' — ' + (askT - askOk) + ' ដងមិនបានឆ្លើយ ប្រហែលបើកទុកដោយមិនបានមើល ។' : ' ។')) : '')
+        + (vAll.filter(x => !x.p).length ? li('<b>មិនទាន់មើល</b>៖ ' + vAll.filter(x => !x.p).length + ' វីដេអូ ។') : '') + '</ul>');
+      out.push('<div style="font-size:11px;background:#fff8e6;border:1px solid #f0dca6;border-radius:8px;padding:8px 10px;margin-top:10px;line-height:1.7;"><b>កំណត់សម្គាល់៖</b> វឌ្ឍនភាពវីដេអូជាសរុបគិតដល់ពេលបង្កើតរបាយការណ៍ មិនមែនតែក្នុងខែនេះទេ ។ តារាងបង្ហាញវីដេអូដែលបានមើលចុងក្រោយក្នុងខែ <b>' + ymLabel(ym) + '</b> ។</div>');
+    }
+    return out.join('');
+  }
+
   // — Teacher monitor —
   // a teacher follows every student of their branch
   // An admin follows every student; a branch or a teacher only its own.
@@ -16437,6 +16692,22 @@ class Component extends DCLogic {
       createBtnLabel: s.adminBusy ? 'កំពុងបង្កើត…' : 'បង្កើតគណនី',
       hasAdminError: !!s.adminError, adminError: s.adminError,
       hasAdminMsg: !!s.adminMsg, adminMsg: s.adminMsg,
+      canMrMonitor: s.role === 'admin' || this.featureGrantedForMe('pdf'),
+      openMrViewing: () => this.openMonthlyReport('viewing'), openMrOwn: () => this.openMonthlyReport('own'),
+      mrOpen: s.mrOpen, closeMr: () => this.closeMonthlyReport(), downloadMr: () => this.downloadMonthlyReport(),
+      mrWhoName: s.mrOpen ? this._mrSource(s.mrWho).name : '',
+      ...(() => {
+        if (!s.mrOpen) return { mrMonths: [], mrOptList: [], mrNoData: false, mrCanDownload: false };
+        const src = this._mrSource(s.mrWho), cur = ymOf(new Date());
+        const mrMonths = [0, 1, 2, 3, 4, 5].map(i => { const ym = ymShift(cur, -i), has = this._mrHas(src, s.mrProg || [], ym), on = s.mrMonth === ym, p = ym.split('-');
+          return { label: KH_MONTHS[+p[1] - 1], sub: p[0] + (i === 0 ? ' · ខែនេះ' : (has ? '' : ' · គ្មាន')), onSelect: has ? (() => this.setMrMonth(ym)) : (() => {}),
+            style: on ? 'background:var(--color-accent);border-color:var(--color-accent);color:#fff;' : (has ? '' : 'opacity:0.4;') }; });
+        const OPTS = [['time', 'ម៉ោងរៀន'], ['tests', 'លទ្ធផលតេស្ត'], ['weak', 'ចំណុចខ្សោយ'], ['compare', 'ប្រៀបធៀបខែមុន'], ['video', 'វីដេអូលម្អិត']];
+        const mrOptList = OPTS.map(o => ({ label: (s.mrOpts[o[0]] ? '✓ ' : '') + o[1], onToggle: () => this.toggleMrOpt(o[0]),
+          style: s.mrOpts[o[0]] ? 'background:var(--color-accent-100);border-color:var(--color-accent);color:var(--color-accent-800);font-weight:600;' : '' }));
+        const hasSel = this._mrHas(src, s.mrProg || [], s.mrMonth);
+        return { mrMonths, mrOptList, mrNoData: !hasSel, mrCanDownload: hasSel };
+      })(),
       qrOpen: s.qrOpen, qrImg: s.qrImg, qrName: s.qrName, qrMsg: s.qrMsg, hasQrMsg: !!s.qrMsg, qrCanShare: !!(navigator.share && navigator.canShare),
       closeQr: () => this.closeQr(), downloadQr: () => this.downloadQr(), shareQr: () => this.shareQr(), copyQrLink: () => this.copyQrLink(),
       isEditingAccount: !!s.editingId,
