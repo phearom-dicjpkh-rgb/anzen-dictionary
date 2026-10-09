@@ -3123,7 +3123,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               <h2 style="font-size:18px;margin:0;font-family:var(--font-heading);">{{ qrTitle }}</h2>
               <button class="btn btn-icon btn-ghost" sc-camel-on-click="{{ closeQr }}" aria-label="បិទ" style="font-size:16px;">✕</button>
             </div>
-            <div style="font-size:12px;opacity:0.7;line-height:1.6;">ឲ្យ <b>{{ qrName }}</b> ស្កេន QR នេះ ដើម្បីចូលគណនីតែម្ដង។ ទាញយករូបទុក ឬ ផ្ញើឲ្យគាត់។</div>
+            <div style="font-size:12px;opacity:0.7;line-height:1.6;">ឲ្យ <b>{{ qrName }}</b> ស្កេន QR នេះ ដើម្បីចូលគណនីតែម្ដង។ ទាញយករូបទុក ឬ ផ្ញើឲ្យគាត់។ គាត់នៅតែអាចចូលដោយអ៊ីមែល និងពាក្យសម្ងាត់បានដដែល។</div>
             <img src="{{ qrImg }}" alt="QR" style="display:block;width:100%;max-width:300px;margin:0 auto;border-radius:12px;border:1px solid var(--color-divider);background:#fff;">
             <button class="btn btn-block" style="background:var(--color-accent);color:#fff;border:none;" sc-camel-on-click="{{ downloadQr }}">⬇ ទាញយក QR</button>
             <div style="display:flex;gap:8px;">
@@ -3131,7 +3131,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               <button class="btn btn-ghost" style="flex:1;border:1px solid var(--color-divider);" sc-camel-on-click="{{ copyQrLink }}">ចម្លងតំណ</button>
             </div>
             <sc-if value="{{ hasQrMsg }}"><div style="font-size:12px;color:var(--color-accent-700);text-align:center;">{{ qrMsg }}</div></sc-if>
-            <div style="font-size:11px;color:#b8322a;line-height:1.6;">⚠ QR នេះមានពាក្យសម្ងាត់នៅខាងក្នុង — អ្នកណាមាន QR នេះអាចចូលគណនីបាន។ ផ្ញើឲ្យតែម្ចាស់គណនីប៉ុណ្ណោះ។ ពេលបិទផ្ទាំងនេះ នឹងមិនអាចមើល QR ឡើងវិញបានទេ។</div>
+            <div style="font-size:11px;color:#b8322a;line-height:1.6;">⚠ QR នេះប្រើបានតែម្ដង ហើយផុតកំណត់ក្នុង ៧ ថ្ងៃ — អ្នកណាស្កេនមុន ចូលបានមុន។ ផ្ញើឲ្យតែម្ចាស់គណនី ហើយប្រាប់ឲ្យស្កេនភ្លាម។ បើបាត់ ឬប្រើរួច ចូលកែគណនីបង្កើត QR ថ្មីបាន។</div>
           </div>
           </div>
           </sc-if>
@@ -3291,12 +3291,9 @@ textarea.input { min-height: 90px; resize: vertical; }
               <div class="field"><label>ពាក្យសម្ងាត់ថ្មី (ទុកទទេ បើមិនប្តូរ)</label><input class="input" type="text" value="{{ editPassword }}" sc-camel-on-change="{{ onEditPassword }}" placeholder="••••••"></div>
               <sc-if value="{{ editQrShow }}">
                 <div class="field"><label>QR ចូលគណនី</label>
-                  <button class="btn btn-secondary btn-block" sc-camel-on-click="{{ openEditQr }}">📱 បង្ហាញ QR ដែលបានបង្កើតពីដំបូង</button>
-                  <div style="font-size:11px;opacity:0.6;line-height:1.6;margin-top:6px;">រក្សាទុកក្នុងឧបករណ៍នេះប៉ុណ្ណោះ។ បើប្តូរពាក្យសម្ងាត់ QR ចាស់ចូលមិនបានទេ — នឹងបង្កើត QR ថ្មីពេលរក្សាទុក។</div>
+                  <button class="btn btn-secondary btn-block" sc-camel-on-click="{{ openEditQr }}">{{ editQrLabel }}</button>
+                  <div style="font-size:11px;opacity:0.6;line-height:1.6;margin-top:6px;">ប្រើបានម្ដងគត់ ផុតកំណត់ក្នុង ៧ ថ្ងៃ។ បង្កើតថ្មី នោះ QR ចាស់ដែលមិនទាន់ប្រើអស់សុពលភាព។ ពាក្យសម្ងាត់មិនប្តូរទេ។</div>
                 </div>
-              </sc-if>
-              <sc-if value="{{ editQrNone }}">
-                <div style="font-size:11.5px;opacity:0.6;line-height:1.7;">QR: មិនមានក្នុងឧបករណ៍នេះ (គណនីបង្កើតពីឧបករណ៍ផ្សេង ឬមុនមានមុខងារ QR)។ បញ្ចូលពាក្យសម្ងាត់ថ្មី រួចរក្សាទុក ដើម្បីបង្កើត QR ថ្មី។</div>
               </sc-if>
               <sc-if value="{{ hasEditError }}"><div style="font-size:12px;color:#c0392b;">{{ editError }}</div></sc-if>
               <div class="dialog-actions">
@@ -10282,7 +10279,24 @@ function makeSupabaseBackend(){
       const { data, error } = await client.functions.invoke(EDGE_CREATE_USER, { body: payload });
       if (error) return { error: await fnError(error) };
       if (data && data.error) return { error: data.error };
-      return { error:null };
+      return { error:null, user_id: data && data.user_id };
+    },
+    // one-time login QR (supabase/36 + the redeployed Edge Function)
+    async issueLoginTicket(userId){
+      const redeploy = 'Edge Function មិនទាន់ deploy កំណែថ្មី ឬមិនទាន់ run supabase/36_login_tickets.sql';
+      const { data, error } = await client.functions.invoke(EDGE_CREATE_USER, { body: { action:'issue_ticket', user_id:userId } });
+      if (error) { const m = await fnError(error); return { error: /Missing email\/password/i.test(m) ? redeploy : m }; }
+      if (data && data.error) return { error: /Missing email\/password|login_tickets/i.test(data.error) ? redeploy : data.error };
+      if (!data || !data.token) return { error: redeploy };
+      return { token: data.token, expires_at: data.expires_at };
+    },
+    async redeemLoginTicket(token){
+      const { data, error } = await client.functions.invoke(EDGE_CREATE_USER, { body: { action:'redeem_ticket', token } });
+      if (error) return { error: await fnError(error) };
+      if (data && data.error) return { error: data.error };
+      if (!data || !data.token_hash) return { error: 'ចូលមិនបានសម្រេច' };
+      const v = await client.auth.verifyOtp({ token_hash: data.token_hash, type: 'magiclink' });
+      return { error: v.error ? v.error.message : null };
     },
     // Profile fields go straight to the table — RLS already limits who may
     // touch which row, and this keeps editing working without redeploying the
@@ -10451,7 +10465,23 @@ function makeDemoBackend(){
       const id = 'b-' + Date.now(); b.push({ id, title: row.title, content: row.content, sort: b.length, updated_at: new Date().toISOString() }); localStorage.setItem('dict_demo_books', JSON.stringify(b)); return { id, error: null };
     },
     async deleteBook(id){ localStorage.setItem('dict_demo_books', JSON.stringify(this._books().filter(x => x.id !== id))); return { error: null }; },
-    async createAccount(p){ const us=load(); const email=String(p.email).trim().toLowerCase(); if(us.find(x=>x.email===email)) return { error:'អ៊ីមែលនេះមានរួចហើយ' }; us.push({ id:'u-'+Date.now(), email, password:p.password, full_name:p.full_name||'', role:p.role, teacher_id:p.role==='student'?(p.teacher_id||null):null, school_id:p.role==='school'?null:(p.school_id||null), viewed:[], favorites:[], history:[], settings:(p.settings && typeof p.settings==='object')?p.settings:{} }); save(us); return { error:null }; },
+    async issueLoginTicket(userId){
+      let t = {}; try { t = JSON.parse(localStorage.getItem('dict_demo_tickets') || '{}') || {}; } catch(e){}
+      for (const k of Object.keys(t)) if (t[k].user_id === userId && !t[k].used) delete t[k];
+      const token = 't' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      t[token] = { user_id: userId, exp: Date.now() + 7 * 86400000, used: false };
+      localStorage.setItem('dict_demo_tickets', JSON.stringify(t));
+      return { token, expires_at: new Date(t[token].exp).toISOString() };
+    },
+    async redeemLoginTicket(token){
+      let t = {}; try { t = JSON.parse(localStorage.getItem('dict_demo_tickets') || '{}') || {}; } catch(e){}
+      const r = t[token];
+      if (!r || r.used || r.exp < Date.now()) return { error: 'QR នេះប្រើរួចហើយ ឬផុតកំណត់ — សូមសុំ QR ថ្មីពី Admin' };
+      r.used = true; localStorage.setItem('dict_demo_tickets', JSON.stringify(t));
+      localStorage.setItem('dict_demo_session', r.user_id);
+      return { error: null };
+    },
+    async createAccount(p){ const us=load(); const email=String(p.email).trim().toLowerCase(); if(us.find(x=>x.email===email)) return { error:'អ៊ីមែលនេះមានរួចហើយ' }; const newId='u-'+Date.now(); us.push({ id:newId, email, password:p.password, full_name:p.full_name||'', role:p.role, teacher_id:p.role==='student'?(p.teacher_id||null):null, school_id:p.role==='school'?null:(p.school_id||null), viewed:[], favorites:[], history:[], settings:(p.settings && typeof p.settings==='object')?p.settings:{} }); save(us); return { error:null, user_id:newId }; },
     async updateAccount(id, patch){ const us=load(); const u=us.find(x=>x.id===id); if(!u) return { error:'not found' }; if(patch.full_name!=null) u.full_name=patch.full_name; if(patch.role!=null) u.role=patch.role; if(patch.teacher_id!==undefined) u.teacher_id=u.role==='student'?(patch.teacher_id||null):null; if(patch.school_id!==undefined) u.school_id=u.role==='school'?null:(patch.school_id||null); if(patch.password) u.password=patch.password; save(us); return { error:null }; },
     async deleteAccount(id){ let us=load(); us=us.filter(x=>x.id!==id); save(us); return { error:null }; },
   };
@@ -10483,7 +10513,7 @@ class Component extends DCLogic {
     // admin (create accounts)
     adminFullName: '', adminEmail: '', adminPassword: '', adminRole: 'student', adminTeacherId: '', adminSchoolId: '',
     adminGender: '', adminBirthDate: '', createDialogOpen: false,
-    qrOpen: false, qrImg: '', qrName: '', qrLink: '', qrMsg: '', qrTitle: '', editEmail: '',
+    qrOpen: false, qrImg: '', qrName: '', qrLink: '', qrMsg: '', qrTitle: '', qrBusy: false, editEmail: '',
     mrOpen: false, mrWho: '', mrMonth: '', mrYear: 0, mrProg: [], mrBusy: false, mrOpts: { time: true, tests: true, weak: true, compare: true, video: true },
     adminOwnerName: '', adminColor: '#2f6fb0', adminLogo: '', adminLogoBlob: null,   // school/branch: owner name, colour, logo
     adminBusy: false, adminMsg: '', adminError: '', teachers: [], accounts: [], schools: [],
@@ -10612,25 +10642,35 @@ class Component extends DCLogic {
     } catch(e) {}
   }
 
-  // — Login QR: a new account's email + password ride in the URL *fragment*
-  // (#qr=…), which the browser never sends to any server. Scanning it signs the
-  // student straight in, and the fragment is wiped from the address bar. —
-  qrLoginLink(email, password){
-    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify({ e: email, p: password }))));
-    return location.origin + location.pathname + '#qr=' + b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  }
+  // — Login QR: scanning it redeems a one-time ticket (see supabase/36) and signs the
+  //   person in; the #t=… fragment is wiped from the address bar straight away. —
+  // a ticket (random one-time token, never a password) in the URL fragment; legacy
+  // #qr=… links made before tickets existed (credentials inside) still sign in
+  qrLoginLink(token){ return location.origin + location.pathname + '#t=' + token; }
   async checkQrLogin(){
-    let raw = '';
-    try { const m = /[#&]qr=([A-Za-z0-9_-]+)/.exec(location.hash); raw = m ? m[1] : ''; } catch(e) {}
-    if (!raw) return false;
+    let ticket = '', legacy = '';
+    try { const m = /[#&]t=([A-Za-z0-9_-]+)/.exec(location.hash); ticket = m ? m[1] : ''; const q = /[#&]qr=([A-Za-z0-9_-]+)/.exec(location.hash); legacy = q ? q[1] : ''; } catch(e) {}
+    if (!ticket && !legacy) return false;
     try { history.replaceState(null, '', location.pathname + location.search); } catch(e) {}
-    let cred = null;
-    try { cred = JSON.parse(decodeURIComponent(escape(atob(raw.replace(/-/g, '+').replace(/_/g, '/'))))); } catch(e) {}
-    if (!cred || !cred.e || !cred.p) { this.setState({ authStage: 'login', authError: 'QR មិនត្រឹមត្រូវ' }); return true; }
     this.setState({ authStage: 'loading', authBusy: true, authError: '' });
-    try { await Backend.signOut(); } catch(e) {}      // whoever was signed in on this phone makes way for the QR's owner
-    const { error } = await Backend.signIn(cred.e, cred.p);
-    if (error) { this.setState({ authStage: 'login', authBusy: false, email: cred.e, authError: 'QR នេះចូលមិនបានទេ — ពាក្យសម្ងាត់ប្រហែលត្រូវបានប្តូរ' }); return true; }
+    let error = null, email = '';
+    if (ticket) {
+      ({ error } = await Backend.redeemLoginTicket(ticket));
+    } else {
+      let cred = null;
+      try { cred = JSON.parse(decodeURIComponent(escape(atob(legacy.replace(/-/g, '+').replace(/_/g, '/'))))); } catch(e) {}
+      if (!cred || !cred.e || !cred.p) { this.setState({ authStage: 'login', authBusy: false, authError: 'QR មិនត្រឹមត្រូវ' }); return true; }
+      email = cred.e;
+      try { await Backend.signOut(); } catch(e) {}
+      ({ error } = await Backend.signIn(cred.e, cred.p));
+      if (error) error = 'QR នេះចូលមិនបានទេ — ពាក្យសម្ងាត់ប្រហែលត្រូវបានប្តូរ';
+    }
+    if (error) {
+      // a failed scan must not log out someone who is already signed in on this phone
+      const keep = ticket ? await Backend.currentSession() : null;
+      if (keep) { this.setState({ authBusy: false }); await this.loadForUser(keep.user.id); this.showToast(error); return true; }
+      this.setState({ authStage: 'login', authBusy: false, email, authError: error }); return true;
+    }
     const session = await Backend.currentSession();
     if (!session) { this.setState({ authStage: 'login', authBusy: false, authError: 'ចូលមិនបានសម្រេច' }); return true; }
     this.setState({ authBusy: false });
@@ -10648,7 +10688,7 @@ class Component extends DCLogic {
     return this._qrP;
   }
   // a printable card: app name, the person's name, the QR, a one-line hint
-  async makeQrCard(name, roleLabel, link){
+  async makeQrCard(name, roleLabel, link, expiresAt){
     await this._loadQrLib();
     const qr = window.qrcode(0, 'M'); qr.addData(link); qr.make();
     const n = qr.getModuleCount(), quiet = 4, cell = Math.max(3, Math.floor(560 / (n + quiet * 2)));
@@ -10668,32 +10708,28 @@ class Component extends DCLogic {
     g.fillStyle = '#000';
     for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) g.fillRect(x0 + (c + quiet) * cell, y0 + (r + quiet) * cell, cell, cell);
     g.fillStyle = '#111'; g.fillText(fit('ស្កេន QR នេះដើម្បីចូលគណនីភ្លាម', 28, '600', W - 60), W / 2, y0 + qs + 52);
-    g.fillStyle = '#b8322a'; g.fillText(fit('សម្ងាត់ — ផ្ញើឲ្យតែម្ចាស់គណនីប៉ុណ្ណោះ', 22, '400', W - 60), W / 2, y0 + qs + 90);
+    const exp = expiresAt ? new Date(expiresAt) : null, p2 = v => String(v).padStart(2, '0');
+    g.fillStyle = '#b8322a'; g.fillText(fit('ប្រើបានម្ដងគត់' + (exp ? ' · ផុតកំណត់ ' + p2(exp.getDate()) + '/' + p2(exp.getMonth() + 1) + '/' + exp.getFullYear() : ''), 22, '400', W - 60), W / 2, y0 + qs + 90);
     return cv.toDataURL('image/png');
   }
-  // The login link of each account this device created (or re-keyed) is kept in this
-  // browser only — never sent to the server — so the QR can be shown again from the
-  // edit dialog. An account made on another device has none until its password is reset.
-  _qrCache(){ try { return JSON.parse(localStorage.getItem('dict_qr_links') || '{}') || {}; } catch(e) { return {}; } }
-  _qrCacheGet(email){ return email ? (this._qrCache()[String(email).trim().toLowerCase()] || '') : ''; }
-  _qrCacheSet(email, link){ try { const m = this._qrCache(); m[String(email).trim().toLowerCase()] = link; localStorage.setItem('dict_qr_links', JSON.stringify(m)); } catch(e) {} }
-  _qrCacheDel(email){ try { const m = this._qrCache(); delete m[String(email || '').trim().toLowerCase()]; localStorage.setItem('dict_qr_links', JSON.stringify(m)); } catch(e) {} }
-  async showAccountQr(name, role, email, password, title){
+  // Make a fresh one-time login QR for an account (supersedes any earlier unused one)
+  async issueAccountQr(userId, name, role, email, title){
+    const res = await Backend.issueLoginTicket(userId);
+    if (res.error || !res.token) return { error: res.error || 'បង្កើត QR មិនបាន' };
     try {
-      const link = this.qrLoginLink(email, password);
-      this._qrCacheSet(email, link);
-      const img = await this.makeQrCard(name, (role === 'teacher' ? 'គ្រូ · ' : 'សិស្ស · ') + email, link);
-      this.setState({ qrOpen: true, qrImg: img, qrName: name, qrLink: link, qrMsg: '', qrTitle: title || 'បង្កើតគណនីជោគជ័យ ✓' });
-    } catch(e) { this.setState({ adminMsg: 'បង្កើតគណនីជោគជ័យ ✓ (បង្កើត QR មិនបាន)' }); }
+      const link = this.qrLoginLink(res.token);
+      const img = await this.makeQrCard(name, (role === 'teacher' ? 'គ្រូ · ' : 'សិស្ស · ') + email, link, res.expires_at);
+      this.setState({ qrOpen: true, qrImg: img, qrName: name, qrLink: link, qrMsg: '', qrTitle: title || 'QR ចូលគណនី' });
+      return { error: null };
+    } catch(e) { return { error: 'បង្កើតរូប QR មិនបាន' }; }
   }
-  // edit dialog → show the QR kept from when the account was created
+  // edit dialog → a new QR for the account being edited
   async openEditQr(){
-    const { editEmail, editFullName, editRole } = this.state, link = this._qrCacheGet(editEmail);
-    if (!link) return;
-    try {
-      const img = await this.makeQrCard(editFullName, (editRole === 'teacher' ? 'គ្រូ · ' : 'សិស្ស · ') + editEmail, link);
-      this.setState({ qrOpen: true, qrImg: img, qrName: editFullName, qrLink: link, qrMsg: '', qrTitle: 'QR ចូលគណនី' });
-    } catch(e) { this.setState({ editError: 'បង្កើត QR មិនបាន' }); }
+    if (this.state.qrBusy) return;
+    const { editingId, editEmail, editFullName, editRole } = this.state;
+    this.setState({ qrBusy: true, editError: '' });
+    const r = await this.issueAccountQr(editingId, editFullName, editRole, editEmail, 'QR ថ្មី — ប្រើបានម្ដងគត់');
+    this.setState({ qrBusy: false, editError: r.error || '' });
   }
   closeQr(){ this.setState({ qrOpen: false, qrImg: '', qrLink: '', qrName: '', qrMsg: '', qrTitle: '' }); }
   _qrFileName(){ return 'QR-' + ((this.state.qrName || 'account').replace(/[\\/:*?"<>|]/g, '').trim() || 'account') + '.png'; }
@@ -11413,7 +11449,7 @@ class Component extends DCLogic {
       this._vwSave(true);
     });
     window.addEventListener('pagehide', () => this._vwSave(true));
-    window.addEventListener('hashchange', () => { if (/[#&]qr=/.test(location.hash)) this.checkQrLogin(); });
+    window.addEventListener('hashchange', () => { if (/[#&](qr|t)=/.test(location.hash)) this.checkQrLogin(); });
     this.primeVoices();
     this.startUsageTracking();
     this.setupInstall();
@@ -12006,8 +12042,8 @@ class Component extends DCLogic {
       if (adminLogoBlob) { const up = await Backend.uploadSchoolLogo(adminLogoBlob); if (up.error) { this.setState({ adminBusy: false, adminError: up.error }); return; } if (up.url) settings.logo = up.url; }
     }
     const email = adminEmail.trim();
-    const qrName = adminFullName.trim(), qrPass = adminPassword;
-    const { error } = await Backend.createAccount({ email, password: adminPassword, full_name: adminFullName.trim(), role: adminRole, teacher_id: null, school_id: isSchool ? null : schoolId, settings });
+    const qrName = adminFullName.trim();
+    const { error, user_id: newUserId } = await Backend.createAccount({ email, password: adminPassword, full_name: adminFullName.trim(), role: adminRole, teacher_id: null, school_id: isSchool ? null : schoolId, settings });
     if (error) { this.setState({ adminBusy: false, adminError: error }); return; }
     // On the real backend the Edge Function doesn't store settings, so stamp the
     // avatar / DOB / gender onto the fresh profile in a follow-up write (admins may).
@@ -12015,7 +12051,16 @@ class Component extends DCLogic {
       try { const { rows } = await Backend.listAccounts(); const made = (rows || []).find(a => (a.email || '').toLowerCase() === email.toLowerCase());
         if (made && made.id) await Backend.updateAccount(made.id, { settings }); } catch(e) {}
     }
-    this.setState({ adminBusy: false, createDialogOpen: false, adminMsg: 'បង្កើតគណនីជោគជ័យ ✓', adminEmail: '', adminPassword: '', adminFullName: '', adminGender: '', adminBirthDate: '', adminOwnerName: '', adminLogo: '', adminLogoBlob: null, adminColor: '#2f6fb0' }, () => { this.loadAdminData(); if (!isSchool) this.showAccountQr(qrName, adminRole, email, qrPass); });
+    this.setState({ adminBusy: false, createDialogOpen: false, adminMsg: 'បង្កើតគណនីជោគជ័យ ✓', adminEmail: '', adminPassword: '', adminFullName: '', adminGender: '', adminBirthDate: '', adminOwnerName: '', adminLogo: '', adminLogoBlob: null, adminColor: '#2f6fb0' }, () => {
+      this.loadAdminData();
+      if (isSchool) return;
+      (async () => {
+        let uid = newUserId;
+        if (!uid) { try { const { rows } = await Backend.listAccounts(); const m = (rows || []).find(a => (a.email || '').toLowerCase() === email.toLowerCase()); uid = m && m.id; } catch(e) {} }
+        const r = uid ? await this.issueAccountQr(uid, qrName, adminRole, email, 'បង្កើតគណនីជោគជ័យ ✓') : { error: 'រកមិនឃើញគណនី' };
+        if (r.error) this.setState({ adminError: 'បង្កើតគណនីរួច ប៉ុន្តែបង្កើត QR មិនបាន៖ ' + r.error + ' — អាចបង្កើតពីប៊ូតុង "កែ" ក្រោយ។' });
+      })();
+    });
   }
   goAdmin(){ this.setState({ screen: 'admin', adminMsg:'', adminError:'' }, () => { this.loadAdminData(); this.loadInviteLink(); }); }
 
@@ -14055,19 +14100,13 @@ class Component extends DCLogic {
     if (editPassword) patch.password = editPassword;
     const { error } = await Backend.updateAccount(editingId, patch);
     if (error) { this.setState({ editBusy: false, editError: error }); return; }
-    const emailNow = this.state.editEmail, showQr = !!editPassword && editRole !== 'school' && !!emailNow;
-    if (editPassword && !showQr) this._qrCacheDel(emailNow);       // the old QR no longer logs in
-    this.setState({ editingId: null, editBusy: false, adminMsg: 'រក្សាទុកការកែប្រែ ✓' }, () => {
-      this.loadAdminData();
-      if (showQr) this.showAccountQr(editFullName.trim(), editRole, emailNow, editPassword, 'ពាក្យសម្ងាត់ថ្មី — QR ថ្មី ✓');
-    });
+    this.setState({ editingId: null, editBusy: false, adminMsg: 'រក្សាទុកការកែប្រែ ✓' }, () => this.loadAdminData());
   }
   async deleteAccountConfirm(acc){
     if (typeof window !== 'undefined' && window.confirm && !window.confirm('លុបគណនី "' + (acc.full_name || acc.email) + '" ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។')) return;
     this.setState({ adminError: '', adminMsg: '' });
     const { error } = await Backend.deleteAccount(acc.id);
     if (error) { this.setState({ adminError: error }); return; }
-    this._qrCacheDel(acc.email);
     this.setState({ adminMsg: 'បានលុបគណនី ✓' }, () => this.loadAdminData());
   }
 
@@ -16795,8 +16834,8 @@ class Component extends DCLogic {
         const hasSel = this._mrHas(src, s.mrProg || [], s.mrMonth);
         return { mrMonths, mrOptList, mrNoData: !hasSel, mrCanDownload: hasSel, mrYearLabel, mrPrevYearStyle, mrNextYearStyle, mrSelLabel, mrPrevYear: () => this.stepMrYear(-1), mrNextYear: () => this.stepMrYear(1) };
       })(),
-      editQrShow: !!(s.editingId && s.editRole !== 'school' && this._qrCacheGet(s.editEmail)),
-      editQrNone: !!(s.editingId && s.editRole !== 'school' && !this._qrCacheGet(s.editEmail)),
+      editQrShow: !!(s.editingId && s.editRole !== 'school'),
+      editQrLabel: s.qrBusy ? '…' : '📱 បង្កើត QR ចូលគណនីថ្មី',
       openEditQr: () => this.openEditQr(), qrTitle: s.qrTitle || 'QR ចូលគណនី',
       qrOpen: s.qrOpen, qrImg: s.qrImg, qrName: s.qrName, qrMsg: s.qrMsg, hasQrMsg: !!s.qrMsg, qrCanShare: !!(navigator.share && navigator.canShare),
       closeQr: () => this.closeQr(), downloadQr: () => this.downloadQr(), shareQr: () => this.shareQr(), copyQrLink: () => this.copyQrLink(),

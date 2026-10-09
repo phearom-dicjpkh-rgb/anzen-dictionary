@@ -7,6 +7,8 @@
 //    create (default): { email, password, full_name, role, teacher_id }
 //    update:           { user_id, full_name?, role?, teacher_id?, password? }
 //    delete:           { user_id }
+//    issue_ticket:     { user_id }            → { token, expires_at }  (one-time login QR; needs supabase/36)
+//    redeem_ticket:    { token }  (no sign-in) → { token_hash }         (app then calls auth.verifyOtp)
 //
 //  Redeploy after changing: Supabase Dashboard → Edge Functions → your function
 //  → paste this file → Deploy.
@@ -17,6 +19,12 @@ const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+const TICKET_DAYS = 7;   // how long a login QR stays valid
+const sha256 = async (s: string) => {
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
 };
 
 Deno.serve(async (req) => {
@@ -61,6 +69,28 @@ Deno.serve(async (req) => {
       });
       if (error) return json({ error: error.message }, 400);
       return json({ ok: true });
+    }
+
+    // ---- REDEEM TICKET (no sign-in required) ----
+    // A student scanning the login QR an Admin / branch made for them. The token
+    // is single-use and expires; redeeming it burns it and hands back a one-time
+    // magic-link hash the app exchanges for a session (auth.verifyOtp).
+    if (body0.action === "redeem_ticket") {
+      const token = String(body0.token ?? "");
+      if (token.length < 20) return json({ error: "QR មិនត្រឹមត្រូវ" }, 400);
+      const { data: row } = await admin0
+        .from("login_tickets").update({ used_at: new Date().toISOString() })
+        .eq("token_hash", await sha256(token)).is("used_at", null)
+        .gt("expires_at", new Date().toISOString())
+        .select("user_id").maybeSingle();
+      if (!row) return json({ error: "QR នេះប្រើរួចហើយ ឬផុតកំណត់ — សូមសុំ QR ថ្មីពី Admin" }, 400);
+      const { data: u } = await admin0.auth.admin.getUserById(row.user_id);
+      const email = u?.user?.email;
+      if (!email) return json({ error: "រកមិនឃើញគណនី" }, 400);
+      const { data: link, error } = await admin0.auth.admin.generateLink({ type: "magiclink", email });
+      const hashed = link?.properties?.hashed_token;
+      if (error || !hashed) return json({ error: error?.message ?? "មិនអាចចូលបានទេ" }, 400);
+      return json({ ok: true, token_hash: hashed });
     }
 
     // 1) Identify caller from their bearer token, and confirm they are admin.
@@ -161,6 +191,29 @@ Deno.serve(async (req) => {
       if (gh.status === 204) return json({ ok: true });
       const detail = await gh.text();
       return json({ error: `GitHub ${gh.status}: ${detail.slice(0, 200)}` }, 400);
+    }
+
+    // ---- ISSUE TICKET: a one-time login QR for a student / teacher ----
+    // Replaces any earlier unused ticket of that person, so only the newest QR works.
+    if (action === "issue_ticket") {
+      const id = body.user_id;
+      if (!id) return json({ error: "Missing user_id" }, 400);
+      const denied = await assertOwns(id);
+      if (denied) return json({ error: denied }, 403);
+      const { data: target } = await admin.from("profiles").select("role").eq("id", id).single();
+      if (!target || !["student", "teacher"].includes(target.role)) {
+        return json({ error: "QR សម្រាប់តែសិស្ស និងគ្រូប៉ុណ្ណោះ" }, 400);
+      }
+      const bytes = crypto.getRandomValues(new Uint8Array(32));
+      const token = btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      await admin.from("login_tickets").delete().eq("user_id", id).is("used_at", null);
+      await admin.from("login_tickets").delete().lt("expires_at", new Date(Date.now() - 30 * 86400000).toISOString());
+      const expires = new Date(Date.now() + TICKET_DAYS * 86400000).toISOString();
+      const { error } = await admin.from("login_tickets").insert({
+        token_hash: await sha256(token), user_id: id, created_by: caller.id, expires_at: expires,
+      });
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true, token, expires_at: expires });
     }
 
     // ---- CREATE (default) ----
