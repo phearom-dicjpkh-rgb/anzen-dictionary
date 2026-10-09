@@ -11154,11 +11154,21 @@ class Component extends DCLogic {
     });
     vw.onFs = () => { const on = (document.fullscreenElement || document.webkitFullscreenElement) === vw.stage; vw.stage.classList.toggle('vw-fs', on); if (on) this._vwKickHide(); else { vw.stage.classList.remove('vw-hide'); try { screen.orientation.unlock(); } catch(e) {} } };
     document.addEventListener('fullscreenchange', vw.onFs); document.addEventListener('webkitfullscreenchange', vw.onFs);
-    // computer: Space plays / pauses (not while typing, nor while the "still watching?" question is up).
-    // keyup is swallowed too, so a focused button is not also "clicked" by the same key press.
+    // computer: Space plays / pauses, ← → jump 10 s back / forward (the same as the −10 / +10 buttons).
+    // Ignored while typing and while the "still watching?" question is up. keyup of Space is swallowed
+    // too, so a focused button is not also "clicked" by the same key press.
     const isSpace = e => e.code === 'Space' || e.key === ' ';
     const typing = e => { const t = e.target; return !!(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))); };
-    vw.onKey = e => { if (!isSpace(e) || typing(e) || e.ctrlKey || e.metaKey || e.altKey) return; e.preventDefault(); e.stopPropagation(); if (e.repeat || vw.asking) return; this._vwToggle(); if (vw.stage.classList.contains('vw-fs') || vw.stage.classList.contains('vw-pfs')) this._vwKickHide(); };
+    vw.onKey = e => {
+      if (typing(e) || e.ctrlKey || e.metaKey || e.altKey) return;
+      const left = e.key === 'ArrowLeft', right = e.key === 'ArrowRight';
+      if (!isSpace(e) && !left && !right) return;
+      e.preventDefault(); e.stopPropagation();
+      if (vw.asking) return;
+      if (isSpace(e)) { if (e.repeat) return; this._vwToggle(); }
+      else this._vwSeek((vw.lastPos || 0) + (left ? -10 : 10));
+      if (vw.stage.classList.contains('vw-fs') || vw.stage.classList.contains('vw-pfs')) this._vwKickHide();
+    };
     vw.onKeyUp = e => { if (isSpace(e) && !typing(e)) { e.preventDefault(); e.stopPropagation(); } };
     document.addEventListener('keydown', vw.onKey, true); document.addEventListener('keyup', vw.onKeyUp, true);
     this._vwSync(); this._vwPaint(start);
