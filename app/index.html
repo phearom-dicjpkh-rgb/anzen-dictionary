@@ -11154,7 +11154,8 @@ class Component extends DCLogic {
     });
     vw.onFs = () => { const on = (document.fullscreenElement || document.webkitFullscreenElement) === vw.stage; vw.stage.classList.toggle('vw-fs', on); if (on) this._vwKickHide(); else { vw.stage.classList.remove('vw-hide'); try { screen.orientation.unlock(); } catch(e) {} } };
     document.addEventListener('fullscreenchange', vw.onFs); document.addEventListener('webkitfullscreenchange', vw.onFs);
-    // computer: Space plays / pauses, ← → jump 10 s back / forward (the same as the −10 / +10 buttons).
+    // computer: Space plays / pauses, ← → jump 10 s back / forward (the same as the −10 / +10 buttons),
+    // F toggles full screen (Esc also leaves the in-page full screen used where the browser has none).
     // Ignored while typing and while the "still watching?" question is up. keyup of Space is swallowed
     // too, so a focused button is not also "clicked" by the same key press.
     const isSpace = e => e.code === 'Space' || e.key === ' ';
@@ -11162,9 +11163,12 @@ class Component extends DCLogic {
     vw.onKey = e => {
       if (typing(e) || e.ctrlKey || e.metaKey || e.altKey) return;
       const left = e.key === 'ArrowLeft', right = e.key === 'ArrowRight';
-      if (!isSpace(e) && !left && !right) return;
+      const fKey = e.code === 'KeyF' || String(e.key).toLowerCase() === 'f';
+      const escPfs = e.key === 'Escape' && vw.stage.classList.contains('vw-pfs');
+      if (!isSpace(e) && !left && !right && !fKey && !escPfs) return;
       e.preventDefault(); e.stopPropagation();
       if (vw.asking) return;
+      if (fKey || escPfs) { if (!e.repeat) this._vwToggleFs(); return; }
       if (isSpace(e)) { if (e.repeat) return; this._vwToggle(); }
       else this._vwSeek((vw.lastPos || 0) + (left ? -10 : 10));
       if (vw.stage.classList.contains('vw-fs') || vw.stage.classList.contains('vw-pfs')) this._vwKickHide();
