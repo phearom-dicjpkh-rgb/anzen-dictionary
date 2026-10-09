@@ -12542,7 +12542,7 @@ class Component extends DCLogic {
     if (this._bookMem.size > 3) this._bookMem.delete(this._bookMem.keys().next().value);
     return book || null;
   }
-  rbBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); this._clearBodyOverlay(); this.setState({ rbMode: 'list', libBookId: null }, () => this.loadReadBooks()); }
+  rbBackToList(){ this._bwClose(); this._clearBodyOverlay(); this.setState({ rbMode: 'list', libBookId: null }, () => this.loadReadBooks()); }
   // admin locks / unlocks an authored book (locked = students see the cover but can't read)
   async rbToggleLock(id, e){ if (e && e.stopPropagation) e.stopPropagation(); if (this.state.role !== 'admin') return;
     const books = (this.state.rbBooks || []).map(b => b.id === id ? { ...b, locked: !b.locked } : b);
@@ -12790,12 +12790,12 @@ class Component extends DCLogic {
       // placeholders (〜…) and multi-token / sentence entries that never appear verbatim
       if (jp.length > 20 || jp.indexOf('〜') >= 0 || /[（）()\s\/、。，,！!？?・「」]/.test(jp)) continue;
       if (!HAS_JP.test(jp)) continue;
-      if (!this._bwMap.has(jp)) { this._bwMap.set(jp, { kana: w.kana || '', km: w.km || '', img: w.img || '' }); if (jp.length > this._bwMax) this._bwMax = jp.length; }
+      if (!this._bwMap.has(jp)) { this._bwMap.set(jp, { kana: w.kana || '', km: w.km || '', img: w.img || '', id: w.id, pos: w.pos || '' }); if (jp.length > this._bwMax) this._bwMax = jp.length; }
       else if (w.img && !this._bwMap.get(jp).img) this._bwMap.get(jp).img = w.img;   // fill an image in from a later duplicate row
       // related conjugation forms (食べない, 食べた…) attached to the word are tappable too
       if (Array.isArray(w.related)) for (const f of w.related) {
         const fj = f && (f.jp || '').trim(); if (!fj || fj.length > 20 || this._bwMap.has(fj) || !HAS_JP.test(fj) || /[（）()\s\/、。，,！!？?・「」]/.test(fj)) continue;
-        this._bwMap.set(fj, { kana: '', km: f.km || w.km || '', img: w.img || '' }); if (fj.length > this._bwMax) this._bwMax = fj.length;
+        this._bwMap.set(fj, { kana: '', km: f.km || w.km || '', img: w.img || '', id: w.id, pos: w.pos || '' }); if (fj.length > this._bwMax) this._bwMax = fj.length;
       }
     }
     return this._bwMap;
@@ -12859,33 +12859,119 @@ class Component extends DCLogic {
       node.parentNode.replaceChild(frag, node);
     }
   }
-  // little translation card for a tapped word, over the reader
-  _showBookWordPopup(jp){
+  // little translation card for a tapped word, over the reader. On a wide screen (a phone
+  // held sideways, a tablet, a computer) it sits in a panel at the right and the book slides
+  // left to make room; on a narrow one it rises from the bottom as before.
+  _bwClose(){
+    const p = document.getElementById('bookword-pop'); if (p) p.remove();
+    if (this._bwSel) { this._bwSel.classList.remove('bw-sel'); this._bwSel = null; }
+  }
+  _showBookWordPopup(jp, srcEl){
     const info = this._bookWordMap().get(jp); if (!info) return;
-    const host = document.getElementById('lib-read-root') || document.body;
-    const old = document.getElementById('bookword-pop'); if (old) old.remove();
-    const pop = document.createElement('div'); pop.id = 'bookword-pop';
-    pop.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:130;background:var(--color-surface);color:var(--color-text);border-top:1px solid var(--color-divider);box-shadow:0 -6px 24px rgba(0,0,0,0.35);padding:16px 18px calc(18px + env(safe-area-inset-bottom, 0px));border-radius:16px 16px 0 0;max-height:80vh;overflow:auto;-webkit-overflow-scrolling:touch;';
-    pop.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-        <div style="min-width:0;"><div style="font-size:12px;opacity:0.6;">${_escHtml(info.kana)}</div>
-        <div style="font-family:var(--font-heading);font-weight:600;font-size:26px;line-height:1.15;">${_escHtml(jp)}</div></div>
-        <div style="display:flex;gap:8px;flex:none;">
-          <button id="bwp-speak" style="width:38px;height:38px;border:1px solid var(--color-divider);border-radius:10px;background:var(--color-bg);cursor:pointer;font-size:17px;">🔊</button>
-          <button id="bwp-close" style="width:38px;height:38px;border:1px solid var(--color-divider);border-radius:10px;background:var(--color-bg);cursor:pointer;font-size:16px;">✕</button>
-        </div></div>
-      <div style="font-size:17px;margin-top:10px;line-height:1.6;">${_escHtml(info.km)}</div>`;
+    this._bwClose();
+    if (srcEl) { srcEl.classList.add('bw-sel'); this._bwSel = srcEl; }
+    const rd = this._rd, sideOk = !!(rd && rd.row && document.body.contains(rd.row)) && window.innerWidth >= 700 && window.innerWidth > window.innerHeight;
+    const host = sideOk ? rd.row : (document.getElementById('lib-read-root') || document.body);
+    const pop = document.createElement('div'); pop.id = 'bookword-pop'; pop.className = sideOk ? 'rd-side' : 'rd-sheet';
+    const means = String(info.km || '').split(/\s*\/\s*/).map(s => s.trim()).filter(Boolean);
+    const fav = !!(info.id && this.state.favorites.includes(info.id));
+    pop.innerHTML = '<button class="rd-x" id="bwp-close" aria-label="បិទ"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
+      + (info.pos ? '<span class="rd-chip">' + _escHtml(info.pos) + '</span>' : '')
+      + (info.kana ? '<div class="rd-kana">' + _escHtml(info.kana) + '</div>' : '')
+      + '<div class="rd-jp">' + _escHtml(jp) + '</div>'
+      + '<div class="rd-mean">' + means.map((m, i) => '<div class="rd-m">' + (means.length > 1 ? '<i>' + (i + 1) + '</i>' : '') + '<span>' + _escHtml(m) + '</span></div>').join('') + '</div>'
+      + '<div class="rd-acts"><button class="rd-spk" id="bwp-speak"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/></svg>ស្តាប់</button>'
+      + (info.id ? '<button class="rd-sq' + (fav ? ' on' : '') + '" id="bwp-fav" aria-label="សំណព្វ"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button>' : '') + '</div>';
     // if the dictionary word has a picture, show it under the translation
     if (info.img) {
       const im = document.createElement('img');
       im.src = normalizeImgUrl(info.img); im.alt = '';
-      im.style.cssText = 'display:block;max-width:100%;max-height:44vh;margin:12px auto 0;border-radius:12px;object-fit:contain;';
+      im.className = 'rd-pic';
       im.addEventListener('error', () => im.remove());   // drop it silently if the link is broken
-      pop.appendChild(im);
+      pop.insertBefore(im, pop.querySelector('.rd-acts'));
     }
     host.appendChild(pop);
-    pop.querySelector('#bwp-close').addEventListener('click', () => pop.remove());
+    pop.querySelector('#bwp-close').addEventListener('click', () => this._bwClose());
     pop.querySelector('#bwp-speak').addEventListener('click', () => this.playAudio(jp));
+    const fb = pop.querySelector('#bwp-fav'); if (fb) fb.addEventListener('click', () => { this.toggleFavorite(info.id); fb.classList.toggle('on'); });
     this.playAudio(jp);   // read it aloud on tap
+  }
+  // look of the full-screen reader (injected once)
+  _rdEnsureCss(){
+    if (document.getElementById('rd-style')) return;
+    const st = document.createElement('style'); st.id = 'rd-style';
+    st.textContent = String.raw`
+.rd-ov{position:fixed;inset:0;z-index:120;display:flex;flex-direction:column;background:radial-gradient(120% 140% at 20% 0%,#2b3550 0%,#171a24 55%,#0f1117 100%);font-family:var(--font-body);--rdA:var(--color-accent,#2f6fb0);--rdA2:color-mix(in srgb,var(--color-accent,#2f6fb0) 60%,#9ad0ff)}
+.rd-bar{position:relative;z-index:20;flex:none;display:flex;align-items:center;gap:7px;margin:calc(10px + env(safe-area-inset-top,0px)) 12px 8px;padding:6px 8px;border-radius:16px;background:rgba(255,255,255,.09);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.12);box-shadow:0 8px 24px rgba(0,0,0,.35);overflow-x:auto;scrollbar-width:none}
+.rd-bar::-webkit-scrollbar{display:none}
+.rd-bar .rd-sp{flex:1;min-width:4px}
+.rd-sep{flex:none;width:1px;height:20px;background:rgba(255,255,255,.16)}
+.rd-ib{position:relative;flex:none;width:34px;height:34px;border:none;border-radius:11px;background:rgba(255,255,255,.1);color:#eef1f7;display:grid;place-items:center;cursor:pointer;padding:0;transition:background .15s,transform .1s}
+.rd-ib:hover{background:rgba(255,255,255,.18)}.rd-ib:active{transform:scale(.94)}
+.rd-ib svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rd-ib.hot{background:linear-gradient(135deg,#ff6b81,#e8416a);color:#fff}
+.rd-ib.rec{background:linear-gradient(135deg,#8b5cf6,#6d3ee0);color:#fff}
+.rd-ib.on{background:rgba(120,180,240,.38);color:#d6ebff}
+.rd-badge{position:absolute;top:-3px;right:-3px;min-width:15px;height:15px;border-radius:99px;background:#e8416a;color:#fff;font-size:9px;font-weight:700;display:none;place-items:center;padding:0 3px}
+.rd-pill{flex:none;height:34px;padding:0 11px;border-radius:99px;background:rgba(255,255,255,.1);color:#eef1f7;font-size:12px;display:flex;align-items:center;gap:6px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rd-jin{width:44px;height:26px;border:none;border-radius:8px;background:rgba(255,255,255,.14);color:#fff;text-align:center;font-size:13px;-moz-appearance:textfield}
+.rd-jin::-webkit-outer-spin-button,.rd-jin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.rd-row{flex:1;min-height:0;display:flex;gap:12px;padding:0 12px 12px}
+.rd-bookwrap{flex:1;min-width:0;position:relative;display:flex;border-radius:16px;overflow:hidden}
+.rd-area{flex:1;min-height:0;min-width:0;overflow:auto;-webkit-overflow-scrolling:touch;display:flex;position:relative}
+.rd-arrow{position:absolute;top:56%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.12);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font-size:22px;line-height:1;cursor:pointer;z-index:8;display:flex;align-items:center;justify-content:center;padding:0}
+.rd-arrow.l{left:8px}.rd-arrow.r{right:8px}
+.rd-prog{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.12);z-index:7;pointer-events:none}
+.rd-prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--rdA2),#9be0ff);border-radius:0 3px 3px 0;transition:width .25s}
+.rd-ov .a4page{border-radius:6px;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 14px 40px rgba(0,0,0,.55) !important}
+.rd-ov .a4page h1,.rd-ov .a4page h2,.rd-ov .a4page h3{letter-spacing:.01em}
+.rd-t-cream .a4page{background:#f4ead2 !important}
+.rd-t-dark .a4page{filter:invert(.92) hue-rotate(180deg)}
+.rd-t-dark .a4page img{filter:invert(1) hue-rotate(180deg)}
+.bookword.bw-sel{background:linear-gradient(transparent 55%,#ffd75e 55%);border-radius:2px}
+.rd-pop{position:absolute;z-index:25;top:calc(64px + env(safe-area-inset-top,0px));right:12px;width:230px;padding:12px;border-radius:16px;background:rgba(30,33,43,.96);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.1);box-shadow:0 14px 34px rgba(0,0,0,.5);color:#e8ecf4;font-size:11px;display:none}
+.rd-pop b{display:block;font-size:11px;color:#9aa3b5;margin:0 0 6px;font-weight:600}
+.rd-sw{display:flex;gap:8px;margin-bottom:12px}
+.rd-sw button{flex:1;height:36px;border-radius:10px;border:2px solid transparent;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.rd-sw button.on{border-color:var(--rdA2)}
+.rd-pop input[type=range]{width:100%;accent-color:var(--rdA2)}
+/* translation card */
+.rd-side{flex:none;width:min(34%,340px);align-self:stretch;overflow:auto;border-radius:18px;background:linear-gradient(180deg,#ffffff,#f1f4f9);color:#15171b;padding:14px;position:relative;display:flex;flex-direction:column;box-shadow:0 10px 30px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.7)}
+.rd-sheet{--rdA:var(--color-accent,#2f6fb0);--rdA2:color-mix(in srgb,var(--color-accent,#2f6fb0) 60%,#9ad0ff);font-family:var(--font-body);position:fixed;left:0;right:0;bottom:0;z-index:130;max-height:80vh;overflow:auto;border-radius:20px 20px 0 0;background:linear-gradient(180deg,#ffffff,#f1f4f9);color:#15171b;padding:16px 18px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;box-shadow:0 -8px 30px rgba(0,0,0,.4)}
+.rd-x{position:absolute;top:10px;right:10px;width:30px;height:30px;border:none;border-radius:50%;background:#e6eaf1;color:#4a5160;display:grid;place-items:center;cursor:pointer;padding:0}
+.rd-x svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round}
+.rd-chip{align-self:flex-start;font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--rdA);background:color-mix(in srgb,var(--rdA) 14%,#fff);border-radius:99px;padding:2px 10px;margin-right:34px}
+.rd-kana{font-size:13px;color:#7a8190;margin-top:8px;font-family:var(--font-jp),sans-serif;margin-right:34px}
+.rd-jp{font-size:34px;font-weight:700;line-height:1.15;margin:2px 34px 10px 0;font-family:var(--font-heading),var(--font-jp),sans-serif;word-break:break-all}
+.rd-mean{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.rd-m{display:flex;gap:8px;align-items:flex-start;background:#fff;border-radius:11px;padding:8px 11px;box-shadow:0 1px 2px rgba(20,30,50,.08),inset 0 0 0 1px #e8ecf3;font-size:15px;line-height:1.55}
+.rd-m i{flex:none;width:19px;height:19px;margin-top:2px;border-radius:50%;background:var(--rdA);color:#fff;font-style:normal;font-size:10.5px;font-weight:700;display:grid;place-items:center}
+.rd-pic{display:block;max-width:100%;max-height:34vh;margin:0 auto 12px;border-radius:12px;object-fit:contain}
+.rd-acts{display:flex;gap:8px;margin-top:auto}
+.rd-spk{flex:1;height:40px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--rdA),var(--rdA2));color:#fff;display:flex;align-items:center;justify-content:center;gap:7px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 6px 14px color-mix(in srgb,var(--rdA) 40%,transparent)}
+.rd-spk svg{width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rd-sq{width:40px;height:40px;border:none;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #dfe4ec;display:grid;place-items:center;color:#9aa1b0;cursor:pointer;padding:0}
+.rd-sq svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rd-sq.on{color:#e0a100}.rd-sq.on svg{fill:#ffcf4a}
+.rd-t-dark .rd-side,.rd-t-dark .rd-sheet{background:linear-gradient(180deg,#2a2d35,#23262d);color:#f1f3f7;box-shadow:0 10px 30px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.07)}
+.rd-t-dark .rd-x{background:rgba(255,255,255,.1);color:#cdd2dc}
+.rd-t-dark .rd-chip{background:rgba(120,180,240,.18);color:#9ccaf7}
+.rd-t-dark .rd-kana{color:#9aa1b0}
+.rd-t-dark .rd-m{background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.rd-t-dark .rd-sq{background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);color:#aab1c0}
+/* teaching mode */
+.rd-dock{position:absolute;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;display:none;align-items:center;gap:8px;padding:6px 10px;border-radius:99px;background:rgba(255,255,255,.1);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.14);box-shadow:0 10px 28px rgba(0,0,0,.45);opacity:.28;transition:opacity .35s;max-width:calc(100vw - 16px);overflow-x:auto;scrollbar-width:none}
+.rd-teach .rd-dock{display:flex}.rd-dock.act,.rd-dock:hover{opacity:1}
+.rd-dock .rd-ib{border-radius:50%}
+.rd-dock .rd-pill{background:transparent;padding:0 6px}
+.rd-teach .rd-bar{display:none}
+.rd-teach.rd-peek .rd-bar{display:flex;position:absolute;top:0;left:0;right:0;margin-top:calc(8px + env(safe-area-inset-top,0px))}
+.rd-teach .rd-arrow{display:none !important}
+.rd-spot{position:absolute;left:0;width:0;top:0;height:0;border-radius:10px;box-shadow:0 0 0 2000px rgba(8,10,16,.6);border:2px solid rgba(255,215,94,.92);pointer-events:none;z-index:6;display:none}
+.rd-laser{position:absolute;left:0;top:0;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:rgba(255,77,106,.35);border:2px solid #ff4d6a;box-shadow:0 0 0 8px rgba(255,77,106,.15);pointer-events:none;z-index:9;display:none}
+@media (max-width:560px){.rd-zoomgrp{display:none !important}.rd-sep{display:none}.rd-bar{gap:5px;padding:5px 6px}.rd-ib{width:30px;height:30px}.rd-pill{height:30px;padding:0 8px}}
+`;
+    document.head.appendChild(st);
   }
   // two-finger pinch to zoom the paper (native page-zoom is off, so we do our own)
   // setZoom receives (newZoom, cx, cy) where cx/cy is the pinch midpoint relative
@@ -12935,55 +13021,76 @@ class Component extends DCLogic {
     // viewport — it scrolls with the container instead, which is why the top
     // toolbar could end up scrolled out of view on a real phone while working
     // fine here. A direct child of <body> has no such ancestor.
+    this._rdEnsureCss();
+    let theme = 'white'; try { const t0 = localStorage.getItem('dict_reader_theme'); if (t0 === 'cream' || t0 === 'dark') theme = t0; } catch(e) {}
     const ov = document.createElement('div');
-    ov.id = 'book-reader-overlay';
-    ov.style.cssText = 'position:fixed;inset:0;z-index:120;background:#454545;display:flex;flex-direction:column;';
+    ov.id = 'book-reader-overlay'; ov.className = 'rd-ov rd-t-' + theme;
     document.body.appendChild(ov);
-    const icon = (txt, fn, extra) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.style.cssText = 'width:34px;height:34px;border:none;border-radius:8px;background:rgba(255,255,255,0.16);color:#fff;font-size:17px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;' + (extra || ''); b.addEventListener('click', fn); return b; };
-    // thin top bar (icons only)
-    const bar = document.createElement('div');
-    bar.style.cssText = 'flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;padding-top:calc(6px + env(safe-area-inset-top, 0px));background:rgba(0,0,0,0.35);';
-    const leftBar = document.createElement('div'); leftBar.style.cssText = 'display:flex;align-items:center;gap:6px;';
-    leftBar.appendChild(icon('✕', () => (this._readerBack || (() => this.libBackToList()))()));
-    // 🔖 toggles a bookmark on the current page; ☰ opens the bookmark list
-    const bmBtn = icon('🔖', () => { if (marks.has(cur)) marks.delete(cur); else marks.add(cur); this._setBookmarks(bookId, [...marks]); applyView(); if (bmPanel.style.display !== 'none') renderBmPanel(); });
-    bmBtn.title = 'ចំណាំ / ដកចំណាំទំព័រនេះ';
-    const bmListBtn = icon('☰', () => { const show = bmPanel.style.display === 'none'; if (show) renderBmPanel(); bmPanel.style.display = show ? 'block' : 'none'; }, 'font-size:15px;');
-    bmListBtn.title = 'បញ្ជីចំណាំ';
-    leftBar.appendChild(bmBtn); leftBar.appendChild(bmListBtn);
-    // ✏️ (admin) — jump straight into the editor on the page being read, to fix a typo
+    const SVG = {
+      close: '<path d="M6 6l12 12M18 6L6 18"/>', bookmark: '<path d="M6 3h12v18l-6-4-6 4z"/>', list: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+      edit: '<path d="M4 20l4-1 11-11-3-3L5 16z"/>', search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/>',
+      aa: '<path d="M5 18l4-12 4 12M6.5 14h5M15 18l3-8 3 8M16 16h4"/>', down: '<path d="M12 4v12M7 11l5 5 5-5M5 20h14"/>',
+      video: '<rect x="3" y="6" width="13" height="12" rx="3"/><path d="M16 10l5-3v10l-5-3"/>', minus: '<path d="M5 12h14"/>', plus: '<path d="M12 5v14M5 12h14"/>',
+      prev: '<path d="M15 6l-6 6 6 6"/>', next: '<path d="M9 6l6 6-6 6"/>', spot: '<rect x="4" y="9" width="16" height="6" rx="2"/><path d="M2 5h2M20 5h2M2 19h2M20 19h2"/>',
+      laser: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>', eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    };
+    const icon = (key, fn, title, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'rd-ib' + (cls ? ' ' + cls : ''); b.innerHTML = '<svg viewBox="0 0 24 24">' + SVG[key] + '</svg>'; if (title) b.title = title; b.addEventListener('click', fn); return b; };
+    const spacer = () => { const s = document.createElement('span'); s.className = 'rd-sp'; return s; };
+    const sep = () => { const s = document.createElement('span'); s.className = 'rd-sep'; return s; };
+    // floating glass toolbar (icons only)
+    const bar = document.createElement('div'); bar.className = 'rd-bar';
+    bar.appendChild(icon('close', () => (this._readerBack || (() => this.libBackToList()))(), 'ចាកចេញ'));
+    // bookmark toggles the current page; the list button opens the bookmark list
+    const bmBtn = icon('bookmark', () => { if (marks.has(cur)) marks.delete(cur); else marks.add(cur); this._setBookmarks(bookId, [...marks]); applyView(); if (bmPanel.style.display !== 'none') renderBmPanel(); }, 'ចំណាំ / ដកចំណាំទំព័រនេះ');
+    const bmListBtn = icon('list', () => { const show = bmPanel.style.display === 'none'; if (show) renderBmPanel(); bmPanel.style.display = show ? 'block' : 'none'; }, 'បញ្ជីចំណាំ');
+    const bmBadge = document.createElement('span'); bmBadge.className = 'rd-badge'; bmListBtn.appendChild(bmBadge);
+    bar.appendChild(bmBtn); bar.appendChild(bmListBtn);
+    // (admin) jump straight into the editor on the page being read, to fix a typo
     if (this.state.role === 'admin' && bookId) {
-      const editBtn = icon('✏️', () => { const p = document.getElementById('bookword-pop'); if (p) p.remove(); this._edOpenAtPage = cur; this._edReturnToRead = { id: bookId, page: cur, origin: this._readRootId === 'rb-read-root' ? 'readbooks' : 'library' }; this.libEditBook(bookId, true); }, 'font-size:15px;');
-      editBtn.title = 'កែសៀវភៅ';
-      leftBar.appendChild(editBtn);
+      bar.appendChild(icon('edit', () => { this._bwClose(); this._edOpenAtPage = cur; this._edReturnToRead = { id: bookId, page: cur, origin: this._readRootId === 'rb-read-root' ? 'readbooks' : 'library' }; this.libEditBook(bookId, true); }, 'កែសៀវភៅ'));
     }
-    // 🔍 — find a word or a sentence anywhere in the book
-    const findBtn = icon('🔍', () => toggleFind(), 'font-size:15px;');
-    findBtn.title = 'ស្វែងរកក្នុងសៀវភៅ';
-    leftBar.appendChild(findBtn);
-    // ⬇ — download the whole book as a printable PDF (native print/Save-as-PDF dialog)
-    const pdfBtn = icon('⬇', () => this._downloadBookPdf((book && book.title) || 'សៀវភៅ', html, PAD, START), 'font-size:15px;');
-    pdfBtn.title = 'ទាញយកជា PDF';
-    leftBar.appendChild(pdfBtn);
-    bar.appendChild(leftBar);
-    const rightBar = document.createElement('div'); rightBar.style.cssText = 'display:flex;align-items:center;gap:6px;';
-    const jin = document.createElement('input'); jin.type = 'number'; jin.min = '1';
-    jin.style.cssText = 'width:46px;height:34px;border:none;border-radius:8px;background:rgba(255,255,255,0.16);color:#fff;text-align:center;font-size:14px;';
-    const jtot = document.createElement('span'); jtot.style.cssText = 'color:#fff;font-size:13px;opacity:0.8;';
-    rightBar.appendChild(jin); rightBar.appendChild(jtot);
-    rightBar.appendChild(icon('−', () => { scale = Math.max(1, Math.round((scale - 0.5) * 2) / 2); applyView(); }));
-    const zlabel = document.createElement('span'); zlabel.style.cssText = 'color:#fff;font-size:12px;min-width:42px;text-align:center;';
-    rightBar.appendChild(zlabel);
-    rightBar.appendChild(icon('+', () => { scale = Math.min(5, Math.round((scale + 0.5) * 2) / 2); applyView(); }));
-    bar.appendChild(rightBar);
+    const findBtn = icon('search', () => toggleFind(), 'ស្វែងរកក្នុងសៀវភៅ');
+    bar.appendChild(findBtn);
+    const themeBtn = icon('aa', () => { const on = themePop.style.display !== 'block'; themePop.style.display = on ? 'block' : 'none'; themeBtn.classList.toggle('on', on); bmPanel.style.display = 'none'; }, 'ពណ៌ទំព័រ និងទំហំ');
+    bar.appendChild(themeBtn);
+    bar.appendChild(icon('down', () => this._downloadBookPdf((book && book.title) || 'សៀវភៅ', html, PAD, START), 'ទាញយកជា PDF'));
+    bar.appendChild(spacer());
+    bar.appendChild(icon('video', () => setTeach(true), 'របៀបបង្រៀន / ថតវីដេអូ', 'rec'));
+    bar.appendChild(sep());
+    const jin = document.createElement('input'); jin.type = 'number'; jin.min = '1'; jin.className = 'rd-jin';
+    const jtot = document.createElement('span'); jtot.style.cssText = 'opacity:0.75;';
+    const jpill = document.createElement('span'); jpill.className = 'rd-pill'; jpill.appendChild(jin); jpill.appendChild(jtot);
+    bar.appendChild(jpill);
+    const zoomGrp = document.createElement('span'); zoomGrp.className = 'rd-pill rd-zoomgrp'; zoomGrp.style.padding = '0 4px'; zoomGrp.style.gap = '2px';
+    const zlabel = document.createElement('span'); zlabel.style.cssText = 'min-width:40px;text-align:center;';
+    const zb = (k, fn) => { const b = icon(k, fn); b.style.background = 'transparent'; b.style.width = '28px'; b.style.height = '28px'; return b; };
+    zoomGrp.appendChild(zb('minus', () => { scale = Math.max(1, Math.round((scale - 0.5) * 2) / 2); applyView(); }));
+    zoomGrp.appendChild(zlabel);
+    zoomGrp.appendChild(zb('plus', () => { scale = Math.min(5, Math.round((scale + 0.5) * 2) / 2); applyView(); }));
+    bar.appendChild(zoomGrp);
     ov.appendChild(bar);
+    // page colour + zoom popover
+    const themePop = document.createElement('div'); themePop.className = 'rd-pop';
+    themePop.innerHTML = '<b>ពណ៌ទំព័រ</b><div class="rd-sw"><button data-t="white" style="background:#fdfcf8;color:#222">ក</button><button data-t="cream" style="background:#f3e8d0;color:#4a3a1e">ក</button><button data-t="dark" style="background:#1f2229;color:#e8eaf0">ក</button></div><b>ពង្រីក</b><input type="range" min="1" max="5" step="0.5" value="1">';
+    const zslider = themePop.querySelector('input');
+    zslider.addEventListener('input', () => { scale = parseFloat(zslider.value) || 1; applyView(); });
+    const setTheme = t => {
+      theme = t; try { localStorage.setItem('dict_reader_theme', t); } catch(e) {}
+      ov.classList.remove('rd-t-white', 'rd-t-cream', 'rd-t-dark'); ov.classList.add('rd-t-' + t);
+      themePop.querySelectorAll('.rd-sw button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+    };
+    themePop.querySelectorAll('.rd-sw button').forEach(b => b.addEventListener('click', () => setTheme(b.dataset.t)));
+    setTheme(theme);
+    ov.appendChild(themePop);
     // page area (scrolls). The sheet is centred with margin:auto so both edges stay
     // reachable by scrolling when zoomed in past the screen.
-    const area = document.createElement('div');
-    area.style.cssText = 'flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;display:flex;position:relative;';
+    const row = document.createElement('div'); row.className = 'rd-row';
+    const bookWrap = document.createElement('div'); bookWrap.className = 'rd-bookwrap';
+    const area = document.createElement('div'); area.className = 'rd-area';
     const stage = document.createElement('div');
     stage.style.cssText = 'margin:auto;flex:none;position:relative;';
-    area.appendChild(stage); ov.appendChild(area);
+    this._rd = { ov, row };
+    area.appendChild(stage); bookWrap.appendChild(area); row.appendChild(bookWrap); ov.appendChild(row);
     // — paginate the content into A4 sheets (absolutely stacked; only one shown) —
     const src = document.createElement('div'); src.innerHTML = html || '';
     // drop PDF-style spaces sitting inside Japanese words (食 料品 → 食料品) so the
@@ -13023,7 +13130,7 @@ class Component extends DCLogic {
       pn.style.cssText = `position:absolute;left:0;right:0;bottom:${Math.max(10, Math.round(PAD / 2) - 6)}px;text-align:center;font-size:13px;color:#666;`;
       pn.textContent = String(pnNums[i]); p.appendChild(pn);
     });
-    area.addEventListener('click', e => { const el = e.target.closest && e.target.closest('.bookword'); if (el && el.dataset.jp) this._showBookWordPopup(el.dataset.jp); });
+    area.addEventListener('click', e => { const el = e.target.closest && e.target.closest('.bookword'); if (el && el.dataset.jp) this._showBookWordPopup(el.dataset.jp, el); themePop.style.display = 'none'; themeBtn.classList.remove('on'); });
     const total = pages.length;
     jin.max = String(total); jtot.textContent = '/ ' + total;
     // reopen where the reader left off last time
@@ -13039,20 +13146,22 @@ class Component extends DCLogic {
       prevB.style.display = cur === 0 ? 'none' : 'flex';
       nextB.style.display = cur === total - 1 ? 'none' : 'flex';
       // reflect bookmark state of the shown page + remember the reading position
-      bmBtn.style.background = marks.has(cur) ? '#c9971f' : 'rgba(255,255,255,0.16)';
-      bmListBtn.textContent = marks.size ? ('☰ ' + marks.size) : '☰';
+      bmBtn.classList.toggle('hot', marks.has(cur));
+      bmBadge.textContent = String(marks.size); bmBadge.style.display = marks.size ? 'grid' : 'none';
+      zslider.value = String(scale); progBar.style.width = (total > 1 ? (cur + 1) / total * 100 : 100) + '%'; dockPage.textContent = (cur + 1) + ' / ' + total;
       this._setLastReadPage(bookId, cur);
     };
     // prev / next — fixed on screen, do NOT scroll with the paper
-    const edge = (txt, fn, side) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt;
-      b.style.cssText = `position:absolute;${side}:8px;top:56%;transform:translateY(-50%);width:42px;height:42px;border:none;border-radius:50%;background:rgba(0,0,0,0.5);color:#fff;font-size:24px;line-height:1;cursor:pointer;z-index:8;display:flex;align-items:center;justify-content:center;`;
+    const edge = (txt, fn, side) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.className = 'rd-arrow ' + (side === 'left' ? 'l' : 'r');
       b.addEventListener('click', fn); return b; };
     const prevB = edge('‹', () => { cur = Math.max(0, cur - 1); applyView(); resetScroll(); }, 'left');
     const nextB = edge('›', () => { cur = Math.min(total - 1, cur + 1); applyView(); resetScroll(); }, 'right');
-    ov.appendChild(prevB); ov.appendChild(nextB);
+    const prog = document.createElement('div'); prog.className = 'rd-prog'; const progBar = document.createElement('i'); prog.appendChild(progBar);
+    bookWrap.appendChild(prog);
+    bookWrap.appendChild(prevB); bookWrap.appendChild(nextB);
     // bookmark list — tap a row to jump, ✕ to remove
     const bmPanel = document.createElement('div');
-    bmPanel.style.cssText = 'position:absolute;top:calc(48px + env(safe-area-inset-top, 0px));left:8px;z-index:9;background:#2b2b2b;color:#fff;border-radius:12px;box-shadow:0 10px 34px rgba(0,0,0,0.55);padding:6px;min-width:170px;max-height:64vh;overflow:auto;display:none;';
+    bmPanel.style.cssText = 'position:absolute;top:calc(64px + env(safe-area-inset-top, 0px));left:12px;z-index:25;background:rgba(30,33,43,.96);color:#fff;border-radius:14px;box-shadow:0 10px 34px rgba(0,0,0,0.55);padding:6px;min-width:170px;max-height:64vh;overflow:auto;display:none;';
     ov.appendChild(bmPanel);
     const renderBmPanel = () => {
       const arr = [...marks].sort((a, b) => a - b);
@@ -13088,7 +13197,7 @@ class Component extends DCLogic {
     };
     // — find in book: jump to the pages holding a word or sentence, and light it up —
     const findBar = document.createElement('div');
-    findBar.style.cssText = 'position:absolute;top:calc(48px + env(safe-area-inset-top, 0px));left:8px;right:8px;z-index:10;background:#2b2b2b;color:#fff;border-radius:12px;box-shadow:0 10px 34px rgba(0,0,0,0.55);padding:7px;display:none;align-items:center;gap:6px;';
+    findBar.style.cssText = 'position:absolute;top:calc(64px + env(safe-area-inset-top, 0px));left:12px;right:12px;z-index:26;background:rgba(30,33,43,.96);color:#fff;border-radius:14px;box-shadow:0 10px 34px rgba(0,0,0,0.55);padding:7px;display:none;align-items:center;gap:6px;';
     const fInp = document.createElement('input'); fInp.type = 'search'; fInp.placeholder = 'ស្វែងរកពាក្យ ឬ ប្រយោគ…';
     fInp.style.cssText = 'flex:1;min-width:0;background:#3a3a3a;border:1px solid #5a5a5a;border-radius:8px;color:#fff;font-size:14px;padding:8px 10px;';
     const fCount = document.createElement('span'); fCount.style.cssText = 'font-size:12px;opacity:0.7;flex:none;min-width:46px;text-align:center;';
@@ -13173,26 +13282,27 @@ class Component extends DCLogic {
     fInp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (hits.length) showHit(hitAt + 1); else runFind(); } });
     fBtn('‹', () => showHit(hitAt - 1));
     fBtn('›', () => showHit(hitAt + 1));
-    fBtn('✕', () => { findBar.style.display = 'none'; findBtn.style.background = 'rgba(255,255,255,0.16)'; clearMarks(); findQ = ''; hits = []; fInp.value = ''; fCount.textContent = ''; });
+    fBtn('✕', () => { findBar.style.display = 'none'; findBtn.classList.remove('on'); clearMarks(); findQ = ''; hits = []; fInp.value = ''; fCount.textContent = ''; });
     ov.appendChild(findBar);
     const toggleFind = () => {
       const open = findBar.style.display === 'none';
       findBar.style.display = open ? 'flex' : 'none';
-      findBtn.style.background = open ? '#c9971f' : 'rgba(255,255,255,0.16)';
-      bmPanel.style.display = 'none';
+      findBtn.classList.toggle('on', open);
+      bmPanel.style.display = 'none'; themePop.style.display = 'none'; themeBtn.classList.remove('on');
       if (open) { fInp.focus(); } else { clearMarks(); findQ = ''; hits = []; }
     };
     const goInput = () => { const v = parseInt(jin.value, 10); if (!isNaN(v)) { cur = Math.max(0, Math.min(total - 1, v - 1)); applyView(); resetScroll(); } };
     jin.addEventListener('change', goInput);
     jin.addEventListener('keydown', e => { if (e.key === 'Enter') { goInput(); jin.blur(); } });
     // fit = 100%: the largest size that shows the whole page with no top/bottom cut
+    let fitWidth = false;
     const fit = () => {
-      if (!document.body.contains(ov)) { window.removeEventListener('resize', onResize); return; }
+      if (!document.body.contains(ov)) { window.removeEventListener('resize', onResize); if (this._rdRO) { this._rdRO.disconnect(); this._rdRO = null; } if (this._rdKey) { document.removeEventListener('keydown', this._rdKey); this._rdKey = null; } return; }
       let ah = area.clientHeight - 16, aw = area.clientWidth - 16;
       // before the flex layout has settled these can read 0 — fall back to the
       // screen size so the very first paint is already fitted, not oversized
       if (ah <= 0 || aw <= 0) { ah = window.innerHeight - 96; aw = window.innerWidth - 16; }
-      if (ah > 0 && aw > 0) fitZoom = Math.max(0.15, Math.min(ah / A4H, aw / A4W));
+      if (ah > 0 && aw > 0) fitZoom = Math.max(0.15, fitWidth ? aw / A4W : Math.min(ah / A4H, aw / A4W));
       applyView();
     };
     const onResize = () => fit();
@@ -13206,6 +13316,72 @@ class Component extends DCLogic {
       area.scrollLeft = stage.offsetLeft + px * zNew - cx;
       area.scrollTop = stage.offsetTop + py * zNew - cy;
     });
+    // refit whenever the book's own box changes — the translation panel opening / closing, a rotation
+    let lastBox = '';
+    if (window.ResizeObserver) {
+      if (this._rdRO) this._rdRO.disconnect();
+      this._rdRO = new ResizeObserver(() => { const k = area.clientWidth + 'x' + area.clientHeight; if (k !== lastBox) { lastBox = k; fit(); } });
+      this._rdRO.observe(area);
+    }
+    // — teaching mode: clean screen for recording a lesson —
+    let teach = false, spotOn = false, laserOn = true, dockT = null;
+    const spotEl = document.createElement('div'); spotEl.className = 'rd-spot';
+    const laserEl = document.createElement('div'); laserEl.className = 'rd-laser';
+    bookWrap.appendChild(spotEl); bookWrap.appendChild(laserEl);
+    const dock = document.createElement('div'); dock.className = 'rd-dock';
+    const dockPage = document.createElement('span'); dockPage.className = 'rd-pill';
+    const spotBtn = icon('spot', () => { spotOn = !spotOn; spotBtn.classList.toggle('on', spotOn); spotEl.style.display = spotOn ? 'block' : 'none'; }, 'ផ្ដោតបន្ទាត់');
+    const laserBtn = icon('laser', () => { laserOn = !laserOn; laserBtn.classList.toggle('on', laserOn); if (!laserOn) laserEl.style.display = 'none'; }, 'ចង្អុល');
+    const peekBtn = icon('eye', () => { ov.classList.toggle('rd-peek'); peekBtn.classList.toggle('on', ov.classList.contains('rd-peek')); setTimeout(fit, 30); }, 'បង្ហាញ/លាក់របារ');
+    dock.appendChild(icon('prev', () => { cur = Math.max(0, cur - 1); applyView(); resetScroll(); }, 'ទំព័រមុន'));
+    dock.appendChild(dockPage);
+    dock.appendChild(icon('next', () => { cur = Math.min(total - 1, cur + 1); applyView(); resetScroll(); }, 'ទំព័របន្ទាប់'));
+    dock.appendChild(sep());
+    dock.appendChild(icon('minus', () => { scale = Math.max(1, Math.round((scale - 0.5) * 2) / 2); applyView(); }, 'អក្សរតូចជាង'));
+    dock.appendChild(icon('plus', () => { scale = Math.min(5, Math.round((scale + 0.5) * 2) / 2); applyView(); }, 'អក្សរធំជាង'));
+    dock.appendChild(spotBtn); dock.appendChild(laserBtn); dock.appendChild(peekBtn);
+    dock.appendChild(sep());
+    dock.appendChild(icon('close', () => setTeach(false), 'ចេញពីរបៀបបង្រៀន', 'hot'));
+    laserBtn.classList.add('on');
+    ov.appendChild(dock);
+    const wake = () => { dock.classList.add('act'); clearTimeout(dockT); dockT = setTimeout(() => dock.classList.remove('act'), 3000); };
+    const setTeach = on => {
+      teach = on; ov.classList.toggle('rd-teach', on); ov.classList.remove('rd-peek'); peekBtn.classList.remove('on');
+      fitWidth = on; scale = 1;
+      themePop.style.display = 'none'; themeBtn.classList.remove('on'); bmPanel.style.display = 'none';
+      if (!on) { spotEl.style.display = 'none'; laserEl.style.display = 'none'; spotOn = false; spotBtn.classList.remove('on'); }
+      else { wake(); }
+      fit(); setTimeout(fit, 60); resetScroll();
+    };
+    // the spotlight band and the red pointer follow the mouse / finger
+    const track = e => {
+      if (!teach) return;
+      const wr = bookWrap.getBoundingClientRect(), x = e.clientX - wr.left, y = e.clientY - wr.top;
+      if (laserOn) { laserEl.style.display = 'block'; laserEl.style.transform = 'translate(' + x + 'px,' + y + 'px)'; }
+      if (spotOn) {
+        const sr = stage.getBoundingClientRect(), z = fitZoom * scale, hh = Math.max(40, 29.6 * 2.1 * z);
+        const l = Math.max(0, sr.left - wr.left - 6), r2 = Math.min(wr.width, sr.right - wr.left + 6);
+        spotEl.style.display = 'block'; spotEl.style.left = l + 'px'; spotEl.style.width = Math.max(0, r2 - l) + 'px';
+        spotEl.style.top = Math.max(0, y - hh / 2) + 'px'; spotEl.style.height = hh + 'px';
+      }
+    };
+    bookWrap.addEventListener('pointermove', track);
+    bookWrap.addEventListener('pointerdown', track);
+    bookWrap.addEventListener('pointerleave', () => { laserEl.style.display = 'none'; });
+    bookWrap.addEventListener('pointerup', e => { if (e.pointerType === 'touch') laserEl.style.display = 'none'; });
+    ov.addEventListener('pointermove', () => { if (teach) wake(); });
+    ov.addEventListener('pointerdown', () => { if (teach) wake(); });
+    // keys on a computer: ← → turn the page, Esc leaves teaching mode
+    if (this._rdKey) document.removeEventListener('keydown', this._rdKey);
+    this._rdKey = e => {
+      if (!document.body.contains(ov)) { document.removeEventListener('keydown', this._rdKey); this._rdKey = null; return; }
+      const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') { cur = Math.min(total - 1, cur + 1); applyView(); resetScroll(); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { cur = Math.max(0, cur - 1); applyView(); resetScroll(); e.preventDefault(); }
+      else if (e.key === 'Escape' && teach) { setTeach(false); e.preventDefault(); }
+    };
+    document.addEventListener('keydown', this._rdKey);
     fit();                 // fit now so the first paint is centred and full-screen
     setTimeout(fit, 60);   // re-fit once the real layout height is known
     setTimeout(fit, 250);
@@ -13229,7 +13405,7 @@ class Component extends DCLogic {
   _lastAll(){ try { return JSON.parse(localStorage.getItem('dict_book_lastpage') || '{}') || {}; } catch(e){ return {}; } }
   _getLastReadPage(bookId){ if (!bookId) return 0; const v = this._lastAll()[bookId]; return (typeof v === 'number' && v >= 0) ? v : 0; }
   _setLastReadPage(bookId, idx){ if (!bookId) return; try { const o = this._lastAll(); o[bookId] = idx; localStorage.setItem('dict_book_lastpage', JSON.stringify(o)); } catch(e){} }
-  libBackToList(){ const p = document.getElementById('bookword-pop'); if (p) p.remove(); const ib = document.getElementById('lib-img-bar'); if (ib) ib.remove(); const sb = document.getElementById('lib-shape-bar'); if (sb) sb.remove(); this._edSelImg = null; this._edSelShape = null; this._clearBodyOverlay(); this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
+  libBackToList(){ this._bwClose(); const ib = document.getElementById('lib-img-bar'); if (ib) ib.remove(); const sb = document.getElementById('lib-shape-bar'); if (sb) sb.remove(); this._edSelImg = null; this._edSelShape = null; this._clearBodyOverlay(); this.setState({ libMode: 'list', libBookId: null }, () => this.loadBooks()); }
   async libDeleteBook(id){ if (!window.confirm('លុបសៀវភៅនេះមែនទេ?')) return; await Backend.deleteBook(id); this.loadBooks(); }
   // strip anything unsafe before a book is stored (it is shown to other users)
   _sanitizeBookHtml(html){
