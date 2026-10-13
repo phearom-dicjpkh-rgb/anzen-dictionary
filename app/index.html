@@ -494,6 +494,14 @@ figcaption {
 .shr-act{flex:1 1 120px;display:flex;align-items:center;justify-content:center;gap:8px;height:46px;border-radius:13px;background:var(--color-surface);border:1.5px solid var(--color-divider);font:inherit;font-weight:700;font-size:14px;color:var(--color-text);cursor:pointer}
 .shr-act.main{flex:1.6 1 160px;background:var(--color-accent);border-color:var(--color-accent);color:#fff}
 .shr-zip{width:100%;margin-top:8px;padding:9px;border-radius:10px;background:var(--color-accent-100);color:var(--color-accent-800);border:none;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.shr-cb{position:relative;flex:1;min-width:0;display:flex;gap:6px}
+.shr-menu{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:8;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.2);padding:5px;max-height:240px;overflow-y:auto}
+.shr-mi{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;font-size:13.5px;cursor:pointer}
+.shr-mi span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shr-mi:hover{background:color-mix(in srgb,var(--color-text) 7%,transparent)}
+.shr-mi.on{background:var(--color-accent-100);color:var(--color-accent-800);font-weight:700}
+.shr-mi.save{color:var(--color-accent-800);font-weight:700;border-bottom:1px solid var(--color-divider);margin-bottom:4px;border-radius:8px 8px 0 0}
+.shr-mi i{font-style:normal;opacity:.55;padding:2px 8px;border-radius:99px}.shr-mi i:hover{opacity:1;background:rgba(192,57,43,.12);color:#c0392b}
 /* — edit / add word dialogs — */
 .ew-scrim{position:fixed;inset:0;z-index:200;background:color-mix(in srgb, var(--color-neutral-900) 50%, transparent);display:flex;justify-content:center;align-items:flex-end}
 .ew-dlg{background:var(--color-bg);width:100%;max-width:680px;max-height:94%;border-radius:22px 22px 0 0;display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow-lg);box-sizing:border-box}
@@ -3369,9 +3377,37 @@ textarea.input { min-height: 90px; resize: vertical; }
                 </div>
               </sc-if>
               <div class="shr-row" style="display:flex;align-items:center;gap:10px;"><span style="flex:none;min-width:96px;">ឈ្មោះខាងលើ</span>
-                <input class="shr-in" style="height:38px;" type="text" value="{{ shareBrand }}" sc-camel-on-change="{{ onShareBrand }}" placeholder="{{ shareBrandPh }}"></div>
+                <div class="shr-cb">
+                  <input class="shr-in" style="height:38px;" type="text" value="{{ shareBrand }}" sc-camel-on-change="{{ onShareBrand }}" placeholder="{{ shareBrandPh }}">
+                  <button class="shr-chip" style="width:42px;height:38px;padding:0;flex:none;" sc-camel-on-click="{{ toggleBrandMenu }}" aria-label="ឈ្មោះដែលបានចងចាំ">▾</button>
+                  <sc-if value="{{ shareMenuBrand }}">
+                    <div style="position:fixed;inset:0;z-index:7;" sc-camel-on-click="{{ toggleBrandMenu }}"></div>
+                    <div class="shr-menu">
+                      <sc-if value="{{ shareBrandCanSave }}"><div class="shr-mi save" sc-camel-on-click="{{ rememberBrand }}"><span>＋ ចងចាំ «{{ shareBrand }}»</span></div></sc-if>
+                      <div class="shr-mi" sc-camel-on-click="{{ useDefaultBrand }}"><span>លំនាំដើម៖ {{ shareBrandPh }}</span></div>
+                      <sc-for list="{{ shareBrandItems }}" as="n" hint-placeholder-count="3">
+                        <div class="shr-mi {{ n.cls }}" sc-camel-on-click="{{ n.onPick }}"><span>{{ n.label }}</span><i sc-camel-on-click="{{ n.onRemove }}" title="លុបចេញពីបញ្ជី">✕</i></div>
+                      </sc-for>
+                      <sc-if value="{{ shareBrandEmpty }}"><div style="padding:9px 10px;font-size:12px;opacity:0.55;">មិនទាន់មានឈ្មោះដែលបានចងចាំ — វាយឈ្មោះ រួចចុច «＋ ចងចាំ» ឬទាញយករូប</div></sc-if>
+                    </div>
+                  </sc-if>
+                </div></div>
               <div class="shr-row" style="display:flex;align-items:center;gap:10px;"><span style="flex:none;min-width:96px;">អក្សរបាត</span>
-                <input class="shr-in" style="height:38px;" type="text" value="{{ shareFoot }}" sc-camel-on-change="{{ onShareFoot }}" placeholder="{{ shareFootPh }}"></div>
+                <div class="shr-cb">
+                  <input class="shr-in" style="height:38px;" type="text" value="{{ shareFoot }}" sc-camel-on-change="{{ onShareFoot }}" placeholder="{{ shareFootPh }}">
+                  <button class="shr-chip" style="width:42px;height:38px;padding:0;flex:none;" sc-camel-on-click="{{ toggleFootMenu }}" aria-label="អក្សរបាតដែលបានចងចាំ">▾</button>
+                  <sc-if value="{{ shareMenuFoot }}">
+                    <div style="position:fixed;inset:0;z-index:7;" sc-camel-on-click="{{ toggleFootMenu }}"></div>
+                    <div class="shr-menu">
+                      <sc-if value="{{ shareFootCanSave }}"><div class="shr-mi save" sc-camel-on-click="{{ rememberFoot }}"><span>＋ ចងចាំ «{{ shareFoot }}»</span></div></sc-if>
+                      <div class="shr-mi" sc-camel-on-click="{{ useDefaultFoot }}"><span>លំនាំដើម៖ {{ shareFootPh }}</span></div>
+                      <sc-for list="{{ shareFootItems }}" as="n" hint-placeholder-count="3">
+                        <div class="shr-mi {{ n.cls }}" sc-camel-on-click="{{ n.onPick }}"><span>{{ n.label }}</span><i sc-camel-on-click="{{ n.onRemove }}" title="លុបចេញពីបញ្ជី">✕</i></div>
+                      </sc-for>
+                      <sc-if value="{{ shareFootEmpty }}"><div style="padding:9px 10px;font-size:12px;opacity:0.55;">មិនទាន់មានអក្សរបាតដែលបានចងចាំ</div></sc-if>
+                    </div>
+                  </sc-if>
+                </div></div>
             </sc-if>
           </div>
 
@@ -10980,7 +11016,7 @@ class Component extends DCLogic {
     playerList: [], playerIdx: 0, playerPlaying: false, playerRepeat: false, playerRate: 0.95,
     // admin: share-image maker
     shareSearch: '', shareWordId: null, shareSize: 'square', shareStyle: 'refined', shareColor: '', shareImgData: '', shareBusy: false, shareErr: '',
-    shareTab: 'tpl', shareFuri: 'ruby', shareGap: 1, shareExStyle: 'quote', shareExScale: 1, shareOpts: { kana: true, ex: false, img: true, code: true, brand: true }, shareBrand: '', shareFoot: '', shareList: [], shareThumbs: {},
+    shareTab: 'tpl', shareFuri: 'ruby', shareGap: 1, shareExStyle: 'quote', shareExScale: 1, shareNameHist: { brand: [], foot: [] }, shareMenu: '', shareOpts: { kana: true, ex: false, img: true, code: true, brand: true }, shareBrand: '', shareFoot: '', shareList: [], shareThumbs: {},
     // admin: A4 results preview / print
     printOpen: false, printReport: null,
     wsGroup: null,  // printable-worksheets screen: which folder is open
@@ -12213,6 +12249,7 @@ class Component extends DCLogic {
   goShare(){
     if (!this._sharePrefsLoaded) {          // remembered from last time: reading style, gap, switches, names
       this._sharePrefsLoaded = true;
+      try { const nh = JSON.parse(localStorage.getItem('dict_share_names') || 'null'); if (nh) this.setState({ shareNameHist: { brand: Array.isArray(nh.brand) ? nh.brand : [], foot: Array.isArray(nh.foot) ? nh.foot : [] } }); } catch(e){}
       try {
         const p = JSON.parse(localStorage.getItem('dict_share_prefs') || 'null');
         if (p) this.setState(st => ({
@@ -12247,6 +12284,23 @@ class Component extends DCLogic {
   setShareColor(c){ this.setState({ shareColor: c || '' }, () => { this._saveSharePrefs(); this.drawShareCard(); }); }
   onShareCustomColor(e){ this.setShareColor(e.target.value); }
   setShareTab(t){ this.setState({ shareTab: t }, () => { if (t === 'tpl') this.drawShareThumbs(); }); }
+  // names typed for the header / footer are remembered (most recent first, at most 8 each) and offered in a dropdown
+  _saveNameHist(h){ try { localStorage.setItem('dict_share_names', JSON.stringify(h)); } catch(e){} }
+  rememberShareName(kind){
+    const s = this.state, v = ((kind === 'brand' ? s.shareBrand : s.shareFoot) || '').trim(); if (!v) return;
+    const cur = s.shareNameHist[kind] || [];
+    if (cur[0] === v) return;
+    const hist = { ...s.shareNameHist, [kind]: [v, ...cur.filter(x => x !== v)].slice(0, 8) };
+    this._saveNameHist(hist); this.setState({ shareNameHist: hist });
+  }
+  toggleShareMenu(kind){ this.setState(s => ({ shareMenu: s.shareMenu === kind ? '' : kind })); }
+  pickShareName(kind, v){
+    this.setState(kind === 'brand' ? { shareBrand: v, shareMenu: '' } : { shareFoot: v, shareMenu: '' }, () => this._shareRedraw());
+  }
+  removeShareName(kind, v){
+    const hist = { ...this.state.shareNameHist, [kind]: (this.state.shareNameHist[kind] || []).filter(x => x !== v) };
+    this._saveNameHist(hist); this.setState({ shareNameHist: hist });
+  }
   setShareExStyle(k){ this.setState({ shareExStyle: k }, () => this._shareRedraw()); }
   setShareExScale(v){ this.setState({ shareExScale: Math.max(0.7, Math.min(1.6, Math.round(v * 20) / 20)) }, () => this._shareRedraw()); }
   setShareFuri(m){ this.setState({ shareFuri: m }, () => this._shareRedraw()); }
@@ -12744,6 +12798,7 @@ class Component extends DCLogic {
   }
   downloadShare(){
     const data = this.state.shareImgData; if (!data) return;
+    this.rememberShareName('brand'); this.rememberShareName('foot');
     const a = document.createElement('a'); a.href = data;
     a.download = this._shareFileName() + '.png';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -12752,6 +12807,7 @@ class Component extends DCLogic {
   // the phone's own share sheet (Facebook, Messenger, Telegram, …)
   async shareNative(){
     if (!this.state.shareImgData) return;
+    this.rememberShareName('brand'); this.rememberShareName('foot');
     try {
       const blob = await this._shareBlob(), file = new File([blob], this._shareFileName() + '.png', { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: this._shareFileName() }); return; }
@@ -12792,6 +12848,7 @@ class Component extends DCLogic {
   }
   async downloadShareZip(){
     const word = WORDS.find(x => x.id === this.state.shareWordId); if (!word) return;
+    this.rememberShareName('brand'); this.rememberShareName('foot');
     this.showToast('កំពុងបង្កើតគ្រប់ទំហំ…');
     try {
       const as = await this._shareAssets(word), files = [], base = this._shareFileName();
@@ -17087,6 +17144,14 @@ class Component extends DCLogic {
       .map(([k, label]) => ({ label, cls: s.shareExStyle === k ? 'on' : '', onSelect: () => this.setShareExStyle(k) }));
     const shareExScaleItems = [[0.8, 'តូច'], [1, 'ធម្មតា'], [1.3, 'ធំ'], [1.6, 'ធំណាស់']]
       .map(([v, label]) => ({ label, cls: Math.abs((s.shareExScale || 1) - v) < 0.03 ? 'on' : '', onSelect: () => this.setShareExScale(v) }));
+    const nameItems = kind => {
+      const cur = ((kind === 'brand' ? s.shareBrand : s.shareFoot) || '').trim();
+      return ((s.shareNameHist || {})[kind] || []).map(v => ({ label: v, cls: v === cur ? 'on' : '',
+        onPick: () => this.pickShareName(kind, v),
+        onRemove: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.removeShareName(kind, v); } }));
+    };
+    const shareBrandItems = nameItems('brand'), shareFootItems = nameItems('foot');
+    const brandCur = (s.shareBrand || '').trim(), footCur = (s.shareFoot || '').trim();
     const shareDimsZ = SHARE_SIZES[s.shareSize] || SHARE_SIZES.square;
     const viewingSet = s.viewingViewed;
     const multiBook = BOOKS.length > 1;
@@ -18508,6 +18573,14 @@ class Component extends DCLogic {
       shareTplItems, shareSizeItems, shareFuriItems, shareGapItems, shareToggleItems, shareListItems,
       shareIsList: s.shareStyle === 'list',
       shareExOn: !!(s.shareOpts || {}).ex, shareExStyleItems, shareExScaleItems,
+      shareMenuBrand: s.shareMenu === 'brand', shareMenuFoot: s.shareMenu === 'foot',
+      toggleBrandMenu: () => this.toggleShareMenu('brand'), toggleFootMenu: () => this.toggleShareMenu('foot'),
+      shareBrandItems, shareFootItems, shareBrandEmpty: shareBrandItems.length === 0, shareFootEmpty: shareFootItems.length === 0,
+      shareBrandCanSave: !!brandCur && !((s.shareNameHist || {}).brand || []).includes(brandCur),
+      shareFootCanSave: !!footCur && !((s.shareNameHist || {}).foot || []).includes(footCur),
+      rememberBrand: () => { this.rememberShareName('brand'); this.setState({ shareMenu: '' }); },
+      rememberFoot: () => { this.rememberShareName('foot'); this.setState({ shareMenu: '' }); },
+      useDefaultBrand: () => this.pickShareName('brand', ''), useDefaultFoot: () => this.pickShareName('foot', ''),
       shareExScaleLabel: Math.round((s.shareExScale || 1) * 100) + '%', shareExScalePct: Math.round((s.shareExScale || 1) * 100),
       onShareExScale: (e) => this.setShareExScale((parseFloat(e.target.value) || 100) / 100),
       shareExMinus: () => this.setShareExScale((s.shareExScale || 1) - 0.1), shareExPlus: () => this.setShareExScale((s.shareExScale || 1) + 0.1),
