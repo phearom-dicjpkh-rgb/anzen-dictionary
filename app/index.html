@@ -2629,7 +2629,12 @@ textarea.input { min-height: 90px; resize: vertical; }
           <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ vrBackFab }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
           <sc-if value="{{ vrPopOpen }}">
           <div style="{{ vrPopOuter }}" sc-camel-on-click="{{ closeVrPop }}">
-            <div style="{{ vrPopInner }}" sc-camel-on-click="{{ stopProp }}">
+            <div id="vr-pop-inner" style="{{ vrPopInner }}" sc-camel-on-click="{{ stopProp }}">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                <button class="btn btn-icon btn-ghost" style="width:38px;height:34px;font-size:20px;line-height:1;border:1px solid var(--color-divider);border-radius:10px;{{ vrPopPrevStyle }}" sc-camel-on-click="{{ vrPopPrev }}" aria-label="សិស្សមុន">‹</button>
+                <span style="font-size:12px;opacity:.65;">{{ vrPopPos }}</span>
+                <button class="btn btn-icon btn-ghost" style="width:38px;height:34px;font-size:20px;line-height:1;border:1px solid var(--color-divider);border-radius:10px;{{ vrPopNextStyle }}" sc-camel-on-click="{{ vrPopNext }}" aria-label="សិស្សបន្ទាប់">›</button>
+              </div>
               <div style="display:flex;align-items:center;gap:10px;">
                 <div style="width:38px;height:38px;border-radius:50%;background:{{ vrPop.avatarBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none;">{{ vrPop.avatarGlyph }}</div>
                 <div style="flex:1;min-width:0;">
@@ -11574,6 +11579,11 @@ class Component extends DCLogic {
     const first = (this.state.videos || [])[0];
     if (first && this.state.vrWide) this.pickReportVideo(first.id);       // wide: show the first video's data at once; narrow: start from the list
   }
+  vrPopStep(d){
+    const ids = this._vrNavIds || [], i = ids.indexOf(this.state.vrDetail), j = i + d;
+    if (i < 0 || j < 0 || j >= ids.length) return;
+    this.setState({ vrDetail: ids[j] }, () => { const el = document.getElementById('vr-pop-inner'); if (el) el.scrollTop = 0; });
+  }
   pickReportVideo(id){ this.setState({ vrVideoId: id, vrFilter: 'all', vrSchoolMenu: false, vrDetail: null }); }
   toggleVrGroup(name){
     this.setState(s => { const c = s.vrCollapsed.includes(name) ? s.vrCollapsed.filter(x => x !== name) : [...s.vrCollapsed, name]; try { localStorage.setItem('dict_vr_collapsed', JSON.stringify(c)); } catch(e) {} return { vrCollapsed: c }; });
@@ -11609,6 +11619,14 @@ class Component extends DCLogic {
       if (document.visibilityState !== 'visible' || Date.now() - this._updChk < 20 * 60 * 1000) return;
       this._updChk = Date.now();
       try { fetch(location.pathname, { cache: 'no-store' }).catch(() => {}); } catch(e) {}     // makes the service worker re-check the shell
+    });
+    // student popup in the video report: ← → switch student, Esc closes
+    document.addEventListener('keydown', e => {
+      if (this.state.screen !== 'vidrep' || !this.state.vrDetail) return;
+      const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      if (e.key === 'ArrowLeft') { this.vrPopStep(-1); e.preventDefault(); }
+      else if (e.key === 'ArrowRight') { this.vrPopStep(1); e.preventDefault(); }
+      else if (e.key === 'Escape') { this.setState({ vrDetail: null }); e.preventDefault(); }
     });
     window.addEventListener('resize', () => { const w = this._vrWide(); if (w !== this.state.vrWide) this.setState({ vrWide: w }); });
     window.addEventListener('hashchange', () => { if (/[#&](qr|t)=/.test(location.hash)) this.checkQrLogin(); });
@@ -17849,6 +17867,14 @@ class Component extends DCLogic {
           vrHeadTitle: rv ? rv.title : '', vrHeadSub: rv ? [rv.grp, rv.duration ? fmtClock(rv.duration) : '', stuSel.length + ' សិស្ស'].filter(Boolean).join(' · ') : '', vrHeadThumb: rv ? thumbOf(rv) : '',
           vrHasSchools: vrMulti, vrSchoolLabel, vrSchoolMenu: !!s.vrSchoolMenu, toggleVrSchoolMenu: () => this.setState(st => ({ vrSchoolMenu: !st.vrSchoolMenu })), vrSchoolOptions,
           vrPopOpen: !!vrPopCard, vrPop: vrPopCard || {}, closeVrPop: () => this.setState({ vrDetail: null }),
+          ...(() => {
+            // ‹ › walk through the students that have something to show, in the order of the list (respecting the school / status filters)
+            let nav = vrCardsShown.filter(c => c.hasRec); if (vrPopCard && !nav.some(c => c.id === vrPopCard.id)) nav = vrCardsAll.filter(c => c.hasRec);
+            this._vrNavIds = nav.map(c => c.id);
+            const i = vrPopCard ? this._vrNavIds.indexOf(vrPopCard.id) : -1, n = nav.length, off = 'opacity:.3;pointer-events:none;';
+            return { vrPopPos: i >= 0 ? 'សិស្សទី ' + (i + 1) + ' / ' + n : '', vrPopPrevStyle: i <= 0 ? off : '', vrPopNextStyle: (i < 0 || i >= n - 1) ? off : '',
+              vrPopPrev: () => this.vrPopStep(-1), vrPopNext: () => this.vrPopStep(1) };
+          })(),
           vrPopOuter: 'position:fixed;inset:0;z-index:70;background:color-mix(in srgb, var(--color-neutral-900) 50%, transparent);display:flex;justify-content:center;' + (vrWide ? 'align-items:center;padding:20px;' : 'align-items:flex-end;'),
           vrPopInner: 'background:var(--color-bg);width:100%;max-width:560px;max-height:' + (vrWide ? '92%' : '90%') + ';overflow-y:auto;box-sizing:border-box;box-shadow:var(--shadow-lg);padding:16px;display:flex;flex-direction:column;gap:10px;border-radius:' + (vrWide ? '18px' : '20px 20px 0 0') + ';',
           vrFilters, vrCards: vrCardsShown, vrNoCards: !!rv && vrCardsShown.length === 0,
