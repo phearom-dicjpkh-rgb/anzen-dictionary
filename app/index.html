@@ -14281,7 +14281,7 @@ class Component extends DCLogic {
   }
   // reflow when an image finishes loading + let a front/behind image be dragged
   _edHookImage(img){
-    if (!img._edLoadHook) { img._edLoadHook = 1; img.addEventListener('load', () => this._edScheduleReflow(this._edCur)); }
+    if (!img._edLoadHook) { img._edLoadHook = 1; img.addEventListener('load', () => { const pg = img.closest ? img.closest('.lib-epage') : null; const ix = pg && this._edPages ? this._edPages.indexOf(pg) : -1; this._edScheduleReflow(ix >= 0 ? ix : this._edCur); }); }
     if (img._edDragHook) return; img._edDragHook = 1;
     img.draggable = false;
     img.addEventListener('pointerdown', e => {
@@ -14451,7 +14451,7 @@ class Component extends DCLogic {
       });
       this._edStripJpSpacesIn(pg);   // also fix PDF-style spaces inside Japanese words
     });
-    this._edDirty = true; this._edReflow(0); this._edApplyView();
+    this._edDirty = true; this._edReflow(0, true); this._edApplyView();
   }
   // does this line START a new paragraph? (Japanese textbooks indent new paragraphs
   // with a full-width space; bullets / numbers / markers also start one)
@@ -14489,7 +14489,7 @@ class Component extends DCLogic {
   _edJoinLines(){
     if (!window.confirm('ភ្ជាប់បន្ទាត់ដែល PDF កាត់ខុស ឲ្យទៅជាកថាខណ្ឌហូរធម្មតា លើគ្រប់ទំព័រ?\n(កថាខណ្ឌដែលចាប់ផ្ដើមដោយគម្លាត　 ឬ លេខ ឬ សញ្ញា នៅដដែល · រូបភាព/រូបរាង/ចំណងជើង នៅដដែល · ចុច ↶ ដើម្បីត្រឡប់)')) return;
     (this._edPages || []).forEach(pg => this._edFlowLines(pg));
-    this._edDirty = true; this._edReflow(0); this._edApplyView();
+    this._edDirty = true; this._edReflow(0, true); this._edApplyView();
   }
   // — Book editor: a paginated, book-style writer. One A4 sheet is shown at a
   // time (exactly like the reader); ‹ › / a page box move between sheets; a
@@ -14690,7 +14690,7 @@ class Component extends DCLogic {
     pPage.appendChild(gZoom);
     const gMar = mkG();
     const mlabel = document.createElement('span'); mlabel.className = 'edtb-val';
-    const setMargin = m => { PAD = Math.max(16, Math.min(160, m)); this._edPAD = PAD; this._libMargin = PAD; this._edPages.forEach(p => { p.style.padding = `${PAD}px ${PAD}px ${PAD + 24}px`; }); mlabel.textContent = String(PAD); this._edDirty = true; this._edScheduleReflow(0); };
+    const setMargin = m => { PAD = Math.max(16, Math.min(160, m)); this._edPAD = PAD; this._libMargin = PAD; this._edPages.forEach(p => { p.style.padding = `${PAD}px ${PAD}px ${PAD + 24}px`; }); mlabel.textContent = String(PAD); this._edDirty = true; this._edScheduleReflow(0, true); };
     gadd(gMar, 'sqm', () => setMargin(PAD - 8), 'រឹមតូច');
     gMar.appendChild(mlabel);
     gadd(gMar, 'sqp', () => setMargin(PAD + 8), 'រឹមធំ');
@@ -14769,7 +14769,7 @@ class Component extends DCLogic {
     setMargin(PAD);   // apply padding to the sheets
     // fit the sheet to the canvas width; refit after the layout settles
     const refit = () => { const cw = (this._edCanvas.clientWidth || window.innerWidth) - 28; if (cw > 0) this._edFitZoom = Math.max(0.2, Math.min(1.2, cw / A4W)); this._edApplyView(); };
-    this._edReflow(0);
+    this._edReflow(0, true);
     refit();
     this._edShowPage(this._edOpenAtPage || 0);   // e.g. jump to the page just read, when opened via ✏️
     this._edOpenAtPage = 0;
@@ -14809,7 +14809,7 @@ class Component extends DCLogic {
     const A4W = this._edA4W, A4H = this._edA4H, PAD = this._edPAD;
     const p = document.createElement('div');
     p.className = 'lib-epage report'; p.contentEditable = 'true';
-    p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-family:var(--font-jp),system-ui,sans-serif;letter-spacing:normal;font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;outline:none;display:none;`;
+    p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;box-shadow:0 2px 10px rgba(0,0,0,0.28);font-family:var(--font-jp),system-ui,sans-serif;letter-spacing:normal;font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;outline:none;display:none;`;
     p.innerHTML = (html && html.trim()) ? html : '<p><br></p>';
     const pnMark = p.querySelector('.pgnum-mark[data-pn]');
     if (pnMark) { p.dataset.pn = pnMark.getAttribute('data-pn') || ''; pnMark.remove(); }
@@ -14888,31 +14888,63 @@ class Component extends DCLogic {
     }
   }
   _edIsEmpty(p){ return !(p.textContent || '').trim() && !p.querySelector('img,hr'); }
-  _edScheduleReflow(fromIdx){ clearTimeout(this._edReflowT); this._edReflowT = setTimeout(() => this._edReflow(fromIdx), 160); }
+  // Debounced: several requests inside the window are merged (earliest sheet wins, any "full" wins).
+  _edScheduleReflow(fromIdx, full){
+    const q = this._edReflowArgs;
+    this._edReflowArgs = q ? { from: Math.min(q.from, fromIdx | 0), full: q.full || !!full } : { from: fromIdx | 0, full: !!full };
+    clearTimeout(this._edReflowT);
+    this._edReflowT = setTimeout(() => { const a = this._edReflowArgs || { from: 0, full: false }; this._edReflowArgs = null; this._edReflow(a.from, a.full); }, 160);
+  }
   // auto-pagination: whatever overflows the bottom of a sheet is pushed onto the
   // next one (a new sheet is created when needed), so writing or pasting a lot of
   // text flows onward sheet by sheet, like a book — and nothing is ever clipped
   // or lost. It only ever moves content FORWARD, so a sheet the writer started on
-  // purpose (＋ new sheet) is never pulled back into the previous one. The caret
-  // is tracked across the shuffle so typing/pasting continues seamlessly.
-  _edReflow(fromIdx){
+  // purpose (＋ new sheet) is never pulled back into the previous one.
+  //
+  // Cost matters on a tablet, so a normal edit touches ONLY the sheet being
+  // written on: that sheet is measured, and the following sheets are looked at
+  // only while overflow keeps cascading into them. Nothing else is shown,
+  // measured or re-laid-out, and the caret/focus is left alone unless text
+  // really moved to another sheet. "full" (opening the book, margin change,
+  // clean-up tools) walks every sheet once.
+  _edReflow(fromIdx, full){
     const pages = this._edPages; if (!pages || !pages.length) return;
     const A4H = this._edA4H;
     const sel = window.getSelection();
     let cn = null, co = 0;
     if (sel && sel.rangeCount) { const r = sel.getRangeAt(0); cn = r.startContainer; co = r.startOffset; }
-    // every sheet must be laid out (not display:none) to measure its height
-    pages.forEach(p => { p.style.display = 'block'; p.style.transform = 'none'; });
-    const start = Math.max(0, fromIdx | 0);
-    // push overflow forward, sheet after sheet
+    const temp = [];           // sheets that were hidden and had to be shown to be measured
+    let moved = false;
+    const start = Math.max(0, Math.min(pages.length - 1, fromIdx | 0));
     for (let i = start; i < pages.length; i++) {
-      const p = pages[i]; let guard = 0;
-      while (p.scrollHeight > A4H && p.childNodes.length > 1 && guard++ < 4000) {
+      const p = pages[i];
+      if (p.style.display === 'none') { p.style.display = 'block'; p.style.transform = 'none'; temp.push(p); }
+      let pushedHere = false;
+      if (p.scrollHeight > A4H && p.childNodes.length > 1) {
+        // coarse pass: everything that starts below the bottom margin moves in one go
+        const padB = parseFloat(getComputedStyle(p).paddingBottom) || 0, limit = A4H - padB;
+        const kids = p.childNodes; let k = -1;
+        for (let j = 1; j < kids.length; j++) { const c = kids[j]; if (c.nodeType === 1 && c.offsetTop >= limit) { k = j; break; } }
         let next = pages[i + 1];
-        if (!next) { next = this._edMakePage(''); next.style.display = 'block'; next.style.transform = 'none'; }   // new sheet must be laid out so it's measurable
-        next.insertBefore(p.lastChild, next.firstChild);
+        const ensureNext = () => { if (!next) { next = this._edMakePage(''); next.style.display = 'block'; next.style.transform = 'none'; temp.push(next); } return next; };
+        if (k > 0) {
+          const frag = document.createDocumentFragment();
+          while (p.childNodes.length > k) frag.insertBefore(p.lastChild, frag.firstChild);
+          const nx = ensureNext(); nx.insertBefore(frag, nx.firstChild);
+          pushedHere = true;
+        }
+        // precise pass: the last few lines that straddle the bottom edge, one by one
+        let guard = 0;
+        while (p.scrollHeight > A4H && p.childNodes.length > 1 && guard++ < 400) {
+          const nx = ensureNext(); nx.insertBefore(p.lastChild, nx.firstChild);
+          pushedHere = true;
+        }
       }
+      if (pushedHere) moved = true;
+      else if (!full) break;       // nothing spilled out of this sheet, so the later ones are untouched
     }
+    temp.forEach(p => { p.style.display = 'none'; });
+    if (!moved) return;            // typing that fits: no focus change, no caret reset, no view rebuild
     // land the caret on whichever sheet its node ended up on
     let targetIdx = this._edCur;
     if (cn) { const pi = pages.findIndex(p => p === cn || p.contains(cn)); if (pi >= 0) targetIdx = pi; }
