@@ -2296,6 +2296,7 @@ textarea.input { min-height: 90px; resize: vertical; }
         <sc-if value="{{ isAddWord }}" hint-placeholder-val="{{ false }}">
         <div style="padding:18px 20px 30px;display:flex;flex-direction:column;gap:14px;">
           <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
+          <sc-if value="{{ hasAwReturn }}"><button class="btn btn-block" style="background:var(--color-accent-100);color:var(--color-accent-800);border:1px solid var(--color-accent);font-weight:700;" sc-camel-on-click="{{ awBackToBook }}">↩ ត្រឡប់ទៅសៀវភៅ (ទំព័រដដែល)</button></sc-if>
           <h1 style="font-size:26px;margin:0;">បញ្ចូលពាក្យថ្មី</h1>
 
           <div class="card">
@@ -3830,7 +3831,7 @@ textarea.input { min-height: 90px; resize: vertical; }
     </sc-if>
 
     <sc-if value="{{ isEditingWord }}" hint-placeholder-val="{{ false }}">
-    <div style="position:absolute;inset:0;background:color-mix(in srgb, var(--color-neutral-900) 45%, transparent);display:flex;align-items:flex-end;z-index:32;" sc-camel-on-click="{{ closeEditWord }}">
+    <div style="position:absolute;inset:0;background:color-mix(in srgb, var(--color-neutral-900) 45%, transparent);display:flex;align-items:flex-end;z-index:200;" sc-camel-on-click="{{ closeEditWord }}">
       <div style="background:var(--color-bg);width:100%;border-radius:20px 20px 0 0;padding:20px 20px 26px;box-shadow:var(--shadow-lg);max-height:88%;overflow-y:auto;box-sizing:border-box;" sc-camel-on-click="{{ stopProp }}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
           <div style="font-family:var(--font-heading);font-weight:600;font-size:19px;">កែពាក្យ</div>
@@ -10552,6 +10553,7 @@ class Component extends DCLogic {
     edBusy: false, edMsg: '', edError: '', overridesRev: 0,
     // admin: add a new word / grammar
     awBook: '', awBookMenuOpen: false, awNewBook: '', awCat: 'vocab', awPage: '',
+    awReturn: null,
     awJp: '', awKana: '', awKanaMap: {}, awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [],
     awRelated: [], awLevel: '', awLink: '', awIsConj: false,
     awBusy: false, awMsg: '', awError: '',
@@ -12246,7 +12248,15 @@ class Component extends DCLogic {
     if (!id) return;
     this.setState({ detailWordId: null, shareWordId: id, shareSearch: '', screen: 'share', shareErr: '' }, () => this.drawShareCard());
   }
-  closeEditWord(){ this.setState({ editWordId: null, edMsg: '', edError: '' }); }
+  closeEditWord(){
+    this.setState({ editWordId: null, edMsg: '', edError: '' });
+    // opened from the book reader and something was saved → rebuild the pages so the new reading / meaning shows
+    const jp = this._rdEditing; this._rdEditing = null;
+    if (jp && this._rdDirty && this._rdRebuild && document.getElementById('book-reader-overlay')) {
+      this._rdDirty = false; this._rdRebuild();
+      setTimeout(() => { try { this._showBookWordPopup(jp, null); } catch(e) {} }, 250);
+    }
+  }
   onEdJp(e){ const v = e.target.value; this.setState(s => ({ edJp: v, edKana: buildKanaFromRuns(v, s.edKanaMap) })); }
   onEdKanaRun(runKey, e){
     const v = e.target.value;
@@ -12292,14 +12302,14 @@ class Component extends DCLogic {
       const rowId = conj.baseId.replace(/^c-/, '');
       const { error } = await Backend.updateCustomWord(rowId, { related: rel });
       if (error) { this.setState({ edBusy: false, edError: error }); return; }
-      base.related = rel; this._bwMap = null; rebuildIndexes();
+      base.related = rel; this._bwMap = null; rebuildIndexes(); this._rdDirty = true;
       this.setState(s => ({ edBusy: false, edMsg: 'រក្សាទុករួចរាល់ ✓', overridesRev: s.overridesRev + 1 }));
       return;
     }
     const row = { word_id: id, jp, kana: (this.state.edKana || '').trim(), pos: (this.state.edPos || '').trim(), km, examples, img: normalizeImgUrl(this.state.edImg) };
     const { error } = await Backend.saveOverride(row);
     if (error) { this.setState({ edBusy: false, edError: error }); return; }
-    applyOverrides([row]);
+    applyOverrides([row]); this._rdDirty = true;
     this.setState(s => ({ edBusy: false, edMsg: 'រក្សាទុករួចរាល់ ✓', overridesRev: s.overridesRev + 1 }));
   }
   async resetEditWord(){
@@ -12312,7 +12322,7 @@ class Component extends DCLogic {
   }
 
   // — Admin: add a new word / grammar —
-  goAddWord(){ this.setState({ screen: 'addword', awMsg: '', awError: '', awIsConj: false }); }
+  goAddWord(){ this.setState({ screen: 'addword', awMsg: '', awError: '', awIsConj: false, awReturn: null }); }
   onAwCatVocab(){ this.setState({ awCat: 'vocab' }); }
   onAwCatGrammar(){ this.setState({ awCat: 'grammar' }); }
   onAwPage(e){ this.setState({ awPage: e.target.value }); }
@@ -12891,6 +12901,7 @@ class Component extends DCLogic {
     const rd = this._rd, sideOk = !!(rd && rd.row && document.body.contains(rd.row)) && window.innerWidth >= 700 && window.innerWidth > window.innerHeight;
     const host = sideOk ? rd.row : (document.getElementById('lib-read-root') || document.body);
     const pop = document.createElement('div'); pop.id = 'bookword-pop'; pop.className = sideOk ? 'rd-side' : 'rd-sheet';
+    const isAdmin = this.state.role === 'admin', baseRow = isAdmin && info.id ? WORDS.find(w => w.id === info.id) : null, canEdit = !!(baseRow && baseRow.jp === jp);
     const means = String(info.km || '').split(/\s*\/\s*/).map(s => s.trim()).filter(Boolean);
     const fav = !!(info.id && this.state.favorites.includes(info.id));
     pop.innerHTML = '<button class="rd-x" id="bwp-close" aria-label="បិទ"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
@@ -12899,7 +12910,8 @@ class Component extends DCLogic {
       + '<div class="rd-jp">' + _escHtml(jp) + '</div>'
       + '<div class="rd-mean">' + means.map((m, i) => '<div class="rd-m">' + (means.length > 1 ? '<i>' + (i + 1) + '</i>' : '') + '<span>' + _escHtml(m) + '</span></div>').join('') + '</div>'
       + '<div class="rd-acts"><button class="rd-spk" id="bwp-speak"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/></svg>ស្តាប់</button>'
-      + (info.id ? '<button class="rd-sq' + (fav ? ' on' : '') + '" id="bwp-fav" aria-label="សំណព្វ"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button>' : '') + '</div>';
+      + (info.id ? '<button class="rd-sq' + (fav ? ' on' : '') + '" id="bwp-fav" aria-label="សំណព្វ"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button>' : '') + '</div>'
+      + (isAdmin ? '<div class="rd-adm">' + (canEdit ? '<button id="bwp-edit" type="button">✏️ កែពាក្យ</button>' : '') + '<button id="bwp-add" type="button">➕ បញ្ចូលពាក្យថ្មី</button></div>' : '');
     // if the dictionary word has a picture, show it under the translation
     if (info.img) {
       const im = document.createElement('img');
@@ -12911,6 +12923,8 @@ class Component extends DCLogic {
     host.appendChild(pop);
     pop.querySelector('#bwp-close').addEventListener('click', () => this._bwClose());
     pop.querySelector('#bwp-speak').addEventListener('click', () => this.playAudio(jp));
+    const eb = pop.querySelector('#bwp-edit'); if (eb) eb.addEventListener('click', () => { this._rdEditing = jp; this._rdDirty = false; this.pickEditWord(info.id); });
+    const ab = pop.querySelector('#bwp-add'); if (ab) ab.addEventListener('click', () => this._rdAddWord(''));
     const fb = pop.querySelector('#bwp-fav'); if (fb) fb.addEventListener('click', () => { this.toggleFavorite(info.id); fb.classList.toggle('on'); });
     if (this._rdAuto()) this.playAudio(jp);   // read it aloud on tap (can be switched off for a lesson recording)
   }
@@ -12922,6 +12936,19 @@ class Component extends DCLogic {
   _rdSetFuri(o){ try { localStorage.setItem('dict_reader_furi', JSON.stringify(o)); } catch(e) {} }
   _rdAuto(){ try { return localStorage.getItem('dict_reader_autoaudio') !== '0'; } catch(e) { return true; } }
   _rdSetAuto(on){ try { localStorage.setItem('dict_reader_autoaudio', on ? '1' : '0'); } catch(e) {} }
+  // admin: add a word the book mentions but the dictionary lacks — opens the normal "បញ្ចូលពាក្យថ្មី" screen
+  // (pre-filled with the selected text) and offers a way back to this very page
+  _rdAddWord(jp){
+    const ctx = this._rdCtx || null, txt = (jp || '').trim();
+    this._bwClose(); this._clearBodyOverlay();
+    this.setState(s => ({ screen: 'addword', awMsg: '', awError: '', awIsConj: false, awReturn: ctx,
+      awJp: txt, awKanaMap: {}, awKana: buildKanaFromRuns(txt, {}), awPos: (s.awCat === 'vocab' && txt) ? jpDetectPos(txt) : '' }));
+  }
+  awBackToBook(){
+    const c = this.state.awReturn; this.setState({ awReturn: null });
+    if (!c) return;
+    if (c.origin === 'readbooks') this.rbReadBook(c.id); else this.libReadBook(c.id);
+  }
   // look of the full-screen reader (injected once)
   _rdEnsureCss(){
     if (document.getElementById('rd-style')) return;
@@ -12974,6 +13001,10 @@ class Component extends DCLogic {
 .rd-mean{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .rd-m{display:flex;gap:8px;align-items:flex-start;background:#fff;border-radius:11px;padding:8px 11px;box-shadow:0 1px 2px rgba(20,30,50,.08),inset 0 0 0 1px #e8ecf3;font-size:15px;line-height:1.55}
 .rd-m i{flex:none;width:19px;height:19px;margin-top:2px;border-radius:50%;background:var(--rdA);color:#fff;font-style:normal;font-size:10.5px;font-weight:700;display:grid;place-items:center}
+.rd-adm{display:flex;gap:8px;margin-top:10px}.rd-adm button{flex:1;height:34px;border:none;border-radius:10px;background:#eaeff7;color:#2a3140;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.rd-t-dark .rd-adm button{background:rgba(255,255,255,.09);color:#dfe4ee}
+.rd-selpill{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:12;display:none;height:38px;padding:0 16px;border:none;border-radius:99px;background:linear-gradient(135deg,#8b5cf6,#6d3ee0);color:#fff;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.45);white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}
+.rd-teach .rd-selpill{display:none !important}
 .rd-pic{display:block;max-width:100%;max-height:34vh;margin:0 auto 12px;border-radius:12px;object-fit:contain}
 .rd-acts{display:flex;gap:8px;margin-top:auto}
 .rd-spk{flex:1;height:40px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--rdA),var(--rdA2));color:#fff;display:flex;align-items:center;justify-content:center;gap:7px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 6px 14px color-mix(in srgb,var(--rdA) 40%,transparent)}
@@ -13050,6 +13081,9 @@ class Component extends DCLogic {
     this._clearBodyOverlay();
     const A4W = 794, A4H = 1123, PAD = margin || 48, START = startPage || 1;
     const bookId = (book && book.id) || null;
+    // what an admin needs to come back to this page, and to rebuild it after a word was edited
+    this._rdCtx = { id: bookId, origin: this._readRootId === 'rb-read-root' ? 'readbooks' : 'library' };
+    this._rdRebuild = () => { this._bwMap = null; _furiMap = null; _furiMax = 0; this._buildReadViewNow(book, root, html, margin, startPage); };
     const marks = new Set(this._getBookmarks(bookId));   // pages the reader flagged
     // Full-screen overlay, the page fills the screen, no app chrome — mounted
     // directly on <body>, NOT inside #lib-read-root/#rb-read-root. Those sit
@@ -13146,15 +13180,10 @@ class Component extends DCLogic {
       for (const w of WORDS) if (seen.has(w.id) || (w._baseId && seen.has(w._baseId))) learned.add(w.jp);
       return learned;
     };
-    // turn one tap-to-translate word into <ruby>kanji<rt>reading</rt></ruby> (okurigana stay plain), or back
-    const furiSpan = (sp, show) => {
-      const jp = sp.dataset.jp; if (!jp) return;
-      if (!show) { if (sp.dataset.fu === '1') { sp.textContent = jp; sp.dataset.fu = '0'; } return; }
-      if (sp.dataset.fu === '1') return;
-      if (sp.children.length || sp.textContent !== jp) return;        // the book already carries its own ruby
-      // split the word into dictionary pieces (longest first); a phrase with kana in the middle (歩道を横切)
-      // is read piece by piece (歩道 / 横切) instead of one long reading over the whole phrase
-      const map = furiMap(), clean = s => /^[㐀-鿿豈-﫿々]+[ぁ-ゖ]*$/.test(s);
+    // ruby for one dictionary word: split it into dictionary pieces (longest first), so a phrase with kana in
+    // the middle (歩道を横切) is read piece by piece (歩道 / 横切); okurigana stay plain
+    const furiHtml = jp => {
+      const map = furiMap(), clean = s => /^[\u3400-\u9FFF\uF900-\uFAFF々]+[\u3041-\u3096]*$/.test(s);
       let out = '', any = false;
       for (let i = 0; i < jp.length;) {
         let hit = 0;
@@ -13167,11 +13196,38 @@ class Component extends DCLogic {
         }
         if (!hit) { out += _escHtml(jp[i]); i++; }
       }
-      if (!any) return;
-      sp.innerHTML = out;
-      sp.dataset.fu = '1';
+      return any ? out : '';
     };
-    const furiPage = p => { if (!p || !p._bwWrapped) return; const hide = furiSt.on && furiSt.hide ? learnedSet() : null; p.querySelectorAll('.bookword').forEach(sp => furiSpan(sp, furiSt.on && !(hide && hide.has(sp.dataset.jp)))); };
+    // a word the book split over several elements (原 | 則, or half of it bold) is one group; the first piece
+    // then carries the whole word with its reading and the rest are hidden, until furigana is switched off
+    const furiGroups = p => {
+      if (p._fuGroups) return p._fuGroups;
+      const spans = [...p.querySelectorAll('.bookword')], groups = [];
+      for (let i = 0; i < spans.length;) {
+        const sp = spans[i], jp = sp.dataset.jp || ''; let txt = sp.textContent; const sps = [sp]; let j = i + 1;
+        while (txt !== jp && txt.length < jp.length && jp.startsWith(txt) && j < spans.length && spans[j].dataset.jp === jp && jp.startsWith(txt + spans[j].textContent)) { txt += spans[j].textContent; sps.push(spans[j]); j++; }
+        if (txt === jp && !sp.children.length) groups.push({ sps, jp, o0: sp.textContent });      // (a span that already holds the book's own ruby is left alone)
+        i = j;
+      }
+      return (p._fuGroups = groups);
+    };
+    const furiPage = p => {
+      if (!p || !p._bwWrapped) return;
+      const hide = furiSt.on && furiSt.hide ? learnedSet() : null;
+      for (const g of furiGroups(p)) {
+        const show = furiSt.on && !(hide && hide.has(g.jp));
+        const first = g.sps[0];
+        if (show) {
+          if (first.dataset.fu === '1') continue;
+          const html = furiHtml(g.jp); if (!html) continue;
+          first.innerHTML = html; first.dataset.fu = '1';
+          for (let k = 1; k < g.sps.length; k++) { g.sps[k].style.display = 'none'; g.sps[k].dataset.fh = '1'; }
+        } else if (first.dataset.fu === '1') {
+          first.textContent = g.o0; first.dataset.fu = '0';
+          for (let k = 1; k < g.sps.length; k++) { g.sps[k].style.display = ''; delete g.sps[k].dataset.fh; }
+        }
+      }
+    };
     const paintFuri = () => {
       furiBtn.classList.toggle('on', furiSt.on);
       ov.classList.toggle('rd-furi', furiSt.on);
@@ -13312,7 +13368,7 @@ class Component extends DCLogic {
     // search for a digit would land on every page
     const bodyText = p => {
       let t = ''; const w = document.createTreeWalker(p, NodeFilter.SHOW_TEXT, null);
-      while (w.nextNode()) { const pe = w.currentNode.parentElement; if (pe && (pe.closest('.pgnum') || pe.closest('rt'))) continue; t += w.currentNode.nodeValue || ''; }
+      while (w.nextNode()) { const pe = w.currentNode.parentElement; if (pe && (pe.closest('.pgnum') || pe.closest('rt') || pe.closest('[data-fh="1"]'))) continue; t += w.currentNode.nodeValue || ''; }
       return t;
     };
     const textOf = () => pageText || (pageText = pages.map(bodyText));
@@ -13335,7 +13391,7 @@ class Component extends DCLogic {
       const nodes = [], starts = []; let joined = '';
       const w = document.createTreeWalker(p, NodeFilter.SHOW_TEXT, null);
       while (w.nextNode()) { const n = w.currentNode;
-        if (n.parentElement && (n.parentElement.closest('.pgnum') || n.parentElement.closest('rt'))) continue;
+        if (n.parentElement && (n.parentElement.closest('.pgnum') || n.parentElement.closest('rt') || n.parentElement.closest('[data-fh="1"]'))) continue;
         starts.push(joined.length); nodes.push(n); joined += n.nodeValue || ''; }
       if (!nodes.length) return;
       const hay = joined.toLowerCase(), q = findQ.toLowerCase();
@@ -13424,6 +13480,31 @@ class Component extends DCLogic {
       if (this._rdRO) this._rdRO.disconnect();
       this._rdRO = new ResizeObserver(() => { const k = area.clientWidth + 'x' + area.clientHeight; if (k !== lastBox) { lastBox = k; fit(); } });
       this._rdRO.observe(area);
+    }
+    // admin: select a word the dictionary lacks → a pill offers to add it
+    if (this.state.role === 'admin') {
+      const selPill = document.createElement('button'); selPill.type = 'button'; selPill.className = 'rd-selpill';
+      bookWrap.appendChild(selPill);
+      let selTxt = '';
+      selPill.addEventListener('pointerdown', e => e.preventDefault());       // keep the selection alive until the click
+      selPill.addEventListener('click', () => { const t = selTxt; selPill.style.display = 'none'; try { window.getSelection().removeAllRanges(); } catch(e) {} this._rdAddWord(t); });
+      let selT = null;
+      const onSel = () => {
+        if (!document.body.contains(ov)) { document.removeEventListener('selectionchange', onSel); return; }
+        clearTimeout(selT);
+        selT = setTimeout(() => {
+          const sel = window.getSelection(); let txt = '';
+          if (sel && sel.rangeCount && !sel.isCollapsed && area.contains(sel.anchorNode)) {
+            const box = document.createElement('div'); box.appendChild(sel.getRangeAt(0).cloneContents());
+            box.querySelectorAll('rt,rp,.pgnum').forEach(n => n.remove());
+            box.querySelectorAll('[data-fh="1"]').forEach(n => n.remove());
+            txt = (box.textContent || '').replace(/\s+/g, '');
+          }
+          if (txt && txt.length <= 20 && HAS_KANJI.test(txt)) { selTxt = txt; selPill.textContent = '➕ បញ្ចូលពាក្យ «' + txt + '»'; selPill.style.display = 'block'; }
+          else selPill.style.display = 'none';
+        }, 200);
+      };
+      document.addEventListener('selectionchange', onSel);
     }
     // — teaching mode: clean screen for recording a lesson —
     let teach = false, spotOn = false, laserOn = true, dockT = null;
@@ -16953,7 +17034,7 @@ class Component extends DCLogic {
       hasEdError: !!s.edError, edError: s.edError,
 
       // — Admin: add a new word —
-      isAddWord: s.screen === 'addword',
+      isAddWord: s.screen === 'addword', hasAwReturn: !!s.awReturn, awBackToBook: () => this.awBackToBook(),
       goAddWord: () => this.goAddWord(),
       awBookLabel, awBookItems, awBookMenuOpen: s.awBookMenuOpen,
       toggleAwBookMenu: () => this.toggleAwBookMenu(),
