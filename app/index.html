@@ -3920,6 +3920,14 @@ textarea.input { min-height: 90px; resize: vertical; }
     <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
       <div style="position:absolute;left:20px;right:20px;bottom:96px;z-index:50;background:var(--color-neutral-900);color:#fff;padding:10px 16px;border-radius:var(--radius-md);font-size:13px;text-align:center;box-shadow:var(--shadow-md);">{{ toast }}</div>
     </sc-if>
+    <sc-if value="{{ updateReady }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:12px;right:12px;bottom:calc(78px + env(safe-area-inset-bottom, 0px));z-index:55;display:flex;align-items:center;gap:10px;background:var(--color-neutral-900);color:#fff;padding:10px 10px 10px 14px;border-radius:14px;box-shadow:var(--shadow-lg);">
+        <span style="font-size:15px;">✨</span>
+        <div style="flex:1;min-width:0;font-size:12.5px;line-height:1.5;"><b>មានកំណែថ្មីរបស់កម្មវិធី</b><div style="opacity:0.7;font-size:11px;">ចុចផ្ទុកឡើងវិញ ពេលអ្នកមិនកំពុងធ្វើតេស្ត</div></div>
+        <button style="flex:none;border:none;background:var(--color-accent);color:#fff;border-radius:10px;padding:8px 13px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;" sc-camel-on-click="{{ reloadForUpdate }}">ផ្ទុកឡើងវិញ</button>
+        <button style="flex:none;border:none;background:transparent;color:#fff;opacity:0.6;font-size:16px;cursor:pointer;padding:4px 6px;" sc-camel-on-click="{{ dismissUpdate }}" aria-label="បិទ">✕</button>
+      </div>
+    </sc-if>
     </sc-if>
 
   </div>
@@ -10533,7 +10541,7 @@ class Component extends DCLogic {
     inviteStudent: '', inviteTeacher: '', inviteBusy: '', inviteMsg: '',
     approveBusy: '',
     // "add to home screen" prompt
-    installShow: false, installPlatform: '',
+    installShow: false, installPlatform: '', updateReady: false,
     // app branding (header logo + name) — shared, admin-editable
     appName: DEFAULT_APP_NAME, appLogo: '',
     settingsName: '', settingsLogo: '', settingsLogoBlob: null, settingsBusy: false, settingsMsg: '', settingsError: '',
@@ -11471,6 +11479,14 @@ class Component extends DCLogic {
       this._vwSave(true);
     });
     window.addEventListener('pagehide', () => this._vwSave(true));
+    // a newer index.html was deployed while this one is open → offer a reload (sw.js posts the message)
+    try { if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'dict-update') this.setState({ updateReady: true }); }); } catch(e) {}
+    this._updChk = Date.now();
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible' || Date.now() - this._updChk < 20 * 60 * 1000) return;
+      this._updChk = Date.now();
+      try { fetch(location.pathname, { cache: 'no-store' }).catch(() => {}); } catch(e) {}     // makes the service worker re-check the shell
+    });
     window.addEventListener('hashchange', () => { if (/[#&](qr|t)=/.test(location.hash)) this.checkQrLogin(); });
     this.primeVoices();
     this.startUsageTracking();
@@ -11609,6 +11625,8 @@ class Component extends DCLogic {
     this.setState({ viewed, pendingHide }, () => this.persist());
   }
 
+  reloadForUpdate(){ try { location.reload(); } catch(e) {} }
+  dismissUpdate(){ this.setState({ updateReady: false }); }
   showToast(msg){
     this.setState({ toast: msg });
     setTimeout(() => this.setState(s => s.toast === msg ? { toast: null } : null), 1800);
@@ -12894,8 +12912,10 @@ class Component extends DCLogic {
     pop.querySelector('#bwp-close').addEventListener('click', () => this._bwClose());
     pop.querySelector('#bwp-speak').addEventListener('click', () => this.playAudio(jp));
     const fb = pop.querySelector('#bwp-fav'); if (fb) fb.addEventListener('click', () => { this.toggleFavorite(info.id); fb.classList.toggle('on'); });
-    this.playAudio(jp);   // read it aloud on tap
+    if (this._rdAuto()) this.playAudio(jp);   // read it aloud on tap (can be switched off for a lesson recording)
   }
+  _rdAuto(){ try { return localStorage.getItem('dict_reader_autoaudio') !== '0'; } catch(e) { return true; } }
+  _rdSetAuto(on){ try { localStorage.setItem('dict_reader_autoaudio', on ? '1' : '0'); } catch(e) {} }
   // look of the full-screen reader (injected once)
   _rdEnsureCss(){
     if (document.getElementById('rd-style')) return;
@@ -12935,6 +12955,8 @@ class Component extends DCLogic {
 .rd-sw button{flex:1;height:36px;border-radius:10px;border:2px solid transparent;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .rd-sw button.on{border-color:var(--rdA2)}
 .rd-pop input[type=range]{width:100%;accent-color:var(--rdA2)}
+.rd-auto{width:100%;height:36px;border:none;border-radius:10px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.1);color:#cfd5e2;margin-top:2px}
+.rd-auto.on{background:linear-gradient(135deg,var(--rdA),var(--rdA2));color:#fff}
 /* translation card */
 .rd-side{flex:none;width:min(34%,340px);align-self:stretch;overflow:auto;border-radius:18px;background:linear-gradient(180deg,#ffffff,#f1f4f9);color:#15171b;padding:14px;position:relative;display:flex;flex-direction:column;box-shadow:0 10px 30px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.7)}
 .rd-sheet{--rdA:var(--color-accent,#2f6fb0);--rdA2:color-mix(in srgb,var(--color-accent,#2f6fb0) 60%,#9ad0ff);font-family:var(--font-body);position:fixed;left:0;right:0;bottom:0;z-index:130;max-height:80vh;overflow:auto;border-radius:20px 20px 0 0;background:linear-gradient(180deg,#ffffff,#f1f4f9);color:#15171b;padding:16px 18px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;box-shadow:0 -8px 30px rgba(0,0,0,.4)}
@@ -12960,7 +12982,7 @@ class Component extends DCLogic {
 .rd-t-dark .rd-m{background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
 .rd-t-dark .rd-sq{background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);color:#aab1c0}
 /* teaching mode */
-.rd-dock{position:absolute;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;display:none;align-items:center;gap:8px;padding:6px 10px;border-radius:99px;background:rgba(255,255,255,.1);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.14);box-shadow:0 10px 28px rgba(0,0,0,.45);opacity:.28;transition:opacity .35s;max-width:calc(100vw - 16px);overflow-x:auto;scrollbar-width:none}
+.rd-dock{position:absolute;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;display:none;align-items:center;gap:8px;padding:6px 10px;border-radius:99px;background:rgba(24,27,36,.88);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.16);box-shadow:0 10px 28px rgba(0,0,0,.45);opacity:.3;transition:opacity .35s;max-width:calc(100% - 16px);overflow-x:auto;scrollbar-width:none}
 .rd-teach .rd-dock{display:flex}.rd-dock.act,.rd-dock:hover{opacity:1}
 .rd-dock .rd-ib{border-radius:50%}
 .rd-dock .rd-pill{background:transparent;padding:0 6px}
@@ -13032,7 +13054,7 @@ class Component extends DCLogic {
       aa: '<path d="M5 18l4-12 4 12M6.5 14h5M15 18l3-8 3 8M16 16h4"/>', down: '<path d="M12 4v12M7 11l5 5 5-5M5 20h14"/>',
       video: '<rect x="3" y="6" width="13" height="12" rx="3"/><path d="M16 10l5-3v10l-5-3"/>', minus: '<path d="M5 12h14"/>', plus: '<path d="M12 5v14M5 12h14"/>',
       prev: '<path d="M15 6l-6 6 6 6"/>', next: '<path d="M9 6l6 6-6 6"/>', spot: '<rect x="4" y="9" width="16" height="6" rx="2"/><path d="M2 5h2M20 5h2M2 19h2M20 19h2"/>',
-      laser: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>', eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+      laser: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>', vol: '<path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/>', mute: '<path d="M4 10v4h4l5 4V6L8 10z"/><path d="M17 9l5 6M22 9l-5 6"/>', eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     };
     const icon = (key, fn, title, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'rd-ib' + (cls ? ' ' + cls : ''); b.innerHTML = '<svg viewBox="0 0 24 24">' + SVG[key] + '</svg>'; if (title) b.title = title; b.addEventListener('click', fn); return b; };
     const spacer = () => { const s = document.createElement('span'); s.className = 'rd-sp'; return s; };
@@ -13071,8 +13093,18 @@ class Component extends DCLogic {
     ov.appendChild(bar);
     // page colour + zoom popover
     const themePop = document.createElement('div'); themePop.className = 'rd-pop';
-    themePop.innerHTML = '<b>ពណ៌ទំព័រ</b><div class="rd-sw"><button data-t="white" style="background:#fdfcf8;color:#222">ក</button><button data-t="cream" style="background:#f3e8d0;color:#4a3a1e">ក</button><button data-t="dark" style="background:#1f2229;color:#e8eaf0">ក</button></div><b>ពង្រីក</b><input type="range" min="1" max="5" step="0.5" value="1">';
+    themePop.innerHTML = '<b>ពណ៌ទំព័រ</b><div class="rd-sw"><button data-t="white" style="background:#fdfcf8;color:#222">ក</button><button data-t="cream" style="background:#f3e8d0;color:#4a3a1e">ក</button><button data-t="dark" style="background:#1f2229;color:#e8eaf0">ក</button></div><b>ពង្រីក</b><input type="range" min="1" max="5" step="0.5" value="1"><b style="margin-top:12px">សំឡេងពេលចុចពាក្យ</b><button type="button" class="rd-auto"></button>';
     const zslider = themePop.querySelector('input');
+    // read-aloud on tapping a word: on by default; off is handy while recording a lesson
+    const autoSw = themePop.querySelector('.rd-auto');
+    let autoBtn = null;
+    const paintAuto = () => {
+      const on = this._rdAuto();
+      autoSw.classList.toggle('on', on); autoSw.textContent = on ? '🔊 អានអូតូពេលចុចពាក្យ' : '🔇 មិនអានអូតូ';
+      if (autoBtn) { autoBtn.classList.toggle('on', on); autoBtn.innerHTML = '<svg viewBox="0 0 24 24">' + SVG[on ? 'vol' : 'mute'] + '</svg>'; autoBtn.title = on ? 'សំឡេងអូតូ៖ បើក (ចុចដើម្បីបិទ)' : 'សំឡេងអូតូ៖ បិទ (ចុចដើម្បីបើក)'; }
+    };
+    const toggleAuto = () => { this._rdSetAuto(!this._rdAuto()); paintAuto(); };
+    autoSw.addEventListener('click', toggleAuto);
     zslider.addEventListener('input', () => { scale = parseFloat(zslider.value) || 1; applyView(); });
     const setTheme = t => {
       theme = t; try { localStorage.setItem('dict_reader_theme', t); } catch(e) {}
@@ -13339,11 +13371,12 @@ class Component extends DCLogic {
     dock.appendChild(sep());
     dock.appendChild(icon('minus', () => { scale = Math.max(1, Math.round((scale - 0.5) * 2) / 2); applyView(); }, 'អក្សរតូចជាង'));
     dock.appendChild(icon('plus', () => { scale = Math.min(5, Math.round((scale + 0.5) * 2) / 2); applyView(); }, 'អក្សរធំជាង'));
-    dock.appendChild(spotBtn); dock.appendChild(laserBtn); dock.appendChild(peekBtn);
+    autoBtn = icon('vol', toggleAuto, 'សំឡេងអូតូ'); paintAuto();
+    dock.appendChild(spotBtn); dock.appendChild(laserBtn); dock.appendChild(autoBtn); dock.appendChild(peekBtn);
     dock.appendChild(sep());
     dock.appendChild(icon('close', () => setTeach(false), 'ចេញពីរបៀបបង្រៀន', 'hot'));
     laserBtn.classList.add('on');
-    ov.appendChild(dock);
+    bookWrap.appendChild(dock);      // centred over the book, so it never sits on the translation panel
     const wake = () => { dock.classList.add('act'); clearTimeout(dockT); dockT = setTimeout(() => dock.classList.remove('act'), 3000); };
     const setTeach = on => {
       teach = on; ov.classList.toggle('rd-teach', on); ov.classList.remove('rd-peek'); peekBtn.classList.remove('on');
@@ -17351,6 +17384,7 @@ class Component extends DCLogic {
       settingsColor: s.screen === 'settings' ? 'var(--color-accent-700)' : 'var(--color-text)',
 
       hasToast: !!s.toast, toast: s.toast,
+      updateReady: s.updateReady, reloadForUpdate: () => this.reloadForUpdate(), dismissUpdate: () => this.dismissUpdate(),
 
       needsRole: s.authStage !== 'app', hasRole: s.authStage === 'app',
       isAuthLoading: s.authStage === 'loading', isLoginScreen: s.authStage === 'login',
