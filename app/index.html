@@ -2637,7 +2637,27 @@ textarea.input { min-height: 90px; resize: vertical; }
               <sc-if value="{{ v.isEditing }}">
                 <div class="card">
                   <div class="field"><label>ចំណងជើង</label><input class="input" type="text" value="{{ v.editTitle }}" sc-camel-on-change="{{ v.onEditTitle }}"></div>
-                  <div class="field"><label>ក្រុម / មេរៀន</label><input class="input" type="text" value="{{ v.editGrp }}" sc-camel-on-change="{{ v.onEditGrp }}"></div>
+                  <div class="field" style="position:relative;"><label>ក្រុម / មេរៀន</label>
+                    <sc-if value="{{ v.editGrpNew }}">
+                      <div style="display:flex;gap:8px;">
+                        <input id="vm-edit-group-in" class="input" type="text" value="{{ v.editGrp }}" sc-camel-on-change="{{ v.onEditGrp }}" placeholder="ឈ្មោះក្រុមថ្មី" style="flex:1;min-width:0;">
+                        <button class="btn" style="flex:none;margin:0;padding:0 14px;border-radius:11px;border:1.5px solid var(--color-divider);background:var(--color-surface);cursor:pointer;" sc-camel-on-click="{{ v.onGrpBack }}" title="ជ្រើសពីបញ្ជី">▾</button>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ v.editGrpNotNew }}">
+                      <button class="vm-ddb {{ v.editDdOpenClass }}" sc-camel-on-click="{{ v.onToggleGrpMenu }}"><span class="v" style="{{ v.editGrpLabelStyle }}">{{ v.editGrpLabel }}</span><i class="car">▾</i></button>
+                    </sc-if>
+                    <sc-if value="{{ v.editGrpMenu }}">
+                      <div style="position:fixed;inset:0;z-index:4;" sc-camel-on-click="{{ v.onToggleGrpMenu }}"></div>
+                      <div class="vm-ddm">
+                        <div class="vm-ddi new" sc-camel-on-click="{{ v.onGrpMakeNew }}"><span>＋ បង្កើតក្រុមថ្មី…</span></div>
+                        <div class="vm-ddi {{ v.noGrpClass }}" sc-camel-on-click="{{ v.onGrpNone }}"><span>— គ្មានក្រុម —</span></div>
+                        <sc-for list="{{ v.grpItems }}" as="gi" hint-placeholder-count="3">
+                          <div class="vm-ddi {{ gi.cls }}" sc-camel-on-click="{{ gi.onPick }}"><span>{{ gi.label }}{{ gi.tick }}</span><small>{{ gi.count }}</small></div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
                   <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;">
                     <span>មើលចប់ជាកាតព្វកិច្ច</span>
                     <label class="switch {{ v.editMandatoryClass }}"><input type="checkbox" checked="{{ v.editMandatory }}" sc-camel-on-change="{{ v.onEditMandatory }}"><span class="track"></span><span class="thumb"></span></label>
@@ -17843,7 +17863,15 @@ class Component extends DCLogic {
           return { title: v.title, sub: dayLbl(v), thumbStyle: thumbOf(v), dim: v.active === false ? 'opacity:0.55;' : '',
             active: v.active !== false, activeClass: v.active !== false ? 'on' : '', onToggleActive: () => this.toggleVideoActive(v),
             onUp: () => this.moveVideo(v, -1), onDown: () => this.moveVideo(v, 1), onEdit: () => this.startEditVideo(v), onDelete: () => this.deleteVideo(v),
-            isEditing: ed, isNotEditing: !ed, editTitle: e.title || '', editGrp: e.grp || '', editMandatory: !!e.mandatory, editMandatoryClass: e.mandatory ? 'on' : '',
+            isEditing: ed, isNotEditing: !ed, editTitle: e.title || '', editGrp: e.grp || '', editGrpNew: !!(ed && e.isNew), editGrpNotNew: !(ed && e.isNew), editGrpMenu: !!(ed && e.menu), editDdOpenClass: (ed && e.menu) ? 'open' : '',
+            editGrpLabel: e.grp || 'ជ្រើសក្រុម…', editGrpLabelStyle: e.grp ? '' : 'color:#999;', noGrpClass: e.grp ? '' : 'on',
+            onToggleGrpMenu: () => this.setState(st => ({ vmEdit: { ...st.vmEdit, menu: !(st.vmEdit && st.vmEdit.menu) } })),
+            onGrpNone: () => this.setState(st => ({ vmEdit: { ...st.vmEdit, grp: '', menu: false, isNew: false } })),
+            onGrpMakeNew: () => this.setState(st => ({ vmEdit: { ...st.vmEdit, grp: '', menu: false, isNew: true } }), () => { const el = document.getElementById('vm-edit-group-in'); if (el) el.focus(); }),
+            onGrpBack: () => this.setState(st => ({ vmEdit: { ...st.vmEdit, isNew: false } })),
+            grpItems: ed ? vmGroups.map(g => ({ label: g, tick: e.grp === g ? ' ✓' : '', cls: e.grp === g ? 'on' : '', count: vids.filter(x => (x.grp || '').trim() === g).length,
+              onPick: () => this.setState(st => ({ vmEdit: { ...st.vmEdit, grp: g, menu: false, isNew: false } })) })) : [],
+            editMandatory: !!e.mandatory, editMandatoryClass: e.mandatory ? 'on' : '',
             onEditTitle: ev => this.setState(st => ({ vmEdit: { ...st.vmEdit, title: ev.target.value } })),
             onEditGrp: ev => this.setState(st => ({ vmEdit: { ...st.vmEdit, grp: ev.target.value } })),
             onEditMandatory: ev => this.setState(st => ({ vmEdit: { ...st.vmEdit, mandatory: ev.target.checked } })),
