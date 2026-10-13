@@ -670,6 +670,8 @@ textarea.input { min-height: 90px; resize: vertical; }
   .report .prow, .report tr { page-break-inside:avoid !important; break-inside:avoid !important; -webkit-column-break-inside:avoid !important; }
   .report img { max-width:170px !important; max-height:130px !important; page-break-inside:avoid !important; break-inside:avoid !important; }
   .no-print { display:none !important; }
+  /* book PDF: pictures print at the size they have in the reader (the cap above is for the results sheet) */
+  .book-pdf-pages .a4page img { max-width:100% !important; max-height:none !important; }
   /* book PDF export: each .a4page is already laid out at true A4 pixel size
      (794×1123 ≈ 210×297mm @96dpi), so print it edge-to-edge on its own named
      page (no browser page margin) instead of the 12mm default used for reports */
@@ -12938,6 +12940,42 @@ class Component extends DCLogic {
   _rdSetFuri(o){ try { localStorage.setItem('dict_reader_furi', JSON.stringify(o)); } catch(e) {} }
   _rdAuto(){ try { return localStorage.getItem('dict_reader_autoaudio') !== '0'; } catch(e) { return true; } }
   _rdSetAuto(on){ try { localStorage.setItem('dict_reader_autoaudio', on ? '1' : '0'); } catch(e) {} }
+  // <ruby> markup for one dictionary word: split into dictionary pieces (longest first), so a phrase with kana in the
+  // middle (歩道を横切) is read piece by piece (歩道 / 横切); okurigana stay plain. '' when nothing has a reading.
+  _furiHtml(jp){
+    const map = furiMap(), clean = s => /^[\u3400-\u9FFF\uF900-\uFAFF々]+[\u3041-\u3096]*$/.test(s);
+    let out = '', any = false;
+    for (let i = 0; i < jp.length;) {
+      let hit = 0;
+      for (let L = Math.min(16, jp.length - i); L >= 1; L--) {
+        const sub = jp.slice(i, i + L), rd = map.get(sub);
+        if (!rd || !clean(sub)) continue;
+        let kj = sub.length; while (kj > 0 && !HAS_KANJI.test(sub[kj - 1])) kj--;
+        const tail = sub.slice(kj); let rr = rd; if (tail && rr.endsWith(tail)) rr = rr.slice(0, rr.length - tail.length);
+        out += '<ruby>' + _escHtml(sub.slice(0, kj)) + '<rt>' + _escHtml(rr) + '</rt></ruby>' + _escHtml(tail); i += L; hit = 1; any = true; break;
+      }
+      if (!hit) { out += _escHtml(jp[i]); i++; }
+    }
+    return any ? out : '';
+  }
+  // the same furigana the reader shows, burned into a detached copy of the book (for the PDF)
+  _furiPdf(container, st){
+    this._wrapBookWords(container);
+    const learned = new Set();
+    if (st.hide) { const seen = new Set(this.state.viewed || []); for (const w of WORDS) if (seen.has(w.id) || (w._baseId && seen.has(w._baseId))) learned.add(w.jp); }
+    const sz = ({ s: 0.42, m: 0.5, l: 0.62 })[st.size] || 0.5, rtCss = 'font-size:' + sz + 'em;color:' + (st.color || '#2f6fb0') + ';font-weight:500;letter-spacing:.02em;';
+    const spans = [...container.querySelectorAll('.bookword')];
+    for (let i = 0; i < spans.length;) {
+      const sp = spans[i], jp = sp.dataset.jp || ''; let txt = sp.textContent; const sps = [sp]; let j = i + 1;
+      while (txt !== jp && txt.length < jp.length && jp.startsWith(txt) && j < spans.length && spans[j].dataset.jp === jp && jp.startsWith(txt + spans[j].textContent)) { txt += spans[j].textContent; sps.push(spans[j]); j++; }
+      if (txt === jp && !sp.children.length && !(st.hide && learned.has(jp))) {
+        const html = this._furiHtml(jp);
+        if (html) { sp.innerHTML = html; sp.querySelectorAll('rt').forEach(rt => { rt.style.cssText = rtCss; }); for (let k = 1; k < sps.length; k++) sps[k].textContent = ''; }
+      }
+      i = j;
+    }
+    spans.forEach(sp => { sp.className = ''; sp.removeAttribute('data-jp'); });      // a PDF has no tap-to-translate underline
+  }
   // highlights (marker pen) per book, kept on this device: [{p: page index, s/e: character range in that page's text, c: y|g|p|b}]
   _hlAll(){ try { return JSON.parse(localStorage.getItem('dict_book_highlights') || '{}') || {}; } catch(e) { return {}; } }
   _hlGet(bookId){ const a = bookId ? this._hlAll()[bookId] : null; return Array.isArray(a) ? a : []; }
@@ -13149,7 +13187,7 @@ class Component extends DCLogic {
     bar.appendChild(furiBtn);
     const themeBtn = icon('aa', () => { const on = themePop.style.display !== 'block'; themePop.style.display = on ? 'block' : 'none'; themeBtn.classList.toggle('on', on); bmPanel.style.display = 'none'; furiPop.style.display = 'none'; }, 'ពណ៌ទំព័រ និងទំហំ');
     bar.appendChild(themeBtn);
-    bar.appendChild(icon('down', () => this._downloadBookPdf((book && book.title) || 'សៀវភៅ', html, PAD, START), 'ទាញយកជា PDF'));
+    bar.appendChild(icon('down', () => this._downloadBookPdf((book && book.title) || 'សៀវភៅ', html, PAD, START, this._rdFuri()), 'ទាញយកជា PDF (រួមទាំង Furigana បើបើក)'));
     bar.appendChild(spacer());
     bar.appendChild(icon('video', () => setTeach(true), 'របៀបបង្រៀន / ថតវីដេអូ', 'rec'));
     bar.appendChild(sep());
@@ -13203,22 +13241,7 @@ class Component extends DCLogic {
     };
     // ruby for one dictionary word: split it into dictionary pieces (longest first), so a phrase with kana in
     // the middle (歩道を横切) is read piece by piece (歩道 / 横切); okurigana stay plain
-    const furiHtml = jp => {
-      const map = furiMap(), clean = s => /^[\u3400-\u9FFF\uF900-\uFAFF々]+[\u3041-\u3096]*$/.test(s);
-      let out = '', any = false;
-      for (let i = 0; i < jp.length;) {
-        let hit = 0;
-        for (let L = Math.min(16, jp.length - i); L >= 1; L--) {
-          const sub = jp.slice(i, i + L), rd = map.get(sub);
-          if (!rd || !clean(sub)) continue;
-          let kj = sub.length; while (kj > 0 && !HAS_KANJI.test(sub[kj - 1])) kj--;
-          const tail = sub.slice(kj); let rr = rd; if (tail && rr.endsWith(tail)) rr = rr.slice(0, rr.length - tail.length);
-          out += '<ruby>' + _escHtml(sub.slice(0, kj)) + '<rt>' + _escHtml(rr) + '</rt></ruby>' + _escHtml(tail); i += L; hit = 1; any = true; break;
-        }
-        if (!hit) { out += _escHtml(jp[i]); i++; }
-      }
-      return any ? out : '';
-    };
+    const furiHtml = jp => this._furiHtml(jp);
     // a word the book split over several elements (原 | 則, or half of it bold) is one group; the first piece
     // then carries the whole word with its reading and the rest are hidden, until furigana is switched off
     const furiGroups = p => {
@@ -15183,10 +15206,9 @@ class Component extends DCLogic {
   // download a whole book (reader or live editor content) as a PDF, via the
   // browser's own print/"Save as PDF" dialog — its live preview stands in for
   // an in-app preview step, so this goes straight to window.print().
-  _downloadBookPdf(title, html, margin, startPage){
-    try {
-      this._printPagesHtml(title, this._bookPagesHtml(html, margin, startPage));
-    } catch(e) { this.showToast('មិនអាចទាញយកជា PDF បានទេ'); }
+  _downloadBookPdf(title, html, margin, startPage, furi){
+    const go = () => { try { this._printPagesHtml(title, this._bookPagesHtml(html, margin, startPage, furi)); } catch(e) { this.showToast('មិនអាចទាញយកជា PDF បានទេ'); } };
+    if (furi && furi.on) { this.showToast('កំពុងរៀបចំ PDF ជាមួយ Furigana…'); setTimeout(go, 60); } else go();   // the furigana pass takes a moment on a long book
   }
   // print an already-paginated set of A4 pages (the string _bookPagesHtml returns)
   _printPagesHtml(title, pagesHtml){
@@ -15199,18 +15221,21 @@ class Component extends DCLogic {
     setTimeout(() => { document.title = prevTitle; }, 1000);
   }
   // flow `html` (a run of top-level blocks) onto true-size A4 pages and return them as one HTML string
-  _bookPagesHtml(html, margin, startPage){
+  _bookPagesHtml(html, margin, startPage, furi){
     {
       const A4W = 794, A4H = 1123, PAD = margin || 48, START = startPage || 1;
       const src = document.createElement('div'); src.innerHTML = html || '';
       this._edStripJpSpacesIn(src);
+      // with furigana the lines are taller — the same spacing the reader uses — and the pages re-flow accordingly
+      let LH = '1.85';
+      if (furi && furi.on) { this._furiPdf(src, furi); LH = '2.25'; }
       // laid out off-screen (not the on-screen stacked/scaled reader or editor
       // sheets) so print sees plain, normally-flowing A4 blocks, one per page
       const mount = document.createElement('div');
       mount.style.cssText = `position:fixed;left:-9999px;top:0;width:${A4W}px;`;
       document.body.appendChild(mount);
       const mkPage = () => { const p = document.createElement('div'); p.className = 'a4page report';
-        p.style.cssText = `width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;position:relative;font-family:var(--font-jp),system-ui,sans-serif;letter-spacing:normal;font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;`;
+        p.style.cssText = `width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;position:relative;font-family:var(--font-jp),system-ui,sans-serif;letter-spacing:normal;font-size:16px;line-height:${LH};overflow-wrap:break-word;word-break:break-word;`;
         mount.appendChild(p); return p; };
       let page = mkPage();
       const blocks = [...src.childNodes].filter(n => n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim()));
