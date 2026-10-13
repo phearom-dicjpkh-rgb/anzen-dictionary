@@ -558,6 +558,28 @@ textarea.input { min-height: 90px; resize: vertical; }
 .set-chev { margin-left: auto; color: color-mix(in srgb, var(--color-text) 40%, transparent); display: flex; flex: none; }
 .set-chev svg { width: 18px; height: 18px; }
 /* iOS-style switch (styled checkbox) */
+.vm-scrim{position:fixed;inset:0;z-index:70;background:color-mix(in srgb, var(--color-neutral-900) 50%, transparent);display:flex;justify-content:center;align-items:flex-end}
+.vm-pop{background:var(--color-bg);width:100%;max-width:520px;max-height:94%;border-radius:22px 22px 0 0;display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow-lg);box-sizing:border-box}
+@media (min-width:700px){.vm-scrim{align-items:center;padding:20px}.vm-pop{border-radius:20px;max-height:92%}}
+.vm-ph{display:flex;align-items:center;gap:11px;padding:15px 16px 12px;background:var(--color-surface);border-bottom:1px solid var(--color-divider)}
+.vm-ph .ic{width:38px;height:38px;border-radius:11px;background:#fde8e6;color:#d0342c;display:flex;align-items:center;justify-content:center;flex:none}
+.vm-pb{padding:14px 16px;overflow-y:auto;display:flex;flex-direction:column;gap:13px;position:relative}
+.vm-pf{display:flex;gap:10px;padding:12px 16px calc(14px + env(safe-area-inset-bottom, 0px));background:var(--color-surface);border-top:1px solid var(--color-divider)}
+.vm-pf button{margin:0;padding:12px;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;border:none}
+.vm-found{display:flex;gap:12px;align-items:center;background:var(--color-surface);border:1.5px solid #bfe3cd;border-radius:13px;padding:9px}
+.vm-ddb{width:100%;display:flex;align-items:center;gap:8px;padding:11px 13px;border:1.5px solid var(--color-divider);border-radius:11px;background:var(--color-surface);font-size:14px;cursor:pointer;text-align:left;color:var(--color-text);font-family:inherit}
+.vm-ddb .v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vm-ddb .car{font-style:normal;color:#666;transition:transform .15s}
+.vm-ddb.open{border-color:var(--color-accent);box-shadow:0 0 0 3px color-mix(in srgb, var(--color-accent) 18%, transparent)}.vm-ddb.open .car{transform:rotate(180deg)}
+.vm-ddm{position:absolute;left:0;right:0;top:calc(100% + 5px);z-index:5;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.2);padding:5px;max-height:230px;overflow-y:auto}
+.vm-ddi{display:flex;align-items:center;gap:8px;padding:10px 11px;border-radius:8px;font-size:13.5px;cursor:pointer}
+.vm-ddi span{flex:1;min-width:0}.vm-ddi small{opacity:.55;font-size:11px}
+.vm-ddi.on{background:var(--color-accent-100);color:var(--color-accent-700);font-weight:700}
+.vm-ddi.new{border-bottom:1px solid var(--color-divider);margin-bottom:4px;border-radius:8px 8px 0 0;color:var(--color-accent-700);font-weight:700}
+.vm-opt{display:flex;align-items:center;gap:12px;background:var(--color-surface);border-radius:12px;padding:11px 13px}
+.vm-sc{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1.5px solid var(--color-divider);border-radius:10px;background:var(--color-surface);font-size:13px;cursor:pointer}
+.vm-sc .ck{width:20px;height:20px;border-radius:6px;border:1.5px solid #bbb;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;flex:none}
+.vm-sc.on{border-color:var(--color-accent);background:var(--color-accent-100)}.vm-sc.on .ck{background:var(--color-accent);border-color:var(--color-accent)}
 .switch { position: relative; width: 44px; height: 26px; flex: none; cursor: pointer; }
 .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 1; }
 .switch .track { position: absolute; inset: 0; border-radius: 999px; background: var(--color-neutral-300); transition: background 0.18s; }
@@ -2527,46 +2549,74 @@ textarea.input { min-height: 90px; resize: vertical; }
           <h1 style="font-size:26px;margin:0;">គ្រប់គ្រងវីដេអូ</h1>
           <div style="font-size:12px;opacity:0.6;line-height:1.6;">បិទភ្ជាប់ link YouTube។ សិស្សមើលក្នុងកម្មវិធី (ចាក់ពាក្យ → វីដេអូ) ហើយប្រព័ន្ធកត់ត្រាថាមើលដល់ត្រឹមណា ប៉ុន្មានដង រំលង និងមើលចប់ឬនៅ។</div>
 
-          <div class="card">
-            <div class="card-kicker">បន្ថែមថ្មី</div>
-            <div class="field"><label>link YouTube</label>
-              <input class="input" type="text" value="{{ vmUrl }}" sc-camel-on-change="{{ onVmUrl }}" placeholder="https://youtu.be/…"></div>
-            <sc-if value="{{ vmHasYt }}">
-              <div style="display:flex;gap:11px;align-items:center;">
-                <div class="vl-thumb" style="{{ vmThumbStyle }}"></div>
-                <div style="font-size:12px;line-height:1.7;">រកឃើញវីដេអូ ✓<br><span style="opacity:0.6;">ថិរវេលា៖ {{ vmDurLabel }}</span></div>
+          <button class="btn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:13px;border:none;border-radius:14px;background:var(--color-accent);color:#fff;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 3px 10px color-mix(in srgb, var(--color-accent) 35%, transparent);" sc-camel-on-click="{{ openVmForm }}"><span style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:17px;line-height:1;">＋</span> បន្ថែមវីដេអូថ្មី</button>
+          <sc-if value="{{ vmPageMsg }}"><div style="font-size:12px;color:var(--color-accent-700);">{{ vmMsg }}</div></sc-if>
+          <sc-if value="{{ vmPageErr }}"><div style="font-size:12px;color:#c0392b;">{{ vmErr }}</div></sc-if>
+
+          <sc-if value="{{ vmOpen }}">
+          <div class="vm-scrim" sc-camel-on-click="{{ closeVmForm }}">
+            <div class="vm-pop" sc-camel-on-click="{{ stopProp }}">
+              <div class="vm-ph">
+                <div class="ic"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="currentColor"><path d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2C2 8.8 2 12 2 12s0 3.2.4 4.8a2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8c.4-1.6.4-4.8.4-4.8s0-3.2-.4-4.8zM10 15V9l5.2 3z"></path></svg></div>
+                <div style="flex:1;min-width:0;"><div style="font-size:16px;font-weight:700;">បន្ថែមវីដេអូថ្មី</div><div style="font-size:11.5px;opacity:.6;">បិទភ្ជាប់ link YouTube ហើយប្រព័ន្ធរកព័ត៌មានឲ្យ</div></div>
+                <button class="btn btn-icon btn-ghost" sc-camel-on-click="{{ closeVmForm }}" aria-label="បិទ" style="font-size:16px;flex:none;">✕</button>
               </div>
-            </sc-if>
-            <div class="field"><label>ចំណងជើង (កែបាន)</label>
-              <input class="input" type="text" value="{{ vmTitle }}" sc-camel-on-change="{{ onVmTitle }}"></div>
-            <div class="field"><label>ក្រុម / មេរៀន (ស្រេចចិត្ត)</label>
-              <input class="input" type="text" value="{{ vmGroup }}" sc-camel-on-change="{{ onVmGroup }}" placeholder="ឧ. SSW-Truck · មេរៀនទី ១"></div>
-            <sc-if value="{{ vmHasGroups }}"><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px;">
-              <sc-for list="{{ vmGroupChips }}" as="gc" hint-placeholder-count="3">
-                <button style="padding:5px 11px;border-radius:99px;border:1.5px solid;font-size:12px;cursor:pointer;{{ gc.style }}" sc-camel-on-click="{{ gc.onPick }}">{{ gc.label }}</button>
-              </sc-for>
-            </div></sc-if>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;">
-              <span>មើលចប់ជាកាតព្វកិច្ច</span>
-              <label class="switch {{ vmMandatoryClass }}"><input type="checkbox" checked="{{ vmMandatory }}" sc-camel-on-change="{{ onVmMandatory }}"><span class="track"></span><span class="thumb"></span></label>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;">
-              <span>បង្ហាញដល់គ្រប់សាលា/សាខា</span>
-              <label class="switch {{ vmAllSchoolsClass }}"><input type="checkbox" checked="{{ vmAllSchools }}" sc-camel-on-change="{{ onVmAllSchools }}"><span class="track"></span><span class="thumb"></span></label>
-            </div>
-            <sc-if value="{{ vmPickSchools }}">
-              <div style="display:flex;flex-direction:column;gap:6px;">
-                <sc-for list="{{ vmSchoolList }}" as="sc" hint-placeholder-count="3">
-                  <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--color-divider);border-radius:10px;cursor:pointer;font-size:13px;" sc-camel-on-click="{{ sc.onToggle }}">
-                    <span style="width:20px;font-weight:700;color:var(--color-accent-700);">{{ sc.check }}</span><span>{{ sc.name }}</span>
+              <div class="vm-pb">
+                <div class="field" style="margin:0;"><label>link YouTube</label>
+                  <div style="display:flex;gap:8px;">
+                    <input class="input" type="text" value="{{ vmUrl }}" sc-camel-on-change="{{ onVmUrl }}" placeholder="https://youtu.be/…" style="flex:1;min-width:0;">
+                    <button class="btn" style="flex:none;margin:0;padding:0 13px;border-radius:11px;border:1.5px solid var(--color-accent);background:var(--color-surface);color:var(--color-accent-700);font-weight:700;font-size:12.5px;cursor:pointer;" sc-camel-on-click="{{ pasteVmUrl }}">📋 បិទភ្ជាប់</button>
                   </div>
-                </sc-for>
+                </div>
+                <sc-if value="{{ vmHasYt }}">
+                  <div class="vm-found">
+                    <div class="vl-thumb" style="width:104px;height:60px;{{ vmThumbStyle }}"><span class="pl">▶</span><span class="d">{{ vmDurBadge }}</span></div>
+                    <div style="min-width:0;font-size:12px;line-height:1.6;"><div style="font-weight:700;color:#2e8b57;">រកឃើញវីដេអូ ✓</div><div style="opacity:.65;">ថិរវេលា៖ {{ vmDurLabel }}</div></div>
+                  </div>
+                </sc-if>
+                <div class="field" style="margin:0;"><label>ចំណងជើង <span style="font-weight:500;opacity:.55;">(កែបាន)</span></label>
+                  <input class="input" type="text" value="{{ vmTitle }}" sc-camel-on-change="{{ onVmTitle }}"></div>
+                <div class="field" style="margin:0;position:relative;"><label>ក្រុម / មេរៀន <span style="font-weight:500;opacity:.55;">(ស្រេចចិត្ត)</span></label>
+                  <sc-if value="{{ vmGroupNew }}">
+                    <div style="display:flex;gap:8px;">
+                      <input id="vm-group-in" class="input" type="text" value="{{ vmGroup }}" sc-camel-on-change="{{ onVmGroup }}" placeholder="ឈ្មោះក្រុមថ្មី ឧ. SSW-Truck · មេរៀនទី ១" style="flex:1;min-width:0;">
+                      <button class="btn" style="flex:none;margin:0;padding:0 14px;border-radius:11px;border:1.5px solid var(--color-divider);background:var(--color-surface);cursor:pointer;" sc-camel-on-click="{{ vmGroupBack }}" title="ជ្រើសពីបញ្ជី">▾</button>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ vmGroupNotNew }}">
+                    <button class="vm-ddb {{ vmDdOpenClass }}" sc-camel-on-click="{{ toggleVmGroupMenu }}"><span class="v" style="{{ vmGroupLabelStyle }}">{{ vmGroupLabel }}</span><i class="car">▾</i></button>
+                  </sc-if>
+                  <sc-if value="{{ vmGroupMenu }}">
+                    <div style="position:fixed;inset:0;z-index:4;" sc-camel-on-click="{{ toggleVmGroupMenu }}"></div>
+                    <div class="vm-ddm">
+                      <div class="vm-ddi new" sc-camel-on-click="{{ vmGroupMakeNew }}"><span>＋ បង្កើតក្រុមថ្មី…</span></div>
+                      <div class="vm-ddi {{ vmNoGroupClass }}" sc-camel-on-click="{{ vmGroupNone }}"><span>— គ្មានក្រុម —</span></div>
+                      <sc-for list="{{ vmGroupItems }}" as="gi" hint-placeholder-count="3">
+                        <div class="vm-ddi {{ gi.cls }}" sc-camel-on-click="{{ gi.onPick }}"><span>{{ gi.label }}{{ gi.tick }}</span><small>{{ gi.count }}</small></div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+                <div class="vm-opt"><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;">មើលចប់ជាកាតព្វកិច្ច</div><div style="font-size:11px;opacity:.6;">សិស្សត្រូវមើលដល់ចប់ ទើបរាប់ថាបានបញ្ចប់</div></div>
+                  <label class="switch {{ vmMandatoryClass }}"><input type="checkbox" checked="{{ vmMandatory }}" sc-camel-on-change="{{ onVmMandatory }}"><span class="track"></span><span class="thumb"></span></label></div>
+                <div class="vm-opt"><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;">បង្ហាញដល់គ្រប់សាលា/សាខា</div><div style="font-size:11px;opacity:.6;">បិទ ដើម្បីជ្រើសតែសាលាខ្លះ</div></div>
+                  <label class="switch {{ vmAllSchoolsClass }}"><input type="checkbox" checked="{{ vmAllSchools }}" sc-camel-on-change="{{ onVmAllSchools }}"><span class="track"></span><span class="thumb"></span></label></div>
+                <sc-if value="{{ vmPickSchools }}">
+                  <div style="display:flex;flex-direction:column;gap:6px;margin-top:-4px;">
+                    <sc-for list="{{ vmSchoolList }}" as="sc" hint-placeholder-count="3">
+                      <div class="vm-sc {{ sc.cls }}" sc-camel-on-click="{{ sc.onToggle }}"><i class="ck">✓</i><span>{{ sc.name }}</span></div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ hasVmErr }}"><div style="font-size:12px;color:#c0392b;">{{ vmErr }}</div></sc-if>
               </div>
-            </sc-if>
-            <sc-if value="{{ hasVmErr }}"><div style="font-size:12px;color:#c0392b;">{{ vmErr }}</div></sc-if>
-            <sc-if value="{{ hasVmMsg }}"><div style="font-size:12px;color:var(--color-accent-700);">{{ vmMsg }}</div></sc-if>
-            <button class="btn btn-primary btn-block" style="margin-top:0;" sc-camel-on-click="{{ saveVideo }}">{{ vmSaveLabel }}</button>
+              <div class="vm-pf">
+                <button style="flex:none;padding:12px 20px;background:var(--color-neutral-100);color:var(--color-text);" sc-camel-on-click="{{ closeVmForm }}">បោះបង់</button>
+                <button style="flex:1;background:var(--color-accent);color:#fff;{{ vmSaveStyle }}" sc-camel-on-click="{{ saveVideo }}">{{ vmSaveLabel }}</button>
+              </div>
+            </div>
           </div>
+          </sc-if>
 
           <div class="card-kicker" style="margin-top:4px;">{{ vmCountLabel }}</div>
           <sc-if value="{{ vmEmpty }}"><div style="text-align:center;padding:30px 0;opacity:0.5;font-size:13px;">មិនទាន់មានវីដេអូទេ</div></sc-if>
@@ -10640,7 +10690,7 @@ class Component extends DCLogic {
     monRankTab: 'skill',   // teacher/admin's ranking screen: 'skill' or 'law'
     // វីដេអូ (YouTube lessons)
     videos: [], videoProg: {}, videoFilter: 'all', vmCollapsed: [], vpCollapsed: [],
-    vmUrl: '', vmTitle: '', vmGroup: '', vmMandatory: false, vmAllSchools: true, vmSchoolIds: [], vmDur: 0, vmYt: '', vmBusy: false, vmErr: '', vmMsg: '', vmEditId: null, vmEdit: null,
+    vmUrl: '', vmTitle: '', vmGroup: '', vmMandatory: false, vmAllSchools: true, vmSchoolIds: [], vmDur: 0, vmYt: '', vmBusy: false, vmErr: '', vmMsg: '', vmEditId: null, vmEdit: null, vmOpen: false, vmGroupMenu: false, vmGroupNew: false,
     vrVideoId: null, vrRows: [], vrBusy: false, vrAll: [], vrWide: false, vrCollapsed: [], vrSchool: '', vrFilter: 'all', vrQuery: '', vrSchoolMenu: false, vrDetail: null,
     // admin (create accounts)
     adminFullName: '', adminEmail: '', adminPassword: '', adminRole: 'student', adminTeacherId: '', adminSchoolId: '',
@@ -11509,14 +11559,23 @@ class Component extends DCLogic {
   // — admin: គ្រប់គ្រងវីដេអូ —
   goVideoMgr(){
     this._closeVideo();
-    this.setState({ screen: 'vidmgr', vmUrl: '', vmTitle: '', vmGroup: '', vmMandatory: false, vmAllSchools: true, vmSchoolIds: [], vmDur: 0, vmYt: '', vmBusy: false, vmErr: '', vmMsg: '', vmEditId: null });
+    this.setState({ screen: 'vidmgr', vmUrl: '', vmTitle: '', vmGroup: '', vmMandatory: false, vmAllSchools: true, vmSchoolIds: [], vmDur: 0, vmYt: '', vmBusy: false, vmErr: '', vmMsg: '', vmEditId: null, vmOpen: false, vmGroupMenu: false, vmGroupNew: false });
     this.loadVideos();
   }
-  onVmUrl(e){
-    const url = e.target.value, id = ytIdFrom(url);
+  openVmForm(){ this.setState({ vmOpen: true, vmUrl: '', vmTitle: '', vmGroup: '', vmYt: '', vmDur: 0, vmMandatory: false, vmAllSchools: true, vmSchoolIds: [], vmErr: '', vmMsg: '', vmGroupMenu: false, vmGroupNew: false }); }
+  closeVmForm(){ if (this.state.vmBusy) return; this.setState({ vmOpen: false, vmGroupMenu: false, vmGroupNew: false }); }
+  async pasteVmUrl(){
+    try { const t = ((await navigator.clipboard.readText()) || '').trim(); if (t) this._setVmUrl(t); else this.showToast('Clipboard ទទេ'); }
+    catch (e) { this.showToast('អានពី clipboard មិនបាន — សូមបិទភ្ជាប់ដោយដៃ'); }
+  }
+  onVmUrl(e){ this._setVmUrl(e.target.value); }
+  _setVmUrl(url){
+    const id = ytIdFrom(url);
     this.setState({ vmUrl: url, vmYt: id, vmErr: '', vmMsg: '', vmDur: 0 });
     if (id) this._vmProbe(id);
   }
+  toggleVmGroupMenu(){ this.setState(s => ({ vmGroupMenu: !s.vmGroupMenu })); }
+  vmGroupMakeNew(){ this.setState({ vmGroupMenu: false, vmGroupNew: true, vmGroup: '' }, () => { const el = document.getElementById('vm-group-in'); if (el) el.focus(); }); }
   async _vmProbe(id){
     this._vmProbeId = id;
     const meta = fetch('https://www.youtube.com/oembed?url=' + encodeURIComponent('https://youtu.be/' + id) + '&format=json').then(r => r.ok ? r.json() : null).catch(() => null);
@@ -11543,7 +11602,8 @@ class Component extends DCLogic {
     const { error } = await Backend.addVideo(row);
     if (error) { this.setState({ vmBusy: false, vmErr: error }); return; }
     await this.loadVideos();
-    this.setState({ vmBusy: false, vmUrl: '', vmTitle: '', vmYt: '', vmDur: 0, vmMandatory: false, vmAllSchools: true, vmSchoolIds: [], vmMsg: `បន្ថែម «${title}» រួចរាល់ ✓` });
+    this.setState({ vmBusy: false, vmOpen: false, vmGroupMenu: false, vmGroupNew: false, vmUrl: '', vmTitle: '', vmGroup: '', vmYt: '', vmDur: 0, vmMandatory: false, vmAllSchools: true, vmSchoolIds: [], vmMsg: `បន្ថែម «${title}» រួចរាល់ ✓` });
+    this.showToast(`បន្ថែម «${title}» រួចរាល់ ✓`);
   }
   async toggleVideoActive(v){ const { error } = await Backend.updateVideo(v.id, { active: !(v.active !== false) }); if (error) { this.showToast(error); return; } await this.loadVideos(); }
   async moveVideo(v, dir){
@@ -11620,6 +11680,7 @@ class Component extends DCLogic {
       this._updChk = Date.now();
       try { fetch(location.pathname, { cache: 'no-store' }).catch(() => {}); } catch(e) {}     // makes the service worker re-check the shell
     });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && this.state.screen === 'vidmgr' && this.state.vmOpen) { if (this.state.vmGroupMenu) this.setState({ vmGroupMenu: false }); else this.closeVmForm(); } });
     // student popup in the video report: ← → switch student, Esc closes
     document.addEventListener('keydown', e => {
       if (this.state.screen !== 'vidrep' || !this.state.vrDetail) return;
@@ -17875,11 +17936,18 @@ class Component extends DCLogic {
           vmDurLabel: s.vmDur ? fmtClock(s.vmDur) : 'កំពុងអាន… (ឬអានមិនបាន — ប្រព័ន្ធនឹងដឹងពេលចាក់ដំបូង)',
           vmMandatory: s.vmMandatory, vmMandatoryClass: s.vmMandatory ? 'on' : '', onVmMandatory: e => this.onVmMandatory(e),
           vmAllSchools: s.vmAllSchools, vmAllSchoolsClass: s.vmAllSchools ? 'on' : '', onVmAllSchools: e => this.onVmAllSchools(e),
-          vmHasGroups: vmGroups.length > 0,
-          vmGroupChips: vmGroups.map(g => ({ label: g, onPick: () => this.setState({ vmGroup: s.vmGroup === g ? '' : g }),
-            style: s.vmGroup === g ? 'background:var(--color-accent);color:#fff;border-color:var(--color-accent);' : 'background:var(--color-surface);color:var(--color-text);border-color:var(--color-divider);' })),
+          vmOpen: !!s.vmOpen, openVmForm: () => this.openVmForm(), closeVmForm: () => this.closeVmForm(), pasteVmUrl: () => this.pasteVmUrl(),
+          vmPageMsg: !s.vmOpen && !!s.vmMsg, vmPageErr: !s.vmOpen && !!s.vmErr,
+          vmDurBadge: s.vmDur ? fmtClock(s.vmDur) : '…',
+          vmGroupNew: !!s.vmGroupNew, vmGroupNotNew: !s.vmGroupNew, vmGroupMenu: !!s.vmGroupMenu, toggleVmGroupMenu: () => this.toggleVmGroupMenu(),
+          vmDdOpenClass: s.vmGroupMenu ? 'open' : '', vmGroupLabel: s.vmGroup || 'ជ្រើសក្រុម…', vmGroupLabelStyle: s.vmGroup ? '' : 'color:#999;',
+          vmGroupMakeNew: () => this.vmGroupMakeNew(), vmGroupBack: () => this.setState({ vmGroupNew: false }),
+          vmNoGroupClass: s.vmGroup ? '' : 'on', vmGroupNone: () => this.setState({ vmGroup: '', vmGroupMenu: false, vmGroupNew: false }),
+          vmGroupItems: vmGroups.map(g => ({ label: g, tick: s.vmGroup === g ? ' ✓' : '', cls: s.vmGroup === g ? 'on' : '', count: vids.filter(v => (v.grp || '').trim() === g).length,
+            onPick: () => this.setState({ vmGroup: g, vmGroupMenu: false, vmGroupNew: false }) })),
+          vmSaveStyle: (s.vmBusy || !s.vmYt || !(s.vmTitle || '').trim()) ? 'opacity:.4;' : '',
           vmPickSchools: !s.vmAllSchools,
-          vmSchoolList: (s.schools || []).map(sc => ({ name: sc.full_name || sc.email, check: s.vmSchoolIds.includes(sc.id) ? '✓' : '', onToggle: () => this.toggleVmSchool(sc.id) })),
+          vmSchoolList: (s.schools || []).map(sc => ({ name: sc.full_name || sc.email, cls: s.vmSchoolIds.includes(sc.id) ? 'on' : '', onToggle: () => this.toggleVmSchool(sc.id) })),
           hasVmErr: !!s.vmErr, vmErr: s.vmErr, hasVmMsg: !!s.vmMsg, vmMsg: s.vmMsg,
           saveVideo: () => this.saveVideo(), vmSaveLabel: s.vmBusy ? 'កំពុងរក្សាទុក…' : '＋ បន្ថែមវីដេអូ',
           vmCountLabel: `វីដេអូដែលមាន (${vids.length})`, vmEmpty: vids.length === 0, vmGroupList,
