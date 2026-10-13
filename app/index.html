@@ -12958,6 +12958,38 @@ class Component extends DCLogic {
     }
     return any ? out : '';
   }
+  // the reader's marker highlights, burned into a detached copy of the book. Ranges are character offsets in the book's
+  // whole text (readings and page numbers left out), so they hold however the PDF later breaks into pages.
+  _hlApplyPdf(src, hl){
+    const COL = { y: 'rgba(255,213,74,.62)', g: 'rgba(110,222,140,.55)', p: 'rgba(255,130,165,.5)', b: 'rgba(110,185,255,.55)' };
+    const blocks = [...src.childNodes].filter(n => n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim()));   // the same blocks the reader pages are made from
+    const nodes = [], starts = []; let total = 0;
+    const add = n => { nodes.push(n); starts.push(total); total += n.nodeValue.length; };
+    for (const b of blocks) {
+      if (b.nodeType === 3) { add(b); continue; }
+      const w = document.createTreeWalker(b, NodeFilter.SHOW_TEXT, { acceptNode: n => (n.parentElement && n.parentElement.closest('rt,rp,.pgnum')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+      while (w.nextNode()) add(w.currentNode);
+    }
+    const per = new Map();      // node index → [{a, b, c}]
+    const first = off => { let lo = 0, hi = nodes.length - 1, k = 0; while (lo <= hi) { const mid = (lo + hi) >> 1; if (starts[mid] <= off) { k = mid; lo = mid + 1; } else hi = mid - 1; } return k; };
+    for (const x of hl) {
+      for (let k = first(x.s); k < nodes.length && starts[k] < x.e; k++) {
+        const L = nodes[k].nodeValue.length, a = Math.max(x.s, starts[k]) - starts[k], b = Math.min(x.e, starts[k] + L) - starts[k];
+        if (b > a) (per.get(k) || per.set(k, []).get(k)).push({ a, b, c: x.c });
+      }
+    }
+    for (const [k, ivs] of per) {
+      let target = nodes[k];
+      ivs.sort((p, q) => q.a - p.a);          // last piece first, so the earlier offsets stay valid while the text node is split
+      for (const iv of ivs) {
+        if (!target.parentNode) break;
+        if (iv.b < target.nodeValue.length) target.splitText(iv.b);
+        const mid = iv.a > 0 ? target.splitText(iv.a) : target;
+        const m = document.createElement('mark'); m.style.cssText = 'background:' + (COL[iv.c] || COL.y) + ';color:inherit;padding:0;';
+        mid.parentNode.insertBefore(m, mid); m.appendChild(mid);
+      }
+    }
+  }
   // the same furigana the reader shows, burned into a detached copy of the book (for the PDF)
   _furiPdf(container, st){
     this._wrapBookWords(container);
@@ -13187,7 +13219,7 @@ class Component extends DCLogic {
     bar.appendChild(furiBtn);
     const themeBtn = icon('aa', () => { const on = themePop.style.display !== 'block'; themePop.style.display = on ? 'block' : 'none'; themeBtn.classList.toggle('on', on); bmPanel.style.display = 'none'; furiPop.style.display = 'none'; }, 'ពណ៌ទំព័រ និងទំហំ');
     bar.appendChild(themeBtn);
-    bar.appendChild(icon('down', () => this._downloadBookPdf((book && book.title) || 'សៀវភៅ', html, PAD, START, this._rdFuri()), 'ទាញយកជា PDF (រួមទាំង Furigana បើបើក)'));
+    bar.appendChild(icon('down', () => this._downloadBookPdf((book && book.title) || 'សៀវភៅ', html, PAD, START, this._rdFuri(), hlForPdf()), 'ទាញយកជា PDF (រួមទាំង Furigana និង Highlight)'));
     bar.appendChild(spacer());
     bar.appendChild(icon('video', () => setTeach(true), 'របៀបបង្រៀន / ថតវីដេអូ', 'rec'));
     bar.appendChild(sep());
@@ -13580,6 +13612,11 @@ class Component extends DCLogic {
         if (b <= a) return; if (s < 0) s = tm.starts[k] + a; e = tm.starts[k] + b;
       });
       return (s < 0 || e <= s) ? null : { p: pages.indexOf(pg), s, e, txt: tm.joined.slice(s, e).replace(/\s+/g, '') };
+    };
+    // highlights as offsets in the whole book's text (for the PDF, which breaks pages differently)
+    const hlForPdf = () => {
+      const pre = []; let acc = 0; pages.forEach(p => { pre.push(acc); acc += textMap(p).joined.length; });
+      return hls.filter(x => pages[x.p]).map(x => ({ s: pre[x.p] + x.s, e: pre[x.p] + x.e, c: x.c }));
     };
     const isAdminUser = this.state.role === 'admin';
     const selBar = document.createElement('div'); selBar.className = 'rd-selbar';
@@ -15206,9 +15243,9 @@ class Component extends DCLogic {
   // download a whole book (reader or live editor content) as a PDF, via the
   // browser's own print/"Save as PDF" dialog — its live preview stands in for
   // an in-app preview step, so this goes straight to window.print().
-  _downloadBookPdf(title, html, margin, startPage, furi){
-    const go = () => { try { this._printPagesHtml(title, this._bookPagesHtml(html, margin, startPage, furi)); } catch(e) { this.showToast('មិនអាចទាញយកជា PDF បានទេ'); } };
-    if (furi && furi.on) { this.showToast('កំពុងរៀបចំ PDF ជាមួយ Furigana…'); setTimeout(go, 60); } else go();   // the furigana pass takes a moment on a long book
+  _downloadBookPdf(title, html, margin, startPage, furi, hl){
+    const go = () => { try { this._printPagesHtml(title, this._bookPagesHtml(html, margin, startPage, furi, hl)); } catch(e) { this.showToast('មិនអាចទាញយកជា PDF បានទេ'); } };
+    if ((furi && furi.on) || (hl && hl.length)) { this.showToast('កំពុងរៀបចំ PDF ជាមួយ Furigana / Highlight…'); setTimeout(go, 60); } else go();   // those passes take a moment on a long book
   }
   // print an already-paginated set of A4 pages (the string _bookPagesHtml returns)
   _printPagesHtml(title, pagesHtml){
@@ -15221,13 +15258,14 @@ class Component extends DCLogic {
     setTimeout(() => { document.title = prevTitle; }, 1000);
   }
   // flow `html` (a run of top-level blocks) onto true-size A4 pages and return them as one HTML string
-  _bookPagesHtml(html, margin, startPage, furi){
+  _bookPagesHtml(html, margin, startPage, furi, hl){
     {
       const A4W = 794, A4H = 1123, PAD = margin || 48, START = startPage || 1;
       const src = document.createElement('div'); src.innerHTML = html || '';
       this._edStripJpSpacesIn(src);
       // with furigana the lines are taller — the same spacing the reader uses — and the pages re-flow accordingly
       let LH = '1.85';
+      if (hl && hl.length) this._hlApplyPdf(src, hl);
       if (furi && furi.on) { this._furiPdf(src, furi); LH = '2.25'; }
       // laid out off-screen (not the on-screen stacked/scaled reader or editor
       // sheets) so print sees plain, normally-flowing A4 blocks, one per page
