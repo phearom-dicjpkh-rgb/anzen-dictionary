@@ -905,6 +905,21 @@ textarea.input { min-height: 90px; resize: vertical; }
     .vl-thumb .pb{ position:absolute; left:0; right:0; bottom:0; height:3px; background:rgba(255,255,255,.35); }
     .vl-thumb .pb i{ display:block; height:100%; background:var(--color-accent); }
     .vl-thumb .pl{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; text-shadow:0 1px 6px rgba(0,0,0,.6); }
+    .vc-bar{ position:relative; height:16px; border-radius:8px; background:var(--color-neutral-200); overflow:hidden; }
+    .vc-bar i{ position:absolute; top:0; bottom:0; }
+    .vc-r{ background:#cfd8e6; } .vc-w{ background:#2e8b57; }
+    .vc-s{ background:repeating-linear-gradient(45deg,rgba(208,52,44,.7) 0 3px,rgba(208,52,44,.25) 3px 6px); }
+    .vc-ticks{ position:relative; height:12px; font-size:9.5px; opacity:.55; }
+    .vc-ticks span{ position:absolute; transform:translateX(-50%); }
+    .vc-ticks span:first-child{ transform:none; }
+    .vc-legend{ display:flex; gap:12px; flex-wrap:wrap; font-size:10.5px; opacity:.75; }
+    .vc-legend span::before{ content:""; display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
+    .vc-legend .a::before{ background:#2e8b57; } .vc-legend .b::before{ background:repeating-linear-gradient(45deg,rgba(208,52,44,.7) 0 2px,rgba(208,52,44,.25) 2px 4px); }
+    .vc-legend .c::before{ background:#cfd8e6; } .vc-legend .d::before{ background:var(--color-neutral-200); }
+    .vc-skr{ display:grid; grid-template-columns:118px 1fr 46px; gap:8px; align-items:center; font-size:12px; padding:3px 0; font-variant-numeric:tabular-nums; }
+    .vc-skr .m{ height:8px; border-radius:5px; background:#f0e1df; position:relative; overflow:hidden; }
+    .vc-skr .m i{ position:absolute; left:0; top:0; bottom:0; border-radius:5px; background:#c0392b; }
+    .vc-skr .d{ text-align:right; font-weight:700; color:#c0392b; }
     .vr-gh{ display:flex; align-items:center; gap:8px; padding:9px 16px; background:var(--color-neutral-100); border-bottom:1px solid var(--color-divider); font-size:11.5px; font-weight:700; letter-spacing:.03em; cursor:pointer; }
     .vr-gh small{ margin-left:auto; font-weight:600; opacity:.55; }
     .vr-vi{ display:flex; gap:10px; align-items:center; padding:11px 16px; border-bottom:1px solid var(--color-divider); cursor:pointer; }
@@ -2663,15 +2678,50 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <sc-if value="{{ vrNoCards }}"><div style="text-align:center;padding:30px 0;opacity:.5;font-size:12.5px;">គ្មានសិស្សក្នុងតម្រងនេះ</div></sc-if>
                 <div style="{{ vrGridStyle }}">
                   <sc-for list="{{ vrCards }}" as="c" hint-placeholder-count="4">
-                    <div class="card elev-sm" style="gap:7px;padding:10px 12px;">
-                      <div style="display:flex;align-items:center;gap:9px;">
-                        <div style="width:28px;height:28px;border-radius:50%;background:{{ c.avatarBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none;">{{ c.avatarGlyph }}</div>
-                        <div style="flex:1;min-width:0;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ c.name }}<sc-if value="{{ c.hasSchool }}"><span style="display:inline-block;font-size:10px;font-weight:600;padding:1px 8px;border-radius:99px;background:var(--color-neutral-100);margin-left:6px;opacity:.85;">{{ c.school }}</span></sc-if></div>
-                        <span class="vl-st" style="margin:0;{{ c.stStyle }}">{{ c.stLabel }}</span>
+                    <div class="card elev-sm" style="gap:9px;padding:12px 14px;">
+                      <div style="display:flex;align-items:center;gap:10px;{{ c.headStyle }}" sc-camel-on-click="{{ c.onToggle }}">
+                        <div style="width:34px;height:34px;border-radius:50%;background:{{ c.avatarBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none;">{{ c.avatarGlyph }}</div>
+                        <div style="flex:1;min-width:0;">
+                          <div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ c.name }}<sc-if value="{{ c.hasSchool }}"><span style="display:inline-block;font-size:10.5px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--color-neutral-100);margin-left:7px;">{{ c.school }}</span></sc-if></div>
+                          <div style="margin-top:3px;"><span class="vl-st" style="margin:0;{{ c.pillStyle }}">{{ c.pillLabel }}</span></div>
+                        </div>
+                        <sc-if value="{{ c.hasRec }}"><div style="text-align:right;flex:none;"><div style="font-size:26px;font-weight:800;color:var(--color-accent-700);line-height:1;">{{ c.pct }}%</div><div style="font-size:10.5px;opacity:.6;margin-top:3px;">មើលពិត</div></div></sc-if>
                       </div>
-                      <div class="vw-seek"><sc-for list="{{ c.segs }}" as="g" hint-placeholder-count="2"><i class="{{ g.cls }}" style="{{ g.style }}"></i></sc-for></div>
-                      <div style="font-size:11px;opacity:0.65;line-height:1.7;">{{ c.meta }}</div>
-                      <sc-if value="{{ c.hasExtra }}"><div style="font-size:11px;line-height:1.7;padding:6px 9px;border-radius:8px;background:var(--color-accent-100);color:var(--color-accent-800);">{{ c.extra }}</div></sc-if>
+                      <sc-if value="{{ c.noRec }}"><div style="font-size:12px;opacity:.6;">មិនទាន់ចាប់ផ្តើមមើល</div></sc-if>
+                      <sc-if value="{{ c.closed }}">
+                        <div class="vc-bar"><sc-for list="{{ c.segs }}" as="g" hint-placeholder-count="3"><i class="vc-{{ g.cls }}" style="{{ g.style }}"></i></sc-for></div>
+                        <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;opacity:.75;cursor:pointer;" sc-camel-on-click="{{ c.onToggle }}"><span style="flex:1;min-width:0;">{{ c.sum }}</span><span style="color:var(--color-accent-700);font-weight:700;flex:none;">លម្អិត {{ c.chev }}</span></div>
+                      </sc-if>
+                      <sc-if value="{{ c.open }}">
+                        <sc-if value="{{ c.hasVerdict }}"><div style="display:flex;gap:8px;align-items:flex-start;border:1px solid;border-radius:10px;padding:8px 10px;font-size:12.5px;line-height:1.6;{{ c.verdictStyle }}"><span>{{ c.verdictIcon }}</span><span>{{ c.verdict }}</span></div></sc-if>
+                        <div style="display:flex;flex-direction:column;gap:4px;">
+                          <div style="display:flex;justify-content:space-between;font-size:10.5px;opacity:.6;"><span>ទាំងវីដេអូ (នាទី)</span><span>{{ c.durLabel }}</span></div>
+                          <div class="vc-bar"><sc-for list="{{ c.segs }}" as="g" hint-placeholder-count="3"><i class="vc-{{ g.cls }}" style="{{ g.style }}"></i></sc-for></div>
+                          <div class="vc-ticks"><sc-for list="{{ c.ticks }}" as="t" hint-placeholder-count="4"><span style="{{ t.style }}">{{ t.label }}</span></sc-for></div>
+                        </div>
+                        <sc-if value="{{ c.hasZoom }}">
+                          <div style="border:1px dashed var(--color-divider);border-radius:10px;padding:8px 10px;background:var(--color-surface);">
+                            <div style="font-size:11px;font-weight:600;opacity:.75;margin-bottom:6px;">{{ c.zoomTitle }}</div>
+                            <div class="vc-bar" style="height:20px;"><sc-for list="{{ c.zsegs }}" as="g" hint-placeholder-count="3"><i class="vc-{{ g.cls }}" style="{{ g.style }}"></i></sc-for></div>
+                            <div class="vc-ticks" style="height:14px;"><sc-for list="{{ c.zticks }}" as="t" hint-placeholder-count="4"><span style="{{ t.style }}">{{ t.label }}</span></sc-for></div>
+                          </div>
+                        </sc-if>
+                        <div class="vc-legend"><span class="a">បានមើលពិត</span><span class="b">រំលង (មិនបានមើល)</span><span class="c">ឈានដល់</span><span class="d">មិនទាន់ដល់</span></div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px;">
+                          <sc-for list="{{ c.facts }}" as="k" hint-placeholder-count="4"><div style="background:var(--color-neutral-100);border-radius:10px;padding:6px 9px;"><b style="font-size:14px;display:block;color:var(--color-accent-700);line-height:1.3;">{{ k.v }}</b><span style="font-size:10px;opacity:.6;">{{ k.l }}</span></div></sc-for>
+                        </div>
+                        <sc-if value="{{ c.hasSkips }}">
+                          <div style="border-top:1px solid var(--color-divider);padding-top:8px;">
+                            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:5px;"><span>{{ c.skipHead }}</span><small style="font-weight:500;opacity:.6;">{{ c.skipSub }}</small></div>
+                            <sc-for list="{{ c.skipRows }}" as="k" hint-placeholder-count="3"><div class="vc-skr" style="{{ k.rowStyle }}"><span>{{ k.t }}</span><div class="m"><i style="{{ k.mStyle }}"></i></div><span class="d">{{ k.d }}</span></div></sc-for>
+                            <sc-if value="{{ c.hasSkipMore }}"><div style="font-size:11px;opacity:.6;margin-top:2px;">{{ c.skipMore }}</div></sc-if>
+                            <div style="font-size:10.5px;opacity:.55;margin-top:3px;">ការរំលងតូចជាង ៥ វិនាទី (ស្រអាប់) ច្រើនជាការរំកិលបន្តិច</div>
+                          </div>
+                        </sc-if>
+                        <sc-if value="{{ c.hasWarn }}"><div style="font-size:11.5px;color:#8a5200;background:#fff3e0;border-radius:9px;padding:6px 10px;line-height:1.6;">{{ c.warn }}</div></sc-if>
+                        <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;opacity:.65;border-top:1px solid var(--color-divider);padding-top:8px;"><span>{{ c.footA }}</span><span>{{ c.footB }}</span><span>{{ c.footC }}</span></div>
+                        <div style="font-size:11.5px;color:var(--color-accent-700);font-weight:700;text-align:right;cursor:pointer;" sc-camel-on-click="{{ c.onToggle }}">បត់ ▴</div>
+                      </sc-if>
                     </div>
                   </sc-for>
                 </div>
@@ -10571,7 +10621,7 @@ class Component extends DCLogic {
     // វីដេអូ (YouTube lessons)
     videos: [], videoProg: {}, videoFilter: 'all', vmCollapsed: [], vpCollapsed: [],
     vmUrl: '', vmTitle: '', vmGroup: '', vmMandatory: false, vmAllSchools: true, vmSchoolIds: [], vmDur: 0, vmYt: '', vmBusy: false, vmErr: '', vmMsg: '', vmEditId: null, vmEdit: null,
-    vrVideoId: null, vrRows: [], vrBusy: false, vrAll: [], vrWide: false, vrCollapsed: [], vrSchool: '', vrFilter: 'all', vrQuery: '', vrSchoolMenu: false,
+    vrVideoId: null, vrRows: [], vrBusy: false, vrAll: [], vrWide: false, vrCollapsed: [], vrSchool: '', vrFilter: 'all', vrQuery: '', vrSchoolMenu: false, vrOpen: {},
     // admin (create accounts)
     adminFullName: '', adminEmail: '', adminPassword: '', adminRole: 'student', adminTeacherId: '', adminSchoolId: '',
     adminGender: '', adminBirthDate: '', createDialogOpen: false,
@@ -11509,7 +11559,7 @@ class Component extends DCLogic {
     const first = (this.state.videos || [])[0];
     if (first && this.state.vrWide) this.pickReportVideo(first.id);       // wide: show the first video's data at once; narrow: start from the list
   }
-  pickReportVideo(id){ this.setState({ vrVideoId: id, vrFilter: 'all', vrSchoolMenu: false }); }
+  pickReportVideo(id){ this.setState({ vrVideoId: id, vrFilter: 'all', vrSchoolMenu: false, vrOpen: {} }); }
   toggleVrGroup(name){
     this.setState(s => { const c = s.vrCollapsed.includes(name) ? s.vrCollapsed.filter(x => x !== name) : [...s.vrCollapsed, name]; try { localStorage.setItem('dict_vr_collapsed', JSON.stringify(c)); } catch(e) {} return { vrCollapsed: c }; });
   }
@@ -17689,20 +17739,50 @@ class Component extends DCLogic {
         const vrMulti = schoolIds.length > 1;
         const stuSel = (vrMulti && s.vrSchool) ? stuAll.filter(st => st.school_id === s.vrSchool) : stuAll;
         const RS = { new: ['មិនទាន់', 'background:var(--color-neutral-200);color:var(--color-neutral-700);'], prog: [null, 'background:var(--color-accent-100);color:var(--color-accent-800);'], done: ['ចប់ ✓', 'background:#e3f4e8;color:#2a7a45;'], skipy: ['រំលងច្រើន', 'background:#fbe4e1;color:#b8322a;'] };
+        const defaultOpen = stuSel.length <= 6;       // few students: every card open; many: folded to one line each
         const cardFor = (st, rec, vdur) => {
           const ranges = rec ? mergeRanges(rec.ranges || []) : [], skips = rec ? mergeRanges(rec.skips || [], 0.5) : [];
           const scale = vdur || Math.max(1, ...ranges.map(x => x[1]), ...skips.map(x => x[1]));
           const vs = videoState(rec, vdur || scale), skipSecs = rangesTotal(skips);
           const key = vs.state === 'done' ? 'done' : (vs.state === 'new' ? 'new' : (skipSecs / scale > 0.2 ? 'skipy' : 'prog'));
-          const pc = x => Math.max(0, Math.min(100, x / scale * 100));
-          const segs = [...ranges.map(x => ({ cls: 'w', style: `left:${pc(x[0])}%;width:${pc(x[1]) - pc(x[0])}%;` })), ...skips.map(x => ({ cls: 's', style: `left:${pc(x[0])}%;width:${pc(x[1]) - pc(x[0])}%;` }))];
           const name = (st.full_name || st.email || '').trim() || 'សិស្ស';
-          const sks = skips.slice(0, 3).map(x => `${fmtClock(x[0])} – ${fmtClock(x[1])}`).join(' · ');
+          const pc = (x, sc) => Math.max(0, Math.min(100, x / sc * 100));
+          const watched = rangesTotal(ranges), lastPos = rec ? (rec.last_pos || 0) : 0;
+          const reached = Math.max(lastPos, 0, ...ranges.map(x => x[1]), ...skips.map(x => x[1]));
+          const pctR = scale ? Math.min(100, Math.round(reached / scale * 100)) : 0;
+          // three layers: reached (blue) under watched (green) and skipped (red hatch)
+          const mkSegs = (lo, hi) => { const sc = hi - lo || 1, cl = x => Math.max(lo, Math.min(hi, x));
+            const seg = (cls, a, b) => ({ cls, style: `left:${pc(cl(a) - lo, sc)}%;width:${Math.max(0, pc(cl(b) - lo, sc) - pc(cl(a) - lo, sc))}%;` });
+            return [seg('r', lo, Math.min(hi, reached)), ...ranges.filter(x => x[1] > lo && x[0] < hi).map(x => seg('w', x[0], x[1])), ...skips.filter(x => x[1] > lo && x[0] < hi).map(x => seg('s', x[0], x[1]))]; };
+          const mkTicks = (hi, step, fmt) => { const out = []; for (let t = 0; t < hi; t += step) out.push({ style: `left:${pc(t, hi)}%;`, label: fmt(t) }); return out; };
+          const fullStep = scale <= 900 ? 300 : (scale <= 3600 ? 600 : 1200);
+          const zoomOn = !!rec && reached >= 60 && reached / scale < 0.6;
+          const zEnd = zoomOn ? Math.min(scale, Math.ceil(reached / 60) * 60 + 0) : 0;
+          const zStep = zEnd <= 600 ? 60 : (zEnd <= 1800 ? 300 : 600);
+          const sorted = skips.slice().sort((a, b) => (b[1] - b[0]) - (a[1] - a[0])), big = sorted[0], maxLen = big ? big[1] - big[0] : 1;
+          const unans = rec ? Math.max(0, (rec.checks_asked || 0) - (rec.checks_ok || 0)) : 0;
+          let verdict = '', verdictOk = true;
+          if (rec) {
+            if (vs.state === 'done') verdict = `មើលចប់ ✓ — មើលពិត ${vs.pct}% នៃវីដេអូ`;
+            else if (big && watched < reached * 0.85 && big[1] - big[0] >= 30) { verdictOk = false; verdict = `ឈានដល់ ${fmtClock(reached)} (${pctR}% នៃវីដេអូ) ប៉ុន្តែមើលពិតតែ ${fmtClock(watched)} (${vs.pct}%) — រំលងផ្នែកធំ ${fmtClock(big[1] - big[0])} ពី ${fmtClock(big[0])} ដល់ ${fmtClock(big[1])}` }
+            else verdict = `ឈានដល់ ${fmtClock(reached)} (${pctR}%) · មើលពិត ${fmtClock(watched)} (${vs.pct}%)`;
+          }
+          const open = rec ? (((s.vrOpen || {})[st.id] !== undefined) ? !!s.vrOpen[st.id] : defaultOpen) : false;
+          const pillLabel = ({ done: 'ចប់ ✓', prog: 'កំពុងមើល', skipy: 'រំលងច្រើន', new: 'មិនទាន់' })[key];
           return { key, name, school: schoolOf(st.school_id), hasSchool: vrMulti && !!schoolOf(st.school_id),
             avatarGlyph: (st.settings && st.settings.avatarAnimal) || name.charAt(0).toUpperCase(), avatarBg: (st.settings && st.settings.avatarColor) || 'var(--color-accent)',
-            stLabel: key === 'prog' ? `${vs.pct}%` : (key === 'skipy' ? `${RS.skipy[0]} · ${vs.pct}%` : RS[key][0]), stStyle: RS[key][1], segs, pct: vs.pct, hasRec: !!rec, skipN: skips.length, done: vs.state === 'done',
-            meta: rec ? `ចាប់ផ្តើម ${rec.plays || 0} ដង · រំលង ${skips.length ? skips.length + ' កន្លែង' : 'មិនមាន'} · ចុងក្រោយ ${fmtClock(rec.last_pos)} · ម៉ោងមើលសរុប ${Math.max(1, Math.round((rec.watch_secs || 0) / 60))} នាទី${rec.checks_asked ? ` · បញ្ជាក់ ${rec.checks_ok || 0}/${rec.checks_asked}` : ''}` : 'មិនទាន់ចាប់ផ្តើម',
-            hasExtra: !!(rec && (skips.length || rec.rate || (rec.checks_asked || 0) > (rec.checks_ok || 0))), extra: rec ? [skips.length ? `📌 រំលង ${sks}${skips.length > 3 ? ' …' : ''}` : '', (rec.checks_asked || 0) > (rec.checks_ok || 0) ? `⚠ មិនបានឆ្លើយ "កំពុងមើលដែរឬទេ?" ${(rec.checks_asked || 0) - (rec.checks_ok || 0)} ដង (ប្រហែលទុកចាក់ចោល)` : '', rec.rate ? `ល្បឿនចុងក្រោយ ${rec.rate}×` : '', rec.updated_at ? this._fmtDate(rec.updated_at) : ''].filter(Boolean).join(' · ') : '' };
+            pillLabel, pillStyle: RS[key][1], pct: vs.pct, hasRec: !!rec, noRec: !rec, skipN: skips.length, done: vs.state === 'done',
+            open, closed: !!rec && !open, chev: open ? '▴' : '▾', headStyle: rec ? 'cursor:pointer;' : '', onToggle: () => { if (rec) this.setState(x => ({ vrOpen: { ...(x.vrOpen || {}), [st.id]: !open } })); },
+            verdict, hasVerdict: !!verdict, verdictStyle: verdictOk ? 'background:#e9f7ee;border-color:#bfe3cd;color:#1f5e3a;' : 'background:#fff6e5;border-color:#f3dfae;color:#5b4a1d;', verdictIcon: verdictOk ? '✓' : '⚠',
+            segs: mkSegs(0, scale), ticks: mkTicks(scale, fullStep, t => String(t / 60)), durLabel: fmtClock(scale),
+            hasZoom: zoomOn, zoomTitle: `🔍 ពង្រីកកន្លែងដែលសិស្សបានឈានដល់ (0:00 – ${fmtClock(zEnd)})`, zsegs: zoomOn ? mkSegs(0, zEnd) : [], zticks: zoomOn ? mkTicks(zEnd, zStep, t => fmtClock(t)) : [],
+            facts: rec ? [{ v: (rec.plays || 0) + ' ដង', l: 'ចាប់ផ្តើមមើល' }, { v: fmtClock(watched), l: 'មើលពិត / ' + fmtClock(scale) }, { v: (rec.rate || 1) + '×', l: 'ល្បឿនចុងក្រោយ' }, { v: (rec.watch_secs ? Math.max(1, Math.round(rec.watch_secs / 60)) + ' នាទី' : '—'), l: 'ម៉ោងចាក់សរុប' }] : [],
+            hasSkips: skips.length > 0, skipHead: `⏩ រំលង ${skips.length} កន្លែង`, skipSub: `សរុប ${fmtClock(skipSecs)} · តម្រៀបតាមប្រវែង`,
+            skipRows: sorted.slice(0, 6).map(x => ({ t: fmtClock(x[0]) + ' → ' + fmtClock(x[1]), d: fmtClock(x[1] - x[0]), mStyle: `width:${Math.max(1.5, (x[1] - x[0]) / maxLen * 100)}%;`, rowStyle: (x[1] - x[0]) < 5 ? 'opacity:.5;' : '' })),
+            skipMore: skips.length > 6 ? `+ ${skips.length - 6} កន្លែងទៀត (តូចៗ)` : '', hasSkipMore: skips.length > 6,
+            hasWarn: unans > 0, warn: `⚠ មិនបានឆ្លើយ «កំពុងមើលដែរឬទេ?» ${unans} ដង — ប្រហែលទុកចាក់ចោល`,
+            footA: rec ? `ឈប់នៅ ${fmtClock(lastPos)}` : '', footB: rec && rec.updated_at ? ('មើលចុងក្រោយ ' + this._fmtDate(rec.updated_at)) : '', footC: rec && rec.checks_asked ? `ឆ្លើយបញ្ជាក់ ${rec.checks_ok || 0} / ${rec.checks_asked}` : '',
+            sum: rec ? `ឈានដល់ ${pctR}% · មើលពិត ${vs.pct}%${big ? ' · ⏩ ' + skips.length + ' រំលង (ធំបំផុត ' + fmtClock(big[1] - big[0]) + ')' : ''}${unans ? ' · ⚠ ' + unans : ''}` : '' };
         };
         const vrCardsAll = rv ? stuSel.map(st => cardFor(st, (rowsBy[rv.id] || {})[st.id], rdur)) : [];
         const vrFlt = s.vrFilter || 'all';
