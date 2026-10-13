@@ -2293,11 +2293,12 @@ textarea.input { min-height: 90px; resize: vertical; }
         </div>
         </sc-if>
 
-        <sc-if value="{{ isAddWord }}" hint-placeholder-val="{{ false }}">
-        <div style="padding:18px 20px 30px;display:flex;flex-direction:column;gap:14px;">
-          <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
-          <sc-if value="{{ hasAwReturn }}"><button class="btn btn-block" style="background:var(--color-accent-100);color:var(--color-accent-800);border:1px solid var(--color-accent);font-weight:700;" sc-camel-on-click="{{ awBackToBook }}">↩ ត្រឡប់ទៅសៀវភៅ (ទំព័រដដែល)</button></sc-if>
-          <h1 style="font-size:26px;margin:0;">បញ្ចូលពាក្យថ្មី</h1>
+        <sc-if value="{{ showAddWord }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ awOuterStyle }}" sc-camel-on-click="{{ closeAwDialog }}">
+        <div style="{{ awInnerStyle }}padding:18px 20px 30px;display:flex;flex-direction:column;gap:14px;" sc-camel-on-click="{{ stopProp }}">
+          <sc-if value="{{ awNotDialog }}"><button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button></sc-if>
+          <sc-if value="{{ awDialog }}"><div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-family:var(--font-heading);font-weight:600;font-size:19px;">បញ្ចូលពាក្យថ្មី</div><button class="btn btn-ghost" style="padding:4px 8px;font-size:17px;line-height:1;" sc-camel-on-click="{{ closeAwDialog }}" aria-label="បិទ">✕</button></div></sc-if>
+          <sc-if value="{{ awNotDialog }}"><h1 style="font-size:26px;margin:0;">បញ្ចូលពាក្យថ្មី</h1></sc-if>
 
           <div class="card">
             <div class="card-kicker">សៀវភៅ &amp; ប្រភេទ</div>
@@ -2440,6 +2441,7 @@ textarea.input { min-height: 90px; resize: vertical; }
             <button class="btn btn-secondary btn-block" style="margin-top:6px;" sc-camel-on-click="{{ exportAllWords }}">📥 ចម្លងពាក្យទាំងអស់ (ជំនួស Sheet)</button>
             <div style="font-size:11px;opacity:0.6;line-height:1.7;">ចម្លងពាក្យទាំងអស់ក្នុងកម្មវិធី (រួមទាំងពាក្យថ្មី និង ការកែ)។ បើក Google Sheet → ជ្រើសតារាងទាំងមូល → លុប → paste ចាប់ពីប្រអប់ A1។ មានជួរក្បាល (header) រួចស្រាប់។</div>
           </div>
+        </div>
         </div>
         </sc-if>
 
@@ -10553,7 +10555,7 @@ class Component extends DCLogic {
     edBusy: false, edMsg: '', edError: '', overridesRev: 0,
     // admin: add a new word / grammar
     awBook: '', awBookMenuOpen: false, awNewBook: '', awCat: 'vocab', awPage: '',
-    awReturn: null,
+    awReturn: null, awDialog: false,
     awJp: '', awKana: '', awKanaMap: {}, awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [],
     awRelated: [], awLevel: '', awLink: '', awIsConj: false,
     awBusy: false, awMsg: '', awError: '',
@@ -12379,7 +12381,7 @@ class Component extends DCLogic {
     const { row: saved, error } = await Backend.addCustomWord(row);
     if (error) { this.setState({ awBusy: false, awError: error }); return; }
     applyCustomWords([saved || { id: 'c-' + Date.now(), ...row }]);
-    rebuildIndexes();
+    rebuildIndexes(); this._rdAwDirty = true;
     // keep the book, category and page so the admin can add the next word fast
     this.setState(st => ({ awBusy: false, awMsg: `បន្ថែម «${jp}»${related.length ? ` + ${related.length} ពាក្យពាក់ព័ន្ធ` : ''} រួចរាល់ ✓`, overridesRev: st.overridesRev + 1,
       awJp: '', awKana: '', awKanaMap: {}, awPos: '', awKm: '', awImg: '', awStar: false, awExamples: [], awRelated: [], awLevel: '', awLink: '', awIsConj: false }));
@@ -12931,23 +12933,27 @@ class Component extends DCLogic {
   // furigana in the reader: on/off, hide the words the student already studied, size s|m|l (kept on this device)
   _rdFuri(){
     let o = {}; try { o = JSON.parse(localStorage.getItem('dict_reader_furi') || '{}') || {}; } catch(e) {}
-    return { on: !!o.on, hide: !!o.hide, size: ['s', 'm', 'l'].includes(o.size) ? o.size : 'm' };
+    return { on: !!o.on, hide: !!o.hide, size: ['s', 'm', 'l'].includes(o.size) ? o.size : 'm', color: /^#[0-9a-f]{6}$/i.test(o.color || '') ? o.color : '#2f6fb0' };
   }
   _rdSetFuri(o){ try { localStorage.setItem('dict_reader_furi', JSON.stringify(o)); } catch(e) {} }
   _rdAuto(){ try { return localStorage.getItem('dict_reader_autoaudio') !== '0'; } catch(e) { return true; } }
   _rdSetAuto(on){ try { localStorage.setItem('dict_reader_autoaudio', on ? '1' : '0'); } catch(e) {} }
+  // highlights (marker pen) per book, kept on this device: [{p: page index, s/e: character range in that page's text, c: y|g|p|b}]
+  _hlAll(){ try { return JSON.parse(localStorage.getItem('dict_book_highlights') || '{}') || {}; } catch(e) { return {}; } }
+  _hlGet(bookId){ const a = bookId ? this._hlAll()[bookId] : null; return Array.isArray(a) ? a : []; }
+  _hlSet(bookId, arr){ if (!bookId) return; try { const o = this._hlAll(); if (arr && arr.length) o[bookId] = arr; else delete o[bookId]; localStorage.setItem('dict_book_highlights', JSON.stringify(o)); } catch(e) {} }
   // admin: add a word the book mentions but the dictionary lacks — opens the normal "បញ្ចូលពាក្យថ្មី" screen
   // (pre-filled with the selected text) and offers a way back to this very page
   _rdAddWord(jp){
-    const ctx = this._rdCtx || null, txt = (jp || '').trim();
-    this._bwClose(); this._clearBodyOverlay();
-    this.setState(s => ({ screen: 'addword', awMsg: '', awError: '', awIsConj: false, awReturn: ctx,
+    const txt = (jp || '').trim();
+    this._rdAwDirty = false;
+    this.setState(s => ({ awDialog: true, awMsg: '', awError: '', awIsConj: false, awReturn: null,
       awJp: txt, awKanaMap: {}, awKana: buildKanaFromRuns(txt, {}), awPos: (s.awCat === 'vocab' && txt) ? jpDetectPos(txt) : '' }));
   }
-  awBackToBook(){
-    const c = this.state.awReturn; this.setState({ awReturn: null });
-    if (!c) return;
-    if (c.origin === 'readbooks') this.rbReadBook(c.id); else this.libReadBook(c.id);
+  // closing the popup leaves the reader exactly where it was; if a word was added, the pages are rebuilt so it shows
+  closeAwDialog(){
+    this.setState({ awDialog: false });
+    if (this._rdAwDirty && this._rdRebuild && document.getElementById('book-reader-overlay')) { this._rdAwDirty = false; this._bwClose(); this._rdRebuild(); }
   }
   // look of the full-screen reader (injected once)
   _rdEnsureCss(){
@@ -13028,16 +13034,30 @@ class Component extends DCLogic {
 .rd-teach .rd-arrow{display:none !important}
 .rd-spot{position:absolute;left:0;width:0;top:0;height:0;border-radius:10px;box-shadow:0 0 0 2000px rgba(8,10,16,.6);border:2px solid rgba(255,215,94,.92);pointer-events:none;z-index:6;display:none}
 .rd-laser{position:absolute;left:0;top:0;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:rgba(255,77,106,.35);border:2px solid #ff4d6a;box-shadow:0 0 0 8px rgba(255,77,106,.15);pointer-events:none;z-index:9;display:none}
-.rd-ov .a4page rt{font-size:.5em;color:#2f6fb0;font-weight:500;letter-spacing:.02em;user-select:none;-webkit-user-select:none}
+.rd-ov .a4page rt{font-size:.5em;color:var(--rd-rt,#2f6fb0);font-weight:500;letter-spacing:.02em;user-select:none;-webkit-user-select:none}
 .rd-fz-s .a4page rt{font-size:.42em}.rd-fz-l .a4page rt{font-size:.62em}
 .rd-furi .a4page{line-height:2.25 !important}
 .rd-tog{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:none;background:rgba(255,255,255,.07);color:#e8ecf4;border-radius:10px;padding:9px 10px;font:inherit;font-size:11.5px;text-align:left;cursor:pointer;margin-bottom:6px}
 .rd-tog s{flex:none;text-decoration:none;width:34px;height:20px;border-radius:99px;background:rgba(255,255,255,.22);position:relative;transition:background .15s}
 .rd-tog s::after{content:"";position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .15s}
 .rd-tog.on s{background:var(--rdA)}.rd-tog.on s::after{left:17px}
+.rd-clr{display:flex;gap:9px;flex-wrap:wrap;padding:2px 0}
+.rd-clr button{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.rd-clr button.on{border-color:#fff;box-shadow:0 0 0 2px var(--rdA2)}
 .rd-fz{display:flex;gap:6px}
 .rd-fz button{flex:1;height:32px;border:none;border-radius:9px;background:rgba(255,255,255,.1);color:#cfd5e2;font:inherit;font-size:11.5px;font-weight:700;cursor:pointer}
 .rd-fz button.on{background:linear-gradient(135deg,var(--rdA),var(--rdA2));color:#fff}
+::highlight(rd-hl-y){background-color:rgba(255,213,74,.6)}
+::highlight(rd-hl-g){background-color:rgba(110,222,140,.55)}
+::highlight(rd-hl-p){background-color:rgba(255,130,165,.5)}
+::highlight(rd-hl-b){background-color:rgba(110,185,255,.55)}
+.rd-selbar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:12;display:none;align-items:center;gap:9px;padding:7px 12px;border-radius:99px;background:rgba(24,27,36,.95);border:1px solid rgba(255,255,255,.18);box-shadow:0 10px 26px rgba(0,0,0,.5);max-width:calc(100% - 16px);overflow-x:auto;scrollbar-width:none}
+.rd-selbar::-webkit-scrollbar{display:none}
+.rd-selbar .c{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.75);cursor:pointer;padding:0}
+.rd-selbar .e{flex:none;height:28px;padding:0 11px;border:none;border-radius:99px;background:rgba(255,255,255,.14);color:#e8ecf4;font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.rd-selbar .add{flex:none;height:28px;padding:0 12px;border:none;border-radius:99px;background:linear-gradient(135deg,#8b5cf6,#6d3ee0);color:#fff;font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.rd-selbar .sepv{flex:none;width:1px;height:20px;background:rgba(255,255,255,.2)}
+.rd-teach .rd-selbar{bottom:calc(78px + env(safe-area-inset-bottom,0px))}.rd-teach .rd-selbar .add,.rd-teach .rd-selbar .sepv{display:none}
 @media (max-width:560px){.rd-zoomgrp{display:none !important}.rd-sep{display:none}.rd-bar{gap:5px;padding:5px 6px}.rd-ib{width:30px;height:30px}.rd-pill{height:30px;padding:0 8px}}
 `;
     document.head.appendChild(st);
@@ -13147,7 +13167,7 @@ class Component extends DCLogic {
     ov.appendChild(bar);
     // page colour + zoom popover
     const themePop = document.createElement('div'); themePop.className = 'rd-pop';
-    themePop.innerHTML = '<b>ពណ៌ទំព័រ</b><div class="rd-sw"><button data-t="white" style="background:#fdfcf8;color:#222">ក</button><button data-t="cream" style="background:#f3e8d0;color:#4a3a1e">ក</button><button data-t="dark" style="background:#1f2229;color:#e8eaf0">ក</button></div><b>ពង្រីក</b><input type="range" min="1" max="5" step="0.5" value="1"><b style="margin-top:12px">សំឡេងពេលចុចពាក្យ</b><button type="button" class="rd-auto"></button>';
+    themePop.innerHTML = '<b>ពណ៌ទំព័រ</b><div class="rd-sw"><button data-t="white" style="background:#fdfcf8;color:#222">ក</button><button data-t="cream" style="background:#f3e8d0;color:#4a3a1e">ក</button><button data-t="dark" style="background:#1f2229;color:#e8eaf0">ក</button></div><b>ពង្រីក</b><input type="range" min="1" max="5" step="0.5" value="1"><b style="margin-top:12px">សំឡេងពេលចុចពាក្យ</b><button type="button" class="rd-auto"></button><b style="margin-top:12px">Highlight</b><button type="button" class="rd-auto rd-hlclr">លុប highlight ទំព័រនេះ</button><div style="margin-top:6px;font-size:10px;line-height:1.6;color:#8d96a8">ជ្រើសអក្សរក្នុងទំព័រ រួចរើសពណ៌</div>';
     const zslider = themePop.querySelector('input');
     // read-aloud on tapping a word: on by default; off is handy while recording a lesson
     const autoSw = themePop.querySelector('.rd-auto');
@@ -13159,6 +13179,7 @@ class Component extends DCLogic {
     };
     const toggleAuto = () => { this._rdSetAuto(!this._rdAuto()); paintAuto(); };
     autoSw.addEventListener('click', toggleAuto);
+    themePop.querySelector('.rd-hlclr').addEventListener('click', () => { hls = hls.filter(x => x.p !== cur); this._hlSet(bookId, hls); renderHl(); });
     zslider.addEventListener('input', () => { scale = parseFloat(zslider.value) || 1; applyView(); });
     const setTheme = t => {
       theme = t; try { localStorage.setItem('dict_reader_theme', t); } catch(e) {}
@@ -13169,7 +13190,7 @@ class Component extends DCLogic {
     setTheme(theme);
     ov.appendChild(themePop);
     const furiPop = document.createElement('div'); furiPop.className = 'rd-pop';
-    furiPop.innerHTML = '<b>Furigana</b><button type="button" class="rd-tog" data-k="on">បង្ហាញ Furigana លើ Kanji<s></s></button><button type="button" class="rd-tog" data-k="hide">លាក់ពាក្យដែលខ្ញុំបានរៀនរួច<s></s></button><b style="margin-top:8px">ទំហំ Furigana</b><div class="rd-fz"><button type="button" data-z="s">តូច</button><button type="button" data-z="m">កណ្ដាល</button><button type="button" data-z="l">ធំ</button></div><div style="margin-top:8px;font-size:10px;line-height:1.6;color:#8d96a8">ការអានមកពីវចនានុក្រម — ពាក្យដែលគ្មានក្នុងវចនានុក្រម ឬអានច្រើនបែប អាចមិនមាន ឬមិនត្រឹមត្រូវ</div>';
+    furiPop.innerHTML = '<b>Furigana</b><button type="button" class="rd-tog" data-k="on">បង្ហាញ Furigana លើ Kanji<s></s></button><button type="button" class="rd-tog" data-k="hide">លាក់ពាក្យដែលខ្ញុំបានរៀនរួច<s></s></button><b style="margin-top:8px">ទំហំ Furigana</b><div class="rd-fz"><button type="button" data-z="s">តូច</button><button type="button" data-z="m">កណ្ដាល</button><button type="button" data-z="l">ធំ</button></div><b style="margin-top:10px">ពណ៌ Furigana</b><div class="rd-clr">' + ['#2f6fb0', '#d9304f', '#1f9d55', '#e07b00', '#7c4dff', '#222222'].map(c => '<button type="button" data-c="' + c + '" style="background:' + c + '"></button>').join('') + '</div><div style="margin-top:8px;font-size:10px;line-height:1.6;color:#8d96a8">ការអានមកពីវចនានុក្រម — ពាក្យដែលគ្មានក្នុងវចនានុក្រម ឬអានច្រើនបែប អាចមិនមាន ឬមិនត្រឹមត្រូវ</div>';
     ov.appendChild(furiPop);
     let furiSt = this._rdFuri();
     // the dictionary words this student has already looked at (their furigana can be hidden)
@@ -13234,10 +13255,13 @@ class Component extends DCLogic {
       ['s', 'm', 'l'].forEach(z => ov.classList.toggle('rd-fz-' + z, furiSt.size === z));
       furiPop.querySelectorAll('.rd-tog').forEach(b => b.classList.toggle('on', !!furiSt[b.dataset.k]));
       furiPop.querySelectorAll('.rd-fz button').forEach(b => b.classList.toggle('on', b.dataset.z === furiSt.size));
+      ov.style.setProperty('--rd-rt', furiSt.color);
+      furiPop.querySelectorAll('.rd-clr button').forEach(b => b.classList.toggle('on', b.dataset.c.toLowerCase() === furiSt.color.toLowerCase()));
     };
-    const applyFuri = () => { paintFuri(); pages.forEach(furiPage); applyView(); };
+    const applyFuri = () => { paintFuri(); pages.forEach(furiPage); renderHl(); applyView(); };
     furiPop.querySelectorAll('.rd-tog').forEach(b => b.addEventListener('click', () => { furiSt = { ...furiSt, [b.dataset.k]: !furiSt[b.dataset.k] }; this._rdSetFuri(furiSt); applyFuri(); }));
     furiPop.querySelectorAll('.rd-fz button').forEach(b => b.addEventListener('click', () => { furiSt = { ...furiSt, size: b.dataset.z }; this._rdSetFuri(furiSt); applyFuri(); }));
+    furiPop.querySelectorAll('.rd-clr button').forEach(b => b.addEventListener('click', () => { furiSt = { ...furiSt, color: b.dataset.c }; this._rdSetFuri(furiSt); paintFuri(); }));
     // page area (scrolls). The sheet is centred with margin:auto so both edges stay
     // reachable by scrolling when zoomed in past the screen.
     const row = document.createElement('div'); row.className = 'rd-row';
@@ -13268,7 +13292,7 @@ class Component extends DCLogic {
     if (!pages.length) { const p = mkPage(); p.innerHTML = '<p style="opacity:0.5;">(សៀវភៅទទេ)</p>'; pages = [p]; }
     // wrap tap-to-translate words lazily — only the page(s) actually shown, so
     // opening a long book is instant instead of pre-scanning every page up front
-    const wrapOne = p => { if (p && !p._bwWrapped) { p._bwWrapped = true; this._wrapBookWords(p); if (furiSt.on) furiPage(p); } };
+    const wrapOne = p => { if (p && !p._bwWrapped) { p._bwWrapped = true; this._wrapBookWords(p); if (furiSt.on) furiPage(p); renderHl(); } };
     // fix Google-Drive share links so the pictures actually load
     pages.forEach(p => p.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; }));
     // page number in the bottom margin, centred — a custom number typed on a
@@ -13455,7 +13479,7 @@ class Component extends DCLogic {
     // fit = 100%: the largest size that shows the whole page with no top/bottom cut
     let fitWidth = false;
     const fit = () => {
-      if (!document.body.contains(ov)) { window.removeEventListener('resize', onResize); if (this._rdRO) { this._rdRO.disconnect(); this._rdRO = null; } if (this._rdKey) { document.removeEventListener('keydown', this._rdKey); this._rdKey = null; } return; }
+      if (!document.body.contains(ov)) { window.removeEventListener('resize', onResize); if (this._rdRO) { this._rdRO.disconnect(); this._rdRO = null; } if (this._rdKey) { document.removeEventListener('keydown', this._rdKey); this._rdKey = null; } try { ['rd-hl-y', 'rd-hl-g', 'rd-hl-p', 'rd-hl-b'].forEach(k => window.CSS && CSS.highlights && CSS.highlights.delete(k)); } catch(e) {} return; }
       let ah = area.clientHeight - 16, aw = area.clientWidth - 16;
       // before the flex layout has settled these can read 0 — fall back to the
       // screen size so the very first paint is already fitted, not oversized
@@ -13481,31 +13505,93 @@ class Component extends DCLogic {
       this._rdRO = new ResizeObserver(() => { const k = area.clientWidth + 'x' + area.clientHeight; if (k !== lastBox) { lastBox = k; fit(); } });
       this._rdRO.observe(area);
     }
-    // admin: select a word the dictionary lacks → a pill offers to add it
-    if (this.state.role === 'admin') {
-      const selPill = document.createElement('button'); selPill.type = 'button'; selPill.className = 'rd-selpill';
-      bookWrap.appendChild(selPill);
-      let selTxt = '';
-      selPill.addEventListener('pointerdown', e => e.preventDefault());       // keep the selection alive until the click
-      selPill.addEventListener('click', () => { const t = selTxt; selPill.style.display = 'none'; try { window.getSelection().removeAllRanges(); } catch(e) {} this._rdAddWord(t); });
-      let selT = null;
-      const onSel = () => {
-        if (!document.body.contains(ov)) { document.removeEventListener('selectionchange', onSel); return; }
-        clearTimeout(selT);
-        selT = setTimeout(() => {
-          const sel = window.getSelection(); let txt = '';
-          if (sel && sel.rangeCount && !sel.isCollapsed && area.contains(sel.anchorNode)) {
-            const box = document.createElement('div'); box.appendChild(sel.getRangeAt(0).cloneContents());
-            box.querySelectorAll('rt,rp,.pgnum').forEach(n => n.remove());
-            box.querySelectorAll('[data-fh="1"]').forEach(n => n.remove());
-            txt = (box.textContent || '').replace(/\s+/g, '');
-          }
-          if (txt && txt.length <= 20 && HAS_KANJI.test(txt)) { selTxt = txt; selPill.textContent = '➕ បញ្ចូលពាក្យ «' + txt + '»'; selPill.style.display = 'block'; }
-          else selPill.style.display = 'none';
-        }, 200);
-      };
-      document.addEventListener('selectionchange', onSel);
+    // — highlighter: select text → pick a colour (kept per book on this device). Uses the browser's
+    //   CSS Custom Highlight API, so the page itself is not changed. —
+    const HLC = { y: 'rd-hl-y', g: 'rd-hl-g', p: 'rd-hl-p', b: 'rd-hl-b' };
+    const hlOK = !!(window.CSS && CSS.highlights && window.Highlight);
+    let hls = this._hlGet(bookId);
+    // a page's real text (readings, the page number and hidden slices left out) + where each text node starts
+    const textMap = pg => {
+      const nodes = [], starts = []; let joined = '';
+      const w = document.createTreeWalker(pg, NodeFilter.SHOW_TEXT, { acceptNode: n => { const pe = n.parentElement; return (!pe || pe.closest('rt,rp,.pgnum,[data-fh="1"]')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; } });
+      while (w.nextNode()) { starts.push(joined.length); nodes.push(w.currentNode); joined += w.currentNode.nodeValue; }
+      return { nodes, starts, joined };
+    };
+    const locate = (tm, off, isEnd) => {
+      const probe = isEnd ? off - 1 : off; let lo = 0, hi = tm.nodes.length - 1, k = -1;
+      while (lo <= hi) { const mid = (lo + hi) >> 1; if (tm.starts[mid] <= probe) { k = mid; lo = mid + 1; } else hi = mid - 1; }
+      if (k < 0) return null; const o = off - tm.starts[k];
+      return (o < 0 || o > tm.nodes[k].nodeValue.length) ? null : { node: tm.nodes[k], offset: o };
+    };
+    const renderHl = () => {
+      if (!hlOK) return;
+      const by = { y: [], g: [], p: [], b: [] }, cache = new Map();
+      for (const x of hls) {
+        const pg = pages[x.p]; if (!pg) continue;
+        let tm = cache.get(pg); if (!tm) { tm = textMap(pg); cache.set(pg, tm); }
+        const a = locate(tm, x.s, false), b = locate(tm, x.e, true); if (!a || !b) continue;
+        try { const rg = document.createRange(); rg.setStart(a.node, a.offset); rg.setEnd(b.node, b.offset); (by[x.c] || by.y).push(rg); } catch(e) {}
+      }
+      for (const k of Object.keys(HLC)) { if (by[k].length) CSS.highlights.set(HLC[k], new Highlight(...by[k])); else CSS.highlights.delete(HLC[k]); }
+    };
+    // paint [s,e) of page p in colour c (or clear it when c is empty); overlapping marks are trimmed
+    const setHl = (p, s, e, c) => {
+      const out = [];
+      for (const x of hls) {
+        if (x.p !== p || x.e <= s || x.s >= e) { out.push(x); continue; }
+        if (x.s < s) out.push({ ...x, e: s });
+        if (x.e > e) out.push({ ...x, s: e });
+      }
+      if (c) out.push({ p, s, e, c });
+      hls = out.slice(-600); this._hlSet(bookId, hls); renderHl();
+    };
+    const selInfo = () => {
+      const sel = window.getSelection(); if (!sel || !sel.rangeCount || sel.isCollapsed) return null;
+      const rng = sel.getRangeAt(0); if (!area.contains(rng.commonAncestorContainer)) return null;
+      const el = rng.commonAncestorContainer.nodeType === 1 ? rng.commonAncestorContainer : rng.commonAncestorContainer.parentElement;
+      const pg = el && el.closest('.a4page'); if (!pg) return null;
+      const tm = textMap(pg); let s = -1, e = -1;
+      tm.nodes.forEach((n, k) => {
+        if (!rng.intersectsNode(n)) return;
+        const a = n === rng.startContainer ? rng.startOffset : 0, b = n === rng.endContainer ? rng.endOffset : n.nodeValue.length;
+        if (b <= a) return; if (s < 0) s = tm.starts[k] + a; e = tm.starts[k] + b;
+      });
+      return (s < 0 || e <= s) ? null : { p: pages.indexOf(pg), s, e, txt: tm.joined.slice(s, e).replace(/\s+/g, '') };
+    };
+    const isAdminUser = this.state.role === 'admin';
+    const selBar = document.createElement('div'); selBar.className = 'rd-selbar';
+    const COLS = [['y', '#ffd54a'], ['g', '#6ede8c'], ['p', '#ff82a5'], ['b', '#6eb9ff']];
+    let selCur = null;
+    if (hlOK) {
+      COLS.forEach(([k, col]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'c'; b.style.background = col; b.title = 'Highlight';
+        b.addEventListener('click', () => { if (selCur) setHl(selCur.p, selCur.s, selCur.e, k); finishSel(); }); selBar.appendChild(b); });
+      const er = document.createElement('button'); er.type = 'button'; er.className = 'e'; er.textContent = '✕ លុប';
+      er.addEventListener('click', () => { if (selCur) setHl(selCur.p, selCur.s, selCur.e, ''); finishSel(); }); selBar.appendChild(er);
     }
+    let addBtn = null;
+    if (isAdminUser) {
+      if (hlOK) { const sv = document.createElement('span'); sv.className = 'sepv'; selBar.appendChild(sv); }
+      addBtn = document.createElement('button'); addBtn.type = 'button'; addBtn.className = 'add';
+      addBtn.addEventListener('click', () => { const t = selCur ? selCur.txt : ''; finishSel(); this._rdAddWord(t); });
+      selBar.appendChild(addBtn);
+    }
+    const finishSel = () => { selBar.style.display = 'none'; selCur = null; try { window.getSelection().removeAllRanges(); } catch(e) {} };
+    selBar.addEventListener('pointerdown', e => e.preventDefault());       // keep the selection alive until the click
+    bookWrap.appendChild(selBar);
+    let selT = null;
+    const onSel = () => {
+      if (!document.body.contains(ov)) { document.removeEventListener('selectionchange', onSel); return; }
+      clearTimeout(selT);
+      selT = setTimeout(() => {
+        const info = selInfo();
+        const canAdd = isAdminUser && info && info.txt && info.txt.length <= 20 && HAS_KANJI.test(info.txt);
+        if (!info || !info.txt || !(hlOK || canAdd)) { selBar.style.display = 'none'; selCur = null; return; }
+        selCur = info;
+        if (addBtn) { addBtn.style.display = canAdd ? '' : 'none'; if (canAdd) addBtn.textContent = '➕ បញ្ចូលពាក្យ «' + (info.txt.length > 8 ? info.txt.slice(0, 8) + '…' : info.txt) + '»'; }
+        selBar.style.display = 'flex';
+      }, 200);
+    };
+    document.addEventListener('selectionchange', onSel);
     // — teaching mode: clean screen for recording a lesson —
     let teach = false, spotOn = false, laserOn = true, dockT = null;
     const spotEl = document.createElement('div'); spotEl.className = 'rd-spot';
@@ -13567,6 +13653,7 @@ class Component extends DCLogic {
     };
     document.addEventListener('keydown', this._rdKey);
     paintFuri();
+    renderHl();
     fit();                 // fit now so the first paint is centred and full-screen
     setTimeout(fit, 60);   // re-fit once the real layout height is known
     setTimeout(fit, 250);
@@ -17034,7 +17121,9 @@ class Component extends DCLogic {
       hasEdError: !!s.edError, edError: s.edError,
 
       // — Admin: add a new word —
-      isAddWord: s.screen === 'addword', hasAwReturn: !!s.awReturn, awBackToBook: () => this.awBackToBook(),
+      isAddWord: s.screen === 'addword', showAddWord: s.screen === 'addword' || s.awDialog, awDialog: s.awDialog, awNotDialog: !s.awDialog, closeAwDialog: () => { if (this.state.awDialog) this.closeAwDialog(); },
+      awOuterStyle: s.awDialog ? 'position:fixed;inset:0;z-index:200;background:color-mix(in srgb, var(--color-neutral-900) 50%, transparent);display:flex;align-items:flex-end;' : '',
+      awInnerStyle: s.awDialog ? 'background:var(--color-bg);width:100%;border-radius:20px 20px 0 0;max-height:92%;overflow-y:auto;box-sizing:border-box;box-shadow:var(--shadow-lg);' : '',
       goAddWord: () => this.goAddWord(),
       awBookLabel, awBookItems, awBookMenuOpen: s.awBookMenuOpen,
       toggleAwBookMenu: () => this.toggleAwBookMenu(),
