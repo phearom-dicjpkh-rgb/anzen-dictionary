@@ -463,6 +463,37 @@ figcaption {
 .btn-icon { width: 36px; height: 36px; padding: 0; }
 .btn-block { width: 100%; margin-top: var(--space-2); }
 
+/* — share image maker — */
+.shr{padding:18px 20px 40px;max-width:980px;margin:0 auto}
+.shr-wb{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.shr-in{width:100%;flex:1 1 240px;height:42px;padding:0 14px;border:1.5px solid var(--color-divider);border-radius:14px;background:var(--color-surface);font:inherit;font-size:14px;color:var(--color-text)}
+.shr-chosen{flex:1 1 280px;min-width:0;padding:9px 12px;border-radius:12px;background:var(--color-accent-100);color:var(--color-accent-800);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shr-res{border:1px solid var(--color-divider);border-radius:var(--radius-md);max-height:230px;overflow-y:auto;margin-bottom:12px;background:var(--color-surface)}
+.shr-stage{background:repeating-conic-gradient(color-mix(in srgb,var(--color-text) 6%,var(--color-bg)) 0 25%,var(--color-bg) 0 50%) 0 0/18px 18px;border-radius:16px;padding:18px;display:flex;justify-content:center;align-items:center;position:relative;min-height:200px}
+.shr-stage img{max-width:100%;max-height:460px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.shr-badge{position:absolute;right:10px;top:10px;font-size:11px;font-weight:700;background:rgba(0,0,0,.6);color:#fff;border-radius:99px;padding:2px 10px}
+.shr-tabs{display:flex;gap:4px;padding:4px;background:color-mix(in srgb,var(--color-text) 8%,var(--color-bg));border-radius:14px;margin:14px 0 10px}
+.shr-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;height:38px;border:none;border-radius:11px;background:transparent;color:var(--color-text);opacity:.7;font:inherit;font-weight:600;font-size:13.5px;cursor:pointer}
+.shr-tab.on{background:var(--color-surface);color:var(--color-accent-800);opacity:1;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.shr-pn{background:var(--color-surface);border:1px solid var(--color-divider);border-radius:16px;padding:12px}
+.shr-tts{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 6px}
+.shr-tt{flex:none;width:96px;text-align:center;font:inherit;font-size:12px;font-weight:600;border:none;background:none;color:var(--color-text);cursor:pointer;padding:0}
+.shr-tt .ph{border-radius:12px;padding:3px;border:2px solid transparent;aspect-ratio:1/1;background:color-mix(in srgb,var(--color-text) 6%,transparent)}
+.shr-tt .ph img{width:100%;height:100%;border-radius:8px;display:block}
+.shr-tt.on .ph{border-color:var(--color-accent)}.shr-tt.on{color:var(--color-accent-800)}.shr-tt span{display:block;margin-top:5px}
+.shr-szs{display:flex;gap:8px;flex-wrap:wrap}
+.shr-sz{flex:1 1 90px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border-radius:12px;border:1.5px solid var(--color-divider);background:var(--color-surface);font:inherit;font-size:11.5px;color:var(--color-text);cursor:pointer}
+.shr-sz b{font-size:14px}.shr-sz span{opacity:.6}.shr-sz .rb{display:block;height:30px;border:2px solid #aab;border-radius:5px}
+.shr-sz.on{border-color:var(--color-accent);background:var(--color-accent-100);color:var(--color-accent-800)}.shr-sz.on .rb{border-color:var(--color-accent)}
+.shr-chip{padding:7px 13px;border-radius:99px;border:1.5px solid var(--color-divider);background:var(--color-surface);font:inherit;font-size:12.5px;color:var(--color-text);cursor:pointer}
+.shr-chip.on{background:var(--color-accent);border-color:var(--color-accent);color:#fff;font-weight:700}
+.shr-row{padding:10px 4px;border-bottom:1px solid color-mix(in srgb,var(--color-divider) 60%,transparent);font-size:13.5px}
+.shr-row:last-child{border-bottom:none}
+.shr-gh{display:flex;justify-content:space-between;margin-bottom:6px}
+.shr-acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.shr-act{flex:1 1 120px;display:flex;align-items:center;justify-content:center;gap:8px;height:46px;border-radius:13px;background:var(--color-surface);border:1.5px solid var(--color-divider);font:inherit;font-weight:700;font-size:14px;color:var(--color-text);cursor:pointer}
+.shr-act.main{flex:1.6 1 160px;background:var(--color-accent);border-color:var(--color-accent);color:#fff}
+.shr-zip{width:100%;margin-top:8px;padding:9px;border-radius:10px;background:var(--color-accent-100);color:var(--color-accent-800);border:none;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
 /* — edit / add word dialogs — */
 .ew-scrim{position:fixed;inset:0;z-index:200;background:color-mix(in srgb, var(--color-neutral-900) 50%, transparent);display:flex;justify-content:center;align-items:flex-end}
 .ew-dlg{background:var(--color-bg);width:100%;max-width:680px;max-height:94%;border-radius:22px 22px 0 0;display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow-lg);box-sizing:border-box}
@@ -3229,14 +3260,16 @@ textarea.input { min-height: 90px; resize: vertical; }
         </sc-if>
 
         <sc-if value="{{ isShare }}" hint-placeholder-val="{{ false }}">
-        <div style="padding:18px 20px 40px;">
+        <div class="shr">
           <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
           <h1 style="font-size:26px;margin:0 0 4px;">រូបភាពចែករំលែក</h1>
-          <div style="font-size:12px;opacity:0.6;margin-bottom:16px;">បង្កើត​រូបភាព​ពាក្យ​ស្អាតៗ សម្រាប់​ចែក​រំលែក​លើ​បណ្ដាញ​សង្គម</div>
-          <div class="field" style="margin-bottom:10px;"><label>ជ្រើសរើសពាក្យ</label>
-            <input class="input" type="text" value="{{ shareSearch }}" sc-camel-on-change="{{ onShareSearch }}" placeholder="ស្វែងរកពាក្យ ឬ 漢字…"></div>
+          <div style="font-size:12px;opacity:0.6;margin-bottom:14px;">បង្កើតរូបភាពពាក្យស្អាតៗ សម្រាប់ចែករំលែកលើបណ្ដាញសង្គម</div>
+          <div class="shr-wb">
+            <input class="shr-in" type="text" value="{{ shareSearch }}" sc-camel-on-change="{{ onShareSearch }}" placeholder="ស្វែងរកពាក្យ ឬ 漢字…">
+            <sc-if value="{{ shareHasWord }}"><div class="shr-chosen">ពាក្យ៖ <b>{{ shareWordLabel }}</b></div></sc-if>
+          </div>
           <sc-if value="{{ shareHasResults }}">
-            <div style="border:1px solid var(--color-divider);border-radius:var(--radius-md);max-height:230px;overflow-y:auto;margin-bottom:14px;">
+            <div class="shr-res">
               <sc-for list="{{ shareResults }}" as="r" hint-placeholder-count="5">
                 <div style="padding:10px 13px;cursor:pointer;border-bottom:1px solid var(--color-divider);display:flex;gap:8px;align-items:baseline;" sc-camel-on-click="{{ r.onSelect }}">
                   <span style="font-family:var(--font-heading);font-size:15px;flex:none;">{{ r.jp }}</span>
@@ -3245,42 +3278,92 @@ textarea.input { min-height: 90px; resize: vertical; }
               </sc-for>
             </div>
           </sc-if>
-          <sc-if value="{{ shareHasWord }}">
-            <div style="font-size:13px;margin-bottom:14px;padding:9px 13px;border-radius:var(--radius-md);background:var(--color-accent-100);color:var(--color-accent-800);">ពាក្យ៖ <b>{{ shareWordLabel }}</b></div>
-          </sc-if>
-
-          <div style="font-size:12px;opacity:0.6;margin-bottom:7px;">រចនាបថ</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
-            <sc-for list="{{ shareStyleChips }}" as="c" hint-placeholder-count="3">
-              <button style="padding:7px 14px;border-radius:99px;border:1.5px solid;font-size:13px;cursor:pointer;{{ c.style }}" sc-camel-on-click="{{ c.onSelect }}">{{ c.label }}</button>
-            </sc-for>
-          </div>
-          <div style="font-size:12px;opacity:0.6;margin-bottom:7px;">ទំហំ</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
-            <sc-for list="{{ shareSizeChips }}" as="c" hint-placeholder-count="3">
-              <button style="padding:7px 14px;border-radius:99px;border:1.5px solid;font-size:13px;cursor:pointer;{{ c.style }}" sc-camel-on-click="{{ c.onSelect }}">{{ c.label }}</button>
-            </sc-for>
-          </div>
-          <div style="font-size:12px;opacity:0.6;margin-bottom:7px;">ពណ៌</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
-            <sc-for list="{{ shareColorChips }}" as="c" hint-placeholder-count="6">
-              <button title="{{ c.title }}" style="width:30px;height:30px;border-radius:50%;cursor:pointer;padding:0;background:{{ c.color }};{{ c.style }}" sc-camel-on-click="{{ c.onSelect }}"></button>
-            </sc-for>
-            <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;opacity:0.75;cursor:pointer;">
-              <input type="color" value="{{ shareCustomColor }}" sc-camel-on-change="{{ onShareCustomColor }}" style="width:30px;height:30px;border:none;background:none;cursor:pointer;padding:0;">
-              ផ្សេង
-            </label>
-          </div>
-
-          <sc-if value="{{ shareBusy }}"><div style="text-align:center;padding:40px 0;opacity:0.6;font-size:13px;">កំពុងបង្កើត…</div></sc-if>
-          <sc-if value="{{ shareHasImg }}">
-            <div style="display:flex;justify-content:center;margin-bottom:14px;">
-              <img src="{{ shareImgData }}" alt="" style="max-width:100%;max-height:420px;border-radius:12px;box-shadow:var(--shadow-md);border:1px solid var(--color-divider);">
+          <sc-if value="{{ shareIsList }}">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+              <span style="font-size:12px;opacity:0.6;">បញ្ជី (≤ ៥)៖</span>
+              <sc-for list="{{ shareListItems }}" as="li" hint-placeholder-count="3">
+                <button class="shr-chip on" sc-camel-on-click="{{ li.onRemove }}">{{ li.jp }} ✕</button>
+              </sc-for>
+              <span style="font-size:12px;opacity:0.55;">ស្វែងរក រួចចុចពាក្យ ដើម្បីបន្ថែម</span>
             </div>
-            <button class="btn btn-primary btn-block" sc-camel-on-click="{{ downloadShare }}">⬇ ទាញយករូបភាព</button>
           </sc-if>
-          <sc-if value="{{ shareHasErr }}"><div style="font-size:12px;color:#c0392b;margin-top:6px;line-height:1.6;">{{ shareErr }}</div></sc-if>
-          <sc-if value="{{ shareNoWord }}"><div style="text-align:center;padding:40px 20px;opacity:0.5;font-size:13px;">ស្វែងរក រួច​ជ្រើសរើស​ពាក្យ​ដើម្បី​បង្កើត​រូបភាព</div></sc-if>
+
+          <div class="shr-stage">
+            <sc-if value="{{ shareHasImg }}"><span class="shr-badge">{{ shareDims }}</span><img src="{{ shareImgData }}" alt=""></sc-if>
+            <sc-if value="{{ shareBusy }}"><div style="opacity:0.6;font-size:13px;">កំពុងបង្កើត…</div></sc-if>
+            <sc-if value="{{ shareNoWord }}"><div style="text-align:center;padding:30px 20px;opacity:0.5;font-size:13px;">ស្វែងរក រួចជ្រើសរើសពាក្យដើម្បីបង្កើតរូបភាព</div></sc-if>
+            <sc-if value="{{ shareHasErr }}"><div style="font-size:12px;color:#c0392b;line-height:1.6;text-align:center;">{{ shareErr }}</div></sc-if>
+          </div>
+
+          <div class="shr-tabs">
+            <sc-for list="{{ shareTabs }}" as="t" hint-placeholder-count="4">
+              <button class="shr-tab {{ t.cls }}" sc-camel-on-click="{{ t.onSelect }}"><span>{{ t.icon }}</span><span>{{ t.label }}</span></button>
+            </sc-for>
+          </div>
+          <div class="shr-pn">
+            <sc-if value="{{ shareTabTpl }}">
+              <div class="shr-tts">
+                <sc-for list="{{ shareTplItems }}" as="t" hint-placeholder-count="7">
+                  <button class="shr-tt {{ t.cls }}" sc-camel-on-click="{{ t.onSelect }}">
+                    <div class="ph"><sc-if value="{{ t.hasThumb }}"><img src="{{ t.thumb }}" alt=""></sc-if></div>
+                    <span>{{ t.label }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ shareTabSize }}">
+              <div class="shr-szs">
+                <sc-for list="{{ shareSizeItems }}" as="z" hint-placeholder-count="5">
+                  <button class="shr-sz {{ z.cls }}" sc-camel-on-click="{{ z.onSelect }}"><i class="rb" style="{{ z.ratioStyle }}"></i><b>{{ z.a }}</b><span>{{ z.sub }}</span></button>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ shareTabColor }}">
+              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                <sc-for list="{{ shareColorChips }}" as="c" hint-placeholder-count="6">
+                  <button title="{{ c.title }}" style="width:34px;height:34px;border-radius:50%;cursor:pointer;padding:0;background:{{ c.color }};{{ c.style }}" sc-camel-on-click="{{ c.onSelect }}"></button>
+                </sc-for>
+                <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;opacity:0.75;cursor:pointer;">
+                  <input type="color" value="{{ shareCustomColor }}" sc-camel-on-change="{{ onShareCustomColor }}" style="width:34px;height:34px;border:none;background:none;cursor:pointer;padding:0;">
+                  ផ្សេង
+                </label>
+              </div>
+            </sc-if>
+            <sc-if value="{{ shareTabText }}">
+              <div class="shr-row">
+                <div style="margin-bottom:6px;">របៀប Furigana</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <sc-for list="{{ shareFuriItems }}" as="f" hint-placeholder-count="3"><button class="shr-chip {{ f.cls }}" sc-camel-on-click="{{ f.onSelect }}">{{ f.label }}</button></sc-for>
+                </div>
+              </div>
+              <div class="shr-row">
+                <div class="shr-gh"><span>គម្លាត furigana ↔ kanji</span><b style="color:var(--color-accent-800);">{{ shareGapLabel }}</b></div>
+                <input type="range" min="0" max="6" step="0.2" value="{{ shareGap }}" sc-camel-on-change="{{ onShareGap }}" style="width:100%;accent-color:var(--color-accent);">
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+                  <sc-for list="{{ shareGapItems }}" as="g" hint-placeholder-count="4"><button class="shr-chip {{ g.cls }}" sc-camel-on-click="{{ g.onSelect }}">{{ g.label }}</button></sc-for>
+                </div>
+              </div>
+              <sc-for list="{{ shareToggleItems }}" as="tg" hint-placeholder-count="5">
+                <div class="shr-row" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                  <span>{{ tg.label }}</span>
+                  <label class="switch {{ tg.cls }}"><input type="checkbox" checked="{{ tg.on }}" sc-camel-on-change="{{ tg.onChange }}"><span class="track"></span><span class="thumb"></span></label>
+                </div>
+              </sc-for>
+              <div class="shr-row" style="display:flex;align-items:center;gap:10px;"><span style="flex:none;min-width:96px;">ឈ្មោះខាងលើ</span>
+                <input class="shr-in" style="height:38px;" type="text" value="{{ shareBrand }}" sc-camel-on-change="{{ onShareBrand }}" placeholder="{{ shareBrandPh }}"></div>
+              <div class="shr-row" style="display:flex;align-items:center;gap:10px;"><span style="flex:none;min-width:96px;">អក្សរបាត</span>
+                <input class="shr-in" style="height:38px;" type="text" value="{{ shareFoot }}" sc-camel-on-change="{{ onShareFoot }}" placeholder="{{ shareFootPh }}"></div>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ shareHasImg }}">
+            <div class="shr-acts">
+              <button class="shr-act main" sc-camel-on-click="{{ downloadShare }}">⬇ ទាញយក PNG</button>
+              <sc-if value="{{ shareCanNative }}"><button class="shr-act" sc-camel-on-click="{{ shareNative }}">↗ ចែករំលែក</button></sc-if>
+              <button class="shr-act" sc-camel-on-click="{{ copyShare }}">⎘ ចម្លង</button>
+            </div>
+            <button class="shr-zip" sc-camel-on-click="{{ downloadShareZip }}">⬇ ទាញយកគ្រប់ទំហំ (ZIP)</button>
+          </sc-if>
         </div>
         </sc-if>
 
@@ -10176,10 +10259,13 @@ const LOCK_COLS = {
 
 // Sizes an admin can pick for the share image (បង្កើតរូបភាពចែករំលែក)
 const SHARE_SIZES = {
-  square: { w: 1080, h: 1080, label: 'ការ៉េ 1:1' },
-  story:  { w: 1080, h: 1920, label: 'Story 9:16' },
-  land:   { w: 1200, h: 675,  label: 'ផ្ដេក 16:9' },
+  square:   { w: 1080, h: 1080, label: 'ការ៉េ 1:1',       a: '1:1',  sub: 'ការ៉េ',      r: '1/1' },
+  portrait: { w: 1080, h: 1350, label: '4:5 Facebook/IG', a: '4:5',  sub: 'Facebook/IG', r: '4/5' },
+  story:    { w: 1080, h: 1920, label: 'Story 9:16',      a: '9:16', sub: 'Story',      r: '9/16' },
+  land:     { w: 1200, h: 675,  label: 'ផ្ដេក 16:9',      a: '16:9', sub: 'ផ្ដេក',      r: '16/9' },
+  tall:     { w: 1080, h: 1440, label: '3:4',             a: '3:4',  sub: 'ក្រដាស់',     r: '3/4' },
 };
+const SHARE_STYLE_KEYS = ['refined', 'bold', 'hero', 'minimal', 'gradient', 'quiz', 'list'];
 
 // How long a day-by-day usage record is kept. ~2 years effectively means "since
 // the student started", while still bounding the jsonb size.
@@ -10875,6 +10961,7 @@ class Component extends DCLogic {
     playerList: [], playerIdx: 0, playerPlaying: false, playerRepeat: false, playerRate: 0.95,
     // admin: share-image maker
     shareSearch: '', shareWordId: null, shareSize: 'square', shareStyle: 'refined', shareColor: '', shareImgData: '', shareBusy: false, shareErr: '',
+    shareTab: 'tpl', shareFuri: 'ruby', shareGap: 1, shareOpts: { kana: true, ex: false, img: true, code: true, brand: true }, shareBrand: '', shareFoot: '', shareList: [], shareThumbs: {},
     // admin: A4 results preview / print
     printOpen: false, printReport: null,
     wsGroup: null,  // printable-worksheets screen: which folder is open
@@ -12104,34 +12191,92 @@ class Component extends DCLogic {
   leavePlayer(){ this.stopSpeech(); this.setState({ playerPlaying: false, screen: 'menu' }); }
 
   // — Admin: make a shareable image of a word (for social media) —
-  goShare(){ this.setState({ screen: 'share', shareErr: '' }, () => { if (this.state.shareWordId) this.drawShareCard(); }); }
+  goShare(){
+    if (!this._sharePrefsLoaded) {          // remembered from last time: reading style, gap, switches, names
+      this._sharePrefsLoaded = true;
+      try {
+        const p = JSON.parse(localStorage.getItem('dict_share_prefs') || 'null');
+        if (p) this.setState(st => ({
+          shareFuri: p.furi || st.shareFuri, shareGap: typeof p.gap === 'number' ? p.gap : st.shareGap, shareOpts: { ...st.shareOpts, ...(p.opts || {}) },
+          shareBrand: p.brand || '', shareFoot: p.foot || '', shareSize: SHARE_SIZES[p.size] ? p.size : st.shareSize,
+          shareStyle: SHARE_STYLE_KEYS.includes(p.style) ? p.style : st.shareStyle, shareColor: p.color || st.shareColor }));
+      } catch(e){}
+    }
+    this.setState({ screen: 'share', shareErr: '' }, () => { if (this.state.shareWordId) this.drawShareCard(); });
+  }
+  _saveSharePrefs(){
+    const s = this.state;
+    try { localStorage.setItem('dict_share_prefs', JSON.stringify({ furi: s.shareFuri, gap: s.shareGap, opts: s.shareOpts, brand: s.shareBrand, foot: s.shareFoot, size: s.shareSize, style: s.shareStyle, color: s.shareColor })); } catch(e){}
+  }
+  // redraw shortly after (typing / dragging a slider fires many changes)
+  _shareRedraw(){ this._saveSharePrefs(); clearTimeout(this._shareT); this._shareT = setTimeout(() => this.drawShareCard(), 90); }
   onShareSearch(e){ this.setState({ shareSearch: e.target.value }); }
-  pickShareWord(id){ this.setState({ shareWordId: id, shareSearch: '' }, () => this.drawShareCard()); }
-  setShareSize(sz){ this.setState({ shareSize: sz }, () => this.drawShareCard()); }
-  setShareStyle(st){ this.setState({ shareStyle: st }, () => this.drawShareCard()); }
-  setShareColor(c){ this.setState({ shareColor: c || '' }, () => this.drawShareCard()); }
+  pickShareWord(id){
+    if (this.state.shareStyle === 'list') {            // the list picture holds up to five words
+      const cur = this.state.shareList.filter(x => x !== id);
+      if (cur.length >= 5) { this.showToast('បញ្ជីមានអតិបរមា ៥ ពាក្យ'); return; }
+      this.setState({ shareList: [...cur, id], shareWordId: id, shareSearch: '' }, () => this.drawShareCard());
+      return;
+    }
+    this.setState({ shareWordId: id, shareSearch: '' }, () => this.drawShareCard());
+  }
+  setShareSize(sz){ this.setState({ shareSize: sz }, () => { this._saveSharePrefs(); this.drawShareCard(); }); }
+  setShareStyle(st){
+    this.setState(s => ({ shareStyle: st, shareList: (st === 'list' && !s.shareList.length && s.shareWordId) ? [s.shareWordId] : s.shareList }), () => { this._saveSharePrefs(); this.drawShareCard(); });
+  }
+  setShareColor(c){ this.setState({ shareColor: c || '' }, () => { this._saveSharePrefs(); this.drawShareCard(); }); }
   onShareCustomColor(e){ this.setShareColor(e.target.value); }
+  setShareTab(t){ this.setState({ shareTab: t }, () => { if (t === 'tpl') this.drawShareThumbs(); }); }
+  setShareFuri(m){ this.setState({ shareFuri: m }, () => this._shareRedraw()); }
+  onShareGap(e){ this.setState({ shareGap: parseFloat(e.target.value) || 0 }, () => this._shareRedraw()); }
+  setShareGap(v){ this.setState({ shareGap: v }, () => this._shareRedraw()); }
+  toggleShareOpt(k){ this.setState(s => ({ shareOpts: { ...s.shareOpts, [k]: !s.shareOpts[k] } }), () => this._shareRedraw()); }
+  onShareBrand(e){ this.setState({ shareBrand: e.target.value }, () => this._shareRedraw()); }
+  onShareFoot(e){ this.setState({ shareFoot: e.target.value }, () => this._shareRedraw()); }
+  removeShareListWord(id){ this.setState(s => ({ shareList: s.shareList.filter(x => x !== id) }), () => this.drawShareCard()); }
   _loadImg(url){ return new Promise(res => { if (!url) return res(null); const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => res(null); im.src = url; }); }
   // a Drive thumbnail link taints the canvas, but its googleusercontent form
   // sends CORS headers, so rewrite to that for drawing
   _corsImg(url){ const m = (url || '').match(/(?:[?&]id=|\/d\/)([\w-]{20,})/); return m ? `https://lh3.googleusercontent.com/d/${m[1]}=w1400` : (url || ''); }
+  // the word's picture and the logo, kept between redraws (they only change with the word / logo)
+  async _shareAssets(word){
+    const key = word && word.img ? word.img : '', logo = this.state.appLogo || '';
+    if (!this._shareAs || this._shareAs.key !== key || this._shareAs.logo !== logo) {
+      const [wordImg, logoImg] = await Promise.all([ this._loadImg(key ? this._corsImg(key) : ''), this._loadImg(logo) ]);
+      this._shareAs = { key, logo, wordImg, logoImg };
+    }
+    return this._shareAs;
+  }
   async drawShareCard(){
-    const word = WORDS.find(x => x.id === this.state.shareWordId);
+    const s = this.state, word = WORDS.find(x => x.id === s.shareWordId);
     if (!word) { this.setState({ shareImgData: '', shareErr: '' }); return; }
-    const S = SHARE_SIZES[this.state.shareSize] || SHARE_SIZES.square;
+    const S = SHARE_SIZES[s.shareSize] || SHARE_SIZES.square;
+    const seq = this._shareSeq = (this._shareSeq || 0) + 1;
     this.setState({ shareBusy: true, shareErr: '' });
-    const [wordImg, logoImg] = await Promise.all([
-      this._loadImg(word.img ? this._corsImg(word.img) : ''),
-      this._loadImg(this.state.appLogo || ''),
-    ]);
+    const as = await this._shareAssets(word);
+    if (seq !== this._shareSeq) return;            // a newer redraw took over
     try {
       const cv = document.createElement('canvas'); cv.width = S.w; cv.height = S.h;
-      this._paintShareCard(cv.getContext('2d'), S, word, wordImg, logoImg);
+      this._paintShareCard(cv.getContext('2d'), S, word, as.wordImg, as.logoImg);
       const data = cv.toDataURL('image/png');
       this.setState({ shareImgData: data, shareBusy: false });
+      if (this.state.shareTab === 'tpl') this.drawShareThumbs();
     } catch (e) {
       this.setState({ shareBusy: false, shareImgData: '', shareErr: 'រូបភាពពាក្យនេះទាញយកមិនបាន — សូមប្ដូរពាក្យ ឬ ពាក្យដែលគ្មានរូប' });
     }
+  }
+  // small previews of every layout with the current word / colour / switches
+  async drawShareThumbs(){
+    const s = this.state, word = WORDS.find(x => x.id === s.shareWordId); if (!word) return;
+    const as = await this._shareAssets(word), out = {};
+    for (const k of SHARE_STYLE_KEYS) {
+      try {
+        const cv = document.createElement('canvas'); cv.width = 300; cv.height = 300;
+        this._paintShareCard(cv.getContext('2d'), { w: 300, h: 300 }, word, as.wordImg, as.logoImg, k);
+        out[k] = cv.toDataURL('image/jpeg', 0.82);
+      } catch(e){}
+    }
+    this.setState({ shareThumbs: out });
   }
   _roundPath(ctx, x, y, w, h, r){ r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
   // draw an image to cover a rounded box (like object-fit:cover)
@@ -12171,9 +12316,13 @@ class Component extends DCLogic {
     const ir = img.width / img.height; let dw, dh; if (ir > 1) { dh = 2 * r; dw = 2 * r * ir; } else { dw = 2 * r; dh = 2 * r / ir; }
     ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh); ctx.restore();
   }
-  _paintShareCard(ctx, S, word, wordImg, logoImg){
-    const fn = { refined: this._paintRefined, bold: this._paintBold, hero: this._paintHero }[this.state.shareStyle] || this._paintRefined;
-    fn.call(this, ctx, S, word, wordImg, logoImg);
+  _paintShareCard(ctx, S, word, wordImg, logoImg, styleKey){
+    const o = this.state.shareOpts || {};
+    const img = o.img === false ? null : wordImg;
+    const k = styleKey || this.state.shareStyle;
+    const fn = { refined: this._paintRefined, bold: this._paintBold, hero: this._paintHero, minimal: this._paintMinimal,
+      gradient: this._paintGradient, quiz: this._paintQuiz, list: this._paintList }[k] || this._paintRefined;
+    fn.call(this, ctx, S, word, img, logoImg);
   }
   // ── share-card colour: every style derives its whole palette from one base
   // colour, so the user can tint the picture to the logo (default) or anything ──
@@ -12196,42 +12345,109 @@ class Component extends DCLogic {
     if (ir > br) { dw = w; dh = w / ir; } else { dh = h; dw = h * ir; }
     ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
   }
-  // shared body (image → kana → JP → [divider] → KM), centered between top and
+  // switches / reading style shared by every layout
+  _shareOpt(){
+    const s = this.state, o = s.shareOpts || {};
+    return { furi: s.shareFuri || 'ruby', gap: typeof s.shareGap === 'number' ? s.shareGap : 1, showKana: o.kana !== false, ex: !!o.ex, code: o.code !== false, brand: o.brand !== false };
+  }
+  // the headword with its reading. 'ruby' = each kanji run carries its own reading right above it
+  // (spread over that kanji's width), 'just' = the whole reading spread over the word's width,
+  // 'line' = one small line above. o.gap is the space between reading and kanji (px).
+  // With o.draw false it only measures and returns the height.
+  _jpBlock(ctx, word, o){
+    const jp = String(word.jp || ''), kana = String(word.kana || '').trim();
+    const size = o.jpSize, W = o.W, gapPx = o.gap || 0;
+    const hasK = !!(o.kana && kana && kana !== jp);
+    let runs = null;
+    if (hasK && o.mode === 'ruby') { runs = jpRubyRuns(jp, kana); if (!runs.some(r => r.kanji)) runs = null; }   // no per-kanji split possible → spread instead
+    const eff = !hasK ? 'none' : (o.mode === 'ruby' && !runs) ? 'just' : (o.mode || 'ruby');
+    const rtSize = Math.max(8, Math.round(size * 0.3)), lineK = Math.max(8, Math.round(W * 0.04));
+    const topH = eff === 'none' ? 0 : Math.round((eff === 'ruby' ? rtSize * 1.2 : lineK * 1.25) + gapPx);
+    const h = topH + Math.round(size * 1.12);
+    if (!o.draw) return h;
+    ctx.save(); ctx.textBaseline = 'top'; ctx.textAlign = 'left'; ctx.font = `800 ${size}px sans-serif`;
+    const parts = runs ? runs.map(r => ({ r, w: ctx.measureText(r.text).width })) : null;
+    const totalW = parts ? parts.reduce((a, p) => a + p.w, 0) : ctx.measureText(jp).width;
+    const x0 = o.left ? o.cx - o.maxW / 2 : o.cx - totalW / 2;
+    ctx.fillStyle = o.cJp;
+    if (parts) { let x = x0; for (const p of parts) { ctx.fillText(p.r.text, x, o.y + topH); p.x = x; x += p.w; } }
+    else ctx.fillText(jp, x0, o.y + topH);
+    ctx.fillStyle = o.cKana; ctx.textAlign = 'center';
+    const spread = (text, cxm, width, fs) => {
+      const ch = this._graphemes(text), n = ch.length; ctx.font = `600 ${fs}px sans-serif`;
+      if (n === 1 || ctx.measureText(text).width >= width * 0.95) { ctx.fillText(text, cxm, o.y); return; }
+      const step = Math.min(width / n, fs * 1.9);
+      ch.forEach((c, i) => ctx.fillText(c, cxm + (i - (n - 1) / 2) * step, o.y));
+    };
+    if (eff === 'ruby') {
+      for (const p of parts) if (p.r.kanji) {
+        let fs = rtSize; ctx.font = `600 ${fs}px sans-serif`;
+        const rw = ctx.measureText(p.r.reading).width;
+        if (rw > p.w * 1.3) fs = Math.max(Math.round(size * 0.2), Math.floor(fs * (p.w * 1.3) / rw));
+        spread(p.r.reading, p.x + p.w / 2, p.w, fs);
+      }
+    } else if (eff === 'just') spread(kana, x0 + totalW / 2, totalW, Math.round(lineK * 0.95));
+    else if (eff === 'line') { ctx.font = `400 ${lineK}px sans-serif`; ctx.fillText(kana, o.left ? x0 + ctx.measureText(kana).width / 2 : o.cx, o.y); }
+    ctx.restore();
+    return h;
+  }
+  _fitText(ctx, text, maxW){
+    text = String(text || ''); if (ctx.measureText(text).width <= maxW) return text;
+    const ch = this._graphemes(text); let t = '';
+    for (const c of ch) { if (ctx.measureText(t + c + '…').width > maxW) break; t += c; }
+    return t + '…';
+  }
+  // shared body (image → reading+JP → [divider] → KM → [example]), centred between top and
   // bottom AND scaled down to fit, so nothing is ever clipped
   _paintBody(ctx, W, H, cx, cw, top, bottom, word, wordImg, opt){
-    const avail = bottom - top;
+    const so = this._shareOpt();
+    const pp = opt.panel ? Math.round(W * 0.045) : 0;       // padding of the white panel behind the text
+    const avail = bottom - top - pp * 2; top += pp;
     let gap = Math.round(W * 0.028);
     let imgH = wordImg ? Math.round(H * 0.24) : 0;
-    let kanaSize = Math.round(W * 0.04);
     let jpSize = Math.round(W * 0.155); ctx.font = `800 ${jpSize}px sans-serif`;
     while (ctx.measureText(word.jp).width > cw * 0.94 && (jpSize -= 6) > 24) ctx.font = `800 ${jpSize}px sans-serif`;
+    let fGap = Math.round(W * 0.01 * so.gap);
     let kmSize = Math.round(W * (opt.kmSize || 0.05));
     let kmLines = this._wrapLines(ctx, word.km || '', cw * 0.9, `600 ${kmSize}px sans-serif`);
-    const measure = () => (wordImg ? imgH + gap * 1.5 : 0) + (word.kana ? kanaSize * 1.3 : 0)
-      + jpSize * 1.12 + (opt.divider ? kmSize * 1.0 : gap) + kmLines.length * (kmSize * 1.34) + (opt.kmPill ? kmSize * 0.5 : 0);
+    const ex = so.ex && word.examples && word.examples[0] ? word.examples[0] : null;
+    let exSize = Math.round(W * 0.034), exJ = [], exK = [];
+    const wrapEx = () => { if (!ex) return; exJ = this._wrapLines(ctx, ex.jp, cw * 0.82, `600 ${exSize}px sans-serif`); exK = ex.km ? this._wrapLines(ctx, ex.km, cw * 0.82, `500 ${Math.round(exSize * 0.88)}px sans-serif`) : []; };
+    wrapEx();
+    const jpH = () => this._jpBlock(ctx, word, { W, mode: so.furi, kana: so.showKana, gap: fGap, jpSize });
+    const exBoxH = () => ex ? (exJ.length * exSize * 1.4 + exK.length * exSize * 1.25 + exSize * 1.3) : 0;
+    const measure = () => (wordImg ? imgH + gap * 1.5 : 0) + jpH() + (opt.divider ? kmSize * 1.0 : gap)
+      + kmLines.length * (kmSize * 1.34) + (opt.kmPill ? kmSize * 0.5 : 0) + (ex ? gap * 0.9 + exBoxH() : 0);
     let blockH = measure();
     if (blockH > avail) {           // shrink everything to fit the space
       const sc = avail / blockH;
-      imgH = Math.round(imgH * sc); kanaSize = Math.round(kanaSize * sc); jpSize = Math.round(jpSize * sc);
-      kmSize = Math.round(kmSize * sc); gap = Math.round(gap * sc);
-      kmLines = this._wrapLines(ctx, word.km || '', cw * 0.9, `600 ${kmSize}px sans-serif`);
+      imgH = Math.round(imgH * sc); jpSize = Math.round(jpSize * sc); kmSize = Math.round(kmSize * sc); gap = Math.round(gap * sc);
+      fGap = Math.round(fGap * sc); exSize = Math.max(10, Math.round(exSize * sc));
+      kmLines = this._wrapLines(ctx, word.km || '', cw * 0.9, `600 ${kmSize}px sans-serif`); wrapEx();
       blockH = measure();
     }
-    const kmLH = kmSize * 1.34;
+    const kmLH = kmSize * 1.34, left = !!opt.left, xL = cx - cw / 2, tx = left ? xL : cx;
     let y = top + Math.max(0, (avail - blockH) / 2);
-    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    if (opt.panel) {
+      ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.22)'; ctx.shadowBlur = W * 0.05; ctx.shadowOffsetY = W * 0.014;
+      this._roundPath(ctx, xL - pp, y - pp, cw + pp * 2, blockH + pp * 2, Math.round(W * 0.05)); ctx.fillStyle = opt.panel; ctx.fill(); ctx.restore();
+    }
+    ctx.textAlign = left ? 'left' : 'center'; ctx.textBaseline = 'top';
     if (wordImg) {
-      const iw = Math.min(cw, imgH * 1.9), fx = cx - iw / 2, r = Math.round(W * 0.04), p = Math.round(W * 0.012);
+      const iw = Math.min(cw, imgH * 1.9), fx = left ? xL : cx - iw / 2, r = Math.round(W * 0.04), p = Math.round(W * 0.012);
       this._roundPath(ctx, fx, y, iw, imgH, r); ctx.fillStyle = opt.imgBg || '#ffffff'; ctx.fill();
       ctx.save(); this._roundPath(ctx, fx, y, iw, imgH, r); ctx.clip(); this._containImg(ctx, wordImg, fx + p, y + p, iw - 2 * p, imgH - 2 * p); ctx.restore();
       if (opt.imgBorder) { ctx.strokeStyle = opt.imgBorder; ctx.lineWidth = Math.max(2, W * 0.006); this._roundPath(ctx, fx, y, iw, imgH, r); ctx.stroke(); }
       y += imgH + gap * 1.5;
     }
-    if (word.kana) { ctx.fillStyle = opt.kana; ctx.font = `400 ${kanaSize}px sans-serif`; ctx.fillText(word.kana, cx, y); y += kanaSize * 1.3; }
-    ctx.fillStyle = opt.jp; ctx.font = `800 ${jpSize}px sans-serif`; ctx.fillText(word.jp, cx, y); y += jpSize * 1.12;
-    if (opt.divider) { const dy = y + kmSize * 0.4; ctx.strokeStyle = opt.divider; ctx.lineWidth = Math.max(2, W * 0.004); ctx.beginPath(); ctx.moveTo(cx - W * 0.08, dy); ctx.lineTo(cx + W * 0.08, dy); ctx.stroke(); y += kmSize; }
-    else y += gap;
-    if (opt.kmPill) {
+    y += this._jpBlock(ctx, word, { W, mode: so.furi, kana: so.showKana, gap: fGap, jpSize, cx, y, maxW: cw, left, draw: true, cJp: opt.jp, cKana: opt.kana });
+    ctx.textAlign = left ? 'left' : 'center'; ctx.textBaseline = 'top';
+    if (opt.divider) {
+      const dy = y + kmSize * 0.4; ctx.strokeStyle = opt.divider; ctx.lineWidth = Math.max(2, W * 0.004); ctx.beginPath();
+      if (left) { ctx.moveTo(xL, dy); ctx.lineTo(xL + W * 0.16, dy); } else { ctx.moveTo(cx - W * 0.08, dy); ctx.lineTo(cx + W * 0.08, dy); }
+      ctx.stroke(); y += kmSize;
+    } else y += gap;
+    if (opt.kmPill && !left) {
       ctx.font = `600 ${kmSize}px sans-serif`;
       let pillW = 0; for (const ln of kmLines) pillW = Math.max(pillW, ctx.measureText(ln).width);
       pillW = Math.min(cw, pillW + W * 0.09);
@@ -12239,23 +12455,40 @@ class Component extends DCLogic {
       this._roundPath(ctx, cx - pillW / 2, y, pillW, pillH, Math.round(kmSize * 0.7)); ctx.fillStyle = opt.kmPill; ctx.fill();
       ctx.fillStyle = opt.km; let yy = y + kmSize * 0.4;
       for (const ln of kmLines) { ctx.fillText(ln, cx, yy); yy += kmLH; }
+      y += pillH;
     } else {
       ctx.fillStyle = opt.km; ctx.font = `600 ${kmSize}px sans-serif`;
-      for (const ln of kmLines) { ctx.fillText(ln, cx, y); y += kmLH; }
+      for (const ln of kmLines) { ctx.fillText(ln, tx, y); y += kmLH; }
+    }
+    if (ex) {                        // one example sentence in a soft box
+      y += gap * 0.9;
+      const bw = cw * 0.92, bh = exBoxH(), bx = left ? xL : cx - bw / 2, ip = exSize * 0.7;
+      this._roundPath(ctx, bx, y, bw, bh, Math.round(exSize * 0.8)); ctx.fillStyle = opt.exBg || 'rgba(255,255,255,0.12)'; ctx.fill();
+      ctx.textAlign = 'left'; let ty = y + exSize * 0.6;
+      ctx.fillStyle = opt.exJp || opt.jp; ctx.font = `600 ${exSize}px sans-serif`;
+      for (const ln of exJ) { ctx.fillText(ln, bx + ip, ty); ty += exSize * 1.4; }
+      ctx.fillStyle = opt.exKm || opt.km; ctx.font = `500 ${Math.round(exSize * 0.88)}px sans-serif`;
+      for (const ln of exK) { ctx.fillText(ln, bx + ip, ty); ty += exSize * 1.25; }
     }
   }
   _header(ctx, W, pad, ms, logoImg, markBg, markFg, nameColor, idText, idBg, idFg){
-    if (logoImg) this._coverImg(ctx, logoImg, pad, pad, ms, ms, ms * 0.24); else this._drawMark(ctx, pad, pad, ms, markBg, markFg);
-    ctx.save(); ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = nameColor;
-    ctx.font = `700 ${Math.round(W * 0.034)}px sans-serif`; try { ctx.letterSpacing = Math.round(W * 0.004) + 'px'; } catch(e) {}
-    ctx.fillText((this.state.appName || 'វចនានុក្រម').toUpperCase(), pad + ms + W * 0.03, pad + ms * 0.55);
-    try { ctx.letterSpacing = '0px'; } catch(e) {} ctx.restore();
-    if (idText) this._idPill(ctx, idText, W - pad, pad + ms * 0.18, Math.round(W * 0.062), idBg, idFg, 'right');
+    const so = this._shareOpt();
+    if (so.brand) {
+      if (logoImg) this._coverImg(ctx, logoImg, pad, pad, ms, ms, ms * 0.24); else this._drawMark(ctx, pad, pad, ms, markBg, markFg);
+      ctx.save(); ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = nameColor;
+      ctx.font = `700 ${Math.round(W * 0.034)}px sans-serif`; try { ctx.letterSpacing = Math.round(W * 0.004) + 'px'; } catch(e) {}
+      const name = (this.state.shareBrand || '').trim() || this.state.appName || 'វចនានុក្រម';
+      ctx.fillText(this._fitText(ctx, name.toUpperCase(), W - pad * 2 - ms - W * 0.3), pad + ms + W * 0.03, pad + ms * 0.55);
+      try { ctx.letterSpacing = '0px'; } catch(e) {} ctx.restore();
+    }
+    if (idText && so.code) this._idPill(ctx, idText, W - pad, pad + ms * 0.18, Math.round(W * 0.062), idBg, idFg, 'right');
   }
   _footer(ctx, W, H, color){
+    const so = this._shareOpt(); if (!so.brand) return;
+    const txt = (this.state.shareFoot || '').trim() || ((this.state.appName || 'វចនានុក្រម') + ' · SSW');
     ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = color;
     ctx.font = `500 ${Math.round(W * 0.027)}px sans-serif`; try { ctx.letterSpacing = Math.round(W * 0.005) + 'px'; } catch(e) {}
-    ctx.fillText((this.state.appName || 'វចនានុក្រម') + ' · SSW', W / 2, H - Math.round(H * 0.045));
+    ctx.fillText(this._fitText(ctx, txt, W * 0.86), W / 2, H - Math.round(H * 0.045));
     try { ctx.letterSpacing = '0px'; } catch(e) {} ctx.restore();
   }
   _paintRefined(ctx, S, word, wordImg, logoImg){
@@ -12264,7 +12497,7 @@ class Component extends DCLogic {
     ctx.fillStyle = this._lighten(base, 0.945); ctx.fillRect(0, 0, W, H);
     this._header(ctx, W, pad, ms, logoImg, base, '#fff8ec', dark, shortWordCode(word), this._lighten(base, 0.9), dark);
     this._paintBody(ctx, W, H, W / 2, W - 2 * pad, pad + ms, H - Math.round(H * 0.075), word, wordImg,
-      { kana, jp: '#1c1a17', km: dark, divider: base, imgBorder: this._lighten(base, 0.78), imgBg: this._lighten(base, 0.86) });
+      { kana, jp: '#1c1a17', km: dark, divider: base, imgBorder: this._lighten(base, 0.78), imgBg: this._lighten(base, 0.86), exBg: this._lighten(base, 0.9), exJp: '#2a2a2a' });
     this._footer(ctx, W, H, this._mix(base, '#b8b8b8', 0.6));
   }
   _paintBold(ctx, S, word, wordImg, logoImg){
@@ -12275,13 +12508,13 @@ class Component extends DCLogic {
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     this._header(ctx, W, pad, ms, logoImg, base, '#fff8ec', light, shortWordCode(word), this._rgba(light, 0.14), light);
     this._paintBody(ctx, W, H, W / 2, W - 2 * pad, pad + ms, H - Math.round(H * 0.075), word, wordImg,
-      { kana: light, jp: '#ffffff', km: deep, kmPill: base, kmSize: 0.048, imgBg: this._darken(base, 0.8), imgBorder: base });
+      { kana: light, jp: '#ffffff', km: deep, kmPill: base, kmSize: 0.048, imgBg: this._darken(base, 0.8), imgBorder: base, exBg: 'rgba(255,255,255,0.1)', exJp: '#ffffff', exKm: light });
     this._footer(ctx, W, H, this._rgba(light, 0.5));
   }
   _paintHero(ctx, S, word, wordImg, logoImg){
     const W = S.w, H = S.h, pad = Math.round(W * 0.06), ms = Math.round(W * 0.09);
     const base = this._shareBase(), dark = this._darken(base, 0.42), kana = this._mix(this._darken(base, 0.3), '#8a8a8a', 0.4);
-    const heroH = Math.round(H * 0.52);
+    const heroH = Math.round(H * 0.52), so = this._shareOpt();
     ctx.fillStyle = this._lighten(base, 0.945); ctx.fillRect(0, 0, W, H);
     if (wordImg) {
       // dark backdrop so the whole (uncropped) image sits cleanly with letterboxing
@@ -12295,19 +12528,168 @@ class Component extends DCLogic {
       this._drawMark(ctx, W / 2 - W * 0.12, heroH / 2 - W * 0.12, W * 0.24, 'rgba(255,255,255,0.9)', dark);
     }
     // header over the hero
-    if (logoImg) this._coverImg(ctx, logoImg, pad, pad, ms, ms, ms * 0.24); else this._drawMark(ctx, pad, pad, ms, 'rgba(255,255,255,0.92)', dark);
-    this._idPill(ctx, shortWordCode(word), W - pad, pad + ms * 0.18, Math.round(W * 0.058), 'rgba(0,0,0,0.32)', '#ffffff', 'right');
+    if (so.brand) { if (logoImg) this._coverImg(ctx, logoImg, pad, pad, ms, ms, ms * 0.24); else this._drawMark(ctx, pad, pad, ms, 'rgba(255,255,255,0.92)', dark); }
+    if (so.code) this._idPill(ctx, shortWordCode(word), W - pad, pad + ms * 0.18, Math.round(W * 0.058), 'rgba(0,0,0,0.32)', '#ffffff', 'right');
     // bottom text panel
     this._paintBody(ctx, W, H, W / 2, W - 2 * Math.round(W * 0.08), heroH, H - Math.round(H * 0.06), word, null,
-      { kana, jp: '#1c1a17', km: dark, divider: this._lighten(base, 0.7) });
+      { kana, jp: '#1c1a17', km: dark, divider: this._lighten(base, 0.7), exBg: this._lighten(base, 0.9), exJp: '#2a2a2a' });
     this._footer(ctx, W, H, this._mix(base, '#b8b8b8', 0.6));
+  }
+  _paintMinimal(ctx, S, word, wordImg, logoImg){
+    const W = S.w, H = S.h, pad = Math.round(W * 0.08), ms = Math.round(W * 0.10);
+    const base = this._shareBase(), dark = this._darken(base, 0.42);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+    const lw = Math.max(2, W * 0.004); ctx.strokeStyle = '#e3e6ec'; ctx.lineWidth = lw; ctx.strokeRect(lw / 2, lw / 2, W - lw, H - lw);
+    this._header(ctx, W, pad, ms, logoImg, base, '#fff8ec', dark, shortWordCode(word), this._lighten(base, 0.9), dark);
+    this._paintBody(ctx, W, H, W / 2, W - 2 * pad, pad + ms, H - Math.round(H * 0.075), word, wordImg,
+      { kana: '#7b8190', jp: '#14161c', km: '#2d3340', divider: base, left: true, exBg: this._lighten(base, 0.93), exJp: '#2a2a2a', imgBg: '#f3f4f7', imgBorder: '#e3e6ec' });
+    this._footer(ctx, W, H, '#a2a8b5');
+  }
+  _paintGradient(ctx, S, word, wordImg, logoImg){
+    const W = S.w, H = S.h, pad = Math.round(W * 0.08), ms = Math.round(W * 0.10);
+    const base = this._shareBase(), dark = this._darken(base, 0.42);
+    const g = ctx.createLinearGradient(0, 0, W * 0.55, H);
+    g.addColorStop(0, this._lighten(base, 0.22)); g.addColorStop(0.5, base); g.addColorStop(1, this._darken(base, 0.45));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    this._header(ctx, W, pad, ms, logoImg, 'rgba(255,255,255,0.92)', dark, '#ffffff', shortWordCode(word), 'rgba(255,255,255,0.22)', '#ffffff');
+    this._paintBody(ctx, W, H, W / 2, W - 2 * pad - Math.round(W * 0.09), pad + ms + Math.round(W * 0.03), H - Math.round(H * 0.075), word, wordImg,
+      { kana: '#6b7280', jp: '#1c1a17', km: dark, divider: base, panel: 'rgba(255,255,255,0.95)', imgBg: '#ffffff', imgBorder: this._lighten(base, 0.8), exBg: this._lighten(base, 0.93), exJp: '#2a2a2a' });
+    this._footer(ctx, W, H, 'rgba(255,255,255,0.72)');
+  }
+  // quiz: the Japanese word, a question, and a dashed box where the meaning goes
+  _paintQuiz(ctx, S, word, wordImg, logoImg){
+    const W = S.w, H = S.h, pad = Math.round(W * 0.08), ms = Math.round(W * 0.10);
+    const base = this._shareBase(), dark = this._darken(base, 0.42), so = this._shareOpt();
+    const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, this._lighten(base, 0.945)); g.addColorStop(1, this._lighten(base, 0.82));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    this._header(ctx, W, pad, ms, logoImg, base, '#fff8ec', dark, shortWordCode(word), this._lighten(base, 0.9), dark);
+    const top = pad + ms, bottom = H - Math.round(H * 0.075), cw = W - 2 * pad, cx = W / 2;
+    let jpSize = Math.round(W * 0.16); ctx.font = `800 ${jpSize}px sans-serif`;
+    while (ctx.measureText(word.jp).width > cw * 0.92 && (jpSize -= 6) > 24) ctx.font = `800 ${jpSize}px sans-serif`;
+    const qSize = Math.round(W * 0.042), gap = Math.round(W * 0.04), fGap = Math.round(W * 0.01 * so.gap);
+    const jpH = this._jpBlock(ctx, word, { W, mode: so.furi, kana: so.showKana, gap: fGap, jpSize });
+    const boxH = Math.round(W * 0.2), qH = Math.round(qSize * 2);
+    const total = qH + gap + jpH + gap * 1.4 + boxH;
+    let y = top + Math.max(0, (bottom - top - total) / 2);
+    const q = 'តើពាក្យនេះមានន័យអ្វី?'; ctx.font = `800 ${qSize}px sans-serif`;
+    const qw = Math.min(cw, ctx.measureText(q).width + qSize * 2);
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.14)'; ctx.shadowBlur = W * 0.02; ctx.shadowOffsetY = W * 0.006;
+    this._roundPath(ctx, cx - qw / 2, y, qw, qH, qH / 2); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.restore();
+    ctx.fillStyle = dark; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(q, cx, y + qH / 2);
+    y += qH + gap;
+    this._jpBlock(ctx, word, { W, mode: so.furi, kana: so.showKana, gap: fGap, jpSize, cx, y, maxW: cw, left: false, draw: true, cJp: '#1c1a17', cKana: this._mix(dark, '#8a8a8a', 0.4) });
+    y += jpH + gap * 1.4;
+    const bw = Math.round(cw * 0.62);
+    ctx.save(); ctx.setLineDash([W * 0.02, W * 0.014]); ctx.lineWidth = Math.max(3, W * 0.006); ctx.strokeStyle = base;
+    this._roundPath(ctx, cx - bw / 2, y, bw, boxH, W * 0.035); ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.fill(); ctx.stroke(); ctx.restore();
+    ctx.fillStyle = base; ctx.font = `800 ${Math.round(boxH * 0.55)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', cx, y + boxH / 2);
+    this._footer(ctx, W, H, this._mix(base, '#b8b8b8', 0.6));
+  }
+  // list: up to five words in one picture (the words picked while "បញ្ជីពាក្យ" is the layout)
+  _paintList(ctx, S, word, wordImg, logoImg){
+    const W = S.w, H = S.h, pad = Math.round(W * 0.08), ms = Math.round(W * 0.10);
+    const base = this._shareBase(), dark = this._darken(base, 0.42);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+    const lw = Math.max(2, W * 0.004); ctx.strokeStyle = '#e3e6ec'; ctx.lineWidth = lw; ctx.strokeRect(lw / 2, lw / 2, W - lw, H - lw);
+    this._header(ctx, W, pad, ms, logoImg, base, '#fff8ec', dark, '', this._lighten(base, 0.9), dark);
+    let words = (this.state.shareList || []).slice(0, 5).map(id => WORDS.find(w => w.id === id)).filter(Boolean);
+    if (!words.length) words = [word];
+    const top = pad + ms, bottom = H - Math.round(H * 0.075);
+    const titleSize = Math.round(W * 0.055);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = dark; ctx.font = `800 ${titleSize}px sans-serif`;
+    ctx.fillText('ពាក្យថ្ងៃនេះ', pad, top + Math.round(W * 0.01));
+    const y0 = top + Math.round(titleSize * 1.6);
+    const rowH = Math.min(Math.round(W * 0.17), Math.floor((bottom - y0) / words.length));
+    const num = Math.round(rowH * 0.5), jpS = Math.round(rowH * 0.36), kmS = Math.round(rowH * 0.23);
+    words.forEach((w, i) => {
+      const ry = y0 + i * rowH, tx = pad + num + Math.round(W * 0.03), maxW = W - pad - tx;
+      ctx.strokeStyle = '#eceef2'; ctx.lineWidth = Math.max(1.5, W * 0.003); ctx.beginPath(); ctx.moveTo(pad, ry + rowH); ctx.lineTo(W - pad, ry + rowH); ctx.stroke();
+      this._roundPath(ctx, pad, ry + (rowH - num) / 2, num, num, num * 0.28); ctx.fillStyle = base; ctx.fill();
+      ctx.fillStyle = '#ffffff'; ctx.font = `800 ${Math.round(num * 0.5)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(i + 1), pad + num / 2, ry + rowH / 2 + 1);
+      ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      let fs = jpS; ctx.font = `800 ${fs}px sans-serif`;
+      while (ctx.measureText(w.jp).width > maxW * 0.62 && (fs -= 2) > 10) ctx.font = `800 ${fs}px sans-serif`;
+      const jy = ry + rowH * 0.1;
+      ctx.fillStyle = '#1c1a17'; ctx.fillText(w.jp, tx, jy);
+      const jw = ctx.measureText(w.jp).width;
+      if (w.kana && w.kana !== w.jp) {
+        ctx.font = `400 ${Math.round(fs * 0.5)}px sans-serif`; ctx.fillStyle = this._mix(dark, '#8a8a8a', 0.4);
+        const kx = tx + jw + Math.round(W * 0.02);
+        if (kx + ctx.measureText(w.kana).width < tx + maxW) ctx.fillText(w.kana, kx, jy + fs * 0.32);
+      }
+      ctx.font = `600 ${kmS}px sans-serif`; ctx.fillStyle = dark;
+      ctx.fillText(this._fitText(ctx, w.km || '', maxW), tx, ry + rowH * 0.1 + fs * 1.18);
+    });
+    this._footer(ctx, W, H, '#a2a8b5');
+  }
+  _shareFileName(){
+    const word = WORDS.find(x => x.id === this.state.shareWordId);
+    return ((word && (word.jp || shortWordCode(word))) || 'word').replace(/[\\/:*?"<>|]/g, '');
   }
   downloadShare(){
     const data = this.state.shareImgData; if (!data) return;
-    const word = WORDS.find(x => x.id === this.state.shareWordId);
     const a = document.createElement('a'); a.href = data;
-    a.download = `${((word && (word.jp || shortWordCode(word))) || 'word').replace(/[\\/:*?"<>|]/g, '')}.png`;
+    a.download = this._shareFileName() + '.png';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+  async _shareBlob(){ const r = await fetch(this.state.shareImgData); return r.blob(); }
+  // the phone's own share sheet (Facebook, Messenger, Telegram, …)
+  async shareNative(){
+    if (!this.state.shareImgData) return;
+    try {
+      const blob = await this._shareBlob(), file = new File([blob], this._shareFileName() + '.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: this._shareFileName() }); return; }
+      this.showToast('ឧបករណ៍នេះមិនគាំទ្រការចែករំលែកផ្ទាល់ — សូមទាញយក');
+    } catch (e) { if (e && e.name !== 'AbortError') this.showToast('ចែករំលែកមិនបាន — សូមទាញយកជំនួស'); }
+  }
+  async copyShare(){
+    if (!this.state.shareImgData) return;
+    try {
+      const blob = await this._shareBlob();
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      this.showToast('បានចម្លងរូបភាព ✓');
+    } catch (e) { this.showToast('ចម្លងមិនបាន — សូមទាញយកជំនួស'); }
+  }
+  // — every size in one ZIP (no library: files are stored, which is fine for PNGs) —
+  _crc32(buf){
+    if (!this._crcT) { this._crcT = []; for (let n = 0, c; n < 256; n++) { c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; this._crcT[n] = c >>> 0; } }
+    let crc = 0xFFFFFFFF; for (let i = 0; i < buf.length; i++) crc = this._crcT[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8);
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+  _zipStore(files){
+    const enc = new TextEncoder(), chunks = [], central = []; let offset = 0;
+    for (const f of files) {
+      const name = enc.encode(f.name), crc = this._crc32(f.data), size = f.data.length;
+      const lh = new DataView(new ArrayBuffer(30));
+      lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(12, 0x21, true);
+      lh.setUint32(14, crc, true); lh.setUint32(18, size, true); lh.setUint32(22, size, true); lh.setUint16(26, name.length, true);
+      chunks.push(new Uint8Array(lh.buffer), name, f.data);
+      const ch = new DataView(new ArrayBuffer(46));
+      ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(14, 0x21, true);
+      ch.setUint32(16, crc, true); ch.setUint32(20, size, true); ch.setUint32(24, size, true); ch.setUint16(28, name.length, true); ch.setUint32(42, offset, true);
+      central.push(new Uint8Array(ch.buffer), name);
+      offset += 30 + name.length + size;
+    }
+    const cdSize = central.reduce((a, c) => a + c.length, 0), end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+    return new Blob([...chunks, ...central, new Uint8Array(end.buffer)], { type: 'application/zip' });
+  }
+  async downloadShareZip(){
+    const word = WORDS.find(x => x.id === this.state.shareWordId); if (!word) return;
+    this.showToast('កំពុងបង្កើតគ្រប់ទំហំ…');
+    try {
+      const as = await this._shareAssets(word), files = [], base = this._shareFileName();
+      for (const k of Object.keys(SHARE_SIZES)) {
+        const S = SHARE_SIZES[k], cv = document.createElement('canvas'); cv.width = S.w; cv.height = S.h;
+        this._paintShareCard(cv.getContext('2d'), S, word, as.wordImg, as.logoImg);
+        const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+        files.push({ name: base + '_' + S.a.replace(':', 'x') + '.png', data: new Uint8Array(await blob.arrayBuffer()) });
+      }
+      const a = document.createElement('a'); a.href = URL.createObjectURL(this._zipStore(files)); a.download = base + '.zip';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    } catch (e) { this.showToast('បង្កើត ZIP មិនបាន — ' + (e && e.message ? e.message : '')); }
   }
 
   // — Login / logout —
@@ -16557,9 +16939,6 @@ class Component extends DCLogic {
     const shareWord = WORDS.find(w => w.id === s.shareWordId) || null;
     const chipStyle = on => on ? 'background:var(--color-accent);color:#f3f2f2;border-color:var(--color-accent);'
       : 'background:var(--color-surface);border-color:var(--color-divider);color:var(--color-text);';
-    const shareSizeChips = Object.keys(SHARE_SIZES).map(k => ({ label: SHARE_SIZES[k].label, onSelect: () => this.setShareSize(k), style: chipStyle(s.shareSize === k) }));
-    const SHARE_STYLES = [{ k: 'refined', label: 'ស្អាតទន់ភ្លន់' }, { k: 'bold', label: 'ខ្មៅដិត' }, { k: 'hero', label: 'រូបភាពពេញ' }];
-    const shareStyleChips = SHARE_STYLES.map(x => ({ label: x.label, onSelect: () => this.setShareStyle(x.k), style: chipStyle(s.shareStyle === x.k) }));
     // colour of the share picture — first swatch follows the logo (app accent),
     // then a few presets; a custom picker sits after them
     const appAccent = (() => { try { const v = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim(); return v || '#2f6fb0'; } catch(e) { return '#2f6fb0'; } })();
@@ -16579,6 +16958,17 @@ class Component extends DCLogic {
       style: (x.c.toLowerCase() === shareBase) ? 'box-shadow:0 0 0 3px color-mix(in srgb, var(--color-text) 55%, transparent);border:2px solid var(--color-bg);' : 'border:2px solid var(--color-divider);',
     }));
 
+    const shareTabs = [['tpl', '▦', 'ទ្រង់ទ្រាយ'], ['size', '⛶', 'ទំហំ'], ['color', '◐', 'ពណ៌'], ['text', 'Aa', 'ខ្លឹមសារ']]
+      .map(([k, icon, label]) => ({ icon, label, cls: s.shareTab === k ? 'on' : '', onSelect: () => this.setShareTab(k) }));
+    const STYLE_LABELS = { refined: 'ទន់ភ្លន់', bold: 'ងងឹត', hero: 'រូបពេញ', minimal: 'សាមញ្ញ', gradient: 'ជម្រាលពណ៌', quiz: 'សំណួរ', list: 'បញ្ជីពាក្យ' };
+    const shareTplItems = SHARE_STYLE_KEYS.map(k => ({ label: STYLE_LABELS[k], cls: s.shareStyle === k ? 'on' : '', thumb: (s.shareThumbs || {})[k] || '', hasThumb: !!(s.shareThumbs || {})[k], onSelect: () => this.setShareStyle(k) }));
+    const shareSizeItems = Object.keys(SHARE_SIZES).map(k => { const z = SHARE_SIZES[k]; return { a: z.a, sub: z.sub, cls: s.shareSize === k ? 'on' : '', ratioStyle: 'aspect-ratio:' + z.r + ';', onSelect: () => this.setShareSize(k) }; });
+    const shareFuriItems = [['ruby', 'ចែកតាម kanji'], ['just', 'លាតស្មើទទឹង'], ['line', 'ជួរតូច']].map(([k, label]) => ({ label, cls: s.shareFuri === k ? 'on' : '', onSelect: () => this.setShareFuri(k) }));
+    const shareGapItems = [[0, 'ជិតបំផុត'], [1, 'ធម្មតា'], [2.6, 'ឆ្ងាយបន្តិច'], [4.5, 'ឆ្ងាយ']].map(([v, label]) => ({ label, cls: Math.abs((s.shareGap || 0) - v) < 0.05 ? 'on' : '', onSelect: () => this.setShareGap(v) }));
+    const shareToggleItems = [['kana', 'ពាក្យអាន (Furigana)'], ['ex', 'ឧទាហរណ៍ប្រយោគ'], ['img', 'រូបភាពពាក្យ'], ['code', 'លេខកូដពាក្យ'], ['brand', 'ឈ្មោះ និងរូបសញ្ញាកម្មវិធី']]
+      .map(([k, label]) => { const on = !!(s.shareOpts || {})[k]; return { label, on, cls: on ? 'on' : '', onChange: () => this.toggleShareOpt(k) }; });
+    const shareListItems = (s.shareList || []).map(id => { const w = WORDS.find(x => x.id === id); return w ? { jp: w.jp, onRemove: () => this.removeShareListWord(id) } : null; }).filter(Boolean);
+    const shareDimsZ = SHARE_SIZES[s.shareSize] || SHARE_SIZES.square;
     const viewingSet = s.viewingViewed;
     const multiBook = BOOKS.length > 1;
     const monitorPageProgress = [];
@@ -17994,7 +18384,16 @@ class Component extends DCLogic {
       shareSearch: s.shareSearch, onShareSearch: e => this.onShareSearch(e),
       shareResults, shareHasResults: shareResults.length > 0,
       shareHasWord: !!shareWord, shareWordLabel: shareWord ? `${shareWord.jp} — ${shareWord.km}` : '',
-      shareSizeChips, shareStyleChips, shareColorChips, shareCustomColor: shareBase, onShareCustomColor: (e) => this.onShareCustomColor(e), shareBusy: s.shareBusy,
+      shareColorChips, shareCustomColor: shareBase, onShareCustomColor: (e) => this.onShareCustomColor(e), shareBusy: s.shareBusy,
+      shareTabs, shareTabTpl: s.shareTab === 'tpl', shareTabSize: s.shareTab === 'size', shareTabColor: s.shareTab === 'color', shareTabText: s.shareTab === 'text',
+      shareTplItems, shareSizeItems, shareFuriItems, shareGapItems, shareToggleItems, shareListItems,
+      shareIsList: s.shareStyle === 'list',
+      shareGap: s.shareGap, shareGapLabel: Number(s.shareGap || 0).toFixed(1), onShareGap: (e) => this.onShareGap(e),
+      shareBrand: s.shareBrand, onShareBrand: (e) => this.onShareBrand(e), shareBrandPh: s.appName || 'វចនានុក្រម',
+      shareFoot: s.shareFoot, onShareFoot: (e) => this.onShareFoot(e), shareFootPh: (s.appName || 'វចនានុក្រម') + ' · SSW',
+      shareDims: shareDimsZ.a + ' · ' + shareDimsZ.w + '×' + shareDimsZ.h,
+      shareNative: () => this.shareNative(), copyShare: () => this.copyShare(), downloadShareZip: () => this.downloadShareZip(),
+      shareCanNative: typeof navigator !== 'undefined' && typeof navigator.share === 'function',
       shareHasImg: !!s.shareImgData && !s.shareBusy, shareImgData: s.shareImgData,
       downloadShare: () => this.downloadShare(),
       shareHasErr: !!s.shareErr, shareErr: s.shareErr,
