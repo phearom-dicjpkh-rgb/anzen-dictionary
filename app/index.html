@@ -2627,6 +2627,50 @@ textarea.input { min-height: 90px; resize: vertical; }
         <sc-if value="{{ isVidRep }}" hint-placeholder-val="{{ false }}">
         <div style="{{ vrRootStyle }}">
           <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ vrBackFab }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
+          <sc-if value="{{ vrPopOpen }}">
+          <div style="{{ vrPopOuter }}" sc-camel-on-click="{{ closeVrPop }}">
+            <div style="{{ vrPopInner }}" sc-camel-on-click="{{ stopProp }}">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:38px;height:38px;border-radius:50%;background:{{ vrPop.avatarBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none;">{{ vrPop.avatarGlyph }}</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:16px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ vrPop.name }}<sc-if value="{{ vrPop.hasSchool }}"><span style="display:inline-block;font-size:10.5px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--color-neutral-100);margin-left:7px;">{{ vrPop.school }}</span></sc-if></div>
+                  <div style="margin-top:3px;"><span class="vl-st" style="margin:0;{{ vrPop.pillStyle }}">{{ vrPop.pillLabel }}</span></div>
+                </div>
+                <div style="text-align:right;flex:none;"><div style="font-size:28px;font-weight:800;color:var(--color-accent-700);line-height:1;">{{ vrPop.pct }}%</div><div style="font-size:10.5px;opacity:.6;margin-top:3px;">មើលពិត</div></div>
+                <button class="btn btn-icon btn-ghost" sc-camel-on-click="{{ closeVrPop }}" aria-label="បិទ" style="font-size:16px;flex:none;">✕</button>
+              </div>
+                        <sc-if value="{{ vrPop.hasVerdict }}"><div style="display:flex;gap:8px;align-items:flex-start;border:1px solid;border-radius:10px;padding:8px 10px;font-size:12.5px;line-height:1.6;{{ vrPop.verdictStyle }}"><span>{{ vrPop.verdictIcon }}</span><span>{{ vrPop.verdict }}</span></div></sc-if>
+                        <div style="display:flex;flex-direction:column;gap:4px;">
+                          <div style="display:flex;justify-content:space-between;font-size:10.5px;opacity:.6;"><span>ទាំងវីដេអូ (នាទី)</span><span>{{ vrPop.durLabel }}</span></div>
+                          <div class="vc-bar"><sc-for list="{{ vrPop.segs }}" as="g" hint-placeholder-count="3"><i class="vc-{{ g.cls }}" style="{{ g.style }}"></i></sc-for></div>
+                          <div class="vc-ticks"><sc-for list="{{ vrPop.ticks }}" as="t" hint-placeholder-count="4"><span style="{{ t.style }}">{{ t.label }}</span></sc-for></div>
+                        </div>
+                        <sc-if value="{{ vrPop.hasZoom }}">
+                          <div style="border:1px dashed var(--color-divider);border-radius:10px;padding:8px 10px;background:var(--color-surface);">
+                            <div style="font-size:11px;font-weight:600;opacity:.75;margin-bottom:6px;">{{ vrPop.zoomTitle }}</div>
+                            <div class="vc-bar" style="height:20px;"><sc-for list="{{ vrPop.zsegs }}" as="g" hint-placeholder-count="3"><i class="vc-{{ g.cls }}" style="{{ g.style }}"></i></sc-for></div>
+                            <div class="vc-ticks" style="height:14px;"><sc-for list="{{ vrPop.zticks }}" as="t" hint-placeholder-count="4"><span style="{{ t.style }}">{{ t.label }}</span></sc-for></div>
+                          </div>
+                        </sc-if>
+                        <div class="vc-legend"><span class="a">បានមើលពិត</span><span class="b">រំលង (មិនបានមើល)</span><span class="c">ឈានដល់</span><span class="d">មិនទាន់ដល់</span></div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px;">
+                          <sc-for list="{{ vrPop.facts }}" as="k" hint-placeholder-count="4"><div style="background:var(--color-neutral-100);border-radius:10px;padding:6px 9px;"><b style="font-size:14px;display:block;color:var(--color-accent-700);line-height:1.3;">{{ k.v }}</b><span style="font-size:10px;opacity:.6;">{{ k.l }}</span></div></sc-for>
+                        </div>
+                        <sc-if value="{{ vrPop.hasSkips }}">
+                          <div style="border-top:1px solid var(--color-divider);padding-top:8px;">
+                            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:5px;"><span>{{ vrPop.skipHead }}</span><small style="font-weight:500;opacity:.6;">{{ vrPop.skipSub }}</small></div>
+                            <sc-for list="{{ vrPop.skipRows }}" as="k" hint-placeholder-count="3"><div class="vc-skr" style="{{ k.rowStyle }}"><span>{{ k.t }}</span><div class="m"><i style="{{ k.mStyle }}"></i></div><span class="d">{{ k.d }}</span></div></sc-for>
+                            <sc-if value="{{ vrPop.hasSkipMore }}"><div style="font-size:11px;opacity:.6;margin-top:2px;">{{ vrPop.skipMore }}</div></sc-if>
+                            <div style="font-size:10.5px;opacity:.55;margin-top:3px;">ការរំលងតូចជាង ៥ វិនាទី (ស្រអាប់) ច្រើនជាការរំកិលបន្តិច</div>
+                          </div>
+                        </sc-if>
+                        <sc-if value="{{ vrPop.hasWarn }}"><div style="font-size:11.5px;color:#8a5200;background:#fff3e0;border-radius:9px;padding:6px 10px;line-height:1.6;">{{ vrPop.warn }}</div></sc-if>
+                        <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;opacity:.65;border-top:1px solid var(--color-divider);padding-top:8px;"><span>{{ vrPop.footA }}</span><span>{{ vrPop.footB }}</span><span>{{ vrPop.footC }}</span></div>
+
+            </div>
+          </div>
+          </sc-if>
+
           <sc-if value="{{ vrShowList }}">
           <div style="{{ vrLeftStyle }}">
             
@@ -2692,35 +2736,6 @@ textarea.input { min-height: 90px; resize: vertical; }
                         <div class="vc-bar"><sc-for list="{{ c.segs }}" as="g" hint-placeholder-count="3"><i class="vc-{{ g.cls }}" style="{{ g.style }}"></i></sc-for></div>
                         <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;opacity:.75;cursor:pointer;" sc-camel-on-click="{{ c.onToggle }}"><span style="flex:1;min-width:0;">{{ c.sum }}</span><span style="color:var(--color-accent-700);font-weight:700;flex:none;">លម្អិត {{ c.chev }}</span></div>
                       </sc-if>
-                      <sc-if value="{{ c.open }}">
-                        <sc-if value="{{ c.hasVerdict }}"><div style="display:flex;gap:8px;align-items:flex-start;border:1px solid;border-radius:10px;padding:8px 10px;font-size:12.5px;line-height:1.6;{{ c.verdictStyle }}"><span>{{ c.verdictIcon }}</span><span>{{ c.verdict }}</span></div></sc-if>
-                        <div style="display:flex;flex-direction:column;gap:4px;">
-                          <div style="display:flex;justify-content:space-between;font-size:10.5px;opacity:.6;"><span>ទាំងវីដេអូ (នាទី)</span><span>{{ c.durLabel }}</span></div>
-                          <div class="vc-bar"><sc-for list="{{ c.segs }}" as="g" hint-placeholder-count="3"><i class="vc-{{ g.cls }}" style="{{ g.style }}"></i></sc-for></div>
-                          <div class="vc-ticks"><sc-for list="{{ c.ticks }}" as="t" hint-placeholder-count="4"><span style="{{ t.style }}">{{ t.label }}</span></sc-for></div>
-                        </div>
-                        <sc-if value="{{ c.hasZoom }}">
-                          <div style="border:1px dashed var(--color-divider);border-radius:10px;padding:8px 10px;background:var(--color-surface);">
-                            <div style="font-size:11px;font-weight:600;opacity:.75;margin-bottom:6px;">{{ c.zoomTitle }}</div>
-                            <div class="vc-bar" style="height:20px;"><sc-for list="{{ c.zsegs }}" as="g" hint-placeholder-count="3"><i class="vc-{{ g.cls }}" style="{{ g.style }}"></i></sc-for></div>
-                            <div class="vc-ticks" style="height:14px;"><sc-for list="{{ c.zticks }}" as="t" hint-placeholder-count="4"><span style="{{ t.style }}">{{ t.label }}</span></sc-for></div>
-                          </div>
-                        </sc-if>
-                        <div class="vc-legend"><span class="a">បានមើលពិត</span><span class="b">រំលង (មិនបានមើល)</span><span class="c">ឈានដល់</span><span class="d">មិនទាន់ដល់</span></div>
-                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px;">
-                          <sc-for list="{{ c.facts }}" as="k" hint-placeholder-count="4"><div style="background:var(--color-neutral-100);border-radius:10px;padding:6px 9px;"><b style="font-size:14px;display:block;color:var(--color-accent-700);line-height:1.3;">{{ k.v }}</b><span style="font-size:10px;opacity:.6;">{{ k.l }}</span></div></sc-for>
-                        </div>
-                        <sc-if value="{{ c.hasSkips }}">
-                          <div style="border-top:1px solid var(--color-divider);padding-top:8px;">
-                            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:5px;"><span>{{ c.skipHead }}</span><small style="font-weight:500;opacity:.6;">{{ c.skipSub }}</small></div>
-                            <sc-for list="{{ c.skipRows }}" as="k" hint-placeholder-count="3"><div class="vc-skr" style="{{ k.rowStyle }}"><span>{{ k.t }}</span><div class="m"><i style="{{ k.mStyle }}"></i></div><span class="d">{{ k.d }}</span></div></sc-for>
-                            <sc-if value="{{ c.hasSkipMore }}"><div style="font-size:11px;opacity:.6;margin-top:2px;">{{ c.skipMore }}</div></sc-if>
-                            <div style="font-size:10.5px;opacity:.55;margin-top:3px;">ការរំលងតូចជាង ៥ វិនាទី (ស្រអាប់) ច្រើនជាការរំកិលបន្តិច</div>
-                          </div>
-                        </sc-if>
-                        <sc-if value="{{ c.hasWarn }}"><div style="font-size:11.5px;color:#8a5200;background:#fff3e0;border-radius:9px;padding:6px 10px;line-height:1.6;">{{ c.warn }}</div></sc-if>
-                        <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;opacity:.65;border-top:1px solid var(--color-divider);padding-top:8px;"><span>{{ c.footA }}</span><span>{{ c.footB }}</span><span>{{ c.footC }}</span></div>
-                        <div style="font-size:11.5px;color:var(--color-accent-700);font-weight:700;text-align:right;cursor:pointer;" sc-camel-on-click="{{ c.onToggle }}">បត់ ▴</div>
                       </sc-if>
                     </div>
                   </sc-for>
@@ -10621,7 +10636,7 @@ class Component extends DCLogic {
     // វីដេអូ (YouTube lessons)
     videos: [], videoProg: {}, videoFilter: 'all', vmCollapsed: [], vpCollapsed: [],
     vmUrl: '', vmTitle: '', vmGroup: '', vmMandatory: false, vmAllSchools: true, vmSchoolIds: [], vmDur: 0, vmYt: '', vmBusy: false, vmErr: '', vmMsg: '', vmEditId: null, vmEdit: null,
-    vrVideoId: null, vrRows: [], vrBusy: false, vrAll: [], vrWide: false, vrCollapsed: [], vrSchool: '', vrFilter: 'all', vrQuery: '', vrSchoolMenu: false, vrOpen: {},
+    vrVideoId: null, vrRows: [], vrBusy: false, vrAll: [], vrWide: false, vrCollapsed: [], vrSchool: '', vrFilter: 'all', vrQuery: '', vrSchoolMenu: false, vrDetail: null,
     // admin (create accounts)
     adminFullName: '', adminEmail: '', adminPassword: '', adminRole: 'student', adminTeacherId: '', adminSchoolId: '',
     adminGender: '', adminBirthDate: '', createDialogOpen: false,
@@ -11551,7 +11566,7 @@ class Component extends DCLogic {
   async goVideoRep(){
     this._closeVideo();
     let col = []; try { col = JSON.parse(localStorage.getItem('dict_vr_collapsed') || '[]') || []; } catch(e) {}
-    this.setState({ screen: 'vidrep', vrAll: [], vrVideoId: null, vrBusy: true, vrWide: this._vrWide(), vrCollapsed: col, vrSchool: '', vrFilter: 'all', vrQuery: '', vrSchoolMenu: false });
+    this.setState({ screen: 'vidrep', vrAll: [], vrVideoId: null, vrBusy: true, vrWide: this._vrWide(), vrCollapsed: col, vrSchool: '', vrFilter: 'all', vrQuery: '', vrSchoolMenu: false, vrDetail: null });
     if (!(this.state.students || []).length) this.loadStudents();
     await this.loadVideos();
     let rows = []; try { const res = await Backend.listAllVideoProgress(); rows = res.rows || []; } catch(e) {}
@@ -11559,7 +11574,7 @@ class Component extends DCLogic {
     const first = (this.state.videos || [])[0];
     if (first && this.state.vrWide) this.pickReportVideo(first.id);       // wide: show the first video's data at once; narrow: start from the list
   }
-  pickReportVideo(id){ this.setState({ vrVideoId: id, vrFilter: 'all', vrSchoolMenu: false, vrOpen: {} }); }
+  pickReportVideo(id){ this.setState({ vrVideoId: id, vrFilter: 'all', vrSchoolMenu: false, vrDetail: null }); }
   toggleVrGroup(name){
     this.setState(s => { const c = s.vrCollapsed.includes(name) ? s.vrCollapsed.filter(x => x !== name) : [...s.vrCollapsed, name]; try { localStorage.setItem('dict_vr_collapsed', JSON.stringify(c)); } catch(e) {} return { vrCollapsed: c }; });
   }
@@ -17739,7 +17754,6 @@ class Component extends DCLogic {
         const vrMulti = schoolIds.length > 1;
         const stuSel = (vrMulti && s.vrSchool) ? stuAll.filter(st => st.school_id === s.vrSchool) : stuAll;
         const RS = { new: ['មិនទាន់', 'background:var(--color-neutral-200);color:var(--color-neutral-700);'], prog: [null, 'background:var(--color-accent-100);color:var(--color-accent-800);'], done: ['ចប់ ✓', 'background:#e3f4e8;color:#2a7a45;'], skipy: ['រំលងច្រើន', 'background:#fbe4e1;color:#b8322a;'] };
-        const defaultOpen = stuSel.length <= 6;       // few students: every card open; many: folded to one line each
         const cardFor = (st, rec, vdur) => {
           const ranges = rec ? mergeRanges(rec.ranges || []) : [], skips = rec ? mergeRanges(rec.skips || [], 0.5) : [];
           const scale = vdur || Math.max(1, ...ranges.map(x => x[1]), ...skips.map(x => x[1]));
@@ -17767,12 +17781,11 @@ class Component extends DCLogic {
             else if (big && watched < reached * 0.85 && big[1] - big[0] >= 30) { verdictOk = false; verdict = `ឈានដល់ ${fmtClock(reached)} (${pctR}% នៃវីដេអូ) ប៉ុន្តែមើលពិតតែ ${fmtClock(watched)} (${vs.pct}%) — រំលងផ្នែកធំ ${fmtClock(big[1] - big[0])} ពី ${fmtClock(big[0])} ដល់ ${fmtClock(big[1])}` }
             else verdict = `ឈានដល់ ${fmtClock(reached)} (${pctR}%) · មើលពិត ${fmtClock(watched)} (${vs.pct}%)`;
           }
-          const open = rec ? (((s.vrOpen || {})[st.id] !== undefined) ? !!s.vrOpen[st.id] : defaultOpen) : false;
           const pillLabel = ({ done: 'ចប់ ✓', prog: 'កំពុងមើល', skipy: 'រំលងច្រើន', new: 'មិនទាន់' })[key];
           return { key, name, school: schoolOf(st.school_id), hasSchool: vrMulti && !!schoolOf(st.school_id),
             avatarGlyph: (st.settings && st.settings.avatarAnimal) || name.charAt(0).toUpperCase(), avatarBg: (st.settings && st.settings.avatarColor) || 'var(--color-accent)',
             pillLabel, pillStyle: RS[key][1], pct: vs.pct, hasRec: !!rec, noRec: !rec, skipN: skips.length, done: vs.state === 'done',
-            open, closed: !!rec && !open, chev: open ? '▴' : '▾', headStyle: rec ? 'cursor:pointer;' : '', onToggle: () => { if (rec) this.setState(x => ({ vrOpen: { ...(x.vrOpen || {}), [st.id]: !open } })); },
+            id: st.id, closed: !!rec, chev: '▸', headStyle: rec ? 'cursor:pointer;' : '', onToggle: () => { if (rec) this.setState({ vrDetail: st.id }); },
             verdict, hasVerdict: !!verdict, verdictStyle: verdictOk ? 'background:#e9f7ee;border-color:#bfe3cd;color:#1f5e3a;' : 'background:#fff6e5;border-color:#f3dfae;color:#5b4a1d;', verdictIcon: verdictOk ? '✓' : '⚠',
             segs: mkSegs(0, scale), ticks: mkTicks(scale, fullStep, t => String(t / 60)), durLabel: fmtClock(scale),
             hasZoom: zoomOn, zoomTitle: `🔍 ពង្រីកកន្លែងដែលសិស្សបានឈានដល់ (0:00 – ${fmtClock(zEnd)})`, zsegs: zoomOn ? mkSegs(0, zEnd) : [], zticks: zoomOn ? mkTicks(zEnd, zStep, t => fmtClock(t)) : [],
@@ -17786,6 +17799,7 @@ class Component extends DCLogic {
         };
         const vrCardsAll = rv ? stuSel.map(st => cardFor(st, (rowsBy[rv.id] || {})[st.id], rdur)) : [];
         const vrFlt = s.vrFilter || 'all';
+        const vrPopCard = s.vrDetail ? (vrCardsAll.find(c => c.id === s.vrDetail && c.hasRec) || null) : null;
         const vrCardsShown = vrFlt === 'all' ? vrCardsAll : vrCardsAll.filter(c => c.key === vrFlt);
         const vrFilters = [['all', 'ទាំងអស់'], ['done', 'មើលចប់'], ['prog', 'កំពុងមើល'], ['skipy', 'រំលងច្រើន'], ['new', 'មិនទាន់']].map(([k, label]) => ({
           label: label + ' (' + (k === 'all' ? vrCardsAll.length : vrCardsAll.filter(c => c.key === k).length) + ')', onSelect: () => this.setState({ vrFilter: k }),
@@ -17834,6 +17848,9 @@ class Component extends DCLogic {
           vrListGroups, vrListEmpty: vrListVids.length === 0,
           vrHeadTitle: rv ? rv.title : '', vrHeadSub: rv ? [rv.grp, rv.duration ? fmtClock(rv.duration) : '', stuSel.length + ' សិស្ស'].filter(Boolean).join(' · ') : '', vrHeadThumb: rv ? thumbOf(rv) : '',
           vrHasSchools: vrMulti, vrSchoolLabel, vrSchoolMenu: !!s.vrSchoolMenu, toggleVrSchoolMenu: () => this.setState(st => ({ vrSchoolMenu: !st.vrSchoolMenu })), vrSchoolOptions,
+          vrPopOpen: !!vrPopCard, vrPop: vrPopCard || {}, closeVrPop: () => this.setState({ vrDetail: null }),
+          vrPopOuter: 'position:fixed;inset:0;z-index:70;background:color-mix(in srgb, var(--color-neutral-900) 50%, transparent);display:flex;justify-content:center;' + (vrWide ? 'align-items:center;padding:20px;' : 'align-items:flex-end;'),
+          vrPopInner: 'background:var(--color-bg);width:100%;max-width:560px;max-height:' + (vrWide ? '92%' : '90%') + ';overflow-y:auto;box-sizing:border-box;box-shadow:var(--shadow-lg);padding:16px;display:flex;flex-direction:column;gap:10px;border-radius:' + (vrWide ? '18px' : '20px 20px 0 0') + ';',
           vrFilters, vrCards: vrCardsShown, vrNoCards: !!rv && vrCardsShown.length === 0,
           vrStatDone: vrCardsAll.filter(c => c.done).length + '/' + vrCardsAll.length,
           vrStatAvg: vrCardsAll.length ? Math.round(vrCardsAll.reduce((a, c) => a + c.pct, 0) / vrCardsAll.length) + '%' : '—',
