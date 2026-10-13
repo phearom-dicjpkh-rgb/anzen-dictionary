@@ -616,6 +616,8 @@ textarea.input { min-height: 90px; resize: vertical; }
 }
 .table tbody tr:hover { background: color-mix(in srgb, var(--color-text) 4%, transparent); }
 
+/* furigana boxes in the word editor: as wide as the reading (grows while typing where the browser supports it) */
+@supports (field-sizing: content) { .kana-run { field-sizing: content; width: auto !important; } }
 /* — dialog — */
 .dialog-backdrop {
   position: fixed; inset: 0; display: grid; place-items: center;
@@ -2345,7 +2347,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                   <sc-if value="{{ run.kanji }}">
                     <div style="display:inline-flex;align-items:stretch;border:1px solid var(--color-accent);border-radius:var(--radius-sm);overflow:hidden;flex:none;">
                       <span style="padding:5px 6px;background:var(--color-accent-100);color:var(--color-accent-800);font-size:14px;white-space:nowrap;line-height:1.4;">{{ run.text }}</span>
-                      <input type="text" inputmode="kana" value="{{ run.reading }}" sc-camel-on-change="{{ run.onChange }}" placeholder="かな" style="border:none;background:transparent;font-size:14px;color:var(--color-text);padding:5px 6px;width:{{ run.width }};min-width:44px;">
+                      <input type="text" inputmode="kana" value="{{ run.reading }}" sc-camel-on-change="{{ run.onChange }}" placeholder="かな" class="kana-run" style="border:none;background:transparent;font-size:14px;color:var(--color-text);padding:5px 6px;width:{{ run.width }};min-width:3em;">
                     </div>
                   </sc-if>
                   <sc-if value="{{ run.notKanji }}">
@@ -3851,7 +3853,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               <sc-if value="{{ run.kanji }}">
                 <div style="display:inline-flex;align-items:stretch;border:1px solid var(--color-accent);border-radius:var(--radius-sm);overflow:hidden;flex:none;">
                   <span style="padding:5px 6px;background:var(--color-accent-100);color:var(--color-accent-800);font-size:14px;white-space:nowrap;line-height:1.4;">{{ run.text }}</span>
-                  <input type="text" inputmode="kana" value="{{ run.reading }}" sc-camel-on-change="{{ run.onChange }}" placeholder="かな" style="border:none;background:transparent;font-size:14px;color:var(--color-text);padding:5px 6px;width:{{ run.width }};min-width:44px;">
+                  <input type="text" inputmode="kana" value="{{ run.reading }}" sc-camel-on-change="{{ run.onChange }}" placeholder="かな" class="kana-run" style="border:none;background:transparent;font-size:14px;color:var(--color-text);padding:5px 6px;width:{{ run.width }};min-width:3em;">
                 </div>
               </sc-if>
               <sc-if value="{{ run.notKanji }}">
@@ -17168,7 +17170,7 @@ class Component extends DCLogic {
       edKana: s.edKana,
       edNoKanaRuns: !(s.edJp || '').trim(),
       edKanaRuns: splitKanaRuns(s.edJp).map((r, i) => { const key = i + ':' + r.text;
-        return r.kanji ? { kanji: true, notKanji: false, text: r.text, reading: s.edKanaMap[key] || '', onChange: e => this.onEdKanaRun(key, e), width: Math.max(3, r.text.length * 2 + 1) + 'ch' }
+        return r.kanji ? { kanji: true, notKanji: false, text: r.text, reading: s.edKanaMap[key] || '', onChange: e => this.onEdKanaRun(key, e), width: (Math.max(3, Math.max((s.edKanaMap[key] || '').length, r.text.length) * 1.05 + 1)).toFixed(2) + 'em' }
                         : { kanji: false, notKanji: true, text: r.text }; }),
       edPos: s.edPos, onEdPos: e => this.onEdPos(e),
       edKm: s.edKm, onEdKm: e => this.onEdKm(e),
@@ -17198,7 +17200,7 @@ class Component extends DCLogic {
       awKana: s.awKana,
       awNoKanaRuns: !(s.awJp || '').trim(),
       awKanaRuns: splitKanaRuns(s.awJp).map((r, i) => { const key = i + ':' + r.text;
-        return r.kanji ? { kanji: true, notKanji: false, text: r.text, reading: s.awKanaMap[key] || '', onChange: e => this.onAwKanaRun(key, e), width: Math.max(3, r.text.length * 2 + 1) + 'ch' }
+        return r.kanji ? { kanji: true, notKanji: false, text: r.text, reading: s.awKanaMap[key] || '', onChange: e => this.onAwKanaRun(key, e), width: (Math.max(3, Math.max((s.awKanaMap[key] || '').length, r.text.length) * 1.05 + 1)).toFixed(2) + 'em' }
                         : { kanji: false, notKanji: true, text: r.text }; }),
       awPos: s.awPos, onAwPos: e => this.onAwPos(e),
       awKm: s.awKm, onAwKm: e => this.onAwKm(e),
