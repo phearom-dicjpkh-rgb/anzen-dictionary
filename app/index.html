@@ -11754,7 +11754,7 @@ class Component extends DCLogic {
     await this.loadVideos();
   }
   // — admin / school / teacher: របាយការណ៍វីដេអូ —
-  _vrWide(){ return window.innerWidth >= 900 && window.innerWidth > window.innerHeight; }
+  _vrWide(){ return window.innerWidth >= 900; }          // tablets: split view in portrait too (iPad Pro) as well as landscape
   async goVideoRep(){
     this._closeVideo();
     let col = []; try { col = JSON.parse(localStorage.getItem('dict_vr_collapsed') || '[]') || []; } catch(e) {}
