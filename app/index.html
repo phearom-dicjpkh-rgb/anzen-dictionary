@@ -3349,6 +3349,25 @@ textarea.input { min-height: 90px; resize: vertical; }
                   <label class="switch {{ tg.cls }}"><input type="checkbox" checked="{{ tg.on }}" sc-camel-on-change="{{ tg.onChange }}"><span class="track"></span><span class="thumb"></span></label>
                 </div>
               </sc-for>
+              <sc-if value="{{ shareExOn }}">
+                <div class="shr-row">
+                  <div style="margin-bottom:6px;">រចនាឧទាហរណ៍</div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <sc-for list="{{ shareExStyleItems }}" as="e" hint-placeholder-count="4"><button class="shr-chip {{ e.cls }}" sc-camel-on-click="{{ e.onSelect }}">{{ e.label }}</button></sc-for>
+                  </div>
+                </div>
+                <div class="shr-row">
+                  <div class="shr-gh"><span>ទំហំអក្សរឧទាហរណ៍</span><b style="color:var(--color-accent-800);">{{ shareExScaleLabel }}</b></div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="shr-chip" style="width:38px;height:38px;font-size:20px;padding:0;" sc-camel-on-click="{{ shareExMinus }}">−</button>
+                    <input type="range" min="70" max="160" step="5" value="{{ shareExScalePct }}" sc-camel-on-change="{{ onShareExScale }}" style="flex:1;accent-color:var(--color-accent);">
+                    <button class="shr-chip" style="width:38px;height:38px;font-size:20px;padding:0;" sc-camel-on-click="{{ shareExPlus }}">＋</button>
+                  </div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+                    <sc-for list="{{ shareExScaleItems }}" as="z" hint-placeholder-count="4"><button class="shr-chip {{ z.cls }}" sc-camel-on-click="{{ z.onSelect }}">{{ z.label }}</button></sc-for>
+                  </div>
+                </div>
+              </sc-if>
               <div class="shr-row" style="display:flex;align-items:center;gap:10px;"><span style="flex:none;min-width:96px;">ឈ្មោះខាងលើ</span>
                 <input class="shr-in" style="height:38px;" type="text" value="{{ shareBrand }}" sc-camel-on-change="{{ onShareBrand }}" placeholder="{{ shareBrandPh }}"></div>
               <div class="shr-row" style="display:flex;align-items:center;gap:10px;"><span style="flex:none;min-width:96px;">អក្សរបាត</span>
@@ -10961,7 +10980,7 @@ class Component extends DCLogic {
     playerList: [], playerIdx: 0, playerPlaying: false, playerRepeat: false, playerRate: 0.95,
     // admin: share-image maker
     shareSearch: '', shareWordId: null, shareSize: 'square', shareStyle: 'refined', shareColor: '', shareImgData: '', shareBusy: false, shareErr: '',
-    shareTab: 'tpl', shareFuri: 'ruby', shareGap: 1, shareOpts: { kana: true, ex: false, img: true, code: true, brand: true }, shareBrand: '', shareFoot: '', shareList: [], shareThumbs: {},
+    shareTab: 'tpl', shareFuri: 'ruby', shareGap: 1, shareExStyle: 'quote', shareExScale: 1, shareOpts: { kana: true, ex: false, img: true, code: true, brand: true }, shareBrand: '', shareFoot: '', shareList: [], shareThumbs: {},
     // admin: A4 results preview / print
     printOpen: false, printReport: null,
     wsGroup: null,  // printable-worksheets screen: which folder is open
@@ -12197,7 +12216,8 @@ class Component extends DCLogic {
       try {
         const p = JSON.parse(localStorage.getItem('dict_share_prefs') || 'null');
         if (p) this.setState(st => ({
-          shareFuri: p.furi || st.shareFuri, shareGap: typeof p.gap === 'number' ? p.gap : st.shareGap, shareOpts: { ...st.shareOpts, ...(p.opts || {}) },
+          shareFuri: p.furi || st.shareFuri, shareGap: typeof p.gap === 'number' ? p.gap : st.shareGap,
+          shareExStyle: ['quote', 'bubble', 'split', 'chip'].includes(p.exStyle) ? p.exStyle : st.shareExStyle, shareExScale: typeof p.exScale === 'number' ? p.exScale : st.shareExScale, shareOpts: { ...st.shareOpts, ...(p.opts || {}) },
           shareBrand: p.brand || '', shareFoot: p.foot || '', shareSize: SHARE_SIZES[p.size] ? p.size : st.shareSize,
           shareStyle: SHARE_STYLE_KEYS.includes(p.style) ? p.style : st.shareStyle, shareColor: p.color || st.shareColor }));
       } catch(e){}
@@ -12206,7 +12226,7 @@ class Component extends DCLogic {
   }
   _saveSharePrefs(){
     const s = this.state;
-    try { localStorage.setItem('dict_share_prefs', JSON.stringify({ furi: s.shareFuri, gap: s.shareGap, opts: s.shareOpts, brand: s.shareBrand, foot: s.shareFoot, size: s.shareSize, style: s.shareStyle, color: s.shareColor })); } catch(e){}
+    try { localStorage.setItem('dict_share_prefs', JSON.stringify({ furi: s.shareFuri, gap: s.shareGap, exStyle: s.shareExStyle, exScale: s.shareExScale, opts: s.shareOpts, brand: s.shareBrand, foot: s.shareFoot, size: s.shareSize, style: s.shareStyle, color: s.shareColor })); } catch(e){}
   }
   // redraw shortly after (typing / dragging a slider fires many changes)
   _shareRedraw(){ this._saveSharePrefs(); clearTimeout(this._shareT); this._shareT = setTimeout(() => this.drawShareCard(), 90); }
@@ -12227,6 +12247,8 @@ class Component extends DCLogic {
   setShareColor(c){ this.setState({ shareColor: c || '' }, () => { this._saveSharePrefs(); this.drawShareCard(); }); }
   onShareCustomColor(e){ this.setShareColor(e.target.value); }
   setShareTab(t){ this.setState({ shareTab: t }, () => { if (t === 'tpl') this.drawShareThumbs(); }); }
+  setShareExStyle(k){ this.setState({ shareExStyle: k }, () => this._shareRedraw()); }
+  setShareExScale(v){ this.setState({ shareExScale: Math.max(0.7, Math.min(1.6, Math.round(v * 20) / 20)) }, () => this._shareRedraw()); }
   setShareFuri(m){ this.setState({ shareFuri: m }, () => this._shareRedraw()); }
   onShareGap(e){ this.setState({ shareGap: parseFloat(e.target.value) || 0 }, () => this._shareRedraw()); }
   setShareGap(v){ this.setState({ shareGap: v }, () => this._shareRedraw()); }
@@ -12348,7 +12370,8 @@ class Component extends DCLogic {
   // switches / reading style shared by every layout
   _shareOpt(){
     const s = this.state, o = s.shareOpts || {};
-    return { furi: s.shareFuri || 'ruby', gap: typeof s.shareGap === 'number' ? s.shareGap : 1, showKana: o.kana !== false, ex: !!o.ex, code: o.code !== false, brand: o.brand !== false };
+    return { furi: s.shareFuri || 'ruby', gap: typeof s.shareGap === 'number' ? s.shareGap : 1, showKana: o.kana !== false, ex: !!o.ex, code: o.code !== false, brand: o.brand !== false,
+      exStyle: s.shareExStyle || 'quote', exScale: typeof s.shareExScale === 'number' ? s.shareExScale : 1 };
   }
   // the headword with its reading. 'ruby' = each kanji run carries its own reading right above it
   // (spread over that kanji's width), 'just' = the whole reading spread over the word's width,
@@ -12397,6 +12420,99 @@ class Component extends DCLogic {
     for (const c of ch) { if (ctx.measureText(t + c + '…').width > maxW) break; t += c; }
     return t + '…';
   }
+  // The example sentence, in one of four looks. The headword is marked inside the sentence.
+  // Returns { h, draw(x, y) } — x/y is the block's left/top, bw its width.
+  _exBlock(ctx, ex, word, bw, size, style, c){
+    const fj = `700 ${size}px sans-serif`, fk = `500 ${Math.round(size * 0.88)}px sans-serif`;
+    const ljH = size * 1.5, lkH = size * 0.88 * 1.4, key = word.jp || '';
+    const wrap = tw => ({ j: this._wrapLines(ctx, ex.jp, tw, fj), k: ex.km ? this._wrapLines(ctx, ex.km, tw, fk) : [] });
+    const drawJp = (lines, x, y) => {
+      ctx.font = fj; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      const full = lines.join(''), s = full === ex.jp && key ? full.indexOf(key) : -1, e = s >= 0 ? s + key.length : -1;
+      let off = 0;
+      lines.forEach((ln, i) => {
+        const ly = y + i * ljH, a = Math.max(s, off), b = Math.min(e, off + ln.length);
+        if (s >= 0 && b > a) {
+          const hx = x + ctx.measureText(ln.slice(0, a - off)).width, hw = ctx.measureText(ln.slice(a - off, b - off)).width;
+          ctx.fillStyle = c.hl; this._roundPath(ctx, hx - size * 0.08, ly + size * 0.66, hw + size * 0.16, size * 0.7, size * 0.15); ctx.fill();
+        }
+        ctx.fillStyle = c.jp; ctx.fillText(ln, x, ly); off += ln.length;
+      });
+    };
+    const drawKm = (lines, x, y, prefix) => {
+      ctx.font = fk; ctx.fillStyle = c.km; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      lines.forEach((ln, i) => ctx.fillText((i === 0 && prefix ? prefix : '') + ln, x, y + i * lkH));
+    };
+    const pill = (text, x, y, fs, bg, fg) => {
+      ctx.font = `700 ${fs}px sans-serif`; const tw = ctx.measureText(text).width, ph = fs * 1.7, pw = tw + fs * 1.6;
+      this._roundPath(ctx, x, y, pw, ph, ph / 2); ctx.fillStyle = bg; ctx.fill();
+      ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, x + pw / 2, y + ph / 2 + fs * 0.04);
+      return pw;
+    };
+    if (style === 'bubble') {
+      const bp = size * 0.9, L = wrap(bw - bp * 2), bubH = bp * 2 + L.j.length * ljH, tail = size * 0.7;
+      const h = bubH + tail + (L.k.length ? size * 0.4 + L.k.length * lkH : 0);
+      return { h, draw: (x, y) => {
+        const lw = Math.max(2, size * 0.1);
+        this._roundPath(ctx, x, y, bw, bubH, size * 1.0); ctx.fillStyle = c.bubble; ctx.fill(); ctx.strokeStyle = c.line; ctx.lineWidth = lw; ctx.stroke();
+        const tx = x + size * 1.8;
+        ctx.beginPath(); ctx.moveTo(tx, y + bubH); ctx.lineTo(tx + size * 0.5, y + bubH + tail); ctx.lineTo(tx + size * 1.3, y + bubH); ctx.closePath();
+        ctx.fillStyle = c.bubble; ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = c.bubble; ctx.lineWidth = lw + 1; ctx.beginPath(); ctx.moveTo(tx + lw, y + bubH); ctx.lineTo(tx + size * 1.3 - lw, y + bubH); ctx.stroke();
+        drawJp(L.j, x + bp, y + bp);
+        if (L.k.length) drawKm(L.k, x + size * 0.5, y + bubH + tail + size * 0.4, '→ ');
+      } };
+    }
+    if (style === 'split') {
+      const pj = size * 0.9, pk = size * 0.8, L = wrap(bw - pj * 2);
+      const topH = size * 1.5 + L.j.length * ljH + size * 0.5, botH = L.k.length ? pk * 2 + L.k.length * lkH : 0, h = topH + botH;
+      return { h, draw: (x, y) => {
+        ctx.save(); this._roundPath(ctx, x, y, bw, h, size * 0.9); ctx.clip();
+        ctx.fillStyle = c.tint; ctx.fillRect(x, y, bw, topH); if (botH) { ctx.fillStyle = c.bg2; ctx.fillRect(x, y + topH, bw, botH); }
+        ctx.restore();
+        ctx.save(); this._roundPath(ctx, x, y, bw, h, size * 0.9); ctx.clip();
+        ctx.font = `700 ${Math.round(size * 0.62)}px sans-serif`; const rw = ctx.measureText('ឧទាហរណ៍').width + size * 1.6, rh = size * 1.1;
+        ctx.fillStyle = c.accent; ctx.beginPath(); ctx.rect(x, y, rw, rh); ctx.fill();
+        ctx.fillStyle = '#ffffff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText('ឧទាហរណ៍', x + size * 0.8, y + rh / 2 + size * 0.04);
+        ctx.restore();
+        drawJp(L.j, x + pj, y + size * 1.4);
+        if (L.k.length) drawKm(L.k, x + pj, y + topH + pk);
+      } };
+    }
+    if (style === 'chip') {
+      const cp = size * 0.95, L = wrap(bw - cp * 2), rowH = size * 1.7;
+      const h = cp + rowH + size * 0.45 + L.j.length * ljH + (L.k.length ? size * 0.95 + L.k.length * lkH : 0) + cp * 0.9;
+      return { h, draw: (x, y) => {
+        this._roundPath(ctx, x, y, bw, h, size * 1.0); ctx.fillStyle = c.card; ctx.fill();
+        let cx2 = x + cp, cy = y + cp;
+        ctx.beginPath(); ctx.arc(cx2 + size * 0.6, cy + rowH / 2, size * 0.6, 0, 7); ctx.fillStyle = c.accent; ctx.fill();
+        ctx.fillStyle = '#ffffff'; ctx.font = `800 ${Math.round(size * 0.7)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('1', cx2 + size * 0.6, cy + rowH / 2 + size * 0.04);
+        const kx = cx2 + size * 1.5, kw = pill(key, kx, cy + (rowH - size * 0.8 * 1.7) / 2, size * 0.8, c.tint, c.keyFg);
+        ctx.fillStyle = c.km; ctx.globalAlpha = 0.55; ctx.font = `500 ${Math.round(size * 0.8)}px sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText('→ ឧទាហរណ៍', kx + kw + size * 0.5, cy + rowH / 2); ctx.globalAlpha = 1;
+        let ty = cy + rowH + size * 0.25; drawJp(L.j, x + cp, ty); ty += L.j.length * ljH;
+        if (L.k.length) {
+          ctx.save(); ctx.setLineDash([size * 0.4, size * 0.3]); ctx.strokeStyle = c.line; ctx.lineWidth = Math.max(1.5, size * 0.07);
+          ctx.beginPath(); ctx.moveTo(x + cp, ty + size * 0.15); ctx.lineTo(x + bw - cp, ty + size * 0.15); ctx.stroke(); ctx.restore();
+          drawKm(L.k, x + cp, ty + size * 0.8);
+        }
+      } };
+    }
+    // quote (default)
+    const padL = size * 2.1, padR = size * 0.9, padT = size * 1.1, padB = size * 0.8, over = size * 0.55, L = wrap(bw - padL - padR);
+    const bh = padT + L.j.length * ljH + (L.k.length ? size * 0.3 + L.k.length * lkH : 0) + padB, h = bh + over;
+    return { h, draw: (x, y) => {
+      y += over;
+      ctx.save(); this._roundPath(ctx, x, y, bw, bh, size * 0.9); ctx.fillStyle = c.bg; ctx.fill(); ctx.clip();
+      ctx.fillStyle = c.accent; ctx.fillRect(x, y, size * 0.38, bh); ctx.restore();
+      ctx.fillStyle = c.accent; ctx.font = `700 ${Math.round(size * 3.2)}px Georgia, serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      ctx.fillText('“', x + size * 0.75, y - size * 0.2);
+      ctx.font = `700 ${Math.round(size * 0.62)}px sans-serif`; const tw = ctx.measureText('ឧទាហរណ៍').width, pw = tw + size * 1.4;
+      pill('ឧទាហរណ៍', x + bw - pw - size * 0.8, y - size * 0.55, size * 0.62, c.accent, '#ffffff');
+      drawJp(L.j, x + padL, y + padT);
+      if (L.k.length) drawKm(L.k, x + padL, y + padT + L.j.length * ljH + size * 0.3);
+    } };
+  }
   // shared body (image → reading+JP → [divider] → KM → [example]), centred between top and
   // bottom AND scaled down to fit, so nothing is ever clipped
   _paintBody(ctx, W, H, cx, cw, top, bottom, word, wordImg, opt){
@@ -12411,11 +12527,15 @@ class Component extends DCLogic {
     let kmSize = Math.round(W * (opt.kmSize || 0.05));
     let kmLines = this._wrapLines(ctx, word.km || '', cw * 0.9, `600 ${kmSize}px sans-serif`);
     const ex = so.ex && word.examples && word.examples[0] ? word.examples[0] : null;
-    let exSize = Math.round(W * 0.034), exJ = [], exK = [];
-    const wrapEx = () => { if (!ex) return; exJ = this._wrapLines(ctx, ex.jp, cw * 0.82, `600 ${exSize}px sans-serif`); exK = ex.km ? this._wrapLines(ctx, ex.km, cw * 0.82, `500 ${Math.round(exSize * 0.88)}px sans-serif`) : []; };
-    wrapEx();
+    let exSize = Math.max(10, Math.round(W * 0.034 * so.exScale));
+    const dark = !!opt.exDark, acc = opt.exAccent || this._shareBase();
+    const exC = { accent: acc, jp: dark ? '#ffffff' : (opt.exJp || '#2a2a2a'), km: opt.exKm || opt.km, bg: dark ? 'rgba(255,255,255,0.1)' : (opt.exBg || '#f5f5f5'),
+      tint: dark ? 'rgba(255,255,255,0.14)' : this._mix(acc, '#ffffff', 0.86), bg2: dark ? 'rgba(255,255,255,0.05)' : '#ffffff', bubble: dark ? 'rgba(255,255,255,0.1)' : '#ffffff',
+      line: dark ? 'rgba(255,255,255,0.28)' : this._mix(acc, '#ffffff', 0.6), card: dark ? 'rgba(255,255,255,0.08)' : '#ffffff', keyFg: dark ? '#ffffff' : this._darken(acc, 0.4),
+      hl: dark ? this._rgba(acc, 0.6) : this._rgba(acc, 0.3) };
+    const exLay = () => ex ? this._exBlock(ctx, ex, word, cw * 0.92, exSize, so.exStyle, exC) : null;
     const jpH = () => this._jpBlock(ctx, word, { W, mode: so.furi, kana: so.showKana, gap: fGap, jpSize });
-    const exBoxH = () => ex ? (exJ.length * exSize * 1.4 + exK.length * exSize * 1.25 + exSize * 1.3) : 0;
+    const exBoxH = () => ex ? exLay().h : 0;
     const measure = () => (wordImg ? imgH + gap * 1.5 : 0) + jpH() + (opt.divider ? kmSize * 1.0 : gap)
       + kmLines.length * (kmSize * 1.34) + (opt.kmPill ? kmSize * 0.5 : 0) + (ex ? gap * 0.9 + exBoxH() : 0);
     let blockH = measure();
@@ -12423,7 +12543,7 @@ class Component extends DCLogic {
       const sc = avail / blockH;
       imgH = Math.round(imgH * sc); jpSize = Math.round(jpSize * sc); kmSize = Math.round(kmSize * sc); gap = Math.round(gap * sc);
       fGap = Math.round(fGap * sc); exSize = Math.max(10, Math.round(exSize * sc));
-      kmLines = this._wrapLines(ctx, word.km || '', cw * 0.9, `600 ${kmSize}px sans-serif`); wrapEx();
+      kmLines = this._wrapLines(ctx, word.km || '', cw * 0.9, `600 ${kmSize}px sans-serif`);
       blockH = measure();
     }
     const kmLH = kmSize * 1.34, left = !!opt.left, xL = cx - cw / 2, tx = left ? xL : cx;
@@ -12460,15 +12580,10 @@ class Component extends DCLogic {
       ctx.fillStyle = opt.km; ctx.font = `600 ${kmSize}px sans-serif`;
       for (const ln of kmLines) { ctx.fillText(ln, tx, y); y += kmLH; }
     }
-    if (ex) {                        // one example sentence in a soft box
+    if (ex) {                        // the example sentence (quote / bubble / split / chip)
       y += gap * 0.9;
-      const bw = cw * 0.92, bh = exBoxH(), bx = left ? xL : cx - bw / 2, ip = exSize * 0.7;
-      this._roundPath(ctx, bx, y, bw, bh, Math.round(exSize * 0.8)); ctx.fillStyle = opt.exBg || 'rgba(255,255,255,0.12)'; ctx.fill();
-      ctx.textAlign = 'left'; let ty = y + exSize * 0.6;
-      ctx.fillStyle = opt.exJp || opt.jp; ctx.font = `600 ${exSize}px sans-serif`;
-      for (const ln of exJ) { ctx.fillText(ln, bx + ip, ty); ty += exSize * 1.4; }
-      ctx.fillStyle = opt.exKm || opt.km; ctx.font = `500 ${Math.round(exSize * 0.88)}px sans-serif`;
-      for (const ln of exK) { ctx.fillText(ln, bx + ip, ty); ty += exSize * 1.25; }
+      const L = exLay(), bw = cw * 0.92;
+      L.draw(left ? xL : cx - bw / 2, y);
     }
   }
   _header(ctx, W, pad, ms, logoImg, markBg, markFg, nameColor, idText, idBg, idFg){
@@ -12508,7 +12623,7 @@ class Component extends DCLogic {
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     this._header(ctx, W, pad, ms, logoImg, base, '#fff8ec', light, shortWordCode(word), this._rgba(light, 0.14), light);
     this._paintBody(ctx, W, H, W / 2, W - 2 * pad, pad + ms, H - Math.round(H * 0.075), word, wordImg,
-      { kana: light, jp: '#ffffff', km: deep, kmPill: base, kmSize: 0.048, imgBg: this._darken(base, 0.8), imgBorder: base, exBg: 'rgba(255,255,255,0.1)', exJp: '#ffffff', exKm: light });
+      { kana: light, jp: '#ffffff', km: deep, kmPill: base, kmSize: 0.048, imgBg: this._darken(base, 0.8), imgBorder: base, exBg: 'rgba(255,255,255,0.1)', exJp: '#ffffff', exKm: light, exDark: true });
     this._footer(ctx, W, H, this._rgba(light, 0.5));
   }
   _paintHero(ctx, S, word, wordImg, logoImg){
@@ -16968,6 +17083,10 @@ class Component extends DCLogic {
     const shareToggleItems = [['kana', 'ពាក្យអាន (Furigana)'], ['ex', 'ឧទាហរណ៍ប្រយោគ'], ['img', 'រូបភាពពាក្យ'], ['code', 'លេខកូដពាក្យ'], ['brand', 'ឈ្មោះ និងរូបសញ្ញាកម្មវិធី']]
       .map(([k, label]) => { const on = !!(s.shareOpts || {})[k]; return { label, on, cls: on ? 'on' : '', onChange: () => this.toggleShareOpt(k) }; });
     const shareListItems = (s.shareList || []).map(id => { const w = WORDS.find(x => x.id === id); return w ? { jp: w.jp, onRemove: () => this.removeShareListWord(id) } : null; }).filter(Boolean);
+    const shareExStyleItems = [['quote', 'កាតសម្រង់'], ['bubble', 'ពពុះសន្ទនា'], ['split', 'ពីរពណ៌'], ['chip', 'ស្លាកពាក្យគន្លឹះ']]
+      .map(([k, label]) => ({ label, cls: s.shareExStyle === k ? 'on' : '', onSelect: () => this.setShareExStyle(k) }));
+    const shareExScaleItems = [[0.8, 'តូច'], [1, 'ធម្មតា'], [1.3, 'ធំ'], [1.6, 'ធំណាស់']]
+      .map(([v, label]) => ({ label, cls: Math.abs((s.shareExScale || 1) - v) < 0.03 ? 'on' : '', onSelect: () => this.setShareExScale(v) }));
     const shareDimsZ = SHARE_SIZES[s.shareSize] || SHARE_SIZES.square;
     const viewingSet = s.viewingViewed;
     const multiBook = BOOKS.length > 1;
@@ -18388,6 +18507,10 @@ class Component extends DCLogic {
       shareTabs, shareTabTpl: s.shareTab === 'tpl', shareTabSize: s.shareTab === 'size', shareTabColor: s.shareTab === 'color', shareTabText: s.shareTab === 'text',
       shareTplItems, shareSizeItems, shareFuriItems, shareGapItems, shareToggleItems, shareListItems,
       shareIsList: s.shareStyle === 'list',
+      shareExOn: !!(s.shareOpts || {}).ex, shareExStyleItems, shareExScaleItems,
+      shareExScaleLabel: Math.round((s.shareExScale || 1) * 100) + '%', shareExScalePct: Math.round((s.shareExScale || 1) * 100),
+      onShareExScale: (e) => this.setShareExScale((parseFloat(e.target.value) || 100) / 100),
+      shareExMinus: () => this.setShareExScale((s.shareExScale || 1) - 0.1), shareExPlus: () => this.setShareExScale((s.shareExScale || 1) + 0.1),
       shareGap: s.shareGap, shareGapLabel: Number(s.shareGap || 0).toFixed(1), onShareGap: (e) => this.onShareGap(e),
       shareBrand: s.shareBrand, onShareBrand: (e) => this.onShareBrand(e), shareBrandPh: s.appName || 'វចនានុក្រម',
       shareFoot: s.shareFoot, onShareFoot: (e) => this.onShareFoot(e), shareFootPh: (s.appName || 'វចនានុក្រម') + ' · SSW',
