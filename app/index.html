@@ -13263,6 +13263,9 @@ class Component extends DCLogic {
 .rd-selbar .e{flex:none;height:28px;padding:0 11px;border:none;border-radius:99px;background:rgba(255,255,255,.14);color:#e8ecf4;font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}
 .rd-selbar .add{flex:none;height:28px;padding:0 12px;border:none;border-radius:99px;background:linear-gradient(135deg,#8b5cf6,#6d3ee0);color:#fff;font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}
 .rd-selbar .sepv{flex:none;width:1px;height:20px;background:rgba(255,255,255,.2)}
+.rd-penbar .lab{flex:none;font-size:11px;font-weight:700;color:#cfd5e2;white-space:nowrap}
+.rd-penbar .c.on{box-shadow:0 0 0 3px rgba(255,255,255,.85);transform:scale(1.08)}
+.rd-penbar .e.on{background:#fff;color:#1a1d26}
 .rd-teach .rd-selbar{bottom:calc(78px + env(safe-area-inset-bottom,0px))}.rd-teach .rd-selbar .add,.rd-teach .rd-selbar .sepv{display:none}
 @media (max-width:560px){.rd-zoomgrp{display:none !important}.rd-sep{display:none}.rd-bar{gap:5px;padding:5px 6px}.rd-ib{width:30px;height:30px}.rd-pill{height:30px;padding:0 8px}}
 `;
@@ -13330,6 +13333,7 @@ class Component extends DCLogic {
       aa: '<path d="M5 18l4-12 4 12M6.5 14h5M15 18l3-8 3 8M16 16h4"/>', down: '<path d="M12 4v12M7 11l5 5 5-5M5 20h14"/>',
       video: '<rect x="3" y="6" width="13" height="12" rx="3"/><path d="M16 10l5-3v10l-5-3"/>', minus: '<path d="M5 12h14"/>', plus: '<path d="M12 5v14M5 12h14"/>',
       prev: '<path d="M15 6l-6 6 6 6"/>', next: '<path d="M9 6l6 6-6 6"/>', spot: '<rect x="4" y="9" width="16" height="6" rx="2"/><path d="M2 5h2M20 5h2M2 19h2M20 19h2"/>',
+      hl: '<path d="M9 14l-4 5 5-1 8-8-4-4z"/><path d="M13 6l4 4"/><path d="M4 21h8"/>',
       laser: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>', vol: '<path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/>', mute: '<path d="M4 10v4h4l5 4V6L8 10z"/><path d="M17 9l5 6M22 9l-5 6"/>', eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     };
     const icon = (key, fn, title, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'rd-ib' + (cls ? ' ' + cls : ''); b.innerHTML = '<svg viewBox="0 0 24 24">' + SVG[key] + '</svg>'; if (title) b.title = title; b.addEventListener('click', fn); return b; };
@@ -13774,12 +13778,37 @@ class Component extends DCLogic {
     const finishSel = () => { selBar.style.display = 'none'; selCur = null; try { window.getSelection().removeAllRanges(); } catch(e) {} };
     selBar.addEventListener('pointerdown', e => e.preventDefault());       // keep the selection alive until the click
     bookWrap.appendChild(selBar);
+    // marker-pen mode (teaching dock): pick a colour once, then whatever is selected is painted at once
+    let penOn = false, penColor = 'y', hlBtn = null;
+    const penBar = document.createElement('div'); penBar.className = 'rd-selbar rd-penbar';
+    const penBtns = {};
+    if (hlOK) {
+      const lab = document.createElement('span'); lab.className = 'lab'; lab.textContent = '🖍 ជ្រើសអក្សរ ដើម្បីគូស'; penBar.appendChild(lab);
+      COLS.forEach(([k, col]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'c'; b.style.background = col; b.title = 'Highlight';
+        b.addEventListener('click', () => { penColor = k; paintPen(); }); penBar.appendChild(b); penBtns[k] = b; });
+      const er = document.createElement('button'); er.type = 'button'; er.className = 'e'; er.textContent = '✕ លុប';
+      er.addEventListener('click', () => { penColor = 'e'; paintPen(); }); penBar.appendChild(er); penBtns.e = er;
+      const off = document.createElement('button'); off.type = 'button'; off.className = 'e'; off.textContent = 'បិទ'; off.addEventListener('click', () => togglePen(false)); penBar.appendChild(off);
+    }
+    penBar.addEventListener('pointerdown', e => e.preventDefault());
+    bookWrap.appendChild(penBar);
+    const paintPen = () => { Object.keys(penBtns).forEach(k => penBtns[k].classList.toggle('on', k === penColor)); };
+    const togglePen = force => {
+      penOn = typeof force === 'boolean' ? force : !penOn;
+      penBar.style.display = penOn ? 'flex' : 'none'; if (penOn) { selBar.style.display = 'none'; paintPen(); }
+      if (hlBtn) hlBtn.classList.toggle('on', penOn);
+    };
     let selT = null;
     const onSel = () => {
       if (!document.body.contains(ov)) { document.removeEventListener('selectionchange', onSel); return; }
       clearTimeout(selT);
       selT = setTimeout(() => {
         const info = selInfo();
+        if (penOn) {                       // marker-pen mode: paint what was selected, then let go of the selection
+          selBar.style.display = 'none';
+          if (info && info.txt) { setHl(info.p, info.s, info.e, penColor === 'e' ? '' : penColor); try { window.getSelection().removeAllRanges(); } catch(e) {} }
+          return;
+        }
         const canAdd = isAdminUser && info && info.txt && info.txt.length <= 20 && HAS_KANJI.test(info.txt);
         if (!info || !info.txt || !(hlOK || canAdd)) { selBar.style.display = 'none'; selCur = null; return; }
         selCur = info;
@@ -13805,7 +13834,8 @@ class Component extends DCLogic {
     dock.appendChild(icon('minus', () => { scale = Math.max(1, Math.round((scale - 0.5) * 2) / 2); applyView(); }, 'អក្សរតូចជាង'));
     dock.appendChild(icon('plus', () => { scale = Math.min(5, Math.round((scale + 0.5) * 2) / 2); applyView(); }, 'អក្សរធំជាង'));
     autoBtn = icon('vol', toggleAuto, 'សំឡេងអូតូ'); paintAuto();
-    dock.appendChild(spotBtn); dock.appendChild(laserBtn); dock.appendChild(autoBtn); dock.appendChild(peekBtn);
+    if (hlOK) { hlBtn = icon('hl', () => togglePen(), 'Highlight (ប៊ិចគូស)'); }
+    dock.appendChild(spotBtn); dock.appendChild(laserBtn); if (hlBtn) dock.appendChild(hlBtn); dock.appendChild(autoBtn); dock.appendChild(peekBtn);
     dock.appendChild(sep());
     dock.appendChild(icon('close', () => setTeach(false), 'ចេញពីរបៀបបង្រៀន', 'hot'));
     laserBtn.classList.add('on');
@@ -13815,7 +13845,7 @@ class Component extends DCLogic {
       teach = on; ov.classList.toggle('rd-teach', on); ov.classList.remove('rd-peek'); peekBtn.classList.remove('on');
       fitWidth = on; scale = 1;
       themePop.style.display = 'none'; themeBtn.classList.remove('on'); bmPanel.style.display = 'none';
-      if (!on) { spotEl.style.display = 'none'; laserEl.style.display = 'none'; spotOn = false; spotBtn.classList.remove('on'); }
+      if (!on) { spotEl.style.display = 'none'; laserEl.style.display = 'none'; spotOn = false; spotBtn.classList.remove('on'); togglePen(false); }
       else { wake(); }
       fit(); setTimeout(fit, 60); resetScroll();
     };
