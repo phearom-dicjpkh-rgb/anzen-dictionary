@@ -12914,6 +12914,12 @@ class Component extends DCLogic {
     const fb = pop.querySelector('#bwp-fav'); if (fb) fb.addEventListener('click', () => { this.toggleFavorite(info.id); fb.classList.toggle('on'); });
     if (this._rdAuto()) this.playAudio(jp);   // read it aloud on tap (can be switched off for a lesson recording)
   }
+  // furigana in the reader: on/off, hide the words the student already studied, size s|m|l (kept on this device)
+  _rdFuri(){
+    let o = {}; try { o = JSON.parse(localStorage.getItem('dict_reader_furi') || '{}') || {}; } catch(e) {}
+    return { on: !!o.on, hide: !!o.hide, size: ['s', 'm', 'l'].includes(o.size) ? o.size : 'm' };
+  }
+  _rdSetFuri(o){ try { localStorage.setItem('dict_reader_furi', JSON.stringify(o)); } catch(e) {} }
   _rdAuto(){ try { return localStorage.getItem('dict_reader_autoaudio') !== '0'; } catch(e) { return true; } }
   _rdSetAuto(on){ try { localStorage.setItem('dict_reader_autoaudio', on ? '1' : '0'); } catch(e) {} }
   // look of the full-screen reader (injected once)
@@ -12991,6 +12997,16 @@ class Component extends DCLogic {
 .rd-teach .rd-arrow{display:none !important}
 .rd-spot{position:absolute;left:0;width:0;top:0;height:0;border-radius:10px;box-shadow:0 0 0 2000px rgba(8,10,16,.6);border:2px solid rgba(255,215,94,.92);pointer-events:none;z-index:6;display:none}
 .rd-laser{position:absolute;left:0;top:0;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:rgba(255,77,106,.35);border:2px solid #ff4d6a;box-shadow:0 0 0 8px rgba(255,77,106,.15);pointer-events:none;z-index:9;display:none}
+.rd-ov .a4page rt{font-size:.5em;color:#2f6fb0;font-weight:500;letter-spacing:.02em;user-select:none;-webkit-user-select:none}
+.rd-fz-s .a4page rt{font-size:.42em}.rd-fz-l .a4page rt{font-size:.62em}
+.rd-furi .a4page{line-height:2.25 !important}
+.rd-tog{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:none;background:rgba(255,255,255,.07);color:#e8ecf4;border-radius:10px;padding:9px 10px;font:inherit;font-size:11.5px;text-align:left;cursor:pointer;margin-bottom:6px}
+.rd-tog s{flex:none;text-decoration:none;width:34px;height:20px;border-radius:99px;background:rgba(255,255,255,.22);position:relative;transition:background .15s}
+.rd-tog s::after{content:"";position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .15s}
+.rd-tog.on s{background:var(--rdA)}.rd-tog.on s::after{left:17px}
+.rd-fz{display:flex;gap:6px}
+.rd-fz button{flex:1;height:32px;border:none;border-radius:9px;background:rgba(255,255,255,.1);color:#cfd5e2;font:inherit;font-size:11.5px;font-weight:700;cursor:pointer}
+.rd-fz button.on{background:linear-gradient(135deg,var(--rdA),var(--rdA2));color:#fff}
 @media (max-width:560px){.rd-zoomgrp{display:none !important}.rd-sep{display:none}.rd-bar{gap:5px;padding:5px 6px}.rd-ib{width:30px;height:30px}.rd-pill{height:30px;padding:0 8px}}
 `;
     document.head.appendChild(st);
@@ -13073,7 +13089,11 @@ class Component extends DCLogic {
     }
     const findBtn = icon('search', () => toggleFind(), 'ស្វែងរកក្នុងសៀវភៅ');
     bar.appendChild(findBtn);
-    const themeBtn = icon('aa', () => { const on = themePop.style.display !== 'block'; themePop.style.display = on ? 'block' : 'none'; themeBtn.classList.toggle('on', on); bmPanel.style.display = 'none'; }, 'ពណ៌ទំព័រ និងទំហំ');
+    // あ — furigana over the kanji (dictionary readings)
+    const furiBtn = icon('aa', () => { const on = furiPop.style.display !== 'block'; furiPop.style.display = on ? 'block' : 'none'; themePop.style.display = 'none'; themeBtn.classList.remove('on'); bmPanel.style.display = 'none'; }, 'Furigana');
+    furiBtn.innerHTML = '<span style="font-family:var(--font-jp),sans-serif;font-size:15px;font-weight:700;line-height:1;">あ</span>';
+    bar.appendChild(furiBtn);
+    const themeBtn = icon('aa', () => { const on = themePop.style.display !== 'block'; themePop.style.display = on ? 'block' : 'none'; themeBtn.classList.toggle('on', on); bmPanel.style.display = 'none'; furiPop.style.display = 'none'; }, 'ពណ៌ទំព័រ និងទំហំ');
     bar.appendChild(themeBtn);
     bar.appendChild(icon('down', () => this._downloadBookPdf((book && book.title) || 'សៀវភៅ', html, PAD, START), 'ទាញយកជា PDF'));
     bar.appendChild(spacer());
@@ -13114,6 +13134,54 @@ class Component extends DCLogic {
     themePop.querySelectorAll('.rd-sw button').forEach(b => b.addEventListener('click', () => setTheme(b.dataset.t)));
     setTheme(theme);
     ov.appendChild(themePop);
+    const furiPop = document.createElement('div'); furiPop.className = 'rd-pop';
+    furiPop.innerHTML = '<b>Furigana</b><button type="button" class="rd-tog" data-k="on">បង្ហាញ Furigana លើ Kanji<s></s></button><button type="button" class="rd-tog" data-k="hide">លាក់ពាក្យដែលខ្ញុំបានរៀនរួច<s></s></button><b style="margin-top:8px">ទំហំ Furigana</b><div class="rd-fz"><button type="button" data-z="s">តូច</button><button type="button" data-z="m">កណ្ដាល</button><button type="button" data-z="l">ធំ</button></div><div style="margin-top:8px;font-size:10px;line-height:1.6;color:#8d96a8">ការអានមកពីវចនានុក្រម — ពាក្យដែលគ្មានក្នុងវចនានុក្រម ឬអានច្រើនបែប អាចមិនមាន ឬមិនត្រឹមត្រូវ</div>';
+    ov.appendChild(furiPop);
+    let furiSt = this._rdFuri();
+    // the dictionary words this student has already looked at (their furigana can be hidden)
+    let learned = null;
+    const learnedSet = () => {
+      if (learned) return learned;
+      learned = new Set(); const seen = new Set(this.state.viewed || []);
+      for (const w of WORDS) if (seen.has(w.id) || (w._baseId && seen.has(w._baseId))) learned.add(w.jp);
+      return learned;
+    };
+    // turn one tap-to-translate word into <ruby>kanji<rt>reading</rt></ruby> (okurigana stay plain), or back
+    const furiSpan = (sp, show) => {
+      const jp = sp.dataset.jp; if (!jp) return;
+      if (!show) { if (sp.dataset.fu === '1') { sp.textContent = jp; sp.dataset.fu = '0'; } return; }
+      if (sp.dataset.fu === '1') return;
+      if (sp.children.length || sp.textContent !== jp) return;        // the book already carries its own ruby
+      // split the word into dictionary pieces (longest first); a phrase with kana in the middle (歩道を横切)
+      // is read piece by piece (歩道 / 横切) instead of one long reading over the whole phrase
+      const map = furiMap(), clean = s => /^[㐀-鿿豈-﫿々]+[ぁ-ゖ]*$/.test(s);
+      let out = '', any = false;
+      for (let i = 0; i < jp.length;) {
+        let hit = 0;
+        for (let L = Math.min(16, jp.length - i); L >= 1; L--) {
+          const sub = jp.slice(i, i + L), rd = map.get(sub);
+          if (!rd || !clean(sub)) continue;
+          let kj = sub.length; while (kj > 0 && !HAS_KANJI.test(sub[kj - 1])) kj--;
+          const tail = sub.slice(kj); let rr = rd; if (tail && rr.endsWith(tail)) rr = rr.slice(0, rr.length - tail.length);
+          out += '<ruby>' + _escHtml(sub.slice(0, kj)) + '<rt>' + _escHtml(rr) + '</rt></ruby>' + _escHtml(tail); i += L; hit = 1; any = true; break;
+        }
+        if (!hit) { out += _escHtml(jp[i]); i++; }
+      }
+      if (!any) return;
+      sp.innerHTML = out;
+      sp.dataset.fu = '1';
+    };
+    const furiPage = p => { if (!p || !p._bwWrapped) return; const hide = furiSt.on && furiSt.hide ? learnedSet() : null; p.querySelectorAll('.bookword').forEach(sp => furiSpan(sp, furiSt.on && !(hide && hide.has(sp.dataset.jp)))); };
+    const paintFuri = () => {
+      furiBtn.classList.toggle('on', furiSt.on);
+      ov.classList.toggle('rd-furi', furiSt.on);
+      ['s', 'm', 'l'].forEach(z => ov.classList.toggle('rd-fz-' + z, furiSt.size === z));
+      furiPop.querySelectorAll('.rd-tog').forEach(b => b.classList.toggle('on', !!furiSt[b.dataset.k]));
+      furiPop.querySelectorAll('.rd-fz button').forEach(b => b.classList.toggle('on', b.dataset.z === furiSt.size));
+    };
+    const applyFuri = () => { paintFuri(); pages.forEach(furiPage); applyView(); };
+    furiPop.querySelectorAll('.rd-tog').forEach(b => b.addEventListener('click', () => { furiSt = { ...furiSt, [b.dataset.k]: !furiSt[b.dataset.k] }; this._rdSetFuri(furiSt); applyFuri(); }));
+    furiPop.querySelectorAll('.rd-fz button').forEach(b => b.addEventListener('click', () => { furiSt = { ...furiSt, size: b.dataset.z }; this._rdSetFuri(furiSt); applyFuri(); }));
     // page area (scrolls). The sheet is centred with margin:auto so both edges stay
     // reachable by scrolling when zoomed in past the screen.
     const row = document.createElement('div'); row.className = 'rd-row';
@@ -13144,7 +13212,7 @@ class Component extends DCLogic {
     if (!pages.length) { const p = mkPage(); p.innerHTML = '<p style="opacity:0.5;">(សៀវភៅទទេ)</p>'; pages = [p]; }
     // wrap tap-to-translate words lazily — only the page(s) actually shown, so
     // opening a long book is instant instead of pre-scanning every page up front
-    const wrapOne = p => { if (p && !p._bwWrapped) { p._bwWrapped = true; this._wrapBookWords(p); } };
+    const wrapOne = p => { if (p && !p._bwWrapped) { p._bwWrapped = true; this._wrapBookWords(p); if (furiSt.on) furiPage(p); } };
     // fix Google-Drive share links so the pictures actually load
     pages.forEach(p => p.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; }));
     // page number in the bottom margin, centred — a custom number typed on a
@@ -13162,7 +13230,7 @@ class Component extends DCLogic {
       pn.style.cssText = `position:absolute;left:0;right:0;bottom:${Math.max(10, Math.round(PAD / 2) - 6)}px;text-align:center;font-size:13px;color:#666;`;
       pn.textContent = String(pnNums[i]); p.appendChild(pn);
     });
-    area.addEventListener('click', e => { const el = e.target.closest && e.target.closest('.bookword'); if (el && el.dataset.jp) this._showBookWordPopup(el.dataset.jp, el); themePop.style.display = 'none'; themeBtn.classList.remove('on'); });
+    area.addEventListener('click', e => { const el = e.target.closest && e.target.closest('.bookword'); if (el && el.dataset.jp) this._showBookWordPopup(el.dataset.jp, el); themePop.style.display = 'none'; themeBtn.classList.remove('on'); furiPop.style.display = 'none'; });
     const total = pages.length;
     jin.max = String(total); jtot.textContent = '/ ' + total;
     // reopen where the reader left off last time
@@ -13242,9 +13310,11 @@ class Component extends DCLogic {
     let pageText = null;
     // the printed page number is not part of the book's words — skip it, or every
     // search for a digit would land on every page
-    const bodyText = p => [...p.childNodes]
-      .filter(n => !(n.nodeType === 1 && n.classList && n.classList.contains('pgnum')))
-      .map(n => n.textContent || '').join('');
+    const bodyText = p => {
+      let t = ''; const w = document.createTreeWalker(p, NodeFilter.SHOW_TEXT, null);
+      while (w.nextNode()) { const pe = w.currentNode.parentElement; if (pe && (pe.closest('.pgnum') || pe.closest('rt'))) continue; t += w.currentNode.nodeValue || ''; }
+      return t;
+    };
     const textOf = () => pageText || (pageText = pages.map(bodyText));
     // unwrap, keeping whatever sat inside — a highlight can contain the
     // tap-to-translate spans, and replacing it with plain text would strip them
@@ -13265,7 +13335,7 @@ class Component extends DCLogic {
       const nodes = [], starts = []; let joined = '';
       const w = document.createTreeWalker(p, NodeFilter.SHOW_TEXT, null);
       while (w.nextNode()) { const n = w.currentNode;
-        if (n.parentElement && n.parentElement.closest('.pgnum')) continue;
+        if (n.parentElement && (n.parentElement.closest('.pgnum') || n.parentElement.closest('rt'))) continue;
         starts.push(joined.length); nodes.push(n); joined += n.nodeValue || ''; }
       if (!nodes.length) return;
       const hay = joined.toLowerCase(), q = findQ.toLowerCase();
@@ -13320,7 +13390,7 @@ class Component extends DCLogic {
       const open = findBar.style.display === 'none';
       findBar.style.display = open ? 'flex' : 'none';
       findBtn.classList.toggle('on', open);
-      bmPanel.style.display = 'none'; themePop.style.display = 'none'; themeBtn.classList.remove('on');
+      bmPanel.style.display = 'none'; themePop.style.display = 'none'; themeBtn.classList.remove('on'); furiPop.style.display = 'none';
       if (open) { fInp.focus(); } else { clearMarks(); findQ = ''; hits = []; }
     };
     const goInput = () => { const v = parseInt(jin.value, 10); if (!isNaN(v)) { cur = Math.max(0, Math.min(total - 1, v - 1)); applyView(); resetScroll(); } };
@@ -13415,6 +13485,7 @@ class Component extends DCLogic {
       else if (e.key === 'Escape' && teach) { setTeach(false); e.preventDefault(); }
     };
     document.addEventListener('keydown', this._rdKey);
+    paintFuri();
     fit();                 // fit now so the first paint is centred and full-screen
     setTimeout(fit, 60);   // re-fit once the real layout height is known
     setTimeout(fit, 250);
