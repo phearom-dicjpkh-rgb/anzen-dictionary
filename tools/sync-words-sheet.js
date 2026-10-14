@@ -88,11 +88,15 @@ function normalizeImg(url) {
   const seenId = new Map();   // id -> jp, to catch a reused id (would conflate two words' progress/stars)
   const dups = [];
   const g = (r, k) => (ci[k] >= 0 ? (r[ci[k]] || '') : '').trim();
+  // reading corrections kept next to this script; each only applies while the sheet still holds the old value
+  let FIXES = {}; try { FIXES = JSON.parse(fs.readFileSync(path.join(__dirname, 'reading-fixes.json'), 'utf8')); } catch (e) {}
+  let fixed = 0;
   for (const r of table.slice(1)) {
     const id = g(r, 'id'), jp = g(r, 'jp'), km = g(r, 'km');
     if (!id || !jp) continue;
     if (seenId.has(id)) dups.push(`${id} (${seenId.get(id)} / ${jp})`); else seenId.set(id, jp);
-    const kana = g(r, 'kana'), pos = g(r, 'pos'), cat = g(r, 'cat') || 'vocab';
+    let kana = g(r, 'kana'); const pos = g(r, 'pos'), cat = g(r, 'cat') || 'vocab';
+    const fx = FIXES[id]; if (fx && fx.from === kana) { kana = fx.to; fixed++; }
     const book = g(r, 'book') || DEFAULT_BOOK;
     const page = parseInt(g(r, 'page'), 10) || 2;
     const exj = splitEx(g(r, 'exj')), exk = splitEx(g(r, 'exk'));
@@ -104,6 +108,7 @@ function normalizeImg(url) {
     rows.push(base);
     csv.push([id, book, page, cat, jp, kana, pos, km, exj.join(' | '), exk.join(' | '), img].map(esc).join(','));
   }
+  if (fixed) console.log(`reading-fixes.json: ${fixed} reading(s) corrected (the sheet still has the old value)`);
   console.log(`parsed ${rows.length} words · with image ${rows.filter(r => r.length === 11).length}`);
   if (!rows.length) throw new Error('Refusing: 0 words parsed.');
   if (dups.length) throw new Error(`Refusing: duplicate id(s) in the sheet — give each row a unique id:\n  ${dups.join('\n  ')}`);
