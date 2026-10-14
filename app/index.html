@@ -15606,7 +15606,6 @@ class Component extends DCLogic {
     if (this._edSelShape && this._edSelShape !== el) this._deselectShape();
     this._edSelShape = el;
     el.style.outline = '2px dashed var(--color-accent)'; el.style.outlineOffset = '3px';
-    this._showShapeBar();
     if (this._edShapeTabHook) this._edShapeTabHook(true);
   }
   _deselectShape(){
@@ -15629,29 +15628,7 @@ class Component extends DCLogic {
     else { let w = (parseFloat(el.style.borderWidth) || 3) + d; w = Math.max(1, Math.min(20, w)); el.style.borderWidth = w + 'px'; }
     this._edDirty = true;
   }
-  _showShapeBar(){
-    const el = this._edSelShape, host = document.getElementById('lib-editor-root'); if (!el || !host) return;
-    const old = document.getElementById('lib-shape-bar'); if (old) old.remove();
-    const bar = document.createElement('div'); bar.id = 'lib-shape-bar';
-    bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:130;background:var(--color-surface);border-top:1px solid var(--color-divider);box-shadow:0 -4px 20px rgba(0,0,0,0.3);padding:8px 10px calc(8px + env(safe-area-inset-bottom, 0px));display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;';
-    const mk = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.style.cssText = 'height:36px;min-width:38px;padding:0 10px;border:1px solid var(--color-divider);border-radius:8px;background:var(--color-bg);cursor:pointer;font-size:14px;'; b.addEventListener('click', fn); return b; };
-    const rs = (dw, dh) => { el.style.width = Math.max(16, el.offsetWidth + dw) + 'px'; el.style.height = Math.max(4, el.offsetHeight + dh) + 'px'; this._edDirty = true; };
-    bar.appendChild(mk('⬌ −', () => rs(-20, 0))); bar.appendChild(mk('⬌ +', () => rs(20, 0)));
-    bar.appendChild(mk('⬍ −', () => rs(0, -20))); bar.appendChild(mk('⬍ +', () => rs(0, 20)));
-    bar.appendChild(mk('▁ −', () => this._edSetShapeThickness(el, -1))); bar.appendChild(mk('▔ +', () => this._edSetShapeThickness(el, 1)));
-    ['#c0342c', '#1558b0', '#2f8f57', '#b6810f', '#7a3fb0', '#201f1d'].forEach(c => {
-      const sw = document.createElement('button'); sw.type = 'button'; sw.title = 'ពណ៌';
-      sw.style.cssText = `width:26px;height:26px;border-radius:6px;border:1px solid rgba(0,0,0,0.2);background:${c};cursor:pointer;`;
-      sw.addEventListener('click', () => this._edSetShapeColor(el, c));
-      bar.appendChild(sw);
-    });
-    bar.appendChild(mk('🗑 លុប', () => { el.remove(); this._deselectShape(); this._edDirty = true; }));
-    bar.appendChild(mk('✕', () => this._deselectShape()));
-    const h = document.createElement('div'); h.style.cssText = 'flex-basis:100%;text-align:center;font-size:11px;opacity:0.6;margin-top:2px;';
-    h.textContent = '↔ អូសរាង​ដើម្បី​ផ្លាស់ទីតាំង';
-    bar.appendChild(h);
-    host.appendChild(bar);
-  }
+
   // — Paste cleanup. Text copied from a PDF/website often carries a fixed column
   // width, multi-column layout or absolute positioning, which squeezes it into a
   // narrow strip and stops it flowing/extending. Strip that on paste (and offer a
