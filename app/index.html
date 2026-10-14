@@ -15753,6 +15753,7 @@ class Component extends DCLogic {
     if (!document.getElementById('ed-rb-css')) {
       const st = document.createElement('style'); st.id = 'ed-rb-css';
       st.textContent = [
+        '.ewd-tit,.ewd-tabs,.ewd-rib,.ewd-hr,.ewd-st,.ewd-bs,.ewd-menu,.ewd-pop,.ewd-find,.ewd-tpick{font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Noto Sans Khmer","Khmer OS System","Noto Sans JP",sans-serif}',
         '.ewd-tit{flex:none;display:flex;align-items:center;gap:2px;background:#2b579a;color:#fff;padding:4px 8px;padding-top:calc(4px + env(safe-area-inset-top,0px))}',
         '.ewd-q{width:32px;height:30px;border:none;border-radius:4px;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none}',
         '.ewd-q:hover{background:rgba(255,255,255,.16)}',
@@ -15763,6 +15764,7 @@ class Component extends DCLogic {
         '.ewd-tab:hover{background:#f3f2f1}.ewd-tab.on{color:#2b579a;font-weight:700}',
         '.ewd-tab.on:after{content:"";position:absolute;left:12px;right:12px;bottom:3px;height:3px;border-radius:2px;background:#2b579a}',
         '.ewd-tab.file{background:#2b579a;color:#fff;border-radius:4px;margin:3px 4px 3px 0}.ewd-tab.file:hover{background:#244a83}',
+        '.ewd-lang{flex:none;align-self:center;display:flex;align-items:center;gap:4px;border:1px solid #c8c6c4;border-radius:12px;background:#fff;font:inherit;font-size:11.5px;padding:2px 9px;margin:0 4px;cursor:pointer;color:#605e5c}.ewd-lang b{color:#2b579a}.ewd-lang i{font-style:normal;color:#c8c6c4}',
         '.ewd-sp{flex:1}.ewd-fold{flex:none;border:none;background:transparent;color:#605e5c;cursor:pointer;padding:0 10px;display:flex;align-items:center}',
         '.ewd-rib{flex:none;display:flex;align-items:stretch;height:96px;background:#fff;border-top:1px solid #edebe9;border-bottom:1px solid #d2d0ce;box-shadow:0 1px 3px rgba(0,0,0,.07);overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;position:relative;z-index:2}',
         '.ewd-rib::-webkit-scrollbar{display:none}',
@@ -15951,7 +15953,7 @@ class Component extends DCLogic {
     const closePops = () => ov.querySelectorAll('.ewd-pop,.ewd-menu,.ewd-tpick').forEach(n => n.remove());
     ov.addEventListener('mousedown', e => { if (!e.target.closest('.ewd-pop,.ewd-menu,.ewd-tpick,[data-pop]')) closePops(); });
     // a small popup under a button (colour palette / file menu)
-    const popUnder = (btn, el) => { closePops(); const rc = btn.getBoundingClientRect(); el.style.left = Math.max(6, Math.min(window.innerWidth - 220, rc.left)) + 'px'; el.style.top = (rc.bottom + 4) + 'px'; ov.appendChild(el); };
+    const popUnder = (btn, el) => { trTree(el); closePops(); const rc = btn.getBoundingClientRect(); el.style.left = Math.max(6, Math.min(window.innerWidth - 220, rc.left)) + 'px'; el.style.top = (rc.bottom + 4) + 'px'; ov.appendChild(el); };
     // ── title bar (Word blue): quick-access save · undo · redo · book title · PDF · close ──
     const top = document.createElement('div'); top.className = 'ewd-tit';
     const qb = (key, fn, tip, keepSel) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-q'; b.innerHTML = svg(key, 17); b.title = tip; b.setAttribute('aria-label', tip); if (keepSel) keep(b); b.addEventListener('click', fn); top.appendChild(b); return b; };
@@ -16000,9 +16002,59 @@ class Component extends DCLogic {
       items.forEach(([lbl, fn, extra]) => { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = lbl; if (extra) b.className = extra; keep(b); b.addEventListener('click', () => { closePops(); fn(); }); m.appendChild(b); });
       popUnder(anchor, m);
     };
-    const toast = m => { try { this.showToast(m); } catch(e){} };
+    // ── interface language: Khmer or English (KH / EN switch in the tab row), remembered on this device ──
+    let uiLang = (() => { try { return localStorage.getItem('dict_ed_lang') === 'en' ? 'en' : 'kh'; } catch(e) { return 'kh'; } })();
+    const EN = {"រក្សាទុក":"Save","ថយក្រោយ (undo)":"Undo","ទៅមុខវិញ (redo)":"Redo","ចំណងជើងសៀវភៅ":"Book title","ទាញយកជា PDF":"Download as PDF","បិទ":"Close","លំនាំដើម":"Default","ឯកសារ":"File","ទំព័រដើម":"Home","បញ្ចូល":"Insert","រចនា":"Design","ប្លង់":"Layout","ឯកសារយោង":"References","សំបុត្រ":"Mailings","ពិនិត្យ":"Review","មើល":"View","អ្នកអភិវឌ្ឍ":"Developer","ជំនួយ":"Help","ពិនិត្យអក្សរ":"Text Check","បង្រួម Ribbon":"Collapse the Ribbon","បង្ហាញ Ribbon":"Show the Ribbon","ទម្រង់រាង":"Shape Format","ក្ដារតម្បៀតខ្ទាស់":"Clipboard","បិទភ្ជាប់":"Paste","កាត់":"Cut","ចម្លង":"Copy","ចម្លងទម្រង់":"Format Painter","ពុម្ពអក្សរ":"Font","ទំហំអក្សរ":"Font Size","ពង្រីកអក្សរ":"Grow Font","បង្រួមអក្សរ":"Shrink Font","ប្ដូរទម្រង់អក្សរ":"Change Case","អក្សរធំដើមប្រយោគ":"Sentence case.","អក្សរតូចទាំងអស់":"lowercase","អក្សរធំទាំងអស់":"UPPERCASE","អក្សរធំដើមពាក្យ":"Capitalize Each Word","លុបទម្រង់អក្សរ":"Clear All Formatting","ដិត":"Bold","ទ្រេត":"Italic","គូសបន្ទាត់ក្រោម":"Underline","គូសកាត់":"Strikethrough","អក្សរក្រោម":"Subscript","អក្សរលើ":"Superscript","បែបផែនអក្សរ (មិនទាន់ដំណើរការ)":"Text Effects","បែបផែនអក្សរ":"Text Effects","ពណ៌គូសលើអក្សរ (highlight)":"Text Highlight Color","គ្មានពណ៌":"No Color","ពណ៌អក្សរ":"Font Color","កថាខណ្ឌ":"Paragraph","បញ្ជីចំណុច":"Bullets","បញ្ជីលេខ":"Numbering","ស្តាយបញ្ជី (ច្រើនកម្រិត)":"Multilevel List","ចំណុចមូល":"Bullet","រង្វង់":"Circle","ការ៉េ":"Square","ចុច «បង្កើនការចូលបន្ទាត់» ដើម្បីបង្កើតកម្រិតរង":"Use “Increase Indent” for a sub-level","បន្ថយការចូលបន្ទាត់":"Decrease Indent","បង្កើនការចូលបន្ទាត់":"Increase Indent","តម្រៀប":"Sort","បង្ហាញ/លាក់ សញ្ញា ¶":"Show/Hide ¶","តម្រឹមឆ្វេង":"Align Left","តម្រឹមកណ្ដាល":"Center","តម្រឹមស្ដាំ":"Align Right","តម្រឹមសងខាង":"Justify","គម្លាតបន្ទាត់":"Line Spacing","ពណ៌ផ្ទៃកថាខណ្ឌ":"Shading","ស៊ុម":"Borders","ស៊ុមជុំវិញ":"Outside Borders","ស៊ុមមូលពណ៌ខៀវ":"Rounded Blue Border","បន្ទាត់ក្រោម":"Bottom Border","បន្ទាត់លើ":"Top Border","គ្មានស៊ុម":"No Border","រចនាប័ទ្ម":"Styles","ធម្មតា":"Normal","គ្មានគម្លាត":"No Spacing","ចំណងជើង ១":"Heading 1","ចំណងជើង ២":"Heading 2","ចំណងជើងធំ":"Title","ចំណងជើងរង":"Subtitle","សង្កត់ធ្ងន់":"Emphasis","ដិតខ្លាំង":"Strong","សម្រង់":"Quote","កែសម្រួល":"Editing","ស្វែងរក និងជំនួស":"Find and Replace","ស្វែងរក…":"Find…","មុន":"Previous","បន្ទាប់":"Next","ជំនួសដោយ…":"Replace with…","ជំនួស":"Replace","ជំនួសទាំងអស់":"Replace All","ស្វែងរក":"Find","ជ្រើសទាំងអស់":"Select All","ទំព័រ":"Pages","ទំព័រ គម្រប":"Cover<br>Page","ទំព័រ ទទេ":"Blank<br>Page","បំបែក ទំព័រ":"Page<br>Break","តារាង":"Table","បញ្ចូលតារាង":"Insert Table","បញ្ចូលតារាង… (កំណត់ចំនួន)":"Insert Table…","រូបភាពប្រកប":"Illustrations","រូបភាព":"Pictures","រាង":"Shapes","ប្រអប់":"Rectangle","គូសពណ៌":"Highlight","បន្ទាត់គូស":"Line","ព្រួញ":"Arrow","បន្ទាត់ផ្ដេក":"Horizontal Line","រូប តំណាង":"Icons","គំរូ 3D":"3D<br>Models","គំនូស តាង":"Chart","ថតរូប អេក្រង់":"Screen-<br>shot","កម្មវិធីបន្ថែម":"Add-ins","យក Add-ins":"Get Add-ins","Add-ins របស់ខ្ញុំ":"My Add-ins","មេឌៀ":"Media","វីដេអូ អនឡាញ":"Online<br>Videos","តំណ":"Link","ចំណាំ":"Bookmark","យោង ឆ្លង":"Cross-<br>reference","មតិ":"Comment","ក្បាល និងបាតទំព័រ":"Header & Footer","ក្បាល ទំព័រ":"Header","បាត ទំព័រ":"Footer","លេខ ទំព័រ":"Page<br>Number","កំពូលទំព័រ":"Top of Page","បាតទំព័រ (កំពុងប្រើ)":"Bottom of Page (in use)","ទម្រង់លេខទំព័រ…":"Format Page Numbers…","ទម្រង់លេខទំព័រ":"Format Page Numbers","លេខទំព័រចាប់ផ្ដើម":"Starting page number","អត្ថបទ":"Text","ស្វាគមន៍ ជប៉ុន":"Japanese<br>Greetings","ប្រអប់ អត្ថបទ":"Text<br>Box","ផ្នែក រហ័ស":"Quick<br>Parts","អក្សរធំ ដើម":"Drop<br>Cap","បន្ទាត់ហត្ថលេខា":"Signature Line","កាលបរិច្ឆេទ និងម៉ោង":"Date & Time","វត្ថុ":"Object","និមិត្តសញ្ញា":"Symbols","សមីការ":"Equation","និមិត្ត សញ្ញា":"Symbol","ទម្រង់ឯកសារ":"Document Formatting","ប្រធាន បទ":"Themes","ពណ៌":"Colors","ពុម្ព អក្សរ":"Fonts","គម្លាតកថាខណ្ឌ":"Paragraph Spacing","បែបផែន":"Effects","កំណត់ជាលំនាំដើម":"Set as Default","ផ្ទៃខាងក្រោយទំព័រ":"Page Background","Water mark":"Water-<br>mark","ពណ៌ ទំព័រ":"Page<br>Color","ស៊ុម ទំព័រ":"Page<br>Borders","សំណុំរចនាប័ទ្ម":"Style Set","សំណុំរចនាប័ទ្មទាំងអស់":"All Style Sets","មូលដ្ឋាន (ឆើតឆាយ)":"Basic (Elegant)","មូលដ្ឋាន (សាមញ្ញ)":"Basic (Simple)","មូលដ្ឋាន (ទាន់សម័យ)":"Basic (Stylish)","ខ្មៅស (អក្សរធំ)":"Black & White (Capitalized)","ខ្មៅស (បុរាណ)":"Black & White (Classic)","ខ្មៅស (លេខរៀង)":"Black & White (Numbered)","ខ្មៅស (Word 2013)":"Black & White (Word 2013)","កណ្ដាល":"Centered","បន្ទាត់ (ប្លែក)":"Lines (Distinctive)","បន្ទាត់ (សាមញ្ញ)":"Lines (Simple)","បន្ទាត់ (ទាន់សម័យ)":"Lines (Stylish)","សាមញ្ញបំផុត":"Minimalist","មានផ្ទៃពណ៌":"Shaded","រៀបចំទំព័រ":"Page Setup","ទិស អក្សរ":"Text<br>Direction","រឹម":"Margins","តូចចង្អៀត":"Narrow","មធ្យម":"Moderate","ធំ":"Wide","ធំខ្លាំង":"Extra Wide","រឹមតូចជាងនេះ (−8)":"Smaller margins (−8)","រឹមធំជាងនេះ (+8)":"Larger margins (+8)","ទិស ក្រដាស":"Orien-<br>tation","ទំហំ":"Size","ជួរ ឈរ":"Columns","បំបែក":"Breaks","បំបែកទំព័រ (ក្រដាសថ្មី)":"Page Break (new sheet)","បំបែកជួរឈរ":"Column Break","បំបែកផ្នែក":"Section Break","លុបក្រដាសទំព័រនេះ":"Delete this sheet","លេខបន្ទាត់":"Line Numbers","ដាច់ពាក្យ":"Hyphenation","កំណត់ Genko":"Genko<br>Setting","គម្លាត":"Spacing","ចូលបន្ទាត់":"Indent","ឆ្វេង":"Left","ស្ដាំ":"Right","ខាងមុខ":"Before","ខាងក្រោយ":"After","រៀបចំ":"Arrange","ទីតាំង":"Position","រុំ អត្ថបទ":"Wrap<br>Text","នាំទៅ មុខ":"Bring<br>Forward","រុញទៅ ក្រោយ":"Send<br>Backward","ផ្ទាំង ជ្រើសរើស":"Selection<br>Pane","តម្រឹម":"Align","ដាក់ជាក្រុម":"Group","បង្វិល":"Rotate","តារាងមាតិកា":"Table of Contents","តារាង មាតិកា":"Table of<br>Contents","បន្ថែមអត្ថបទ":"Add Text","ធ្វើបច្ចុប្បន្នភាពតារាង":"Update Table","លេខយោងខាងក្រោម":"Footnotes","បញ្ចូល លេខយោង":"Insert<br>Footnote","បញ្ចូលលេខយោងចុង":"Insert Endnote","លេខយោងបន្ទាប់":"Next Footnote","បង្ហាញកំណត់ចំណាំ":"Show Notes","ស្រាវជ្រាវ":"Research","ការដកស្រង់ និងគន្ថនិទ្ទេស":"Citations & Bibliography","បញ្ចូល ការដកស្រង់":"Insert<br>Citation","គ្រប់គ្រងប្រភព":"Manage Sources","ស្តាយ៖":"Style:","ស្តាយការដកស្រង់":"Citation Style","គន្ថនិទ្ទេស":"Bibliography","ចំណងជើងរូប":"Captions","បញ្ចូល ចំណងជើង":"Insert<br>Caption","បញ្ចូលតារាងរូបភាព":"Insert Table of Figures","យោងឆ្លង":"Cross-reference","លិបិក្រម":"Index","សម្គាល់ ធាតុ":"Mark<br>Entry","បញ្ចូលលិបិក្រម":"Insert Index","ធ្វើបច្ចុប្បន្នភាពលិបិក្រម":"Update Index","តារាងសិទ្ធិអំណាច":"Table of Authorities","សម្គាល់ ការដកស្រង់":"Mark<br>Citation","បញ្ចូលតារាងសិទ្ធិអំណាច":"Insert Table of Authorities","បង្កើត":"Create","កាតប៉ុស្ដាល់ ជប៉ុន":"Japanese<br>Postcard","ស្រោម សំបុត្រ":"Envelopes","ស្លាក":"Labels","ចាប់ផ្ដើមបញ្ចូលសំបុត្រ":"Start Mail Merge","ចាប់ផ្ដើម បញ្ចូល":"Start Mail<br>Merge","ជ្រើស អ្នកទទួល":"Select<br>Recipients","កែបញ្ជី អ្នកទទួល":"Edit<br>Recipient List","សរសេរ និងបញ្ចូលវាល":"Write & Insert Fields","គូសវាល បញ្ចូល":"Highlight<br>Merge Fields","វាលបាកូដ":"Insert Barcode<br>Field","ប្លុក អាសយដ្ឋាន":"Address<br>Block","បន្ទាត់ ស្វាគមន៍":"Greeting<br>Line","បញ្ចូលវាល":"Insert Merge<br>Field","ក្បួន":"Rules","ផ្គូផ្គងវាល":"Match Fields","ធ្វើបច្ចុប្បន្នភាពស្លាក":"Update Labels","មើលលទ្ធផល":"Preview Results","មើល លទ្ធផល":"Preview<br>Results","អ្នកទទួល":"Recipient","រុករកអ្នកទទួល":"Recipient navigation","រកអ្នកទទួល":"Find Recipient","ពិនិត្យកំហុស":"Check for Errors","បញ្ចប់":"Finish","បញ្ចប់ និង បញ្ចូល":"Finish &<br>Merge","ពិនិត្យអក្ខរាវិរុទ្ធ":"Proofing","អក្ខរាវិរុទ្ធ និងវេយ្យាករណ៍":"Spelling &<br>Grammar","វចនានុក្រម សទិសន័យ":"Thesaurus","រាប់ ពាក្យ":"Word<br>Count","ពាក្យ (ប្រហែល)":"Words (approx.)","តួអក្សរ (គ្មានដកឃ្លា)":"Characters (no spaces)","តួអក្សរ (មានដកឃ្លា)":"Characters (with spaces)","សំឡេង":"Speech","អាន ឮៗ":"Read<br>Aloud","ភាពងាយស្រួល":"Accessibility","ពិនិត្យ ភាពងាយស្រួល":"Check<br>Accessibility","ភាសា":"Language","បកប្រែ":"Translate","ពិនិត្យភាពស៊ីសង្វាក់ជប៉ុន":"Japanese Consistency Checker","ធ្វើបច្ចុប្បន្នភាពវចនានុក្រម IME":"Update IME Dictionary","មតិ ថ្មី":"New<br>Comment","លុប":"Delete","បង្ហាញ មតិ":"Show<br>Comments","តាមដានការកែ":"Tracking","តាមដាន ការកែ":"Track<br>Changes","សម្គាល់ទាំងអស់":"All Markup","សម្គាល់សាមញ្ញ":"Simple Markup","គ្មានការសម្គាល់":"No Markup","ដើម":"Original","ការបង្ហាញការសម្គាល់":"Markup display","បង្ហាញការសម្គាល់":"Show Markup","ផ្ទាំងពិនិត្យ":"Reviewing Pane","ការផ្លាស់ប្ដូរ":"Changes","ទទួល យក":"Accept","បដិសេធ":"Reject","ប្រៀបធៀប":"Compare","ប្រៀប ធៀប":"Compare","ការពារ":"Protect","ហាមអ្នក និពន្ធ":"Block<br>Authors","ហាម កែ":"Restrict<br>Editing","ទឹកខ្មៅ":"Ink","លាក់ ទឹកខ្មៅ":"Hide<br>Ink","កំណត់ចំណាំ ភ្ជាប់":"Linked<br>Notes","ជួសជុលអត្ថបទ":"Text Clean-up","សម្អាត paste":"Clean<br>Paste","ភ្ជាប់បន្ទាត់":"Join<br>Lines","ទិដ្ឋភាព":"Views","របៀប អាន":"Read<br>Mode","ប្លង់ បោះពុម្ព":"Print<br>Layout","ប្លង់ វេប":"Web<br>Layout","គ្រោង":"Outline","សេចក្ដីព្រាង":"Draft","ផ្ដោតអារម្មណ៍":"Immersive","ផ្ដោត":"Focus","អ្នកអាន ងាយស្រួល":"Immersive<br>Reader","ចលនាទំព័រ":"Page Movement","បញ្ឈរ":"Vertical","ចំហៀង ទៅចំហៀង":"Side<br>to Side","បង្ហាញ":"Show","បន្ទាត់វាស់":"Ruler","ក្រឡាជំនួយ":"Gridlines","ផ្ទាំងរុករក":"Navigation Pane","ពង្រីក/បង្រួម":"Zoom","ពង្រីក":"Zoom","ពង្រីក +25%":"Zoom in +25%","បង្រួម −25%":"Zoom out −25%","មួយទំព័រ":"One Page","ច្រើនទំព័រ":"Multiple Pages","ទទឹងទំព័រ":"Page Width","បង្អួច":"Window","បង្អួច ថ្មី":"New<br>Window","រៀប ទាំងអស់":"Arrange<br>All","បំបែក បង្អួច":"Split","មើលចំហៀងគ្នា":"View Side by Side","រំកិលព្រមគ្នា":"Synchronous Scrolling","កំណត់ទីតាំងបង្អួចឡើងវិញ":"Reset Window Position","ប្ដូរ បង្អួច":"Switch<br>Windows","ម៉ាក្រូ":"Macros","លក្ខណៈ":"Properties","ទៅទំព័រ":"Go to Page","ទំព័រមុន":"Previous Page","ទំព័របន្ទាប់":"Next Page","បង្រួម":"Zoom Out","ទំហំមើល":"Zoom","កូដ":"Code","ថតម៉ាក្រូ":"Record Macro","ផ្អាកការថត":"Pause Recording","សុវត្ថិភាពម៉ាក្រូ":"Macro Security","ការត្រួតពិនិត្យ":"Controls","ប្រអប់អត្ថបទសម្បូរ":"Rich Text Content Control","ប្រអប់អត្ថបទធម្មតា":"Plain Text Content Control","ប្រអប់រូបភាព":"Picture Content Control","ប្លុកអត្ថបទ":"Building Block Gallery","ប្រអប់ធីក":"Check Box","ប្រអប់ជ្រើស (combo)":"Combo Box","ប្រអប់ជ្រើស":"Combo Box","បញ្ជីទម្លាក់ចុះ":"Drop-Down List","ជ្រើសកាលបរិច្ឆេទ":"Date Picker","ផ្នែកដដែលៗ":"Repeating Section","ឧបករណ៍ចាស់":"Legacy Tools","របៀបរចនា":"Design Mode","ក្រុម":"Group","ការផ្គូផ្គង":"Mapping","ផ្ទាំងផ្គូផ្គង XML":"XML Mapping<br>Pane","ពុម្ព":"Templates","ពុម្ព ឯកសារ":"Document<br>Template","ទាក់ទងជំនួយ":"Contact<br>Support","មតិកែលម្អ":"Feedback","វគ្គបណ្ដុះបណ្ដាល":"Show<br>Training","អ្វីដែលថ្មី":"What’s<br>New","បើក":"Open","កែតម្រូវ":"Correct","សរសេរឡើងវិញ":"Rephrase","ស្តាប់":"Listen","បញ្ចូលរាង":"Insert Shapes","ស្តាយរាង":"Shape Styles","ពណ៌ខាងក្នុង":"Shape Fill","ពណ៌ស៊ុម":"Shape Outline","ស៊ុមក្រាស់ +":"Thicker outline +","ស៊ុមស្ដើង −":"Thinner outline −","បែបផែនរាង":"Shape Effects","ស្តាយ WordArt":"WordArt Styles","រចនាប័ទ្មរហ័ស":"Quick Styles","ស៊ុមអក្សរ":"Text Outline","ទិសអក្សរ":"Text Direction","តម្រឹមអក្សរ":"Align Text","បង្កើតតំណ":"Create Link","អត្ថបទជំនួស":"Alt Text","រុំអត្ថបទ":"Wrap Text","នាំទៅមុខ":"Bring Forward","រុញទៅក្រោយ":"Send Backward","ផ្ទាំងជ្រើសរើស":"Selection Pane","កម្ពស់":"Height","ទទឹង":"Width","កម្ពស់ តូច":"Shorter","កម្ពស់ ធំ":"Taller","ទទឹង តូច":"Narrower","ទទឹង ធំ":"Wider","លុបរាង":"Delete<br>Shape","ជួរដេក និងជួរឈរ":"Rows & Columns","បញ្ចូលខាងលើ":"Insert<br>Above","បញ្ចូលខាងក្រោម":"Insert<br>Below","បញ្ចូលខាងឆ្វេង":"Insert<br>Left","បញ្ចូលខាងស្ដាំ":"Insert<br>Right","លុបជួរដេក":"Delete Rows","លុបជួរឈរ":"Delete Columns","លុបតារាង":"Delete Table","ស្តាយតារាង":"Table Styles","ស៊ុមពេញ":"Grid","ក្បាលពណ៌":"Header Row","ឆ្លាស់ពណ៌":"Banded","ក្រឡា":"Cell","ពណ៌ក្រឡា":"Cell<br>Shading","តម្រឹមលើ":"Align Top","តម្រឹមក្រោម":"Align Bottom","សៀវភៅទទេ":"Blank book","មេរៀនពាក្យ":"Vocabulary lesson","តារាងពាក្យ":"Word list","ទំព័រគម្រប":"Cover page","ឧទាហរណ៍ប្រយោគ":"Example sentences","លំហាត់":"Exercises","ដកការខ្ទាស់":"Unpin","ខ្ទាស់":"Pin","ឈ្មោះ":"Name","កាលបរិច្ឆេទកែ":"Date modified","កំពុងផ្ទុក…":"Loading…","ថ្មី":"New","អរុណសួស្តី":"Good morning","ទិវាសួស្តី":"Good afternoon","សាយណ្ហសួស្តី":"Good evening","ពុម្ពច្រើនទៀត →":"More templates →","ពុម្ពច្រើនទៀត":"More templates","ថ្មីៗ":"Recent","បានខ្ទាស់":"Pinned","មិនទាន់មានសៀវភៅដែលបានខ្ទាស់ទេ — ចុចរូប 🔖 ដើម្បីខ្ទាស់":"No pinned books yet — tap 🔖 to pin one","មិនទាន់មានសៀវភៅទេ":"No books yet","សៀវភៅច្រើនទៀត →":"More books →","ស្វែងរកសៀវភៅ…":"Search books…","រកមិនឃើញ":"Nothing found","ព័ត៌មាន":"Info","ចំណងជើង":"Title","ទំហំក្រដាស":"Paper size","រឹមក្រដាស":"Margins","លេខចាប់ផ្ដើម":"Starting number","កែចុងក្រោយ":"Last modified","មិនទាន់រក្សាទុក":"Not saved yet","ស្ថានភាព":"Status","មានការកែមិនទាន់រក្សាទុក":"Unsaved changes","បានរក្សាទុក":"Saved","ត្រឡប់":"Back","រក្សាទុកជា":"Save As","ប្រវត្តិ":"History","បោះពុម្ព":"Print","ចែករំលែក":"Share","នាំចេញ (PDF)":"Export (PDF)","គណនី":"Account","ជម្រើស":"Options","សៀវភៅ":"Book","· កំពុងបើក":"· open now","(គ្មានចំណងជើង)":"(untitled)","លេខទំព័រផ្ទាល់ខ្លួន (ទុកទទេ = រាប់ស្វ័យប្រវត្តិ)":"Custom page number (blank = automatic)","កថាខណ្ឌ ":"Paragraphs","សូមជ្រើសអក្សរជាមុនសិន":"Select some text first","សូមចុចសង្កត់លើក្រដាស ហើយជ្រើស «Paste»":"Press and hold on the page, then choose “Paste”","សូមដាក់ cursor លើអក្សរដែលមានទម្រង់ចង់ចម្លង":"Put the cursor in text whose format you want to copy","ឥឡូវជ្រើសអក្សរដែលចង់ដាក់ទម្រង់នេះ":"Now select the text to apply this format to","សូមជ្រើសកថាខណ្ឌ ឬបញ្ជីច្រើនជួរ ដើម្បីតម្រៀប":"Select several paragraphs or list items to sort","សូមវាយជាទម្រង់ 4x3":"Type it like 4x3","សូមចុចលើរាងជាមុនសិន":"Select a shape first","សូមដាក់ cursor ក្នុងតារាងជាមុនសិន":"Put the cursor in a table first","បានរក្សាទុក ✓":"Saved ✓","បានរក្សាទុកជាសៀវភៅថ្មី ✓":"Saved as a new book ✓","លេខទំព័រនៅបាតទំព័ររួចហើយ — វាយលេខក្នុងប្រអប់ខាងក្រោមក្រដាសដើម្បីកំណត់ផ្ទាល់":"Page numbers are already at the bottom — type a number in the box under the sheet to set one"};
+    const EN_NS = {}; Object.keys(EN).forEach(k => { EN_NS[k.replace(/\s/g, '')] = EN[k]; });
+    const KM_M = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'], EN_M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const TR_RX = [
+      [/^ទំព័រ (\d+) នៃ (\d+)$/, m => 'Page ' + m[1] + ' of ' + m[2]], [/^បច្ចុប្បន្ន៖ (\d+) px$/, m => 'Current: ' + m[1] + ' px'], [/^បានជំនួស (\d+) កន្លែង$/, m => 'Replaced ' + m[1]],
+      [/^(\d+) × (\d+) តារាង$/, m => m[1] + ' × ' + m[2] + ' Table'], [/^លេខចាប់ផ្ដើម… \((\d+)\)$/, m => 'Starting number… (' + m[1] + ')'], [/^លេខចាប់ផ្ដើម = (\d+)$/, m => 'Starting number = ' + m[1]],
+      [/^(\d+) (\S+)( \d{4})?$/, m => KM_M.includes(m[2]) ? EN_M[KM_M.indexOf(m[2])] + ' ' + m[1] + (m[3] || '') : null],
+      [/^(.+) \((cm|pt)\)$/, m => (EN[m[1]] ? EN[m[1]] + ' (' + m[2] + ')' : null)],
+      [/^(.+) តូច$/, m => (EN[m[1]] ? EN[m[1]] + ' −' : null)], [/^(.+) ធំ$/, m => (EN[m[1]] ? EN[m[1]] + ' +' : null)],
+    ];
+    const norm = s => String(s).replace(/<br\s*\/?>/gi, ' ').replace(/▾/g, '').replace(/\s+/g, ' ').trim();
+    const PRE = /^([✓•◦▪▭▢▁▔✕⊞¶]\s*)/;
+    // Khmer label → English (or the label itself when there is no translation / Khmer is on)
+    const tr = s => {
+      if (uiLang !== 'en' || s == null) return s;
+      const k = norm(s); if (!/[\u1780-\u17FF]/.test(k)) return s;
+      const look = x => (EN[x] != null ? EN[x] : (EN_NS[x.replace(/\s/g, '')] != null ? EN_NS[x.replace(/\s/g, '')] : null));
+      let v = look(k); if (v != null) return v;
+      const m = k.match(PRE); if (m) { v = look(k.slice(m[0].length)); if (v != null) return m[1] + v; }
+      for (const [rx, fn] of TR_RX) { const mm = k.match(rx); if (mm) { const out = fn(mm); if (out != null) return out; } }
+      return s;
+    };
+    const ORIG = new WeakMap();
+    // (re)label everything under root in the current language; the book's own sheets are never touched
+    const trTree = root => {
+      if (!root || !root.querySelectorAll) return;
+      root.querySelectorAll('.ewd-big > span:last-child, .ewd-sty small').forEach(el => {
+        if (el.dataset.kh == null) { if (!/[\u1780-\u17FF]/.test(el.innerHTML)) return; el.dataset.kh = el.innerHTML; }
+        const kh = el.dataset.kh; if (uiLang !== 'en') { el.innerHTML = kh; return; }
+        const v = tr(kh); el.innerHTML = v === kh ? kh : v + (/▾/.test(kh) ? ' ▾' : '');
+      });
+      const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => (n.parentElement && n.parentElement.closest('.lib-epage, .ewd-big > span:last-child, .ewd-sty small')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+      const nodes = []; let n; while ((n = w.nextNode())) nodes.push(n);
+      nodes.forEach(t => {
+        if (!ORIG.has(t)) { if (!/[\u1780-\u17FF]/.test(t.nodeValue)) return; ORIG.set(t, t.nodeValue); }
+        const kh = ORIG.get(t); if (uiLang !== 'en') { t.nodeValue = kh; return; }
+        const core = kh.trim(), dd = /▾\s*$/.test(core), base = core.replace(/\s*▾\s*$/, ''), v = tr(base);
+        t.nodeValue = v === base ? kh : kh.replace(core, String(v).replace(/<br>/g, ' ') + (dd ? ' ▾' : ''));
+      });
+      root.querySelectorAll('[title],[placeholder],[aria-label]').forEach(el => {
+        if (el.closest('.lib-epage')) return;
+        ['title', 'placeholder', 'aria-label'].forEach(a => {
+          const cur = el.getAttribute(a); if (cur == null) return; const key = 'kh' + a.replace('-', '');
+          if (el.dataset[key] == null) { if (!/[\u1780-\u17FF]/.test(cur)) return; el.dataset[key] = cur; }
+          const kh = el.dataset[key]; el.setAttribute(a, uiLang === 'en' ? String(tr(kh)).replace(/<br>/g, ' ') : kh);
+        });
+      });
+    };
+    const toast = m => { try { this.showToast(tr(m)); } catch(e){} };
     // buttons laid out like Word whose feature comes later: they say so instead of doing nothing
-    const soon = label => () => toast('«' + label + '» មិនទាន់ដំណើរការ — នឹងបន្ថែមពេលក្រោយ');
+    const soon = label => () => { try { this.showToast(uiLang === 'en' ? '“' + String(tr(label)).replace(/<br>/g, ' ') + '” is not available yet — coming later' : '«' + label + '» មិនទាន់ដំណើរការ — នឹងបន្ថែមពេលក្រោយ'); } catch(e){} };
     const touched = () => { this._edDirty = true; this._edScheduleReflow(this._edCur); };
     // top-level blocks of the sheet touched by the selection (or the one holding the caret)
     const selBlocks = () => {
@@ -16234,7 +16286,7 @@ class Component extends DCLogic {
           + '<div class="r"><input class="q" placeholder="ស្វែងរក…"><button type="button" class="pv" title="មុន">‹</button><span class="cnt">0/0</span><button type="button" class="nx" title="បន្ទាប់">›</button></div>'
           + '<div class="r"><input class="rp" placeholder="ជំនួសដោយ…"></div>'
           + '<div class="r" style="justify-content:flex-end"><button type="button" class="one">ជំនួស</button><button type="button" class="all pri">ជំនួសទាំងអស់</button></div>';
-        ov.appendChild(findBox);
+        ov.appendChild(findBox); trTree(findBox);
         const q = findBox.querySelector('.q');
         q.addEventListener('input', () => refind(0));
         q.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); step(e.shiftKey ? -1 : 1); } if (e.key === 'Escape') closeFind(); });
@@ -16297,7 +16349,7 @@ class Component extends DCLogic {
       const cells = [];
       for (let rI = 0; rI < 8; rI++) for (let cI = 0; cI < 10; cI++) {
         const c = document.createElement('i'); c.dataset.r = rI + 1; c.dataset.c = cI + 1; cells.push(c); gr.appendChild(c);
-        const mark = () => { cells.forEach(x => x.classList.toggle('on', +x.dataset.r <= rI + 1 && +x.dataset.c <= cI + 1)); lb.textContent = (cI + 1) + ' × ' + (rI + 1) + ' តារាង'; };
+        const mark = () => { cells.forEach(x => x.classList.toggle('on', +x.dataset.r <= rI + 1 && +x.dataset.c <= cI + 1)); lb.textContent = tr((cI + 1) + ' × ' + (rI + 1) + ' តារាង'); };
         c.addEventListener('mouseenter', mark);
         c.addEventListener('mousedown', e => e.preventDefault());
         c.addEventListener('click', () => { closePops(); insertTable(rI + 1, cI + 1); });
@@ -16422,8 +16474,8 @@ class Component extends DCLogic {
     const spins = [
       spin(colI, 'indL', 'ឆ្វេង', 'cm', 0.1, cs => fmt1(parseFloat(cs.marginLeft) / CMPX), (el, v) => { el.style.marginLeft = (v * CMPX).toFixed(1) + 'px'; }),
       spin(colI, 'indR', 'ស្ដាំ', 'cm', 0.1, cs => fmt1(parseFloat(cs.marginRight) / CMPX), (el, v) => { el.style.marginRight = (v * CMPX).toFixed(1) + 'px'; }),
-      spin(colS, 'spB', 'មុន', 'pt', 1, cs => fmt1(parseFloat(cs.marginTop) / PTPX), (el, v) => { el.style.marginTop = (v * PTPX).toFixed(1) + 'px'; }),
-      spin(colS, 'spA', 'ក្រោយ', 'pt', 1, cs => fmt1(parseFloat(cs.marginBottom) / PTPX), (el, v) => { el.style.marginBottom = (v * PTPX).toFixed(1) + 'px'; }),
+      spin(colS, 'spB', 'ខាងមុខ', 'pt', 1, cs => fmt1(parseFloat(cs.marginTop) / PTPX), (el, v) => { el.style.marginTop = (v * PTPX).toFixed(1) + 'px'; }),
+      spin(colS, 'spA', 'ខាងក្រោយ', 'pt', 1, cs => fmt1(parseFloat(cs.marginBottom) / PTPX), (el, v) => { el.style.marginBottom = (v * PTPX).toFixed(1) + 'px'; }),
     ];
     this._edParaSync = () => {   // show the caret paragraph's own values
       if (!ov.isConnected || curTab !== 'layout') return;
@@ -16538,7 +16590,7 @@ class Component extends DCLogic {
     smSoon(sZoom, 'onep', 'មួយទំព័រ'); smSoon(sZoom, 'multp', 'ច្រើនទំព័រ');
     sm(sZoom, 'pgw', 'ទទឹងទំព័រ', () => setZoom(1), true);
     const gWin = group(pView, 'បង្អួច');
-    bigSoon(gWin, 'nwin', 'បង្អួច<br>ថ្មី'); bigSoon(gWin, 'arr', 'រៀប<br>ទាំងអស់'); bigSoon(gWin, 'split', 'បំបែក');
+    bigSoon(gWin, 'nwin', 'បង្អួច<br>ថ្មី'); bigSoon(gWin, 'arr', 'រៀប<br>ទាំងអស់'); bigSoon(gWin, 'split', 'បំបែក<br>បង្អួច');
     const sWin = stack(gWin); smSoon(sWin, 'sbs', 'មើលចំហៀងគ្នា').classList.add('dim'); smSoon(sWin, 'sync', 'រំកិលព្រមគ្នា').classList.add('dim'); smSoon(sWin, 'rwin', 'កំណត់ទីតាំងបង្អួចឡើងវិញ').classList.add('dim');
     bigSoon(gWin, 'swin', 'ប្ដូរ<br>បង្អួច ▾');
     const gMac = group(pView, 'ម៉ាក្រូ'); bigSoon(gMac, 'macro', 'ម៉ាក្រូ<br>▾');
@@ -16687,7 +16739,7 @@ class Component extends DCLogic {
       rib.style.display = curTab ? 'flex' : 'none';
       rib.scrollLeft = 0; setTimeout(ribArrows, 0);
       if (curTab === 'layout') setTimeout(() => { if (this._edParaSync) this._edParaSync(); }, 0);
-      fold.innerHTML = svg(curTab ? 'up' : 'dn', 16); fold.title = curTab ? 'បង្រួម Ribbon' : 'បង្ហាញ Ribbon';
+      fold.innerHTML = svg(curTab ? 'up' : 'dn', 16); fold.title = tr(curTab ? 'បង្រួម Ribbon' : 'បង្ហាញ Ribbon');
       try { localStorage.setItem('dict_ed_tab', curTab); } catch(e){}
       setTimeout(() => { try { refit(); } catch(e){} }, 30);     // refit is defined further down, after the toolbar
     };
@@ -16734,7 +16786,7 @@ class Component extends DCLogic {
       if (!list.length) { const e = document.createElement('div'); e.className = 'ewd-bs-empty'; e.textContent = emptyMsg; main.appendChild(e); return; }
       list.forEach(b => main.appendChild(docRow(b)));
     };
-    const paint = () => {
+    const paintRaw = () => {
       if (!bs) return;
       const main = bs.querySelector('.ewd-bs-main'); main.innerHTML = '';
       bs.querySelectorAll('.ewd-bs-side button[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === bsView));
@@ -16759,7 +16811,7 @@ class Component extends DCLogic {
         const q = document.createElement('input'); q.className = 'ewd-bs-search'; q.placeholder = 'ស្វែងរកសៀវភៅ…'; main.appendChild(q);
         const box = document.createElement('div'); main.appendChild(box);
         const draw = () => { box.innerHTML = ''; const t = q.value.trim().toLowerCase(); docList(box, (books || []).filter(b => !t || String(b.title || '').toLowerCase().includes(t)), 'រកមិនឃើញ'); };
-        q.addEventListener('input', draw); draw(); setTimeout(() => q.focus(), 30);
+        q.addEventListener('input', () => { draw(); trTree(box); }); draw(); setTimeout(() => q.focus(), 30);
       } else if (bsView === 'info') {
         H('ព័ត៌មាន');
         const pages = this._edPages || [], text = pages.map(p => p.innerText || '').join('\n');
@@ -16772,6 +16824,7 @@ class Component extends DCLogic {
         main.appendChild(g);
       }
     };
+    const paint = () => { paintRaw(); if (bs) trTree(bs); };
     const openBackstage = () => {
       closePops(); closeBs();
       bs = document.createElement('div'); bs.className = 'ewd-bs';
@@ -16813,6 +16866,14 @@ class Component extends DCLogic {
       tabBtns[k] = b; tabsBar.appendChild(b);
     });
     const tsp = document.createElement('span'); tsp.className = 'ewd-sp'; tabsBar.appendChild(tsp);
+    const langB = document.createElement('button'); langB.type = 'button'; langB.className = 'ewd-lang'; langB.title = 'ប្ដូរភាសា / Language';
+    const paintLang = () => { langB.innerHTML = (uiLang === 'kh' ? '<b>KH</b>' : '<span>KH</span>') + '<i>|</i>' + (uiLang === 'en' ? '<b>EN</b>' : '<span>EN</span>'); };
+    paintLang(); langB.addEventListener('mousedown', e => e.preventDefault());
+    langB.addEventListener('click', () => {
+      uiLang = uiLang === 'en' ? 'kh' : 'en'; try { localStorage.setItem('dict_ed_lang', uiLang); } catch(e){}
+      paintLang(); trTree(ov); if (this._edViewHook) this._edViewHook(); fold.title = tr(curTab ? 'បង្រួម Ribbon' : 'បង្ហាញ Ribbon'); setTimeout(ribArrows, 0);
+    });
+    tabsBar.appendChild(langB);
     fold.addEventListener('click', () => showTab(curTab ? '' : 'home'));
     const tblTab = document.createElement('button'); tblTab.type = 'button'; tblTab.className = 'ewd-tab ctx'; tblTab.textContent = 'តារាង'; tblTab.style.display = 'none';
     tblTab.addEventListener('mousedown', e => e.preventDefault());
@@ -16905,7 +16966,7 @@ class Component extends DCLogic {
       hBar.style.background = 'linear-gradient(90deg,' + shade + ' 0 ' + m + 'px,transparent ' + m + 'px ' + (W - m) + 'px,' + shade + ' ' + (W - m) + 'px) no-repeat,' + tickBg(z, false) + ' 0 9px/100% 5px repeat-x,#fff';
       vBar.style.top = (sr.top - vr.top) + 'px'; vBar.style.height = H + 'px';
       vBar.style.background = 'linear-gradient(180deg,' + shade + ' 0 ' + m + 'px,transparent ' + m + 'px ' + (H - (PAD + 24) * z) + 'px,' + shade + ' ' + (H - (PAD + 24) * z) + 'px) no-repeat,' + tickBg(z, true) + ' 9px 0/5px 100% repeat-y,#fff';
-      stPage.textContent = 'ទំព័រ ' + (this._edCur + 1) + ' នៃ ' + pages.length;
+      stPage.textContent = tr('ទំព័រ ' + (this._edCur + 1) + ' នៃ ' + pages.length);
       zRange.value = String(Math.round((this._edScale || 1) * 100)); zPct.textContent = Math.round((this._edScale || 1) * 100) + '%';
     };
     canvas.addEventListener('scroll', () => { if (this._edViewHook) this._edViewHook(); }, { passive: true });
@@ -16933,6 +16994,7 @@ class Component extends DCLogic {
     setTimeout(refit, 60);
     setTimeout(refit, 250);
     this._edDirty = false;   // building/opening is not an unsaved edit
+    if (uiLang === 'en') { trTree(ov); if (this._edViewHook) this._edViewHook(); setTimeout(ribArrows, 0); }
   }
   // leave the editor — if there are unsaved edits, ask what to do first
   _edTryExit(){
