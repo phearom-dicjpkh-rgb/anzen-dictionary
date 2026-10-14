@@ -15760,19 +15760,59 @@ class Component extends DCLogic {
     const ov = document.createElement('div');
     ov.style.cssText = 'position:fixed;inset:0;z-index:120;background:#f3f4f7;color:#1b1d22;display:flex;flex-direction:column;';
     root.appendChild(ov);
-    // ── light, clean toolbar: line icons only; five sections, one open at a time ──
-    if (!document.getElementById('ed-tb-css')) {
-      const st = document.createElement('style'); st.id = 'ed-tb-css';
-      st.textContent = '.edtb{width:34px;height:32px;border:none;border-radius:9px;background:transparent;color:#3a3f4b;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer;padding:0}'
-        + '.edtb:hover{background:#eef0f4}.edtb:active{background:#e1e5ec}'
-        + '.edtb.solid{background:#2f6fb0;color:#fff}.edtb.solid:hover{background:#2a639f}'
-        + '.edtb.blue{background:#e6f0fa;color:#2f6fb0}.edtb.red{background:#fdeceb;color:#c0342c}'
-        + '.edtb-tab{width:44px;height:30px;border:none;border-radius:9px;background:transparent;color:#5a6070;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}'
-        + '.edtb-tab.on{background:#fff;color:#1d4f86;box-shadow:0 1px 3px rgba(0,0,0,.15)}'
-        + '.edtb-g{display:flex;align-items:center;gap:2px;padding:0 6px;border-right:1px solid #e3e5eb}.edtb-g:last-child{border-right:none}'
-        + '.edtb-val{min-width:40px;text-align:center;font-size:12.5px;font-weight:700;color:#3a3f4b}'
-        + '.edtb-in{width:42px;height:28px;border:none;border-radius:8px;background:#f1f2f6;color:#1b1d22;text-align:center;font-size:13px;font-weight:700}'
-        + '.edtb-sw{width:20px;height:20px;border-radius:50%;margin:0 3px;border:1.5px solid rgba(60,64,75,.35);cursor:pointer;flex:none;padding:0}';
+    // ── Word-style chrome: blue title bar · tabs · ribbon of labelled groups · rulers · status bar ──
+    if (!document.getElementById('ed-rb-css')) {
+      const st = document.createElement('style'); st.id = 'ed-rb-css';
+      st.textContent = [
+        '.ewd-tit{flex:none;display:flex;align-items:center;gap:2px;background:#2b579a;color:#fff;padding:4px 8px;padding-top:calc(4px + env(safe-area-inset-top,0px))}',
+        '.ewd-q{width:32px;height:30px;border:none;border-radius:4px;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none}',
+        '.ewd-q:hover{background:rgba(255,255,255,.16)}',
+        '.ewd-title{flex:1;min-width:0;height:28px;margin:0 8px;background:transparent;border:1px solid transparent;border-radius:4px;color:#fff;text-align:center;font:inherit;font-size:13.5px;font-weight:600;padding:0 10px}',
+        '.ewd-title:hover,.ewd-title:focus{border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.1);outline:none}.ewd-title::placeholder{color:rgba(255,255,255,.7)}',
+        '.ewd-tabs{flex:none;display:flex;align-items:stretch;height:32px;background:#fff;padding:0 6px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}.ewd-tabs::-webkit-scrollbar{display:none}',
+        '.ewd-tab{flex:none;border:none;background:transparent;color:#323130;font:inherit;font-size:13px;padding:0 13px;cursor:pointer;position:relative}',
+        '.ewd-tab:hover{background:#f3f2f1}.ewd-tab.on{color:#2b579a;font-weight:700}',
+        '.ewd-tab.on:after{content:"";position:absolute;left:12px;right:12px;bottom:3px;height:3px;border-radius:2px;background:#2b579a}',
+        '.ewd-tab.file{background:#2b579a;color:#fff;border-radius:4px;margin:3px 4px 3px 0}.ewd-tab.file:hover{background:#244a83}',
+        '.ewd-sp{flex:1}.ewd-fold{flex:none;border:none;background:transparent;color:#605e5c;cursor:pointer;padding:0 10px;display:flex;align-items:center}',
+        '.ewd-rib{flex:none;display:flex;align-items:stretch;height:96px;background:#fff;border-top:1px solid #edebe9;border-bottom:1px solid #d2d0ce;box-shadow:0 1px 3px rgba(0,0,0,.07);overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;position:relative;z-index:2}',
+        '.ewd-rib::-webkit-scrollbar{display:none}',
+        '.ewd-g{flex:none;display:flex;flex-direction:column;padding:4px 7px 0;position:relative}',
+        '.ewd-g+.ewd-g:before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:1px;background:#e1dfdd}',
+        '.ewd-gb{flex:1;display:flex;gap:2px;align-items:flex-start}',
+        '.ewd-gl{height:18px;display:flex;align-items:center;justify-content:center;color:#605e5c;font-size:11px}',
+        '.ewd-big{flex:none;min-width:50px;height:70px;border:none;border-radius:4px;background:transparent;color:#323130;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px 0;font:inherit;font-size:11.5px;line-height:1.15;cursor:pointer}',
+        '.ewd-big:hover,.ewd-sm:hover,.ewd-b:hover{background:#f3f2f1}.ewd-big:active,.ewd-sm:active,.ewd-b:active{background:#e1dfdd}',
+        '.ewd-big.red{color:#a4262c}',
+        '.ewd-stack{display:flex;flex-direction:column;gap:1px;padding-top:2px}',
+        '.ewd-rows{display:flex;flex-direction:column;gap:5px;padding-top:4px}',
+        '.ewd-row{display:flex;align-items:center;gap:1px;height:26px}',
+        '.ewd-sm{height:23px;border:none;border-radius:4px;background:transparent;color:#323130;display:flex;align-items:center;gap:6px;padding:0 6px;font:inherit;font-size:11.5px;cursor:pointer}',
+        '.ewd-b{flex:none;min-width:26px;height:26px;border:none;border-radius:4px;background:transparent;color:#323130;display:flex;align-items:center;justify-content:center;gap:2px;padding:0 3px;font:inherit;font-size:13px;cursor:pointer}',
+        '.ewd-b.on{background:#c7dcf3;box-shadow:inset 0 0 0 1px #9cbce3}',
+        '.ewd-dd:after{content:"";width:5px;height:5px;border-right:1.3px solid #605e5c;border-bottom:1.3px solid #605e5c;transform:rotate(45deg) translateY(-2px);margin-left:2px}',
+        '.ewd-sep{flex:none;width:1px;height:16px;background:#e1dfdd;margin:0 3px}',
+        '.ewd-sel{height:24px;border:1px solid #8a8886;border-radius:3px;background:#fff;color:#323130;font:inherit;font-size:12px;padding:0 4px;cursor:pointer}',
+        '.ewd-in{width:46px;height:24px;border:1px solid #8a8886;border-radius:3px;background:#fff;color:#323130;text-align:center;font:inherit;font-size:12px}',
+        '.ewd-val{min-width:38px;text-align:center;font-size:12px;color:#323130}',
+        '.ewd-bar{display:block;width:16px;height:3px;border-radius:1px;margin-top:1px}',
+        '.ewd-gal{display:flex;border:1px solid #c8c6c4;border-radius:3px;height:64px;margin-top:2px;background:#fff}',
+        '.ewd-sty{flex:none;width:78px;border:none;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;font:inherit;color:#323130;padding:0 4px}',
+        '.ewd-sty:hover{background:#f3f2f1;box-shadow:inset 0 0 0 1px #c8c6c4}.ewd-sty small{font-size:10.5px;color:#605e5c}',
+        '.ewd-pop{position:fixed;z-index:150;background:#fff;border:1px solid #c8c6c4;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.18);padding:8px;display:grid;grid-template-columns:repeat(5,22px);gap:6px}',
+        '.ewd-pop button{width:22px;height:22px;border-radius:4px;border:1px solid rgba(0,0,0,.18);cursor:pointer;padding:0}',
+        '.ewd-pop .wide{grid-column:1/-1;width:auto;height:26px;background:#fff;font:inherit;font-size:12px;color:#323130;border-color:#c8c6c4}',
+        '.ewd-menu{position:fixed;z-index:150;background:#fff;border:1px solid #c8c6c4;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.18);padding:4px;min-width:190px;display:flex;flex-direction:column}',
+        '.ewd-menu button{border:none;background:transparent;text-align:left;font:inherit;font-size:13px;color:#323130;padding:9px 12px;border-radius:4px;cursor:pointer;display:flex;gap:10px;align-items:center}.ewd-menu button:hover{background:#f3f2f1}',
+        '.ewd-hr{flex:none;height:20px;background:#e6e6e6;position:relative;overflow:hidden;border-bottom:1px solid #d2d0ce}',
+        '.ewd-vr{flex:none;width:18px;background:#e6e6e6;position:relative;overflow:hidden}',
+        '.ewd-rl{position:absolute;background:#fff}',
+        '.ewd-hr .ewd-rl{top:3px;height:14px}.ewd-vr .ewd-rl{left:2px;width:14px}',
+        '.ewd-st{flex:none;height:26px;background:#f3f2f1;border-top:1px solid #e1dfdd;display:flex;align-items:center;gap:14px;padding:0 10px;padding-bottom:env(safe-area-inset-bottom,0px);font-size:11.5px;color:#323130;white-space:nowrap}',
+        '.ewd-st .z{margin-left:auto;display:flex;align-items:center;gap:6px}',
+        '.ewd-st button{border:none;background:transparent;color:#323130;font:inherit;font-size:14px;width:22px;height:22px;border-radius:4px;cursor:pointer;padding:0}.ewd-st button:hover{background:#e1dfdd}',
+        '.ewd-st input[type=range]{width:110px;accent-color:#2b579a}',
+      ].join('\n');
       document.head.appendChild(st);
     }
     const IC = {
@@ -15793,188 +15833,236 @@ class Component extends DCLogic {
       trash: 'M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2',
       sqm: 'M3 3h18v18H3zM8 12h8', sqp: 'M3 3h18v18H3zM8 12h8M12 8v8',
       link: 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71',
+      paste: 'M9 4H6a1 1 0 0 0-1 1v15a1 1 0 0 0 1 1h4M15 4h3a1 1 0 0 1 1 1v3M9 3h6v3H9zM12 10h8v11h-8zM14 14h4M14 17h4',
+      cut: 'M6 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12',
+      copy: 'M9 9h11v12H9zM5 15H4V4h11v1',
+      strike: 'M4 12h16M17 7a4 4 0 0 0-4-3h-2a3.5 3.5 0 0 0 0 7M7 17a4 4 0 0 0 4 3h2a3.5 3.5 0 0 0 1.5-6.6',
+      clear: 'M4 7V4h16v3M9 20h4M12 4l-3 16M16 15l5 5M21 15l-5 5',
+      grow: 'M3 20L8.5 5 14 20M5 15h7M19 9V3M16 6h6', shrink: 'M3 20L8.5 5 14 20M5 15h7M16 6h6',
+      olist: 'M10 6h11M10 12h11M10 18h11M4 4h1v4M4 8h2M4 14h2l-2 3h2', outd: 'M21 4H8M21 10H12M21 14H12M21 20H8M7 9l-4 3 4 3', ind: 'M21 4H8M21 10H12M21 14H12M21 20H8M3 9l4 3-4 3',
+      lsp: 'M11 6h10M11 12h10M11 18h10M5 4v16M2 7l3-3 3 3M2 17l3 3 3-3', pen: 'M15 5l4 4L8 20H4v-4zM13 7l4 4', fontc: 'M5 17L10 4h2l5 13M7 12h8',
+      selall: 'M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4M8 9h8M8 12h8M8 15h5', fit: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
+      x: 'M6 6l12 12M18 6L6 18', mn: 'M3 12h18',
     };
     const svg = (k, s) => '<svg width="' + (s || 18) + '" height="' + (s || 18) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
       + IC[k].split('M').filter(Boolean).map(d => '<path d="M' + d + '"/>').join('') + '</svg>';
-    // icon button; keepSel keeps the sheet's selection/caret when pressed
-    const icon = (key, fn, tip, keepSel, cls) => {
-      const b = document.createElement('button'); b.type = 'button'; b.className = 'edtb' + (cls ? ' ' + cls : ''); b.innerHTML = svg(key);
-      if (tip) { b.title = tip; b.setAttribute('aria-label', tip); }
-      if (keepSel) b.addEventListener('mousedown', e => e.preventDefault());
-      b.addEventListener('click', fn);
-      return b;
-    };
     // toolbar commands run on whichever sheet has focus (only one is shown)
     const exec = (cmd, val) => { const p = this._edCurPage(); if (p) p.focus(); document.execCommand(cmd, false, val == null ? null : val); if (p) p.focus(); this._edScheduleReflow(this._edCur); };
-    // ── top bar: back · title · save · download · hide/show tools ──
-    const top = document.createElement('div');
-    top.style.cssText = 'flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top, 0px));background:#fff;';
-    top.appendChild(icon('back', () => this._edTryExit(), 'ត្រឡប់'));
+    const keep = b => { b.addEventListener('mousedown', e => e.preventDefault()); return b; };
+    const closePops = () => ov.querySelectorAll('.ewd-pop,.ewd-menu').forEach(n => n.remove());
+    ov.addEventListener('mousedown', e => { if (!e.target.closest('.ewd-pop,.ewd-menu,[data-pop]')) closePops(); });
+    // a small popup under a button (colour palette / file menu)
+    const popUnder = (btn, el) => { closePops(); const rc = btn.getBoundingClientRect(); el.style.left = Math.max(6, Math.min(window.innerWidth - 220, rc.left)) + 'px'; el.style.top = (rc.bottom + 4) + 'px'; ov.appendChild(el); };
+    // ── title bar (Word blue): quick-access save · undo · redo · book title · PDF · close ──
+    const top = document.createElement('div'); top.className = 'ewd-tit';
+    const qb = (key, fn, tip, keepSel) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-q'; b.innerHTML = svg(key, 17); b.title = tip; b.setAttribute('aria-label', tip); if (keepSel) keep(b); b.addEventListener('click', fn); top.appendChild(b); return b; };
+    const save = qb('save', async () => { const ok = await this.saveBook(); if (ok !== false && this._edReturnToRead) this._edLeave(); }, 'រក្សាទុក'); save.id = 'lib-save';
+    save.dataset.ico = save.innerHTML;
+    qb('undo', () => exec('undo'), 'ថយក្រោយ (undo)', true);
+    qb('redo', () => exec('redo'), 'ទៅមុខវិញ (redo)', true);
     const title = document.createElement('input');
-    title.id = 'lib-title'; title.placeholder = 'ចំណងជើងសៀវភៅ'; title.value = book.title || '';
-    title.style.cssText = 'flex:1;min-width:0;height:32px;background:#f1f2f6;color:#1b1d22;border:none;border-radius:9px;padding:0 12px;font-size:14px;font-weight:600;';
+    title.id = 'lib-title'; title.className = 'ewd-title'; title.placeholder = 'ចំណងជើងសៀវភៅ'; title.value = book.title || '';
     title.addEventListener('input', () => { this._edDirty = true; });
     top.appendChild(title);
-    // save; if we came in from the reader (✏️), go back to reading afterwards
-    const save = icon('save', async () => { const ok = await this.saveBook(); if (ok !== false && this._edReturnToRead) this._edLeave(); }, 'រក្សាទុក', false, 'solid'); save.id = 'lib-save';
-    save.dataset.ico = save.innerHTML; top.appendChild(save);
-    const pdfBtn = icon('down', () => this._downloadBookPdf(title.value || book.title || 'សៀវភៅ', this._edSerializePages(), PAD, this._libStartPage || 1), 'ទាញយកជា PDF');
-    top.appendChild(pdfBtn);
-    const toolsBtn = icon('up', () => { toolsOpen = !toolsOpen; tools.style.display = toolsOpen ? 'flex' : 'none'; toolsBtn.innerHTML = svg(toolsOpen ? 'up' : 'dn'); setTimeout(refit, 30); }, 'លាក់/បង្ហាញ ឧបករណ៍');
-    top.appendChild(toolsBtn);
+    const doPdf = () => this._downloadBookPdf(title.value || book.title || 'សៀវភៅ', this._edSerializePages(), PAD, this._libStartPage || 1);
+    qb('down', doPdf, 'ទាញយកជា PDF');
+    qb('x', () => this._edTryExit(), 'បិទ');
     ov.appendChild(top);
-    // ── tools: one strip (undo/redo · sections · page) + one panel for the open section ──
-    let toolsOpen = true;
-    const tools = document.createElement('div');
-    tools.style.cssText = 'flex:none;display:flex;flex-direction:column;background:#fff;border-top:1px solid #eceef2;box-shadow:0 6px 12px -8px rgba(0,0,0,.25);position:relative;z-index:2;';
-    const mkG = () => { const g = document.createElement('div'); g.className = 'edtb-g'; return g; };
-    const gadd = (g, key, fn, tip, cls) => { const b = icon(key, fn, tip, true, cls); g.appendChild(b); return b; };
-    const strip = document.createElement('div');
-    strip.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 12px;flex-wrap:wrap;';
-    // undo / redo (always visible)
-    const gHist = document.createElement('div'); gHist.style.cssText = 'display:flex;gap:2px;';
-    gHist.appendChild(icon('undo', () => exec('undo'), 'ថយក្រោយ (undo)', true));
-    gHist.appendChild(icon('redo', () => exec('redo'), 'ទៅមុខវិញ (redo)', true));
-    strip.appendChild(gHist);
-    // section tabs
-    const seg = document.createElement('div'); seg.style.cssText = 'display:flex;gap:2px;padding:3px;border-radius:12px;background:#eceef2;margin-left:4px;';
-    strip.appendChild(seg);
-    const spacer = document.createElement('div'); spacer.style.cssText = 'flex:1;'; strip.appendChild(spacer);
-    // page navigation (always visible)
-    const gPageNav = document.createElement('div'); gPageNav.style.cssText = 'display:flex;align-items:center;gap:2px;background:#f1f2f6;border-radius:10px;padding:2px;';
-    gPageNav.appendChild(icon('l', () => this._edShowPage(this._edCur - 1), 'ទំព័រមុន', true));
-    const jin = document.createElement('input'); jin.type = 'number'; jin.min = '1'; jin.className = 'edtb-in'; jin.style.cssText += 'background:#fff;width:44px;';
-    const jtot = document.createElement('span'); jtot.style.cssText = 'color:#6a7080;font-size:12.5px;padding:0 4px;min-width:34px;';
+    // ── tabs ──
+    const tabsBar = document.createElement('div'); tabsBar.className = 'ewd-tabs';
+    ov.appendChild(tabsBar);
+    const rib = document.createElement('div'); rib.className = 'ewd-rib';
+    ov.appendChild(rib);
+    // builders for the ribbon
+    const group = (pane, label) => { const g = document.createElement('div'); g.className = 'ewd-g'; const gb = document.createElement('div'); gb.className = 'ewd-gb'; const gl = document.createElement('div'); gl.className = 'ewd-gl'; gl.textContent = label; g.appendChild(gb); g.appendChild(gl); pane.appendChild(g); return gb; };
+    const big = (parent, key, label, fn, keepSel, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-big' + (cls ? ' ' + cls : ''); b.innerHTML = svg(key, 28) + '<span>' + label + '</span>'; b.title = label; if (keepSel) keep(b); b.addEventListener('click', fn); parent.appendChild(b); return b; };
+    const stack = parent => { const s = document.createElement('div'); s.className = 'ewd-stack'; parent.appendChild(s); return s; };
+    const sm = (parent, key, label, fn, keepSel) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-sm'; b.innerHTML = svg(key, 15) + '<span>' + label + '</span>'; if (keepSel) keep(b); b.addEventListener('click', fn); parent.appendChild(b); return b; };
+    const rows = parent => { const s = document.createElement('div'); s.className = 'ewd-rows'; parent.appendChild(s); return s; };
+    const row = parent => { const s = document.createElement('div'); s.className = 'ewd-row'; parent.appendChild(s); return s; };
+    const sep = parent => { const s = document.createElement('span'); s.className = 'ewd-sep'; parent.appendChild(s); };
+    const btn = (parent, inner, tip, fn, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-b' + (cls ? ' ' + cls : ''); b.innerHTML = IC[inner] ? svg(inner, 16) : inner; b.title = tip; b.setAttribute('aria-label', tip); keep(b); b.addEventListener('click', fn); parent.appendChild(b); return b; };
+    const panes = {};
+    const pane = k => { const p = document.createElement('div'); p.style.cssText = 'display:none;align-items:stretch;'; panes[k] = p; rib.appendChild(p); return p; };
+    const palette = (anchor, colors, apply, noneLabel) => {
+      const pop = document.createElement('div'); pop.className = 'ewd-pop';
+      colors.forEach(c => { const b = document.createElement('button'); b.type = 'button'; b.style.background = c; b.title = c; keep(b); b.addEventListener('click', () => { closePops(); apply(c); }); pop.appendChild(b); });
+      if (noneLabel) { const b = document.createElement('button'); b.type = 'button'; b.className = 'wide'; b.textContent = noneLabel; keep(b); b.addEventListener('click', () => { closePops(); apply(null); }); pop.appendChild(b); }
+      popUnder(anchor, pop);
+    };
+    const SIZES = [10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 64];
+    const FONT_COLORS = ['#201f1d', '#6b7280', '#c0342c', '#ea580c', '#b6810f', '#2f8f57', '#1558b0', '#2b579a', '#7c3aed', '#ffffff'];
+    const HL_COLORS = ['#fff176', '#c5f0a4', '#a6e3ff', '#ffc4dd', '#ffd8a8', '#e0d4ff', '#d9d9d9', '#ffeb3b', '#7ee081', '#64d2ff'];
+    // ═══ ទំព័រដើម (Home) ═══
+    const pHome = pane('home');
+    // clipboard
+    const gClip = group(pHome, 'ក្ដារតម្បៀតខ្ទាស់');
+    big(gClip, 'paste', 'បិទភ្ជាប់', async () => {
+      const pg = this._edCurPage(); this._restoreLibSel();
+      try { const t = await navigator.clipboard.readText(); if (t) { if (pg) pg.focus(); this._restoreLibSel(); document.execCommand('insertHTML', false, this._edTextToHtml(t)); this._edDirty = true; this._edScheduleReflow(this._edCur); } }
+      catch(e) { this.showToast('សូមចុចសង្កត់លើក្រដាស ហើយជ្រើស «Paste»'); }
+    }, true);
+    const sClip = stack(gClip);
+    sm(sClip, 'cut', 'កាត់', () => exec('cut'), true);
+    sm(sClip, 'copy', 'ចម្លង', () => { const p = this._edCurPage(); if (p) p.focus(); document.execCommand('copy'); }, true);
+    // font
+    const gFont = group(pHome, 'ពុម្ពអក្សរ'); const fr = rows(gFont);
+    const fr1 = row(fr), fr2 = row(fr);
+    const sizeSel = document.createElement('select'); sizeSel.className = 'ewd-sel'; sizeSel.title = 'ទំហំអក្សរ'; sizeSel.style.width = '58px';
+    SIZES.forEach(px => { const o = document.createElement('option'); o.value = px; o.textContent = px; if (px === 16) o.selected = true; sizeSel.appendChild(o); });
+    sizeSel.addEventListener('mousedown', () => this._saveLibSel());
+    sizeSel.addEventListener('change', () => { this._setFontSize(sizeSel.value); this._edScheduleReflow(this._edCur); });
+    this._edSizeSel = sizeSel;   // kept so the caret can drive it to the real size
+    fr1.appendChild(sizeSel);
+    const stepSize = dir => { const cur = parseInt(sizeSel.value, 10) || 16; const nx = dir > 0 ? (SIZES.find(s => s > cur) || cur) : ([...SIZES].reverse().find(s => s < cur) || cur); this._setFontSize(nx); sizeSel.value = String(nx); this._edSyncFontSize(); this._edScheduleReflow(this._edCur); };
+    btn(fr1, 'grow', 'ពង្រីកអក្សរ', () => { this._saveLibSel(); stepSize(1); });
+    btn(fr1, 'shrink', 'បង្រួមអក្សរ', () => { this._saveLibSel(); stepSize(-1); });
+    sep(fr1);
+    btn(fr1, 'clear', 'លុបទម្រង់អក្សរ', () => exec('removeFormat'));
+    btn(fr2, 'bold', 'ដិត', () => exec('bold'));
+    btn(fr2, 'italic', 'ទ្រេត', () => exec('italic'));
+    btn(fr2, 'under', 'គូសបន្ទាត់ក្រោម', () => exec('underline'));
+    btn(fr2, 'strike', 'គូសកាត់', () => exec('strikeThrough'));
+    btn(fr2, 'x<sub style="font-size:9px">2</sub>', 'អក្សរក្រោម', () => exec('subscript'));
+    btn(fr2, 'x<sup style="font-size:9px">2</sup>', 'អក្សរលើ', () => exec('superscript'));
+    sep(fr2);
+    let hlCol = '#fff176', fcCol = '#c0342c';
+    const hlB = btn(fr2, '', 'ពណ៌គូសលើអក្សរ (highlight)', () => exec('hiliteColor', hlCol), 'ewd-dd');
+    const paintHl = () => { hlB.innerHTML = '<span style="display:flex;flex-direction:column;align-items:center">' + svg('pen', 15) + '<i class="ewd-bar" style="background:' + hlCol + '"></i></span>'; };
+    paintHl(); hlB.dataset.pop = '1';
+    hlB.addEventListener('click', e => { if (e.clientX > hlB.getBoundingClientRect().right - 12) { e.stopImmediatePropagation(); palette(hlB, HL_COLORS, c => { if (c) { hlCol = c; paintHl(); } exec('hiliteColor', c || 'transparent'); }, 'គ្មានពណ៌'); } }, true);
+    const fcB = btn(fr2, '', 'ពណ៌អក្សរ', () => exec('foreColor', fcCol), 'ewd-dd');
+    const paintFc = () => { fcB.innerHTML = '<span style="display:flex;flex-direction:column;align-items:center">' + svg('fontc', 15) + '<i class="ewd-bar" style="background:' + fcCol + ';box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)"></i></span>'; };
+    paintFc(); fcB.dataset.pop = '1';
+    fcB.addEventListener('click', e => { if (e.clientX > fcB.getBoundingClientRect().right - 12) { e.stopImmediatePropagation(); palette(fcB, FONT_COLORS, c => { if (c) { fcCol = c; paintFc(); exec('foreColor', c); } }); } }, true);
+    // paragraph
+    const gPara = group(pHome, 'កថាខណ្ឌ'); const pr = rows(gPara);
+    const pr1 = row(pr), pr2 = row(pr);
+    btn(pr1, 'list', 'បញ្ជីចំណុច', () => exec('insertUnorderedList'));
+    btn(pr1, 'olist', 'បញ្ជីលេខ', () => exec('insertOrderedList'));
+    sep(pr1);
+    btn(pr1, 'outd', 'បន្ថយការចូលបន្ទាត់', () => exec('outdent'));
+    btn(pr1, 'ind', 'បង្កើនការចូលបន្ទាត់', () => exec('indent'));
+    btn(pr2, 'al', 'តម្រឹមឆ្វេង', () => exec('justifyLeft'));
+    btn(pr2, 'ac', 'តម្រឹមកណ្ដាល', () => exec('justifyCenter'));
+    btn(pr2, 'ar', 'តម្រឹមស្ដាំ', () => exec('justifyRight'));
+    btn(pr2, 'aj', 'តម្រឹមសងខាង', () => exec('justifyFull'));
+    sep(pr2);
+    const lhWrap = document.createElement('span'); lhWrap.style.cssText = 'display:flex;align-items:center;gap:2px;'; lhWrap.innerHTML = svg('lsp', 16); lhWrap.title = 'គម្លាតបន្ទាត់';
+    const lhSel = document.createElement('select'); lhSel.className = 'ewd-sel'; lhSel.title = 'គម្លាតបន្ទាត់';
+    [1.0, 1.15, 1.3, 1.5, 1.85, 2.0, 2.5, 3.0].forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v.toFixed(v % 1 ? 2 : 1).replace(/0$/, ''); if (v === 1.85) o.selected = true; lhSel.appendChild(o); });
+    lhSel.addEventListener('mousedown', () => this._saveLibSel());
+    lhSel.addEventListener('change', () => { this._restoreLibSel(); this._setLineSpacing(parseFloat(lhSel.value)); });
+    lhWrap.appendChild(lhSel); pr2.appendChild(lhWrap);
+    // styles
+    const gSty = group(pHome, 'រចនាប័ទ្ម');
+    const gal = document.createElement('div'); gal.className = 'ewd-gal'; gSty.appendChild(gal);
+    [['P', '<span style="font-size:13px">Aa កខ</span>', '¶ ធម្មតា'], ['H2', '<span style="font-size:15px;font-weight:700;color:#2f5496">Aa កខ</span>', 'ចំណងជើង ១'], ['H3', '<span style="font-size:13px;font-weight:700;color:#2f5496">Aa កខ</span>', 'ចំណងជើង ២']].forEach(([tag, prev, name]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-sty'; b.innerHTML = prev + '<small>' + name + '</small>'; b.title = name; keep(b);
+      b.addEventListener('click', () => exec('formatBlock', tag)); gal.appendChild(b);
+    });
+    // editing
+    const gEdit = group(pHome, 'កែសម្រួល'); const sEd = stack(gEdit);
+    sm(sEd, 'selall', 'ជ្រើសទាំងអស់', () => { const p = this._edCurPage(); if (!p) return; p.focus(); const rg = document.createRange(); rg.selectNodeContents(p); const s = window.getSelection(); s.removeAllRanges(); s.addRange(rg); this._saveLibSel(); }, true);
+    // ═══ បញ្ចូល (Insert) ═══
+    const pIns = pane('insert');
+    const gIns = group(pIns, 'បញ្ចូល');
+    big(gIns, 'img', 'រូបភាព', () => {
+      const url = normalizeImgUrl(window.prompt('Link រូបភាព (https://…)') || '');
+      if (!url) return;
+      exec('insertHTML', '<img src="' + url.replace(/"/g, '&quot;') + '" data-wrap="center" data-w="55" style="width:55%;max-width:100%;height:auto;border-radius:6px;display:block;margin:8px auto;">');
+      const p = this._edCurPage();
+      if (p) p.querySelectorAll('img').forEach(im => this._edHookImage(im));
+    }, true);
+    big(gIns, 'hr', 'បន្ទាត់', () => exec('insertHorizontalRule'), true);
+    const gShape = group(pIns, 'រាង');
+    big(gShape, 'sq', 'ប្រអប់', () => this._edInsertShape('rect'), true);
+    big(gShape, 'ci', 'រង្វង់', () => this._edInsertShape('ellipse'), true);
+    big(gShape, 'hl', 'គូសពណ៌', () => this._edInsertShape('highlight'), true);
+    big(gShape, 'ln', 'បន្ទាត់គូស', () => this._edInsertShape('line'), true);
+    big(gShape, 'ar2', 'ព្រួញ', () => this._edInsertShape('arrow'), true);
+    // ═══ ប្លង់ (Layout) ═══
+    const pLay = pane('layout');
+    const gSheet = group(pLay, 'ទំព័រ');
+    big(gSheet, 'file', 'ក្រដាសថ្មី', () => this._edNewPage());
+    big(gSheet, 'trash', 'លុបទំព័រ', () => this._edDeletePage(), false, 'red');
+    const gMar = group(pLay, 'រឹម និងលេខទំព័រ'); const mr = rows(gMar);
+    const mr1 = row(mr), mr2 = row(mr);
+    const mlbl = document.createElement('span'); mlbl.textContent = 'រឹមក្រដាស'; mlbl.style.cssText = 'width:88px;font-size:12px;'; mr1.appendChild(mlbl);
+    const mlabel = document.createElement('span'); mlabel.className = 'ewd-val';
+    const setMargin = m => { PAD = Math.max(16, Math.min(160, m)); this._edPAD = PAD; this._libMargin = PAD; this._edPages.forEach(p => { p.style.padding = PAD + 'px ' + PAD + 'px ' + (PAD + 24) + 'px'; }); mlabel.textContent = String(PAD); this._edDirty = true; this._edScheduleReflow(0, true); if (this._edViewHook) this._edViewHook(); };
+    btn(mr1, 'mn', 'រឹមតូច', () => setMargin(PAD - 8));
+    mr1.appendChild(mlabel);
+    btn(mr1, 'plus', 'រឹមធំ', () => setMargin(PAD + 8));
+    const plbl = document.createElement('span'); plbl.textContent = 'លេខចាប់ផ្ដើម'; plbl.style.cssText = 'width:88px;font-size:12px;'; mr2.appendChild(plbl);
+    const pnInput = document.createElement('input'); pnInput.type = 'number'; pnInput.min = '1'; pnInput.value = String(this._libStartPage || 1); pnInput.title = 'លេខទំព័រចាប់ផ្ដើម'; pnInput.className = 'ewd-in';
+    pnInput.addEventListener('change', () => { const v = parseInt(pnInput.value, 10); this._libStartPage = (!isNaN(v) && v >= 1) ? v : 1; pnInput.value = String(this._libStartPage); this._edDirty = true; this._edApplyView(); });
+    mr2.appendChild(pnInput);
+    // ═══ ពិនិត្យ (Review): clean-up of pasted text ═══
+    const pRev = pane('review');
+    const gFix = group(pRev, 'ជួសជុលអត្ថបទ');
+    big(gFix, 'spark', 'សម្អាត paste', () => this._edFixLayout());
+    big(gFix, 'link', 'ភ្ជាប់បន្ទាត់', () => this._edJoinLines());
+    // ═══ មើល (View) ═══
+    const pView = pane('view');
+    const gZoom = group(pView, 'ទំហំមើល');
+    const zoomBy = d => { this._edScale = Math.max(1, Math.min(4, Math.round((this._edScale + d) * 4) / 4)); this._edApplyView(); };
+    big(gZoom, 'zo', 'បង្រួម', () => zoomBy(-0.25), true);
+    const zlabel = document.createElement('span'); zlabel.className = 'ewd-val'; zlabel.style.alignSelf = 'center'; this._edZlabel = zlabel; gZoom.appendChild(zlabel);
+    big(gZoom, 'zi', 'ពង្រីក', () => zoomBy(0.25), true);
+    big(gZoom, 'fit', 'ពេញទទឹង', () => { this._edScale = 1; this._edApplyView(); }, true);
+    const gGo = group(pView, 'ទៅទំព័រ');
+    big(gGo, 'l', 'ទំព័រមុន', () => this._edShowPage(this._edCur - 1), true);
+    const goBox = document.createElement('span'); goBox.style.cssText = 'display:flex;align-items:center;gap:4px;align-self:center;font-size:12px;';
+    const jin = document.createElement('input'); jin.type = 'number'; jin.min = '1'; jin.className = 'ewd-in';
+    const jtot = document.createElement('span');
     this._edJin = jin; this._edLabelTot = jtot;
     const goInput = () => { const v = parseInt(jin.value, 10); if (!isNaN(v)) this._edShowPage(v - 1); };
     jin.addEventListener('change', goInput);
     jin.addEventListener('keydown', e => { if (e.key === 'Enter') { goInput(); jin.blur(); } });
-    gPageNav.appendChild(jin); gPageNav.appendChild(jtot);
-    gPageNav.appendChild(icon('r', () => this._edShowPage(this._edCur + 1), 'ទំព័របន្ទាប់', true));
-    strip.appendChild(gPageNav);
-    tools.appendChild(strip);
-    // panel
-    const panel = document.createElement('div');
-    panel.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:4px 0;padding:6px 10px;border-top:1px solid #eceef2;background:#fff;';
-    const panes = {};
-    const pane = k => { const p = document.createElement('div'); p.style.cssText = 'display:none;flex-wrap:wrap;align-items:center;gap:4px 0;'; panes[k] = p; panel.appendChild(p); return p; };
-    // 1 · text
-    const pText = pane('text');
-    const gStyle = mkG();
-    gadd(gStyle, 'bold', () => exec('bold'), 'ដិត');
-    gadd(gStyle, 'italic', () => exec('italic'), 'ទ្រេត');
-    gadd(gStyle, 'under', () => exec('underline'), 'គូស');
-    pText.appendChild(gStyle);
-    const gSize = mkG();
-    const sizeSel = document.createElement('select'); sizeSel.title = 'ទំហំអក្សរ';
-    sizeSel.style.cssText = 'height:30px;border:none;border-radius:9px;background:#f1f2f6;color:#1b1d22;cursor:pointer;font-size:14px;font-weight:700;padding:0 8px;';
-    [10,12,14,16,18,20,24,28,32,36,48,64].forEach(px => { const o = document.createElement('option'); o.value = px; o.textContent = px; if (px === 16) o.selected = true; sizeSel.appendChild(o); });
-    sizeSel.addEventListener('mousedown', () => this._saveLibSel());
-    sizeSel.addEventListener('change', () => { this._setFontSize(sizeSel.value); this._edScheduleReflow(this._edCur); });
-    this._edSizeSel = sizeSel;   // kept so the caret can drive it to the real size
-    gSize.appendChild(sizeSel);
-    pText.appendChild(gSize);
-    const gColor = mkG();
-    ['#ffffff', '#201f1d', '#c0342c', '#1558b0', '#2f8f57', '#b6810f'].forEach(c => {
-      const sw = document.createElement('button'); sw.type = 'button'; sw.title = 'ពណ៌អក្សរ'; sw.className = 'edtb-sw'; sw.style.background = c;
-      sw.addEventListener('mousedown', e => e.preventDefault());
-      sw.addEventListener('click', () => exec('foreColor', c));
-      gColor.appendChild(sw);
-    });
-    pText.appendChild(gColor);
-    const gLH = mkG();
-    let lineH = 1.85; const LHS = [1.0, 1.15, 1.3, 1.5, 1.85, 2.0, 2.5, 3.0];
-    const stepLH = dir => { let idx = LHS.reduce((bi, v, i) => Math.abs(v - lineH) < Math.abs(LHS[bi] - lineH) ? i : bi, 0); idx = Math.max(0, Math.min(LHS.length - 1, idx + dir)); lineH = LHS[idx]; this._setLineSpacing(lineH); };
-    gadd(gLH, 'lhm', () => stepLH(-1), 'គម្លាតបន្ទាត់ តូច');
-    gadd(gLH, 'lhp', () => stepLH(1), 'គម្លាតបន្ទាត់ ធំ');
-    pText.appendChild(gLH);
-    // 2 · paragraph
-    const pPara = pane('para');
-    const gAlign = mkG();
-    gadd(gAlign, 'al', () => exec('justifyLeft'), 'តម្រឹមឆ្វេង');
-    gadd(gAlign, 'ac', () => exec('justifyCenter'), 'តម្រឹមកណ្ដាល');
-    gadd(gAlign, 'ar', () => exec('justifyRight'), 'តម្រឹមស្ដាំ');
-    gadd(gAlign, 'aj', () => exec('justifyFull'), 'តម្រឹមសងខាង');
-    pPara.appendChild(gAlign);
-    const gBlock = mkG();
-    gadd(gBlock, 'head', () => exec('formatBlock', 'H2'), 'ចំណងជើង');
-    gadd(gBlock, 'para', () => exec('formatBlock', 'P'), 'អត្ថបទធម្មតា');
-    gadd(gBlock, 'list', () => exec('insertUnorderedList'), 'បញ្ជី');
-    pPara.appendChild(gBlock);
-    // 3 · insert
-    const pIns = pane('insert');
-    const gIns = mkG();
-    gadd(gIns, 'img', () => {
-      const url = normalizeImgUrl(window.prompt('Link រូបភាព (https://…)') || '');
-      if (!url) return;
-      exec('insertHTML', `<img src="${url.replace(/"/g, '&quot;')}" data-wrap="center" data-w="55" style="width:55%;max-width:100%;height:auto;border-radius:6px;display:block;margin:8px auto;">`);
-      const p = this._edCurPage();
-      if (p) p.querySelectorAll('img').forEach(im => this._edHookImage(im));
-    }, 'បញ្ចូលរូបភាព');
-    gadd(gIns, 'hr', () => exec('insertHorizontalRule'), 'បន្ទាត់');
-    pIns.appendChild(gIns);
-    const gShape = mkG();
-    gadd(gShape, 'sq', () => this._edInsertShape('rect'), 'ប្រអប់ការ៉េ');
-    gadd(gShape, 'ci', () => this._edInsertShape('ellipse'), 'រង្វង់');
-    gadd(gShape, 'hl', () => this._edInsertShape('highlight'), 'គូសពណ៌ (highlight)');
-    gadd(gShape, 'ln', () => this._edInsertShape('line'), 'បន្ទាត់គូស');
-    gadd(gShape, 'ar2', () => this._edInsertShape('arrow'), 'ព្រួញ');
-    pIns.appendChild(gShape);
-    // 4 · page & view
-    const pPage = pane('page');
-    const gSheet = mkG();
-    gadd(gSheet, 'plus', () => this._edNewPage(), 'ក្រដាស់ថ្មី', 'blue');
-    gadd(gSheet, 'trash', () => this._edDeletePage(), 'លុបក្រដាស់ទំព័រនេះ', 'red');
-    pPage.appendChild(gSheet);
-    const gZoom = mkG();
-    gadd(gZoom, 'zo', () => { this._edScale = Math.max(1, Math.round((this._edScale - 0.25) * 4) / 4); this._edApplyView(); }, 'បង្រួម');
-    const zlabel = document.createElement('span'); zlabel.className = 'edtb-val'; this._edZlabel = zlabel;
-    gZoom.appendChild(zlabel);
-    gadd(gZoom, 'zi', () => { this._edScale = Math.min(4, Math.round((this._edScale + 0.25) * 4) / 4); this._edApplyView(); }, 'ពង្រីក');
-    pPage.appendChild(gZoom);
-    const gMar = mkG();
-    const mlabel = document.createElement('span'); mlabel.className = 'edtb-val';
-    const setMargin = m => { PAD = Math.max(16, Math.min(160, m)); this._edPAD = PAD; this._libMargin = PAD; this._edPages.forEach(p => { p.style.padding = `${PAD}px ${PAD}px ${PAD + 24}px`; }); mlabel.textContent = String(PAD); this._edDirty = true; this._edScheduleReflow(0, true); };
-    gadd(gMar, 'sqm', () => setMargin(PAD - 8), 'រឹមតូច');
-    gMar.appendChild(mlabel);
-    gadd(gMar, 'sqp', () => setMargin(PAD + 8), 'រឹមធំ');
-    pPage.appendChild(gMar);
-    const gStart = mkG();
-    const hashLbl = document.createElement('span'); hashLbl.textContent = '#'; hashLbl.className = 'edtb-val'; hashLbl.style.minWidth = '16px';
-    const pnInput = document.createElement('input'); pnInput.type = 'number'; pnInput.min = '1'; pnInput.value = String(this._libStartPage || 1); pnInput.title = 'លេខទំព័រចាប់ផ្ដើម'; pnInput.className = 'edtb-in';
-    pnInput.addEventListener('change', () => { const v = parseInt(pnInput.value, 10); this._libStartPage = (!isNaN(v) && v >= 1) ? v : 1; pnInput.value = String(this._libStartPage); this._edDirty = true; });
-    gStart.appendChild(hashLbl); gStart.appendChild(pnInput);
-    pPage.appendChild(gStart);
-    // 5 · fix pasted text
-    const pFix = pane('fix');
-    const gFix = mkG();
-    gadd(gFix, 'spark', () => this._edFixLayout(), 'សម្អាត paste (អក្សរចង្អៀត + ដកឃ្លាជប៉ុនខុស)');
-    gadd(gFix, 'link', () => this._edJoinLines(), 'ភ្ជាប់បន្ទាត់ PDF ឲ្យហូរធម្មតា');
-    pFix.appendChild(gFix);
-    // section tabs: tap one to show only its tools, tap it again to fold the panel away
-    const TABS = [['text', 'type', 'អក្សរ'], ['para', 'al', 'កថាខណ្ឌ'], ['insert', 'plus', 'បញ្ចូល'], ['page', 'file', 'ទំព័រ និងមើល'], ['fix', 'spark', 'ជួសជុល paste']];
+    goBox.appendChild(jin); goBox.appendChild(jtot); gGo.appendChild(goBox);
+    big(gGo, 'r', 'ទំព័របន្ទាប់', () => this._edShowPage(this._edCur + 1), true);
+    // ── tabs: tap one to show its ribbon; tap the open one (or ˄) to fold the ribbon away ──
+    const TABS = [['home', 'ទំព័រដើម'], ['insert', 'បញ្ចូល'], ['layout', 'ប្លង់'], ['review', 'ពិនិត្យ'], ['view', 'មើល']];
     const tabBtns = {};
-    let curTab = 'text';
+    let curTab = 'home';
     try { const t = localStorage.getItem('dict_ed_tab'); if (t === '' || (t && panes[t])) curTab = t; } catch(e){}
+    const fold = document.createElement('button'); fold.type = 'button'; fold.className = 'ewd-fold';
     const showTab = k => {
       curTab = k || '';
       Object.keys(panes).forEach(n => { panes[n].style.display = n === curTab ? 'flex' : 'none'; });
       Object.keys(tabBtns).forEach(n => tabBtns[n].classList.toggle('on', n === curTab));
-      panel.style.display = curTab ? 'flex' : 'none';
+      rib.style.display = curTab ? 'flex' : 'none';
+      fold.innerHTML = svg(curTab ? 'up' : 'dn', 16); fold.title = curTab ? 'បង្រួម Ribbon' : 'បង្ហាញ Ribbon';
       try { localStorage.setItem('dict_ed_tab', curTab); } catch(e){}
       setTimeout(() => { try { refit(); } catch(e){} }, 30);     // refit is defined further down, after the toolbar
     };
-    TABS.forEach(([k, ico, tip]) => {
-      const b = document.createElement('button'); b.type = 'button'; b.className = 'edtb-tab'; b.innerHTML = svg(ico, 18); b.title = tip; b.setAttribute('aria-label', tip);
+    const fileB = document.createElement('button'); fileB.type = 'button'; fileB.className = 'ewd-tab file'; fileB.textContent = 'ឯកសារ'; fileB.dataset.pop = '1';
+    fileB.addEventListener('click', () => {
+      const m = document.createElement('div'); m.className = 'ewd-menu';
+      [['save', 'រក្សាទុក', () => save.click()], ['down', 'ទាញយកជា PDF', doPdf], ['back', 'ចាកចេញ', () => this._edTryExit()]].forEach(([k, lbl, fn]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.innerHTML = svg(k, 16) + '<span>' + lbl + '</span>'; b.addEventListener('click', () => { closePops(); fn(); }); m.appendChild(b);
+      });
+      popUnder(fileB, m);
+    });
+    tabsBar.appendChild(fileB);
+    TABS.forEach(([k, label]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-tab'; b.textContent = label;
       b.addEventListener('mousedown', e => e.preventDefault());
       b.addEventListener('click', () => showTab(curTab === k ? '' : k));
-      tabBtns[k] = b; seg.appendChild(b);
+      tabBtns[k] = b; tabsBar.appendChild(b);
     });
-    tools.appendChild(panel);
+    const tsp = document.createElement('span'); tsp.className = 'ewd-sp'; tabsBar.appendChild(tsp);
+    fold.addEventListener('click', () => showTab(curTab ? '' : 'home'));
+    tabsBar.appendChild(fold);
     showTab(curTab);
-    ov.appendChild(tools);
+    // ── horizontal ruler (margins shaded), kept in line with the sheet ──
+    const hRul = document.createElement('div'); hRul.className = 'ewd-hr';
+    const hBar = document.createElement('div'); hBar.className = 'ewd-rl'; hRul.appendChild(hBar);
+    ov.appendChild(hRul);
     // ── canvas: fills the rest; the sheet floats centred, ‹ › on the edges ──
     const canvasWrap = document.createElement('div'); canvasWrap.style.cssText = 'position:relative;flex:1;min-height:0;display:flex;';
+    const vRul = document.createElement('div'); vRul.className = 'ewd-vr'; const vBar = document.createElement('div'); vBar.className = 'ewd-rl'; vRul.appendChild(vBar); canvasWrap.appendChild(vRul);
     const canvas = document.createElement('div');
     canvas.style.cssText = 'flex:1;overflow:auto;background:#e6e8ee;padding:14px;-webkit-overflow-scrolling:touch;display:flex;';
     const stage = document.createElement('div'); stage.style.cssText = 'margin:auto;flex:none;position:relative;';
@@ -15992,7 +16080,7 @@ class Component extends DCLogic {
     stage.appendChild(pgNumField);
     this._edPnField = pgNumField;
     const edge = (txt, fn, side) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt;
-      b.style.cssText = `position:absolute;${side}:6px;top:50%;transform:translateY(-50%);width:40px;height:40px;border:none;border-radius:50%;background:rgba(0,0,0,0.5);color:#fff;font-size:24px;line-height:1;cursor:pointer;z-index:8;display:flex;align-items:center;justify-content:center;`;
+      b.style.cssText = `position:absolute;${side}:${side === 'left' ? 26 : 6}px;top:50%;transform:translateY(-50%);width:40px;height:40px;border:none;border-radius:50%;background:rgba(0,0,0,0.5);color:#fff;font-size:24px;line-height:1;cursor:pointer;z-index:8;display:flex;align-items:center;justify-content:center;`;
       b.addEventListener('mousedown', e => e.preventDefault());
       b.addEventListener('click', fn); return b; };
     const prevB = edge('‹', () => this._edShowPage(this._edCur - 1), 'left');
@@ -16000,6 +16088,43 @@ class Component extends DCLogic {
     canvasWrap.appendChild(prevB); canvasWrap.appendChild(nextB);
     this._edPrevB = prevB; this._edNextB = nextB;
     ov.appendChild(canvasWrap);
+    // ── status bar: page x of y · zoom slider ──
+    const stBar = document.createElement('div'); stBar.className = 'ewd-st';
+    const stPage = document.createElement('span'); stBar.appendChild(stPage);
+    const stSize = document.createElement('span'); stSize.textContent = 'A4'; stBar.appendChild(stSize);
+    const stZ = document.createElement('div'); stZ.className = 'z';
+    const zMinus = document.createElement('button'); zMinus.type = 'button'; zMinus.textContent = '−'; zMinus.title = 'បង្រួម';
+    const zRange = document.createElement('input'); zRange.type = 'range'; zRange.min = '100'; zRange.max = '400'; zRange.step = '25'; zRange.title = 'ទំហំមើល';
+    const zPlus = document.createElement('button'); zPlus.type = 'button'; zPlus.textContent = '+'; zPlus.title = 'ពង្រីក';
+    const zPct = document.createElement('span'); zPct.style.minWidth = '40px';
+    [zMinus, zPlus].forEach(b => b.addEventListener('mousedown', e => e.preventDefault()));
+    zMinus.addEventListener('click', () => { this._edScale = Math.max(1, this._edScale - 0.25); this._edApplyView(); });
+    zPlus.addEventListener('click', () => { this._edScale = Math.min(4, this._edScale + 0.25); this._edApplyView(); });
+    zRange.addEventListener('input', () => { this._edScale = (parseInt(zRange.value, 10) || 100) / 100; this._edApplyView(); });
+    stZ.appendChild(zMinus); stZ.appendChild(zRange); stZ.appendChild(zPlus); stZ.appendChild(zPct); stBar.appendChild(stZ);
+    ov.appendChild(stBar);
+    // rulers follow the sheet (position, zoom, margins); the status bar follows the page and zoom
+    const CM = 37.8;   // px per cm at 96 dpi
+    const tickBg = (z, vertical) => 'repeating-linear-gradient(' + (vertical ? '180deg' : '90deg') + ',#8a8886 0 1px,transparent 1px ' + (CM * z / 4) + 'px)';
+    this._edViewHook = () => {
+      if (!hRul.isConnected) return;
+      const pages = this._edPages || [], pg = pages[this._edCur]; if (!pg) return;
+      const z = (this._edFitZoom || 1) * (this._edScale || 1), sr = this._edStage.getBoundingClientRect();
+      const hr = hRul.getBoundingClientRect(), vr = vRul.getBoundingClientRect();
+      const W = this._edA4W * z, H = pg.offsetHeight * z, m = PAD * z;
+      const shade = '#c8c6c4';
+      hBar.style.left = (sr.left - hr.left) + 'px'; hBar.style.width = W + 'px';
+      hBar.style.background = 'linear-gradient(90deg,' + shade + ' 0 ' + m + 'px,transparent ' + m + 'px ' + (W - m) + 'px,' + shade + ' ' + (W - m) + 'px) no-repeat,' + tickBg(z, false) + ' 0 9px/100% 5px repeat-x,#fff';
+      vBar.style.top = (sr.top - vr.top) + 'px'; vBar.style.height = H + 'px';
+      vBar.style.background = 'linear-gradient(180deg,' + shade + ' 0 ' + m + 'px,transparent ' + m + 'px ' + (H - (PAD + 24) * z) + 'px,' + shade + ' ' + (H - (PAD + 24) * z) + 'px) no-repeat,' + tickBg(z, true) + ' 9px 0/5px 100% repeat-y,#fff';
+      stPage.textContent = 'ទំព័រ ' + (this._edCur + 1) + ' នៃ ' + pages.length;
+      zRange.value = String(Math.round((this._edScale || 1) * 100)); zPct.textContent = Math.round((this._edScale || 1) * 100) + '%';
+    };
+    canvas.addEventListener('scroll', () => { if (this._edViewHook) this._edViewHook(); }, { passive: true });
+    // turning the tablet / resizing the window refits the sheet to the new width (one handler, replaced on each open)
+    if (this._edResizeH) window.removeEventListener('resize', this._edResizeH);
+    this._edResizeH = () => { if (!hRul.isConnected) return; clearTimeout(this._edResizeT); this._edResizeT = setTimeout(() => { try { refit(); } catch(e){} }, 120); };
+    window.addEventListener('resize', this._edResizeH);
     // hidden error line (saveBook writes here)
     const err = document.createElement('div'); err.id = 'lib-err';
     err.style.cssText = 'position:absolute;left:0;right:0;bottom:0;display:none;color:#fff;background:#c0342c;font-size:13px;text-align:center;padding:8px;z-index:9;';
@@ -16130,6 +16255,7 @@ class Component extends DCLogic {
       this._edPnField.value = (p && p.dataset.pn) || '';
       this._edPnField.placeholder = String(nums[this._edCur]);
     }
+    if (this._edViewHook) this._edViewHook();
   }
   _edIsEmpty(p){ return !(p.textContent || '').trim() && !p.querySelector('img,hr'); }
   // Debounced: several requests inside the window are merged (earliest sheet wins, any "full" wins).
