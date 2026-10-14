@@ -17877,7 +17877,7 @@ class Component extends DCLogic {
     }; });
     const awRuleItems = ruleItems('aw', s.awRules), edRuleItems = ruleItems('ed', s.edRules);
     const editedW = s.editWordId ? WORDS.find(w => w.id === s.editWordId) : null;
-    const detailRuleItems = ((s.detailWordId && WORDS.find(w => w.id === s.detailWordId)) || { rules: [] }).rules.map(x => ({
+    const detailRuleItems = (((s.detailWordId && WORDS.find(w => w.id === s.detailWordId)) || {}).rules || []).map(x => ({
       pre: x.pre, km: x.km, hasPre: !!x.pre, hasKm: !!x.km, postShow: x.post || '…', hasEx: !!(x.ex && x.ex.jp), exJp: x.ex ? x.ex.jp : '', exKm: x.ex ? x.ex.km : '' }));
     const shareDimsZ = SHARE_SIZES[s.shareSize] || SHARE_SIZES.square;
     const viewingSet = s.viewingViewed;
