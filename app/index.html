@@ -13783,6 +13783,7 @@ class Component extends DCLogic {
     const rd = this._rd, sideOk = !!(rd && rd.row && document.body.contains(rd.row)) && window.innerWidth >= 700 && window.innerWidth > window.innerHeight;
     const host = sideOk ? rd.row : (document.getElementById('lib-read-root') || document.body);
     const pop = document.createElement('div'); pop.id = 'bookword-pop'; pop.className = sideOk ? 'rd-side' : 'rd-sheet';
+    { const ovn = document.getElementById('book-reader-overlay'); const m = ovn && /rd-t-(white|cream|dark)/.exec(ovn.className); if (m) pop.classList.add('rd-t-' + m[1]); }   // the sheet sits outside the overlay, so it carries the paper theme itself
     const isAdmin = this.state.role === 'admin', baseRow = isAdmin && info.id ? WORDS.find(w => w.id === info.id) : null, canEdit = !!(baseRow && baseRow.jp === jp);
     const means = String(info.km || '').split(/\s*\/\s*/).map(s => s.trim()).filter(Boolean);
     const fav = !!(info.id && this.state.favorites.includes(info.id));
@@ -13909,7 +13910,7 @@ class Component extends DCLogic {
     const st = document.createElement('style'); st.id = 'rd-style';
     st.textContent = String.raw`
 .rd-ov{position:fixed;inset:0;z-index:120;display:flex;flex-direction:column;background:radial-gradient(120% 140% at 20% 0%,#2b3550 0%,#171a24 55%,#0f1117 100%);font-family:var(--font-body);--rdA:var(--color-accent,#2f6fb0);--rdA2:color-mix(in srgb,var(--color-accent,#2f6fb0) 60%,#9ad0ff)}
-.rd-bar{position:relative;z-index:20;flex:none;display:flex;align-items:center;gap:7px;margin:calc(10px + env(safe-area-inset-top,0px)) 12px 8px;padding:6px 8px;border-radius:16px;background:rgba(255,255,255,.09);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.12);box-shadow:0 8px 24px rgba(0,0,0,.35);overflow-x:auto;scrollbar-width:none}
+.rd-bar{position:relative;z-index:20;flex:none;display:flex;align-items:center;gap:7px;margin:calc(10px + env(safe-area-inset-top,0px)) 12px 8px;padding:6px 8px;border-radius:16px;background:rgba(24,27,36,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.2);box-shadow:0 10px 28px rgba(0,0,0,.5);overflow-x:auto;scrollbar-width:none}
 .rd-bar::-webkit-scrollbar{display:none}
 .rd-bar .rd-sp{flex:1;min-width:4px}
 .rd-sep{flex:none;width:1px;height:20px;background:rgba(255,255,255,.16)}
@@ -13966,12 +13967,20 @@ class Component extends DCLogic {
 .rd-sq{width:40px;height:40px;border:none;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px #dfe4ec;display:grid;place-items:center;color:#9aa1b0;cursor:pointer;padding:0}
 .rd-sq svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .rd-sq.on{color:#e0a100}.rd-sq.on svg{fill:#ffcf4a}
-.rd-t-dark .rd-side,.rd-t-dark .rd-sheet{background:linear-gradient(180deg,#2a2d35,#23262d);color:#f1f3f7;box-shadow:0 10px 30px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.07)}
+.rd-t-dark .rd-side,.rd-t-dark .rd-sheet,.rd-sheet.rd-t-dark{background:linear-gradient(180deg,#2a2d35,#23262d);color:#f1f3f7;box-shadow:0 10px 30px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.07)}
 .rd-t-dark .rd-x{background:rgba(255,255,255,.1);color:#cdd2dc}
 .rd-t-dark .rd-chip{background:rgba(120,180,240,.18);color:#9ccaf7}
 .rd-t-dark .rd-kana{color:#9aa1b0}
 .rd-t-dark .rd-m{background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
 .rd-t-dark .rd-sq{background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);color:#aab1c0}
+/* cream (sepia) paper: the word card takes the same paper colour */
+.rd-t-cream .rd-side,.rd-t-cream .rd-sheet,.rd-sheet.rd-t-cream{background:linear-gradient(180deg,#f7eed6,#efe2c2);color:#2b2417;box-shadow:0 10px 30px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,248,226,.8)}
+.rd-t-cream .rd-x{background:#e6d8b6;color:#5b4c30}
+.rd-t-cream .rd-chip{background:color-mix(in srgb,var(--rdA) 16%,#f7eed6);color:var(--rdA)}
+.rd-t-cream .rd-kana{color:#8a7954}
+.rd-t-cream .rd-m{background:#fbf5e3;box-shadow:0 1px 2px rgba(80,60,20,.1),inset 0 0 0 1px #e4d6b0}
+.rd-t-cream .rd-sq{background:#fbf5e3;box-shadow:inset 0 0 0 1px #dccdaa;color:#9a8a62}
+.rd-t-cream .rd-adm button{background:#e9dcbb;color:#3a2f1a}
 /* teaching mode */
 .rd-dock{position:absolute;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;display:none;align-items:center;gap:8px;padding:6px 10px;border-radius:99px;background:rgba(24,27,36,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.2);box-shadow:0 10px 28px rgba(0,0,0,.5);opacity:.72;transition:opacity .35s;max-width:calc(100% - 16px);overflow-x:auto;scrollbar-width:none}
 .rd-teach .rd-dock{display:flex}.rd-dock.act,.rd-dock:hover{opacity:1}
@@ -14136,6 +14145,7 @@ class Component extends DCLogic {
     const setTheme = t => {
       theme = t; try { localStorage.setItem('dict_reader_theme', t); } catch(e) {}
       ov.classList.remove('rd-t-white', 'rd-t-cream', 'rd-t-dark'); ov.classList.add('rd-t-' + t);
+      { const bp = document.getElementById('bookword-pop'); if (bp) { bp.classList.remove('rd-t-white', 'rd-t-cream', 'rd-t-dark'); bp.classList.add('rd-t-' + t); } }
       themePop.querySelectorAll('.rd-sw button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
     };
     themePop.querySelectorAll('.rd-sw button').forEach(b => b.addEventListener('click', () => setTheme(b.dataset.t)));
