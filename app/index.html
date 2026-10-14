@@ -9501,7 +9501,7 @@ let _furiMap = null, _furiMax = 0;
 function furiMap(){
   if (_furiMap) return _furiMap;
   _furiMap = new Map();
-  for (const w of WORDS){
+  for (const w of [...WORDS.filter(x => x && x._ov), ...WORDS]){            // rows whose reading an admin edited come first
     if (!w || !w.jp || !w.kana || w.jp === w.kana) continue;
     if (!HAS_KANJI.test(w.jp)) continue;
     if (!_furiMap.has(w.jp)){ _furiMap.set(w.jp, w.kana); if (w.jp.length > _furiMax) _furiMax = w.jp.length; }
@@ -9800,9 +9800,14 @@ function applyOverrides(rows){
   let n = 0;
   for (const o of rows) {
     const w = byId.get(o.word_id);
-    if (!w) continue;
+    if (!w) {
+      // the id is gone (the sheet was re-ordered) — a corrected reading still belongs to every row of that word
+      if (o.jp && o.kana) for (const x of WORDS) if (x.jp === o.jp && !x._ov && x.kana !== o.kana) { x.kana = o.kana; x._ov = true; x.romaji = kanaToRomaji(x.kana); x.romajiNorm = normRomaji(x.romaji); n++; }
+      continue;
+    }
+    const oldJp = w.jp, oldKana = w.kana;
     if (o.jp) w.jp = o.jp;
-    if (o.kana != null) w.kana = o.kana;
+    if (o.kana != null) { w.kana = o.kana; w._ov = true; }
     if (o.pos != null) w.pos = o.pos;
     if (o.km) w.km = o.km;
     if (o.img != null) w.img = o.img;
@@ -9814,6 +9819,11 @@ function applyOverrides(rows){
       for (const x of WORDS) if (x.jp + '|' + x.kana === k) x.starred = on;
     }
     w.romaji = kanaToRomaji(w.kana); w.romajiNorm = normRomaji(w.romaji);
+    // the same word is listed on many pages: its reading was typed once, so every other row of it (still carrying the
+    // sheet's original reading) takes it too — otherwise the book keeps reading from a row that was never edited
+    if (o.kana != null && o.kana !== oldKana) for (const x of WORDS) {
+      if (x !== w && !x._ov && x.jp === oldJp && x.kana === oldKana) { x.kana = o.kana; x.romaji = kanaToRomaji(x.kana); x.romajiNorm = normRomaji(x.romaji); }
+    }
     n++;
   }
   if (n) rebuildIndexes();
@@ -10872,7 +10882,17 @@ function makeSupabaseBackend(){
       if (!data || !data.publicUrl) return { error:'មិនអាចយក URL របស់និមិត្តសញ្ញាបានទេ' };
       return { url: data.publicUrl };
     },
-    async getOverrides(){ const { data } = await client.from('word_overrides').select('word_id,jp,kana,pos,km,examples,starred,img'); return { rows: data || [] }; },
+    async getOverrides(){
+      // PostgREST hands back 1000 rows at most per request — page through, in a stable order, or the rest are silently dropped
+      const rows = [];
+      for (let from = 0; from < 20000; from += 1000) {
+        const { data, error } = await client.from('word_overrides').select('word_id,jp,kana,pos,km,examples,starred,img').order('word_id').range(from, from + 999);
+        if (error) { if (!rows.length) return { rows: [] }; break; }
+        rows.push(...(data || []));
+        if (!data || data.length < 1000) break;
+      }
+      return { rows };
+    },
     // only touches the starred column, so it never clobbers a correction
     async setStar(word_id, starred){
       const { error } = await client.from('word_overrides').upsert({ word_id, starred }, { onConflict: 'word_id' });
@@ -14062,7 +14082,7 @@ class Component extends DCLogic {
     if (this._bwMap && this._bwMapLen === WORDS.length) return this._bwMap;   // rebuild when new (custom) words are added
     this._bwMap = new Map(); this._bwMax = 0; this._bwMapLen = WORDS.length;
     const gram = [];     // grammar points written with a leading 〜 — tappable as the text after the 〜
-    for (const w of WORDS) {
+    for (const w of [...WORDS.filter(x => x && x._ov), ...WORDS]) {      // an edited row is the one the card shows
       if (!w || !w.jp) continue;
       const jp = w.jp;
       if (/^[〜～~]/.test(jp) && !/[（）()s/、。，,！!？?・「」]/.test(jp)) {
