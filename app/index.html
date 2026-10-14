@@ -15823,6 +15823,11 @@ class Component extends DCLogic {
         '.ewd-st button{border:none;background:transparent;color:#323130;font:inherit;font-size:14px;width:22px;height:22px;border-radius:4px;cursor:pointer;padding:0}.ewd-st button:hover{background:#e1dfdd}',
         '.ewd-st input[type=range]{width:110px;accent-color:#2b579a}',
         '.ewd-sm.on,.ewd-b.on2{background:#c7dcf3;box-shadow:inset 0 0 0 1px #9cbce3}',
+        '.ewd-tpick{position:fixed;z-index:150;background:#fff;border:1px solid #c8c6c4;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.18);padding:8px;font-size:12px;color:#323130}',
+        '.ewd-tpick .lb{margin-bottom:6px;font-weight:600}.ewd-tpick .gr{display:grid;grid-template-columns:repeat(10,20px);gap:3px}',
+        '.ewd-tpick .gr i{width:20px;height:20px;border:1px solid #c8c6c4;background:#fff;cursor:pointer}.ewd-tpick .gr i.on{background:#c7dcf3;border-color:#2b579a}',
+        '.ewd-tpick .more{margin-top:8px;width:100%;border:none;border-top:1px solid #e1dfdd;background:#fff;font:inherit;font-size:12.5px;padding:8px 4px 2px;text-align:left;cursor:pointer;color:#323130}',
+        '.ewd-tab.ctx{color:#7a4f00;background:#fff4ce;border-radius:4px 4px 0 0}.ewd-tab.ctx.on{color:#7a4f00}.ewd-tab.ctx.on:after{background:#c79100}',
         '.ewd-galin{width:312px;height:64px;display:flex;flex-wrap:wrap;overflow:hidden;scroll-behavior:smooth}',
         '.ewd-galbtn{width:16px;border-left:1px solid #c8c6c4;display:flex;flex-direction:column}',
         '.ewd-galbtn button{flex:1;border:none;border-bottom:1px solid #e1dfdd;background:#fff;color:#605e5c;font-size:8px;cursor:pointer;padding:0}.ewd-galbtn button:last-child{border-bottom:none}.ewd-galbtn button:hover{background:#f3f2f1}',
@@ -15892,15 +15897,18 @@ class Component extends DCLogic {
       rmode: 'M3 5h7a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H3zM21 5h-7a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h7z', pview: 'M6 3h12v18H6zM9 7h6M9 11h6M9 15h4', web: 'M3 4h18v16H3zM3 8h18M6 6h.01M9 6h.01',
       focus: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5M9 12h6', imm: 'M4 5h16v14H4zM8 9h8M8 12h8M8 15h5', ruler: 'M3 8h18v8H3zM7 8v3M11 8v4M15 8v3M19 8v4', grid: 'M4 4h16v16H4zM4 9h16M4 14h16M9 4v16M14 4v16',
       nav: 'M4 4h16v16H4zM9 4v16M5.5 8h2M5.5 11h2M5.5 14h2', onep: 'M7 3h10v18H7z', multp: 'M3 5h8v14H3zM13 5h8v14h-8z', z100: 'M4 12h16M12 4v16',
-      new: 'M6 3h8l4 4v14H6zM14 3v4h4M12 11v6M9 14h6', open: 'M3 7h6l2 2h10v10H3z', saveas: 'M5 4h11l3 3v13H5zM9 4v5h6M14 14l4 4M18 14l-4 4', print: 'M7 9V3h10v6M5 9h14v8h-2M7 14h10v7H7z', info: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v6M12 7.5h.01',
+      new: 'M6 3h8l4 4v14H6zM14 3v4h4M12 11v6M9 14h6',
+      rowup: 'M3 12h18v8H3zM3 16h18M9 12v8M15 12v8M12 3v6M9 6h6', rowdn: 'M3 4h18v8H3zM3 8h18M9 4v8M15 4v8M12 15v6M9 18h6',
+      colL: 'M12 3h9v18h-9zM12 9h9M12 15h9M16.5 3v18M3 12h6M6 9v6', colR: 'M3 3h9v18H3zM3 9h9M3 15h9M7.5 3v18M15 12h6M18 9v6',
+      vtop: 'M4 4h16M12 8v12M8 12l4-4 4 4', vmid: 'M4 12h16M12 3v5M12 16v5', vbot: 'M4 20h16M12 4v12M8 12l4 4 4-4', open: 'M3 7h6l2 2h10v10H3z', saveas: 'M5 4h11l3 3v13H5zM9 4v5h6M14 14l4 4M18 14l-4 4', print: 'M7 9V3h10v6M5 9h14v8h-2M7 14h10v7H7z', info: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v6M12 7.5h.01',
     };
     const svg = (k, s) => '<svg width="' + (s || 18) + '" height="' + (s || 18) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
       + IC[k].split('M').filter(Boolean).map(d => '<path d="M' + d + '"/>').join('') + '</svg>';
     // toolbar commands run on whichever sheet has focus (only one is shown)
     const exec = (cmd, val) => { const p = this._edCurPage(); if (p) p.focus(); document.execCommand(cmd, false, val == null ? null : val); if (p) p.focus(); this._edScheduleReflow(this._edCur); };
     const keep = b => { b.addEventListener('mousedown', e => e.preventDefault()); return b; };
-    const closePops = () => ov.querySelectorAll('.ewd-pop,.ewd-menu').forEach(n => n.remove());
-    ov.addEventListener('mousedown', e => { if (!e.target.closest('.ewd-pop,.ewd-menu,[data-pop]')) closePops(); });
+    const closePops = () => ov.querySelectorAll('.ewd-pop,.ewd-menu,.ewd-tpick').forEach(n => n.remove());
+    ov.addEventListener('mousedown', e => { if (!e.target.closest('.ewd-pop,.ewd-menu,.ewd-tpick,[data-pop]')) closePops(); });
     // a small popup under a button (colour palette / file menu)
     const popUnder = (btn, el) => { closePops(); const rc = btn.getBoundingClientRect(); el.style.left = Math.max(6, Math.min(window.innerWidth - 220, rc.left)) + 'px'; el.style.top = (rc.bottom + 4) + 'px'; ov.appendChild(el); };
     // ── title bar (Word blue): quick-access save · undo · redo · book title · PDF · close ──
@@ -16218,7 +16226,44 @@ class Component extends DCLogic {
     big(gPages, 'file', 'ក្រដាសទទេ', () => this._edNewPage());
     bigSoon(gPages, 'pbreak', 'បំបែកទំព័រ');
     const gTbl = group(pIns, 'តារាង');
-    bigSoon(gTbl, 'table', 'តារាង');
+    // tables: inline styles only, so the reader and the PDF draw them exactly as written
+    const CELL = 'border:1px solid #444;padding:6px 8px;vertical-align:top;';
+    const tableHtml = (rowsN, colsN) => {
+      let t = '<table style="width:100%;border-collapse:collapse;table-layout:fixed;margin:8px 0;">';
+      for (let i = 0; i < rowsN; i++) { t += '<tr>'; for (let j = 0; j < colsN; j++) t += '<td style="' + CELL + '"><br></td>'; t += '</tr>'; }
+      return t + '</table><p><br></p>';
+    };
+    const insertTable = (rowsN, colsN) => {
+      this._restoreLibSel(); exec('insertHTML', tableHtml(rowsN, colsN));
+      const p = this._edCurPage(); const tbls = p ? p.querySelectorAll('table') : [];
+      const td = tbls.length ? [...tbls].find(t => t.contains(window.getSelection().anchorNode)) : null;
+      // land the caret in the first cell of the new table
+      const last = td || [...tbls].pop(); const c0 = last && last.querySelector('td');
+      if (c0) { const rg = document.createRange(); rg.setStart(c0, 0); rg.collapse(true); const s = window.getSelection(); s.removeAllRanges(); s.addRange(rg); this._saveLibSel(); }
+    };
+    const tblB = big(gTbl, 'table', 'តារាង ▾', () => {
+      this._saveLibSel();
+      const pk = document.createElement('div'); pk.className = 'ewd-tpick';
+      const lb = document.createElement('div'); lb.className = 'lb'; lb.textContent = 'បញ្ចូលតារាង'; pk.appendChild(lb);
+      const gr = document.createElement('div'); gr.className = 'gr'; pk.appendChild(gr);
+      const cells = [];
+      for (let rI = 0; rI < 8; rI++) for (let cI = 0; cI < 10; cI++) {
+        const c = document.createElement('i'); c.dataset.r = rI + 1; c.dataset.c = cI + 1; cells.push(c); gr.appendChild(c);
+        const mark = () => { cells.forEach(x => x.classList.toggle('on', +x.dataset.r <= rI + 1 && +x.dataset.c <= cI + 1)); lb.textContent = (cI + 1) + ' × ' + (rI + 1) + ' តារាង'; };
+        c.addEventListener('mouseenter', mark);
+        c.addEventListener('mousedown', e => e.preventDefault());
+        c.addEventListener('click', () => { closePops(); insertTable(rI + 1, cI + 1); });
+      }
+      const more = document.createElement('button'); more.type = 'button'; more.className = 'more'; more.textContent = '⊞ បញ្ចូលតារាង… (កំណត់ចំនួន)';
+      more.addEventListener('click', () => {
+        closePops();
+        const v = window.prompt('ចំនួនជួរឈរ × ជួរដេក (ឧ. 4x3)', '3x3'); if (!v) return;
+        const m = v.match(/(\d+)\s*[x×*]\s*(\d+)/i); if (!m) { toast('សូមវាយជាទម្រង់ 4x3'); return; }
+        insertTable(Math.max(1, Math.min(60, +m[2])), Math.max(1, Math.min(20, +m[1])));
+      });
+      pk.appendChild(more);
+      popUnder(tblB, pk);
+    }, true); tblB.dataset.pop = '1';
     const gIll = group(pIns, 'រូបភាព');
     big(gIll, 'img', 'រូបភាព', () => {
       const url = normalizeImgUrl(window.prompt('Link រូបភាព (https://…)') || '');
@@ -16364,6 +16409,47 @@ class Component extends DCLogic {
     jin.addEventListener('keydown', e => { if (e.key === 'Enter') { goInput(); jin.blur(); } });
     goBox.appendChild(jin); goBox.appendChild(jtot); gGo.appendChild(goBox);
     big(gGo, 'r', 'ទំព័របន្ទាប់', () => this._edShowPage(this._edCur + 1), true);
+    // ═══ តារាង (contextual: shows while the caret is inside a table) ═══
+    const curCell = () => { this._restoreLibSel(); const s = window.getSelection(); let n = s && s.rangeCount ? s.getRangeAt(0).startContainer : null; if (n && n.nodeType === 3) n = n.parentElement; const p = this._edCurPage(); const c = n && n.closest ? n.closest('td,th') : null; return c && p && p.contains(c) ? c : null; };
+    const tblOp = fn => () => { const c = curCell(); if (!c) { toast('សូមដាក់ cursor ក្នុងតារាងជាមុនសិន'); return; } const tr = c.parentElement, tb = c.closest('table'); fn(c, tr, tb, [...tr.children].indexOf(c)); touched(); };
+    const newCell = like => { const n = document.createElement(like.tagName); n.setAttribute('style', like.getAttribute('style') || CELL); n.innerHTML = '<br>'; return n; };
+    const putCaret = cell => { if (!cell) return; const rg = document.createRange(); rg.setStart(cell, 0); rg.collapse(true); const s = window.getSelection(); s.removeAllRanges(); s.addRange(rg); this._saveLibSel(); };
+    const addRow = below => tblOp((c, tr) => { const nr = document.createElement('tr'); [...tr.children].forEach(x => nr.appendChild(newCell(x))); tr.parentNode.insertBefore(nr, below ? tr.nextSibling : tr); putCaret(nr.children[0]); });
+    const addCol = right => tblOp((c, tr, tb, ci) => { tb.querySelectorAll('tr').forEach(row => { const ref = row.children[ci] || row.lastElementChild; if (!ref) return; const nc = newCell(ref); row.insertBefore(nc, right ? ref.nextSibling : ref); }); });
+    const delRow = tblOp((c, tr, tb) => { if (tb.querySelectorAll('tr').length <= 1) tb.remove(); else tr.remove(); });
+    const delCol = tblOp((c, tr, tb, ci) => { tb.querySelectorAll('tr').forEach(row => { if (row.children[ci]) row.children[ci].remove(); }); if (!tb.querySelector('td,th')) tb.remove(); });
+    const delTbl = tblOp((c, tr, tb) => tb.remove());
+    const tblStyle = kind => tblOp((c, tr, tb) => {
+      const rowsA = [...tb.querySelectorAll('tr')];
+      rowsA.forEach((row, ri) => [...row.children].forEach(cell => {
+        cell.style.border = kind === 'none' ? '1px dashed #d0d0d0' : (kind === 'striped' ? '1px solid #9db3d0' : '1px solid #444');
+        cell.style.background = ''; cell.style.color = ''; cell.style.fontWeight = '';
+        if (kind === 'header' && ri === 0) { cell.style.background = '#dbe5f1'; cell.style.fontWeight = '700'; }
+        if (kind === 'striped') { if (ri === 0) { cell.style.background = '#2b579a'; cell.style.color = '#fff'; cell.style.fontWeight = '700'; } else if (ri % 2 === 0) cell.style.background = '#eef3fa'; }
+      }));
+      tb.dataset.tstyle = kind;
+    })();
+    const pTbl = pane('table');
+    const gRC = group(pTbl, 'ជួរដេក និងជួរឈរ');
+    big(gRC, 'rowup', 'បញ្ចូលខាងលើ', () => addRow(false)(), true);
+    big(gRC, 'rowdn', 'បញ្ចូលខាងក្រោម', () => addRow(true)(), true);
+    big(gRC, 'colL', 'បញ្ចូលខាងឆ្វេង', () => addCol(false)(), true);
+    big(gRC, 'colR', 'បញ្ចូលខាងស្ដាំ', () => addCol(true)(), true);
+    const delB = big(gRC, 'trash', 'លុប ▾', () => menuUnder(delB, [['លុបជួរដេក', () => delRow()], ['លុបជួរឈរ', () => delCol()], ['លុបតារាង', () => delTbl()]]), true, 'red'); delB.dataset.pop = '1';
+    const gTs = group(pTbl, 'ស្តាយតារាង');
+    const tsGal = document.createElement('div'); tsGal.className = 'ewd-gal';
+    [['grid', '<span style="display:grid;grid-template-columns:repeat(3,12px);gap:0;border:1px solid #444">' + '<i style="height:7px;border:1px solid #444"></i>'.repeat(9) + '</span>', 'ស៊ុមពេញ'],
+     ['header', '<span style="display:grid;grid-template-columns:repeat(3,12px);border:1px solid #444">' + '<i style="height:7px;border:1px solid #444;background:#dbe5f1"></i>'.repeat(3) + '<i style="height:7px;border:1px solid #444"></i>'.repeat(6) + '</span>', 'ក្បាលពណ៌'],
+     ['striped', '<span style="display:grid;grid-template-columns:repeat(3,12px);border:1px solid #9db3d0">' + '<i style="height:7px;background:#2b579a"></i>'.repeat(3) + '<i style="height:7px;border:1px solid #9db3d0"></i>'.repeat(3) + '<i style="height:7px;border:1px solid #9db3d0;background:#eef3fa"></i>'.repeat(3) + '</span>', 'ឆ្លាស់ពណ៌'],
+     ['none', '<span style="display:grid;grid-template-columns:repeat(3,12px);border:1px dashed #bbb">' + '<i style="height:7px;border:1px dashed #ccc"></i>'.repeat(9) + '</span>', 'គ្មានស៊ុម']].forEach(([k, prev, name]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-sty'; b.style.width = '70px'; b.innerHTML = prev + '<small>' + name + '</small>'; b.title = name; keep(b);
+      b.addEventListener('click', () => tblStyle(k)); tsGal.appendChild(b);
+    });
+    gTs.appendChild(tsGal);
+    const gCell = group(pTbl, 'ក្រឡា');
+    const cshB = big(gCell, 'shade', 'ពណ៌ក្រឡា ▾', () => palette(cshB, ['#dbe5f1', '#eef3fa', '#fff4cc', '#e6f6e6', '#fde8ec', '#efe9ff', '#f1f1f1', '#2b579a', '#c0342c', '#2f8f57'], col => { const c = curCell(); if (!c) return; c.style.background = col || ''; c.style.color = col && /^#(2b579a|c0342c|2f8f57)$/.test(col) ? '#fff' : ''; touched(); }, 'គ្មានពណ៌'), true); cshB.dataset.pop = '1';
+    const sCell = stack(gCell);
+    [['vtop', 'តម្រឹមលើ', 'top'], ['vmid', 'តម្រឹមកណ្ដាល', 'middle'], ['vbot', 'តម្រឹមក្រោម', 'bottom']].forEach(([k, l, v]) => sm(sCell, k, l, tblOp(c => { c.style.verticalAlign = v; }), true));
     // ── tabs: tap one to show its ribbon; tap the open one (or ˄) to fold the ribbon away ──
     const TABS = [['home', 'ទំព័រដើម'], ['insert', 'បញ្ចូល'], ['design', 'រចនា'], ['layout', 'ប្លង់'], ['refs', 'ឯកសារយោង'], ['review', 'ពិនិត្យ'], ['view', 'មើល']];
     const tabBtns = {};
@@ -16396,8 +16482,26 @@ class Component extends DCLogic {
     });
     const tsp = document.createElement('span'); tsp.className = 'ewd-sp'; tabsBar.appendChild(tsp);
     fold.addEventListener('click', () => showTab(curTab ? '' : 'home'));
+    const tblTab = document.createElement('button'); tblTab.type = 'button'; tblTab.className = 'ewd-tab ctx'; tblTab.textContent = 'តារាង'; tblTab.style.display = 'none';
+    tblTab.addEventListener('mousedown', e => e.preventDefault());
+    tblTab.addEventListener('click', () => showTab(curTab === 'table' ? '' : 'table'));
+    tabBtns.table = tblTab; tabsBar.insertBefore(tblTab, tsp);
     tabsBar.appendChild(fold);
+    if (curTab === 'table') curTab = 'home';
     showTab(curTab);
+    // show the table tab while the caret is inside a table (and open it the moment a table is first entered)
+    let inTbl = false;
+    if (this._edSelH) document.removeEventListener('selectionchange', this._edSelH);
+    this._edSelH = () => {
+      if (!ov.isConnected) { document.removeEventListener('selectionchange', this._edSelH); return; }
+      const s = window.getSelection(); let n = s && s.rangeCount ? s.getRangeAt(0).startContainer : null; if (n && n.nodeType === 3) n = n.parentElement;
+      const p = this._edCurPage(); const now = !!(n && n.closest && p && p.contains(n) && n.closest('td,th'));
+      if (!n || !p || !p.contains(n)) return;     // focus moved to the ribbon: keep the tab as it is
+      if (now === inTbl) return;
+      inTbl = now; tblTab.style.display = now ? '' : 'none';
+      if (now && curTab !== '') showTab('table'); else if (!now && curTab === 'table') showTab('home');
+    };
+    document.addEventListener('selectionchange', this._edSelH);
     // ── horizontal ruler (margins shaded), kept in line with the sheet ──
     const hRul = document.createElement('div'); hRul.className = 'ewd-hr';
     const hBar = document.createElement('div'); hBar.className = 'ewd-rl'; hRul.appendChild(hBar);
