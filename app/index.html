@@ -465,6 +465,27 @@ figcaption {
 
 /* — share image maker — */
 .shr{padding:18px 20px 40px;max-width:980px;margin:0 auto}
+.shr-sh,.shr-showtools{display:none}
+@media (min-width:900px) and (orientation:landscape){
+  .shr{max-width:none;display:flex;align-items:flex-start;gap:0;padding:14px 0 24px 20px}
+  .shr-work{flex:1;min-width:0;padding-right:18px}
+  .shr-work h1{font-size:20px!important}
+  .shr-stage{min-height:calc(100dvh - 330px)}
+  .shr-stage img{max-height:calc(100dvh - 360px)}
+  .shr-side{flex:none;width:350px;position:sticky;top:0;align-self:flex-start;height:calc(100dvh - 150px);display:flex;flex-direction:column;background:var(--color-surface);border-left:1px solid var(--color-divider);border-radius:16px 0 0 16px;box-shadow:-4px 0 18px rgba(0,0,0,.06);overflow:hidden}
+  .shr-sh{display:flex;align-items:center;gap:8px;padding:11px 12px;border-bottom:1px solid var(--color-divider);font-weight:700;font-size:14px;flex:none}
+  .shr-sh button{margin-left:auto;border:1.5px solid var(--color-divider);background:transparent;color:var(--color-text);border-radius:9px;padding:3px 10px;font:inherit;font-size:12px;cursor:pointer;opacity:.8}
+  .shr-side .shr-tabs{margin:8px 10px;flex:none}
+  .shr-side .shr-tab{flex-direction:column;gap:1px;height:46px;font-size:11.5px}
+  .shr-side .shr-pn{flex:1;min-height:0;overflow-y:auto;border:none;border-radius:0;padding:4px 12px 12px}
+  .shr-side .shr-tts{flex-wrap:wrap;overflow:visible;gap:8px}.shr-side .shr-tt{width:calc(33.3% - 6px)}
+  .shr-foot{flex:none;border-top:1px solid var(--color-divider);padding:10px 12px;background:var(--color-surface)}
+  .shr-foot .shr-acts{margin-top:0}.shr-foot .shr-act{height:40px;flex:1 1 90px}
+  .shr.tools-off .shr-side{display:none}
+  .shr.tools-off .shr-work{padding-right:20px}
+  .shr.tools-off .shr-showtools{display:block;position:absolute;right:12px;bottom:12px;border:none;border-radius:99px;background:#1f2937;color:#fff;font:inherit;font-size:13px;font-weight:700;padding:8px 16px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+  .shr-back{right:auto!important;left:16px}
+}
 .shr-wb{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 .shr-in{width:100%;flex:1 1 240px;height:42px;padding:0 14px;border:1.5px solid var(--color-divider);border-radius:14px;background:var(--color-surface);font:inherit;font-size:14px;color:var(--color-text)}
 .shr-chosen{flex:1 1 280px;min-width:0;padding:9px 12px;border-radius:12px;background:var(--color-accent-100);color:var(--color-accent-800);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -3338,8 +3359,9 @@ textarea.input { min-height: 90px; resize: vertical; }
         </sc-if>
 
         <sc-if value="{{ isShare }}" hint-placeholder-val="{{ false }}">
-        <div class="shr">
-          <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
+        <div class="shr {{ shareToolsCls }}">
+          <button class="btn shr-back" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
+          <div class="shr-work">
           <h1 style="font-size:26px;margin:0 0 4px;">រូបភាពចែករំលែក</h1>
           <div style="font-size:12px;opacity:0.6;margin-bottom:14px;">បង្កើតរូបភាពពាក្យស្អាតៗ សម្រាប់ចែករំលែកលើបណ្ដាញសង្គម</div>
           <div class="shr-wb">
@@ -3371,8 +3393,12 @@ textarea.input { min-height: 90px; resize: vertical; }
             <sc-if value="{{ shareBusy }}"><div style="opacity:0.6;font-size:13px;">កំពុងបង្កើត…</div></sc-if>
             <sc-if value="{{ shareNoWord }}"><div style="text-align:center;padding:30px 20px;opacity:0.5;font-size:13px;">ស្វែងរក រួចជ្រើសរើសពាក្យដើម្បីបង្កើតរូបភាព</div></sc-if>
             <sc-if value="{{ shareHasErr }}"><div style="font-size:12px;color:#c0392b;line-height:1.6;text-align:center;">{{ shareErr }}</div></sc-if>
+            <button class="shr-showtools" sc-camel-on-click="{{ toggleShareTools }}">🎨 បង្ហាញឧបករណ៍</button>
+          </div>
           </div>
 
+          <div class="shr-side">
+          <div class="shr-sh"><span>🎨 ឧបករណ៍</span><button sc-camel-on-click="{{ toggleShareTools }}" title="លាក់ឧបករណ៍">⇥ លាក់</button></div>
           <div class="shr-tabs">
             <sc-for list="{{ shareTabs }}" as="t" hint-placeholder-count="4">
               <button class="shr-tab {{ t.cls }}" sc-camel-on-click="{{ t.onSelect }}"><span>{{ t.icon }}</span><span>{{ t.label }}</span></button>
@@ -3482,13 +3508,16 @@ textarea.input { min-height: 90px; resize: vertical; }
           </div>
 
           <sc-if value="{{ shareHasImg }}">
+            <div class="shr-foot">
             <div class="shr-acts">
               <button class="shr-act main" sc-camel-on-click="{{ downloadShare }}">⬇ ទាញយក PNG</button>
               <sc-if value="{{ shareCanNative }}"><button class="shr-act" sc-camel-on-click="{{ shareNative }}">↗ ចែករំលែក</button></sc-if>
               <button class="shr-act" sc-camel-on-click="{{ copyShare }}">⎘ ចម្លង</button>
             </div>
             <button class="shr-zip" sc-camel-on-click="{{ downloadShareZip }}">⬇ ទាញយកគ្រប់ទំហំ (ZIP)</button>
+            </div>
           </sc-if>
+          </div>
         </div>
         </sc-if>
 
@@ -11379,6 +11408,7 @@ class Component extends DCLogic {
     // admin: share-image maker
     shareSearch: '', shareWordId: null, shareSize: 'square', shareStyle: 'refined', shareColor: '', shareImgData: '', shareBusy: false, shareErr: '',
     awRules: [], edRules: [],
+    shareToolsOff: (() => { try { return localStorage.getItem('dict_share_tools') === '0'; } catch(e) { return false; } })(),
     shareTab: 'tpl', shareFuri: 'ruby', shareGap: 1, shareExStyle: 'quote', shareExScale: 1, shareNameHist: { brand: [], foot: [] }, shareMenu: '', shareOpts: { kana: true, ex: false, img: true, code: true, brand: true, rules: true }, shareBrand: '', shareFoot: '', shareList: [], shareThumbs: {},
     // admin: A4 results preview / print
     printOpen: false, printReport: null,
@@ -12646,6 +12676,8 @@ class Component extends DCLogic {
   }
   setShareColor(c){ this.setState({ shareColor: c || '' }, () => { this._saveSharePrefs(); this.drawShareCard(); }); }
   onShareCustomColor(e){ this.setShareColor(e.target.value); }
+  // wide landscape screens: the tools sit in a side panel that can be tucked away (remembered on this device)
+  toggleShareTools(){ const off = !this.state.shareToolsOff; try { localStorage.setItem('dict_share_tools', off ? '0' : '1'); } catch(e) {} this.setState({ shareToolsOff: off }); }
   setShareTab(t){ this.setState({ shareTab: t }, () => { if (t === 'tpl') this.drawShareThumbs(); }); }
   // names typed for the header / footer are remembered (most recent first, at most 8 each) and offered in a dropdown
   _saveNameHist(h){ try { localStorage.setItem('dict_share_names', JSON.stringify(h)); } catch(e){} }
@@ -19259,7 +19291,7 @@ class Component extends DCLogic {
 
       // — ប្រឡងសាកល្បង (exam) —
       // — Admin: share-image maker —
-      goShare: () => this.goShare(), isShare: s.screen === 'share',
+      goShare: () => this.goShare(), isShare: s.screen === 'share', shareToolsCls: s.shareToolsOff ? 'tools-off' : '', toggleShareTools: () => this.toggleShareTools(),
       shareSearch: s.shareSearch, onShareSearch: e => this.onShareSearch(e),
       shareResults, shareHasResults: shareResults.length > 0,
       shareHasWord: !!shareWord, shareWordLabel: shareWord ? `${shareWord.jp} — ${shareWord.km}` : '',
