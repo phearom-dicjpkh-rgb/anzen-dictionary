@@ -9238,10 +9238,10 @@ function jpKhmer(base,form){ const M=(base||'').trim()||'…';
     // — more forms (rough drafts, editable) —
     case 'nakute': return 'មិន'+M+' ហើយ…';
     case 'naku': return 'មិន'+M;
-    case 'nakunaru': return 'លែងបាន'+M+' (ទៀត)';
+    case 'nakunaru': return 'លែង'+M+' (ទៀត)';
     case 'nakunatta': return 'បានលែង'+M;
-    case 'nakunatte': return 'លែងបាន'+M+' ហើយ…';
-    case 'nakunarimasu': return 'លែងបាន'+M+' (ទៀត)';
+    case 'nakunatte': return 'លែង'+M+' ហើយ…';
+    case 'nakunarimasu': return 'លែង'+M+' (ទៀត)';
     case 'nakereba': return 'បើមិន'+M;
     case 'nakerebanaranai': return 'ត្រូវតែ'+M;
     case 'naide': return 'ដោយមិន'+M;
@@ -9411,7 +9411,7 @@ function jpAllForms(jp, kana, pos){
     if (r.type && r.type !== 'noun') for (const f of [...r.forms, ...(r.extra || [])]) {
       if (!f.jp || !HAS_KANJI.test(f.jp)) continue;
       const k = jpRelatedKana(jp, kana, f.jp);
-      if (k) v.push({ jp: f.jp, kana: k });
+      if (k) v.push({ jp: f.jp, kana: k, form: f.form });
     }
   } catch(e) {}
   _formsCache.set(key, v);
@@ -13853,7 +13853,9 @@ class Component extends DCLogic {
       // every conjugation of a verb / adjective is tappable and carries its reading (買えなくなって → 買えなく…)
       for (const f of jpAllForms(w.jp, w.kana, w.pos)) {
         if (this._bwMap.has(f.jp) || f.jp.length > 20) continue;
-        this._bwMap.set(f.jp, { kana: f.kana, km: w.km || '', img: w.img || '', id: w.id, pos: w.pos || '' }); if (f.jp.length > this._bwMax) this._bwMax = f.jp.length;
+        const first = String(w.km || '').split(/\s*\/\s*/)[0].trim();
+        const draft = first ? jpKhmer(first, f.form) : '', km = draft && draft !== first ? draft + ' / ' + (w.km || '') : (w.km || '');
+        this._bwMap.set(f.jp, { kana: f.kana, km, img: w.img || '', id: w.id, pos: w.pos || '' }); if (f.jp.length > this._bwMax) this._bwMax = f.jp.length;
       }
       // related conjugation forms (食べない, 食べた…) attached to the word are tappable too
       if (Array.isArray(w.related)) for (const f of w.related) {
