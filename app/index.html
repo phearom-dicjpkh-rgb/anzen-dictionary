@@ -587,6 +587,14 @@ figcaption {
 .ew-dlg .ew-bx:focus-within{background:var(--color-bg)}
 .ew-dlg .ew-ex .ew-bx{background:var(--color-bg)}
 .ew-dlg .ew-chip,.ew-dlg .ew-sb,.ew-dlg .ew-rb{background:var(--color-bg)}
+.ew-mods,.ew-mem{margin-top:8px}
+.ew-chip.mod{border-style:dashed;font-size:12.5px;padding:5px 12px}
+.ew-chip.mod.on{background:#0f766e;border-color:#0f766e;border-style:solid;color:#fff;font-weight:700}
+.ew-chip.sav,.ew-dlg .ew-chip.sav{display:inline-flex;align-items:center;padding:0;background:color-mix(in srgb,#8b5cf6 16%,var(--color-surface));border-color:color-mix(in srgb,#8b5cf6 45%,var(--color-divider))}
+.ew-chip.sav button{all:unset;cursor:pointer;color:inherit;font-size:13px;font-weight:600;padding:6px 4px 6px 13px}
+.ew-chip.sav button.ew-sx{padding:6px 11px 6px 4px;font-size:11.5px;font-weight:400;opacity:.55}
+.ew-chip.sav.on,.ew-dlg .ew-chip.sav.on{background:#6d28d9;border-color:#6d28d9;color:#fff}
+.ew-svbtn{border:0;border-left:1.5px solid var(--color-divider);background:color-mix(in srgb,#8b5cf6 16%,var(--color-surface));color:var(--color-text);padding:0 12px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
 .ew-dlg .ew-read{background:color-mix(in srgb, var(--color-accent) 5%, var(--color-bg))}
 /* — forms — */
 .field > label {
@@ -2567,9 +2575,11 @@ textarea.input { min-height: 90px; resize: vertical; }
                 </div>
                 <div class="ew-f"><label>ផ្នែកខាងមុខ <i>(ជ្រើស ឬ វាយខ្លួនឯង)</i></label>
                   <div class="ew-chips" style="margin-bottom:8px;"><sc-for list="{{ ru.pal }}" as="pc" hint-placeholder-count="4"><button class="ew-chip {{ pc.cls }}" sc-camel-on-click="{{ pc.onPick }}">{{ pc.label }}</button></sc-for></div>
-                  <div class="ew-bx"><i class="ew-lg jp">JP</i><input type="text" value="{{ ru.pre }}" sc-camel-on-change="{{ ru.onPre }}" placeholder="ឧ. 名詞 / 動詞 て形／で形"></div></div>
+                  <sc-if value="{{ ru.hasMods }}"><div class="ew-chips ew-mods"><sc-for list="{{ ru.mods }}" as="md" hint-placeholder-count="4"><button class="ew-chip mod {{ md.cls }}" sc-camel-on-click="{{ md.onPick }}">{{ md.label }}</button></sc-for></div></sc-if>
+                  <sc-if value="{{ ru.hasMemPre }}"><div class="ew-chips ew-mem"><sc-for list="{{ ru.memPre }}" as="mc" hint-placeholder-count="3"><span class="ew-chip sav {{ mc.cls }}"><button class="ew-sv" sc-camel-on-click="{{ mc.onPick }}">{{ mc.label }}</button><button class="ew-sx" title="លុបចេញពីអង្គចាំ" sc-camel-on-click="{{ mc.onDrop }}">✕</button></span></sc-for></div></sc-if>
+                  <div class="ew-bx"><i class="ew-lg jp">JP</i><input type="text" value="{{ ru.pre }}" sc-camel-on-change="{{ ru.onPre }}" placeholder="ឧ. 名詞 / 動詞 て形／で形"><sc-if value="{{ ru.canSavePre }}"><button class="ew-svbtn" sc-camel-on-click="{{ ru.onSavePre }}">＋ ចាំទុក</button></sc-if></div></div>
                 <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                  <div class="ew-f" style="flex:1 1 170px;"><label>ផ្នែកក្រោយ (វេយ្យាករណ៍)</label><div class="ew-bx"><i class="ew-lg jp">JP</i><input type="text" value="{{ ru.post }}" sc-camel-on-change="{{ ru.onPost }}"></div></div>
+                  <div class="ew-f" style="flex:1 1 170px;"><label>ផ្នែកក្រោយ (វេយ្យាករណ៍)</label><div class="ew-bx"><i class="ew-lg jp">JP</i><input type="text" value="{{ ru.post }}" sc-camel-on-change="{{ ru.onPost }}"><sc-if value="{{ ru.canSavePost }}"><button class="ew-svbtn" sc-camel-on-click="{{ ru.onSavePost }}">＋ ចាំទុក</button></sc-if></div><sc-if value="{{ ru.hasMemPost }}"><div class="ew-chips ew-mem" style="margin-top:7px;"><sc-for list="{{ ru.memPost }}" as="mc" hint-placeholder-count="3"><span class="ew-chip sav {{ mc.cls }}"><button class="ew-sv" sc-camel-on-click="{{ mc.onPick }}">{{ mc.label }}</button><button class="ew-sx" title="លុបចេញពីអង្គចាំ" sc-camel-on-click="{{ mc.onDrop }}">✕</button></span></sc-for></div></sc-if></div>
                   <div class="ew-f" style="flex:2 1 220px;"><label>អត្ថន័យនៃការផ្សំ</label><div class="ew-bx"><i class="ew-lg km">ខ្មែរ</i><input type="text" value="{{ ru.km }}" sc-camel-on-change="{{ ru.onKm }}" placeholder="ឧ. ប្រែក្លាយទៅជានាម"></div></div>
                 </div>
                 <button class="ew-sb" style="align-self:flex-start;" sc-camel-on-click="{{ ru.onToggleEx }}">{{ ru.exLabel }}</button>
@@ -4360,9 +4370,11 @@ textarea.input { min-height: 90px; resize: vertical; }
                 </div>
                 <div class="ew-f"><label>ផ្នែកខាងមុខ <i>(ជ្រើស ឬ វាយខ្លួនឯង)</i></label>
                   <div class="ew-chips" style="margin-bottom:8px;"><sc-for list="{{ ru.pal }}" as="pc" hint-placeholder-count="4"><button class="ew-chip {{ pc.cls }}" sc-camel-on-click="{{ pc.onPick }}">{{ pc.label }}</button></sc-for></div>
-                  <div class="ew-bx"><i class="ew-lg jp">JP</i><input type="text" value="{{ ru.pre }}" sc-camel-on-change="{{ ru.onPre }}" placeholder="ឧ. 名詞 / 動詞 て形／で形"></div></div>
+                  <sc-if value="{{ ru.hasMods }}"><div class="ew-chips ew-mods"><sc-for list="{{ ru.mods }}" as="md" hint-placeholder-count="4"><button class="ew-chip mod {{ md.cls }}" sc-camel-on-click="{{ md.onPick }}">{{ md.label }}</button></sc-for></div></sc-if>
+                  <sc-if value="{{ ru.hasMemPre }}"><div class="ew-chips ew-mem"><sc-for list="{{ ru.memPre }}" as="mc" hint-placeholder-count="3"><span class="ew-chip sav {{ mc.cls }}"><button class="ew-sv" sc-camel-on-click="{{ mc.onPick }}">{{ mc.label }}</button><button class="ew-sx" title="លុបចេញពីអង្គចាំ" sc-camel-on-click="{{ mc.onDrop }}">✕</button></span></sc-for></div></sc-if>
+                  <div class="ew-bx"><i class="ew-lg jp">JP</i><input type="text" value="{{ ru.pre }}" sc-camel-on-change="{{ ru.onPre }}" placeholder="ឧ. 名詞 / 動詞 て形／で形"><sc-if value="{{ ru.canSavePre }}"><button class="ew-svbtn" sc-camel-on-click="{{ ru.onSavePre }}">＋ ចាំទុក</button></sc-if></div></div>
                 <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                  <div class="ew-f" style="flex:1 1 170px;"><label>ផ្នែកក្រោយ (វេយ្យាករណ៍)</label><div class="ew-bx"><i class="ew-lg jp">JP</i><input type="text" value="{{ ru.post }}" sc-camel-on-change="{{ ru.onPost }}"></div></div>
+                  <div class="ew-f" style="flex:1 1 170px;"><label>ផ្នែកក្រោយ (វេយ្យាករណ៍)</label><div class="ew-bx"><i class="ew-lg jp">JP</i><input type="text" value="{{ ru.post }}" sc-camel-on-change="{{ ru.onPost }}"><sc-if value="{{ ru.canSavePost }}"><button class="ew-svbtn" sc-camel-on-click="{{ ru.onSavePost }}">＋ ចាំទុក</button></sc-if></div><sc-if value="{{ ru.hasMemPost }}"><div class="ew-chips ew-mem" style="margin-top:7px;"><sc-for list="{{ ru.memPost }}" as="mc" hint-placeholder-count="3"><span class="ew-chip sav {{ mc.cls }}"><button class="ew-sv" sc-camel-on-click="{{ mc.onPick }}">{{ mc.label }}</button><button class="ew-sx" title="លុបចេញពីអង្គចាំ" sc-camel-on-click="{{ mc.onDrop }}">✕</button></span></sc-for></div></sc-if></div>
                   <div class="ew-f" style="flex:2 1 220px;"><label>អត្ថន័យនៃការផ្សំ</label><div class="ew-bx"><i class="ew-lg km">ខ្មែរ</i><input type="text" value="{{ ru.km }}" sc-camel-on-change="{{ ru.onKm }}" placeholder="ឧ. ប្រែក្លាយទៅជានាម"></div></div>
                 </div>
                 <button class="ew-sb" style="align-self:flex-start;" sc-camel-on-click="{{ ru.onToggleEx }}">{{ ru.exLabel }}</button>
@@ -9764,6 +9776,12 @@ function zodiacFromYear(y){
   return ['🐵','🐔','🐶','🐷','🐭','🐮','🐯','🐰','🐲','🐍','🐴','🐐'][((y % 12) + 12) % 12];
 }
 // "ក្បួនផ្សំ" of a grammar point: [{ pre: 名詞 / 動詞 て形, post: になります, km: meaning of the combination, ex: { jp, km } | null }]
+// the formula's front part: base forms, plus the variations a ます形 can take (see the rule editor)
+const RULE_PRE_BASE = ['名詞', '動詞 辞書形', '動詞 ます形', '動詞 て形／で形', '動詞 ない形', '動詞 た形', '動詞 普通形', 'い形容詞', 'な形容詞', '文 (普通形)'];
+const RULE_MODS = [
+  { label: 'ដូចដើម', suf: '' }, { label: '＋ ません', suf: ' ＋ ません' }, { label: '＋ ました', suf: ' ＋ ました' }, { label: '＋ ませんでした', suf: ' ＋ ませんでした' },
+  { label: 'ដក ます (語幹)', suf: ' (ます削除)' }, { label: 'ដក ます ＋ たい', suf: ' (ます削除) ＋ たい' }, { label: 'ដក ます ＋ ながら', suf: ' (ます削除) ＋ ながら' },
+];
 function normalizeRules(arr){
   return (Array.isArray(arr) ? arr : []).filter(Boolean).map(x => ({
     pre: String(x.pre || '').trim(), post: String(x.post || '').trim(), km: String(x.km || '').trim(),
@@ -13588,6 +13606,30 @@ class Component extends DCLogic {
     const key = this._rk(k), ex = (this.state[key][i] || {}).ex; if (!ex || !(ex.jp || '').trim()) return;
     const km = await mmTranslate(ex.jp);
     if (km) this.setRuleEx(k, i, 'km', km); else this.showToast('បកប្រែស្វ័យមិនបាន — សូមវាយដោយដៃ');
+  }
+  // remembered front / back parts of the formulas (this device); forms already used in saved grammar points are offered too
+  _ruleMemGet(){
+    if (!this._ruleMem) {
+      let m = null; try { m = JSON.parse(localStorage.getItem('dict_rule_mem') || 'null'); } catch(e){}
+      const arr = v => Array.isArray(v) ? v.filter(x => typeof x === 'string' && x.trim()) : [];
+      this._ruleMem = { pre: arr(m && m.pre), post: arr(m && m.post), hidPre: arr(m && m.hidPre), hidPost: arr(m && m.hidPost) };
+    }
+    return this._ruleMem;
+  }
+  _ruleMemSet(m){
+    this._ruleMem = m; try { localStorage.setItem('dict_rule_mem', JSON.stringify(m)); } catch(e){}
+    this.setState(s => ({ ruleMemV: (s.ruleMemV || 0) + 1 }));
+  }
+  saveRuleMem(k, i, kind){
+    const x = (this.state[this._rk(k)] || [])[i]; const v = ((x && x[kind]) || '').trim(); if (!v) return;
+    if (kind === 'pre' && RULE_PRE_BASE.includes(v)) return;
+    const m = this._ruleMemGet(), hid = kind === 'pre' ? 'hidPre' : 'hidPost';
+    this._ruleMemSet({ ...m, [kind]: [v, ...m[kind].filter(y => y !== v)].slice(0, 60), [hid]: m[hid].filter(y => y !== v) });
+    this.showToast('បានចាំទុក ✓');
+  }
+  dropRuleMem(kind, v){
+    const m = this._ruleMemGet(), hid = kind === 'pre' ? 'hidPre' : 'hidPost';
+    this._ruleMemSet({ ...m, [kind]: m[kind].filter(y => y !== v), [hid]: [...m[hid].filter(y => y !== v), v] });
   }
   _rulesOut(list){ return normalizeRules((list || []).map(x => ({ pre: x.pre, post: x.post, km: x.km, ex: x.ex }))); }
   genRelatedMore(){
@@ -17610,16 +17652,33 @@ class Component extends DCLogic {
     };
     const shareBrandItems = nameItems('brand'), shareFootItems = nameItems('foot');
     const brandCur = (s.shareBrand || '').trim(), footCur = (s.shareFoot || '').trim();
-    const RULE_PRE = ['名詞', '動詞 辞書形', '動詞 ます形', '動詞 て形／で形', '動詞 ない形', '動詞 た形', '動詞 普通形', 'い形容詞', 'な形容詞', '文 (普通形)'];
-    const ruleItems = (k, list) => (list || []).map((x, i) => ({
-      n: i + 1, pre: x.pre || '', post: x.post || '', km: x.km || '', hasPre: !!(x.pre || '').trim(), hasKm: !!(x.km || '').trim(), postShow: (x.post || '').trim() || '…',
-      pal: RULE_PRE.map(label => ({ label, cls: (x.pre || '').trim() === label ? 'on' : '', onPick: () => this.setRule(k, i, 'pre', (x.pre || '').trim() === label ? '' : label) })),
+    const RULE_PRE = RULE_PRE_BASE;
+    const ruleMem = this._ruleMemGet(), ruleAuto = { pre: [], post: [] };
+    for (const w of WORDS) if (w.rules && w.rules.length) for (const ru of w.rules) { if (ru.pre && !ruleAuto.pre.includes(ru.pre)) ruleAuto.pre.push(ru.pre); if (ru.post && !ruleAuto.post.includes(ru.post)) ruleAuto.post.push(ru.post); }
+    const memPreAll = [...ruleMem.pre, ...ruleAuto.pre].filter((v, i, a) => a.indexOf(v) === i && !RULE_PRE.includes(v) && !ruleMem.hidPre.includes(v));
+    const memPostAll = [...ruleMem.post, ...ruleAuto.post].filter((v, i, a) => a.indexOf(v) === i && !ruleMem.hidPost.includes(v));
+    const modsSorted = RULE_MODS.filter(m => m.suf).sort((a, b) => b.suf.length - a.suf.length);
+    const ruleItems = (k, list) => (list || []).map((x, i) => {
+      const preT = (x.pre || '').trim(), postT = (x.post || '').trim();
+      const curMod = modsSorted.find(m => preT.endsWith(m.suf)), base = curMod ? preT.slice(0, -curMod.suf.length) : preT;
+      const showMods = /ます形/.test(base);
+      return {
+      n: i + 1, pre: x.pre || '', post: x.post || '', km: x.km || '', hasPre: !!preT, hasKm: !!(x.km || '').trim(), postShow: postT || '…',
+      pal: RULE_PRE.map(label => ({ label, cls: preT === label ? 'on' : '', onPick: () => this.setRule(k, i, 'pre', preT === label ? '' : label) })),
+      hasMods: showMods,
+      mods: showMods ? RULE_MODS.map(m => ({ label: m.label, cls: (m.suf ? (curMod && curMod.suf === m.suf) : !curMod) ? 'on' : '', onPick: () => this.setRule(k, i, 'pre', base + m.suf) })) : [],
+      hasMemPre: memPreAll.length > 0,
+      memPre: memPreAll.map(label => ({ label, cls: preT === label ? 'on' : '', onPick: () => this.setRule(k, i, 'pre', preT === label ? '' : label), onDrop: () => this.dropRuleMem('pre', label) })),
+      hasMemPost: memPostAll.length > 0,
+      memPost: memPostAll.map(label => ({ label, cls: postT === label ? 'on' : '', onPick: () => this.setRule(k, i, 'post', postT === label ? '' : label), onDrop: () => this.dropRuleMem('post', label) })),
+      canSavePre: !!preT && !RULE_PRE.includes(preT) && !memPreAll.includes(preT), onSavePre: () => this.saveRuleMem(k, i, 'pre'),
+      canSavePost: !!postT && !memPostAll.includes(postT), onSavePost: () => this.saveRuleMem(k, i, 'post'),
       onPre: e => this.setRule(k, i, 'pre', e.target.value), onPost: e => this.setRule(k, i, 'post', e.target.value), onKm: e => this.setRule(k, i, 'km', e.target.value),
       onRemove: () => this.removeRule(k, i),
       exOpen: !!x.exOpen, exJp: (x.ex && x.ex.jp) || '', exKm: (x.ex && x.ex.km) || '', exLabel: x.exOpen ? '▾ លាក់ឧទាហរណ៍' : (x.ex && x.ex.jp ? '▸ ឧទាហរណ៍ (មាន)' : '＋ ឧទាហរណ៍ក្នុងក្បួន'),
       onToggleEx: () => this.toggleRuleEx(k, i), onExJp: e => this.setRuleEx(k, i, 'jp', e.target.value), onExKm: e => this.setRuleEx(k, i, 'km', e.target.value),
       onTranslate: () => this.translateRuleEx(k, i),
-    }));
+    }; });
     const awRuleItems = ruleItems('aw', s.awRules), edRuleItems = ruleItems('ed', s.edRules);
     const editedW = s.editWordId ? WORDS.find(w => w.id === s.editWordId) : null;
     const detailRuleItems = ((s.detailWordId && WORDS.find(w => w.id === s.detailWordId)) || { rules: [] }).rules.map(x => ({
