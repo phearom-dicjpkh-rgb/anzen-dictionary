@@ -14691,6 +14691,7 @@ class Component extends DCLogic {
   _buildReadView(book, root){
     const bmeta = this._parseBookMeta((book && book.content) || '');
     const html = this._sanitizeBookHtml(bmeta.html);
+    this._ensureBookFonts(false, html);
     const pre = document.createElement('div'); pre.innerHTML = html;
     pre.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.setAttribute('src', s); });
     const finalHtml = pre.innerHTML;
@@ -15414,6 +15415,14 @@ class Component extends DCLogic {
   // keep the editor's selection alive across toolbar clicks (esp. dropdowns,
   // which steal focus) so a format command still lands on the chosen text
   _edCurPage(){ return (this._edPages && this._edPages[this._edCur]) || null; }
+  // the Google Fonts a book can use (Khmer / Japanese); loaded once, on demand — when the editor opens or a book uses one
+  _ensureBookFonts(force, html){
+    if (document.getElementById('book-gfonts')) return;
+    if (!force && !/Kantumruy|Battambang|Moul|Noto Sans JP|Noto Serif JP/.test(html || '')) return;
+    const l = document.createElement('link'); l.id = 'book-gfonts'; l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&family=Kantumruy+Pro:wght@400;700&family=Moul&family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP:wght@400;700&display=swap';
+    document.head.appendChild(l);
+  }
   _saveLibSel(){ try { const s = window.getSelection(); if (!s.rangeCount) return; const r = s.getRangeAt(0); const ed = this._edCurPage(); if (ed && ed.contains(r.commonAncestorContainer)) this._libRange = r.cloneRange(); } catch(e){} }
   _restoreLibSel(){ try { const ed = this._edCurPage(); if (ed) ed.focus(); if (!this._libRange) return; const s = window.getSelection(); s.removeAllRanges(); s.addRange(this._libRange); } catch(e){} }
   // set an exact pixel font size on the selection (execCommand only knows 1–7)
@@ -15443,6 +15452,7 @@ class Component extends DCLogic {
       if (after) sel.insertBefore(opt, after); else sel.appendChild(opt);
     }
     sel.value = String(px);
+    const fs2 = this._edFontSel; if (fs2) { const fam = (node.closest('[style*="font-family"]') && ed.contains(node.closest('[style*="font-family"]'))) ? getComputedStyle(node).fontFamily : ''; const first = fam.split(',')[0].replace(/["']/g, '').trim(); const opt = [...fs2.options].find(o => o.value && o.value.split(',')[0].replace(/["']/g, '').trim() === first); fs2.value = opt ? opt.value : ''; }
   }
   // set line spacing on the selected paragraphs (or the whole sheet if nothing is
   // selected). It writes an inline line-height, which is kept in the saved HTML so
@@ -15812,6 +15822,19 @@ class Component extends DCLogic {
         '.ewd-st .z{margin-left:auto;display:flex;align-items:center;gap:6px}',
         '.ewd-st button{border:none;background:transparent;color:#323130;font:inherit;font-size:14px;width:22px;height:22px;border-radius:4px;cursor:pointer;padding:0}.ewd-st button:hover{background:#e1dfdd}',
         '.ewd-st input[type=range]{width:110px;accent-color:#2b579a}',
+        '.ewd-sm.on,.ewd-b.on2{background:#c7dcf3;box-shadow:inset 0 0 0 1px #9cbce3}',
+        '.ewd-galin{width:312px;height:64px;display:flex;flex-wrap:wrap;overflow:hidden;scroll-behavior:smooth}',
+        '.ewd-galbtn{width:16px;border-left:1px solid #c8c6c4;display:flex;flex-direction:column}',
+        '.ewd-galbtn button{flex:1;border:none;border-bottom:1px solid #e1dfdd;background:#fff;color:#605e5c;font-size:8px;cursor:pointer;padding:0}.ewd-galbtn button:last-child{border-bottom:none}.ewd-galbtn button:hover{background:#f3f2f1}',
+        '.ewd-sty{height:64px}',
+        '.ewd-menu .sty-row{justify-content:space-between}.ewd-menu .sty-row small{color:#605e5c;font-size:11px}',
+        '.ewd-find{position:absolute;right:14px;z-index:20;width:300px;max-width:calc(100% - 28px);background:#fff;border:1px solid #c8c6c4;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:10px;display:flex;flex-direction:column;gap:8px;font-size:12.5px}',
+        '.ewd-find .r{display:flex;gap:6px;align-items:center}.ewd-find input{flex:1;min-width:0;height:30px;border:1px solid #8a8886;border-radius:4px;padding:0 8px;font:inherit;font-size:13px}',
+        '.ewd-find button{height:30px;border:1px solid #c8c6c4;background:#fff;border-radius:4px;font:inherit;font-size:12px;padding:0 10px;cursor:pointer;color:#323130}.ewd-find button:hover{background:#f3f2f1}.ewd-find button.pri{background:#2b579a;border-color:#2b579a;color:#fff}',
+        '.ewd-find .h{display:flex;align-items:center;justify-content:space-between;font-weight:700}.ewd-find .cnt{min-width:46px;text-align:center;color:#605e5c}',
+        '::highlight(ewd-find){background:#ffe58a}::highlight(ewd-cur){background:#ff9f43;color:#000}',
+        '.ewd-pil .lib-epage p::after,.ewd-pil .lib-epage h1::after,.ewd-pil .lib-epage h2::after,.ewd-pil .lib-epage h3::after,.ewd-pil .lib-epage li::after,.ewd-pil .lib-epage blockquote::after{content:"¶";color:#7aa7e0;margin-left:3px;font-weight:400;font-style:normal}',
+        '.ewd-pil .lib-epage br{content:""}',
       ].join('\n');
       document.head.appendChild(st);
     }
@@ -15843,6 +15866,10 @@ class Component extends DCLogic {
       lsp: 'M11 6h10M11 12h10M11 18h10M5 4v16M2 7l3-3 3 3M2 17l3 3 3-3', pen: 'M15 5l4 4L8 20H4v-4zM13 7l4 4', fontc: 'M5 17L10 4h2l5 13M7 12h8',
       selall: 'M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4M8 9h8M8 12h8M8 15h5', fit: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
       x: 'M6 6l12 12M18 6L6 18', mn: 'M3 12h18',
+      fp: 'M4 3h12v5H4zM16 5h3v6h-8v3M10 14h2v7h-2z', mlist: 'M9 5h12M12 12h9M15 19h6M4 5h.01M7 12h.01M10 19h.01',
+      sort: 'M7 4v16M3 16l4 4 4-4M14 6h7M14 11h5M14 16h3', pil: 'M10 20V4M14 20V4M16 4H9a4 4 0 0 0 0 8h1',
+      shade: 'M5 12l6-6 6 6-6 6zM11 6L8 3M19 13c0 1.5 1 2.2 1 3.2a1 1 0 0 1-2 0c0-1 1-1.7 1-3.2z', border: 'M4 4h16v16H4zM4 12h16M12 4v16',
+      find: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5', repl: 'M4 7h11l-3-3M15 7l-3 3M20 17H9l3 3M9 17l3-3',
     };
     const svg = (k, s) => '<svg width="' + (s || 18) + '" height="' + (s || 18) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
       + IC[k].split('M').filter(Boolean).map(d => '<path d="M' + d + '"/>').join('') + '</svg>';
@@ -15890,6 +15917,41 @@ class Component extends DCLogic {
       if (noneLabel) { const b = document.createElement('button'); b.type = 'button'; b.className = 'wide'; b.textContent = noneLabel; keep(b); b.addEventListener('click', () => { closePops(); apply(null); }); pop.appendChild(b); }
       popUnder(anchor, pop);
     };
+    const menuUnder = (anchor, items) => {
+      const m = document.createElement('div'); m.className = 'ewd-menu';
+      items.forEach(([lbl, fn, extra]) => { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = lbl; if (extra) b.className = extra; keep(b); b.addEventListener('click', () => { closePops(); fn(); }); m.appendChild(b); });
+      popUnder(anchor, m);
+    };
+    const toast = m => { try { this.showToast(m); } catch(e){} };
+    const touched = () => { this._edDirty = true; this._edScheduleReflow(this._edCur); };
+    // top-level blocks of the sheet touched by the selection (or the one holding the caret)
+    const selBlocks = () => {
+      const p = this._edCurPage(); if (!p) return [];
+      this._restoreLibSel(); const s = window.getSelection(); if (!s || !s.rangeCount) return [];
+      const rg = s.getRangeAt(0); if (!p.contains(rg.commonAncestorContainer)) return [];
+      if (rg.collapsed) { let n = rg.startContainer; while (n && n.parentNode !== p) n = n.parentNode; return n && n.nodeType === 1 ? [n] : []; }
+      return [...p.children].filter(el => { try { return rg.intersectsNode(el); } catch(e) { return false; } });
+    };
+    // the list (ol/ul) holding the caret, if any
+    const selList = () => { const s = window.getSelection(); let n = s && s.rangeCount ? s.getRangeAt(0).startContainer : null; if (n && n.nodeType === 3) n = n.parentElement; const p = this._edCurPage(); const l = n && n.closest ? n.closest('ol,ul') : null; return l && p && p.contains(l) ? l : null; };
+    // rewrite the selected characters in place (same length, so the selection stays put)
+    const mapSelText = fn => {
+      const p = this._edCurPage(); if (!p) return;
+      this._restoreLibSel(); const s = window.getSelection();
+      if (!s || !s.rangeCount || s.isCollapsed) { toast('សូមជ្រើសអក្សរជាមុនសិន'); return; }
+      const rg = s.getRangeAt(0); const root = rg.commonAncestorContainer;
+      const nodes = []; if (root.nodeType === 3) nodes.push(root);
+      else { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { try { if (rg.intersectsNode(n)) nodes.push(n); } catch(e){} } }
+      nodes.forEach(n => {
+        const a = n === rg.startContainer ? rg.startOffset : 0, b = n === rg.endContainer ? rg.endOffset : n.nodeValue.length;
+        const mid = n.nodeValue.slice(a, b), out = fn(mid);
+        if (out !== mid && out.length === mid.length) n.nodeValue = n.nodeValue.slice(0, a) + out + n.nodeValue.slice(b);
+      });
+      touched();
+    };
+    // fonts: the app's own + a few Google Fonts (Khmer / Japanese) that load on first use
+    const FONTS = [['', 'លំនាំដើម'], ['"Kantumruy Pro", sans-serif', 'Kantumruy Pro'], ['Battambang, serif', 'Battambang'], ['Moul, serif', 'Moul'], ['"Noto Sans JP", sans-serif', 'Noto Sans JP'], ['"Noto Serif JP", serif', 'Noto Serif JP'], ['Lora, serif', 'Lora'], ['"Cormorant Garamond", serif', 'Cormorant Garamond'], ['monospace', 'Monospace']];
+    this._ensureBookFonts(true);
     const SIZES = [10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 64];
     const FONT_COLORS = ['#201f1d', '#6b7280', '#c0342c', '#ea580c', '#b6810f', '#2f8f57', '#1558b0', '#2b579a', '#7c3aed', '#ffffff'];
     const HL_COLORS = ['#fff176', '#c5f0a4', '#a6e3ff', '#ffc4dd', '#ffd8a8', '#e0d4ff', '#d9d9d9', '#ffeb3b', '#7ee081', '#64d2ff'];
@@ -15905,6 +15967,31 @@ class Component extends DCLogic {
     const sClip = stack(gClip);
     sm(sClip, 'cut', 'កាត់', () => exec('cut'), true);
     sm(sClip, 'copy', 'ចម្លង', () => { const p = this._edCurPage(); if (p) p.focus(); document.execCommand('copy'); }, true);
+    // format painter: take the look of the text at the caret, then brush it onto the next selection
+    let fmt = null;
+    const fpB = sm(sClip, 'fp', 'ចម្លងទម្រង់', () => {
+      if (fmt) { fmt = null; fpB.classList.remove('on'); return; }
+      const p = this._edCurPage(); const s = window.getSelection();
+      let n = s && s.rangeCount ? s.getRangeAt(0).startContainer : null; if (n && n.nodeType === 3) n = n.parentElement;
+      if (!p || !n || !p.contains(n)) { toast('សូមដាក់ cursor លើអក្សរដែលមានទម្រង់ចង់ចម្លង'); return; }
+      const cs = getComputedStyle(n); let deco = '', bg = '';
+      for (let e = n; e && e !== p; e = e.parentElement) { const c = getComputedStyle(e); deco += ' ' + c.textDecorationLine; if (!bg && c.backgroundColor && !/rgba\(0, 0, 0, 0\)|transparent/.test(c.backgroundColor)) bg = c.backgroundColor; }
+      fmt = { bold: parseInt(cs.fontWeight, 10) >= 600, italic: cs.fontStyle === 'italic', underline: /underline/.test(deco), strikeThrough: /line-through/.test(deco),
+        color: cs.color, bg, size: Math.round(parseFloat(cs.fontSize)) || 16, fam: cs.fontFamily !== getComputedStyle(p).fontFamily ? cs.fontFamily : '' };
+      fpB.classList.add('on'); toast('ឥឡូវជ្រើសអក្សរដែលចង់ដាក់ទម្រង់នេះ');
+    }, true);
+    const brush = () => {
+      if (!fmt) return; const s = window.getSelection(); const p = this._edCurPage();
+      if (!s || !s.rangeCount || s.isCollapsed || !p || !p.contains(s.anchorNode)) return;
+      const f2 = fmt; fmt = null; fpB.classList.remove('on');
+      this._saveLibSel(); document.execCommand('removeFormat');
+      ['bold', 'italic', 'underline', 'strikeThrough'].forEach(c => { if (!!f2[c] !== document.queryCommandState(c)) document.execCommand(c); });
+      document.execCommand('foreColor', false, f2.color);
+      if (f2.bg) document.execCommand('hiliteColor', false, f2.bg);
+      if (f2.fam) document.execCommand('fontName', false, f2.fam);
+      this._saveLibSel(); this._setFontSize(f2.size); touched();
+    };
+    setTimeout(() => { const st = this._edStage; if (!st) return; st.addEventListener('mouseup', () => setTimeout(brush, 0)); st.addEventListener('touchend', () => setTimeout(brush, 350)); }, 0);   // the stage is built further down
     // font
     const gFont = group(pHome, 'ពុម្ពអក្សរ'); const fr = rows(gFont);
     const fr1 = row(fr), fr2 = row(fr);
@@ -15913,10 +16000,25 @@ class Component extends DCLogic {
     sizeSel.addEventListener('mousedown', () => this._saveLibSel());
     sizeSel.addEventListener('change', () => { this._setFontSize(sizeSel.value); this._edScheduleReflow(this._edCur); });
     this._edSizeSel = sizeSel;   // kept so the caret can drive it to the real size
+    const fontSel = document.createElement('select'); fontSel.className = 'ewd-sel'; fontSel.title = 'ពុម្ពអក្សរ'; fontSel.style.width = '124px';
+    FONTS.forEach(([v, l]) => { const o = document.createElement('option'); o.value = v; o.textContent = l; if (v) o.style.fontFamily = v; fontSel.appendChild(o); });
+    fontSel.addEventListener('mousedown', () => this._saveLibSel());
+    fontSel.addEventListener('change', () => { this._restoreLibSel(); if (fontSel.value) exec('fontName', fontSel.value); else { const p = this._edCurPage(); this._restoreLibSel(); const s = window.getSelection(); if (p && s && s.rangeCount) { const rg = s.getRangeAt(0); p.querySelectorAll('[style*="font-family"]').forEach(el => { try { if (rg.intersectsNode(el)) el.style.fontFamily = ''; } catch(e){} }); touched(); } } });
+    this._edFontSel = fontSel;
+    fr1.appendChild(fontSel);
     fr1.appendChild(sizeSel);
     const stepSize = dir => { const cur = parseInt(sizeSel.value, 10) || 16; const nx = dir > 0 ? (SIZES.find(s => s > cur) || cur) : ([...SIZES].reverse().find(s => s < cur) || cur); this._setFontSize(nx); sizeSel.value = String(nx); this._edSyncFontSize(); this._edScheduleReflow(this._edCur); };
     btn(fr1, 'grow', 'ពង្រីកអក្សរ', () => { this._saveLibSel(); stepSize(1); });
     btn(fr1, 'shrink', 'បង្រួមអក្សរ', () => { this._saveLibSel(); stepSize(-1); });
+    sep(fr1);
+    const caseB = btn(fr1, '<span style="font-size:13px">Aa</span>', 'ប្ដូរទម្រង់អក្សរ', () => menuUnder(caseB, [
+      ['អក្សរធំដើមប្រយោគ', () => mapSelText(t => t.toLowerCase().replace(/^\s*\S/, c => c.toUpperCase()))],
+      ['អក្សរតូចទាំងអស់', () => mapSelText(t => t.toLowerCase())],
+      ['អក្សរធំទាំងអស់', () => mapSelText(t => t.toUpperCase())],
+      ['អក្សរធំដើមពាក្យ', () => mapSelText(t => t.toLowerCase().replace(/(^|[\s(（「])(\S)/g, (m, a, b) => a + b.toUpperCase()))],
+      ['ひらがな → カタカナ', () => mapSelText(t => t.replace(/[\u3041-\u3096]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60)))],
+      ['カタカナ → ひらがな', () => mapSelText(t => t.replace(/[\u30a1-\u30f6]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60)))],
+    ]), 'ewd-dd'); caseB.dataset.pop = '1';
     sep(fr1);
     btn(fr1, 'clear', 'លុបទម្រង់អក្សរ', () => exec('removeFormat'));
     btn(fr2, 'bold', 'ដិត', () => exec('bold'));
@@ -15940,9 +16042,30 @@ class Component extends DCLogic {
     const pr1 = row(pr), pr2 = row(pr);
     btn(pr1, 'list', 'បញ្ជីចំណុច', () => exec('insertUnorderedList'));
     btn(pr1, 'olist', 'បញ្ជីលេខ', () => exec('insertOrderedList'));
+    const setListStyle = (type, ordered) => {
+      let l = selList(); if (!l) { exec(ordered ? 'insertOrderedList' : 'insertUnorderedList'); l = selList(); }
+      if (l) { l.style.listStyleType = type; touched(); }
+    };
+    const mlB = btn(pr1, 'mlist', 'ស្តាយបញ្ជី (ច្រើនកម្រិត)', () => menuUnder(mlB, [
+      ['1. 2. 3.', () => setListStyle('decimal', true)], ['១. ២. ៣.', () => setListStyle('khmer', true)], ['a. b. c.', () => setListStyle('lower-alpha', true)],
+      ['A. B. C.', () => setListStyle('upper-alpha', true)], ['i. ii. iii.', () => setListStyle('lower-roman', true)], ['あ. い. う.', () => setListStyle('hiragana', true)],
+      ['• ចំណុចមូល', () => setListStyle('disc', false)], ['◦ រង្វង់', () => setListStyle('circle', false)], ['▪ ការ៉េ', () => setListStyle('square', false)],
+      ['<span style="color:#605e5c">ចុច «បង្កើនការចូលបន្ទាត់» ដើម្បីបង្កើតកម្រិតរង</span>', () => {}],
+    ]), 'ewd-dd'); mlB.dataset.pop = '1';
     sep(pr1);
     btn(pr1, 'outd', 'បន្ថយការចូលបន្ទាត់', () => exec('outdent'));
     btn(pr1, 'ind', 'បង្កើនការចូលបន្ទាត់', () => exec('indent'));
+    sep(pr1);
+    const sortBlocks = dir => {
+      const l = selList(); let items = l ? [...l.children].filter(n => n.tagName === 'LI') : selBlocks();
+      if (items.length < 2) { toast('សូមជ្រើសកថាខណ្ឌ ឬបញ្ជីច្រើនជួរ ដើម្បីតម្រៀប'); return; }
+      const parent = items[0].parentNode, anchor = items[items.length - 1].nextSibling;
+      const sorted = [...items].sort((a, b) => dir * (a.textContent || '').trim().localeCompare((b.textContent || '').trim(), ['ja', 'km'], { numeric: true }));
+      sorted.forEach(n => parent.insertBefore(n, anchor)); touched();
+    };
+    const sortB = btn(pr1, 'sort', 'តម្រៀប', () => menuUnder(sortB, [['A → Z · ក → អ · あ → ん', () => sortBlocks(1)], ['Z → A · អ → ក · ん → あ', () => sortBlocks(-1)]])); sortB.dataset.pop = '1';
+    sep(pr1);
+    const pilB = btn(pr1, 'pil', 'បង្ហាញ/លាក់ សញ្ញា ¶', () => { const on = !this._edStage.classList.contains('ewd-pil'); this._edStage.classList.toggle('ewd-pil', on); pilB.classList.toggle('on2', on); });
     btn(pr2, 'al', 'តម្រឹមឆ្វេង', () => exec('justifyLeft'));
     btn(pr2, 'ac', 'តម្រឹមកណ្ដាល', () => exec('justifyCenter'));
     btn(pr2, 'ar', 'តម្រឹមស្ដាំ', () => exec('justifyRight'));
@@ -15954,15 +16077,111 @@ class Component extends DCLogic {
     lhSel.addEventListener('mousedown', () => this._saveLibSel());
     lhSel.addEventListener('change', () => { this._restoreLibSel(); this._setLineSpacing(parseFloat(lhSel.value)); });
     lhWrap.appendChild(lhSel); pr2.appendChild(lhWrap);
+    sep(pr2);
+    const SHADES = ['#fff4cc', '#e3f2ff', '#e6f6e6', '#fde8ec', '#efe9ff', '#f1f1f1', '#ffe0b2', '#d0e7ff', '#c8eccb', '#d9d9d9'];
+    const shB = btn(pr2, 'shade', 'ពណ៌ផ្ទៃកថាខណ្ឌ', () => palette(shB, SHADES, c => { const bl = selBlocks(); bl.forEach(el => { el.style.backgroundColor = c || ''; }); if (bl.length) touched(); }, 'គ្មានពណ៌'), 'ewd-dd'); shB.dataset.pop = '1';
+    const setBorder = kind => {
+      const bl = selBlocks(); if (!bl.length) return;
+      bl.forEach(el => {
+        ['border', 'borderTop', 'borderBottom', 'borderRadius', 'padding'].forEach(k => { el.style[k] = ''; });
+        if (kind === 'box') { el.style.border = '1.5px solid #444'; el.style.padding = '8px 12px'; }
+        else if (kind === 'round') { el.style.border = '1.5px solid #2b579a'; el.style.borderRadius = '10px'; el.style.padding = '10px 14px'; }
+        else if (kind === 'bottom') { el.style.borderBottom = '1.5px solid #444'; el.style.padding = '0 0 4px'; }
+        else if (kind === 'top') { el.style.borderTop = '1.5px solid #444'; el.style.padding = '4px 0 0'; }
+      });
+      touched();
+    };
+    const bdB = btn(pr2, 'border', 'ស៊ុម', () => menuUnder(bdB, [['▭ ស៊ុមជុំវិញ', () => setBorder('box')], ['▢ ស៊ុមមូលពណ៌ខៀវ', () => setBorder('round')], ['▁ បន្ទាត់ក្រោម', () => setBorder('bottom')], ['▔ បន្ទាត់លើ', () => setBorder('top')], ['✕ គ្មានស៊ុម', () => setBorder('none')]]), 'ewd-dd'); bdB.dataset.pop = '1';
     // styles
     const gSty = group(pHome, 'រចនាប័ទ្ម');
     const gal = document.createElement('div'); gal.className = 'ewd-gal'; gSty.appendChild(gal);
-    [['P', '<span style="font-size:13px">Aa កខ</span>', '¶ ធម្មតា'], ['H2', '<span style="font-size:15px;font-weight:700;color:#2f5496">Aa កខ</span>', 'ចំណងជើង ១'], ['H3', '<span style="font-size:13px;font-weight:700;color:#2f5496">Aa កខ</span>', 'ចំណងជើង ២']].forEach(([tag, prev, name]) => {
+    const galIn = document.createElement('div'); galIn.className = 'ewd-galin'; gal.appendChild(galIn);
+    const blockStyle = (tag, css) => {
+      exec('formatBlock', tag);
+      selBlocks().forEach(el => { ['margin', 'fontSize', 'color', 'letterSpacing', 'fontStyle', 'fontWeight', 'borderLeft', 'padding'].forEach(k => { el.style[k] = ''; }); Object.assign(el.style, css || {}); });
+      touched();
+    };
+    const STYLES = [
+      ['<span style="font-size:13px">Aa កខ</span>', '¶ ធម្មតា', () => blockStyle('P')],
+      ['<span style="font-size:13px">Aa កខ</span>', '¶ គ្មានគម្លាត', () => blockStyle('P', { margin: '0' })],
+      ['<span style="font-size:15px;font-weight:700;color:#2f5496">Aa កខ</span>', 'ចំណងជើង ១', () => blockStyle('H2')],
+      ['<span style="font-size:13px;font-weight:700;color:#2f5496">Aa កខ</span>', 'ចំណងជើង ២', () => blockStyle('H3')],
+      ['<span style="font-size:19px;font-weight:700">Aa ក</span>', 'ចំណងជើងធំ', () => blockStyle('H1', { fontSize: '30px' })],
+      ['<span style="font-size:13px;color:#595959">Aa កខ</span>', 'ចំណងជើងរង', () => blockStyle('P', { fontSize: '19px', color: '#595959', letterSpacing: '.02em' })],
+      ['<span style="font-size:13px;font-style:italic;color:#404040">Aa កខ</span>', 'សង្កត់ធ្ងន់', () => exec('italic')],
+      ['<span style="font-size:13px;font-weight:800">Aa កខ</span>', 'ដិតខ្លាំង', () => exec('bold')],
+      ['<span style="font-size:13px;font-style:italic;color:#2b579a">❝ Aa</span>', 'សម្រង់', () => blockStyle('BLOCKQUOTE', { borderLeft: '4px solid #2b579a', padding: '4px 14px', margin: '8px 0', color: '#444', fontStyle: 'italic' })],
+    ];
+    STYLES.forEach(([prev, name, fn]) => {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-sty'; b.innerHTML = prev + '<small>' + name + '</small>'; b.title = name; keep(b);
-      b.addEventListener('click', () => exec('formatBlock', tag)); gal.appendChild(b);
+      b.addEventListener('click', fn); galIn.appendChild(b);
+    });
+    const gbtns = document.createElement('div'); gbtns.className = 'ewd-galbtn'; gal.appendChild(gbtns);
+    [['▲', () => { galIn.scrollTop -= 64; }], ['▼', () => { galIn.scrollTop += 64; }], ['⊽', () => menuUnder(gbtns, STYLES.map(([prev, name, fn]) => [prev + '<small>' + name + '</small>', fn, 'sty-row']))]].forEach(([t, fn]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = t; keep(b); if (t === '⊽') b.dataset.pop = '1'; b.addEventListener('click', fn); gbtns.appendChild(b);
     });
     // editing
     const gEdit = group(pHome, 'កែសម្រួល'); const sEd = stack(gEdit);
+    // find & replace across every sheet; matches are marked with the CSS highlight API, so typing in the box keeps focus
+    let findBox = null, fMatches = [], fIdx = -1;
+    const hlOK = typeof Highlight !== 'undefined' && window.CSS && CSS.highlights;
+    const clearMarks = () => { if (hlOK) { CSS.highlights.delete('ewd-find'); CSS.highlights.delete('ewd-cur'); } };
+    const collect = q => {
+      const res = []; if (!q) return res; const ql = q.toLowerCase();
+      (this._edPages || []).forEach((pg, pi) => { const w = document.createTreeWalker(pg, NodeFilter.SHOW_TEXT); let n;
+        while ((n = w.nextNode())) { const t = n.nodeValue.toLowerCase(); let k = t.indexOf(ql); while (k >= 0) { res.push({ pi, node: n, off: k, len: q.length }); k = t.indexOf(ql, k + ql.length); } } });
+      return res;
+    };
+    const mkRange = m => { const rg = document.createRange(); rg.setStart(m.node, m.off); rg.setEnd(m.node, m.off + m.len); return rg; };
+    const showMatch = () => {
+      const cnt = findBox && findBox.querySelector('.cnt'); if (cnt) cnt.textContent = fMatches.length ? (fIdx + 1) + '/' + fMatches.length : '0/0';
+      clearMarks(); if (!fMatches.length || fIdx < 0) return;
+      const m = fMatches[fIdx];
+      if (m.pi !== this._edCur) { this._edCur = m.pi; this._edApplyView(); }
+      if (hlOK) { CSS.highlights.set('ewd-find', new Highlight(...fMatches.filter(x => x.pi === m.pi).map(mkRange))); CSS.highlights.set('ewd-cur', new Highlight(mkRange(m))); }
+      const rr = mkRange(m).getBoundingClientRect(), cr = this._edCanvas.getBoundingClientRect();
+      if (rr.top < cr.top + 40 || rr.bottom > cr.bottom - 40) this._edCanvas.scrollTop += rr.top - cr.top - cr.height / 3;
+      if (!hlOK) { const p = this._edPages[m.pi]; p.focus(); const s = window.getSelection(); s.removeAllRanges(); s.addRange(mkRange(m)); }
+    };
+    const refind = keepIdx => { const q = findBox.querySelector('.q').value; fMatches = collect(q); fIdx = fMatches.length ? Math.min(Math.max(keepIdx, 0), fMatches.length - 1) : -1; showMatch(); };
+    const step = d => { if (!fMatches.length) { refind(0); return; } fIdx = (fIdx + d + fMatches.length) % fMatches.length; showMatch(); };
+    const closeFind = () => { if (findBox) findBox.remove(); findBox = null; clearMarks(); };
+    const openFind = withReplace => {
+      if (!findBox) {
+        findBox = document.createElement('div'); findBox.className = 'ewd-find';
+        findBox.innerHTML = '<div class="h"><span>ស្វែងរក និងជំនួស</span><button type="button" class="x" title="បិទ">✕</button></div>'
+          + '<div class="r"><input class="q" placeholder="ស្វែងរក…"><button type="button" class="pv" title="មុន">‹</button><span class="cnt">0/0</span><button type="button" class="nx" title="បន្ទាប់">›</button></div>'
+          + '<div class="r"><input class="rp" placeholder="ជំនួសដោយ…"></div>'
+          + '<div class="r" style="justify-content:flex-end"><button type="button" class="one">ជំនួស</button><button type="button" class="all pri">ជំនួសទាំងអស់</button></div>';
+        ov.appendChild(findBox);
+        const q = findBox.querySelector('.q');
+        q.addEventListener('input', () => refind(0));
+        q.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); step(e.shiftKey ? -1 : 1); } if (e.key === 'Escape') closeFind(); });
+        findBox.querySelector('.x').addEventListener('click', closeFind);
+        findBox.querySelector('.pv').addEventListener('click', () => step(-1));
+        findBox.querySelector('.nx').addEventListener('click', () => step(1));
+        findBox.querySelector('.one').addEventListener('click', () => {
+          if (fIdx < 0 || !fMatches[fIdx]) return; const m = fMatches[fIdx], rep = findBox.querySelector('.rp').value;
+          m.node.nodeValue = m.node.nodeValue.slice(0, m.off) + rep + m.node.nodeValue.slice(m.off + m.len);
+          this._edDirty = true; refind(fIdx); this._edScheduleReflow(m.pi);
+        });
+        findBox.querySelector('.all').addEventListener('click', () => {
+          const qv = findBox.querySelector('.q').value, rep = findBox.querySelector('.rp').value; if (!qv) return;
+          const rx = new RegExp(qv.replace(/[.*+?^$\{\}()|[\]\\]/g, '\\$&'), 'gi'); let n = 0;
+          (this._edPages || []).forEach(pg => { const w = document.createTreeWalker(pg, NodeFilter.SHOW_TEXT); const nodes = []; let t; while ((t = w.nextNode())) nodes.push(t);
+            nodes.forEach(t2 => { const v = t2.nodeValue.replace(rx, () => { n++; return rep; }); if (v !== t2.nodeValue) t2.nodeValue = v; }); });
+          this._edDirty = true; refind(0); this._edScheduleReflow(0, true); toast('បានជំនួស ' + n + ' កន្លែង');
+        });
+      }
+      findBox.style.top = (hRul.getBoundingClientRect().bottom - ov.getBoundingClientRect().top + 8) + 'px';
+      const s = window.getSelection(); const sel = s && s.rangeCount && !s.isCollapsed ? s.toString().trim() : '';
+      const q = findBox.querySelector('.q'); if (sel && sel.length < 60 && !sel.includes('\n')) { q.value = sel; }
+      refind(0);
+      (withReplace ? findBox.querySelector('.rp') : q).focus();
+    };
+    sm(sEd, 'find', 'ស្វែងរក', () => openFind(false));
+    sm(sEd, 'repl', 'ជំនួស', () => openFind(true));
+    ov.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'h')) { e.preventDefault(); openFind(e.key === 'h'); } });
     sm(sEd, 'selall', 'ជ្រើសទាំងអស់', () => { const p = this._edCurPage(); if (!p) return; p.focus(); const rg = document.createRange(); rg.selectNodeContents(p); const s = window.getSelection(); s.removeAllRanges(); s.addRange(rg); this._saveLibSel(); }, true);
     // ═══ បញ្ចូល (Insert) ═══
     const pIns = pane('insert');
