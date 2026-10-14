@@ -15912,6 +15912,9 @@ class Component extends DCLogic {
       nav: 'M4 4h16v16H4zM9 4v16M5.5 8h2M5.5 11h2M5.5 14h2', onep: 'M7 3h10v18H7z', multp: 'M3 5h8v14H3zM13 5h8v14h-8z', z100: 'M4 12h16M12 4v16',
       new: 'M6 3h8l4 4v14H6zM14 3v4h4M12 11v6M9 14h6',
       env: 'M3 6h18v12H3zM3 6l9 7 9-7',
+      vba: 'M4 6h9v13H4zM13 9h7v10h-7M7 10h3M7 13h3M16 13l1.5 1.5L20 12', macros: 'M4 4h13v16H4zM7 8h7M7 12h7M7 16h4M17 13l3 3-3 3', pause: 'M8 6v12M16 6v12', warn: 'M12 3l10 18H2zM12 10v5M12 18h.01',
+      cbox: 'M4 6h16v12H4zM14 6v12M16 11l1.5 1.5L19 11', dd2: 'M4 8h16v8H4zM15 11l1.5 1.5L18 11', rep: 'M4 5h16v6H4zM4 13h16v6H4zM17 8h.01', legacy: 'M4 5h16v14H4zM8 9h3M8 13h8', chkb: 'M4 4h16v16H4zM8 12l3 3 5-6',
+      dmode: 'M4 4h16v16H4zM4 9h16M9 9v11', xmlp: 'M4 4h16v16H4zM4 9h16M8 13h8M8 16h5', dtpl: 'M5 3h11l3 3v15H5zM8 9l1.5 6 2-4 2 4L15 9',
       outln: 'M4 5h3M10 5h10M7 10h3M13 10h7M7 15h3M13 15h7M4 20h3M10 20h10', draft: 'M4 5h16M4 10h16M4 15h16M4 20h10', vert: 'M7 3h10v18H7zM4 8l-2 4 2 4M20 8l2 4-2 4', side: 'M3 5h8v14H3zM13 5h8v14h-8zM7 9h1M17 9h1',
       zoomQ: 'M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-6-6', z100b: 'M4 4h16v16H4zM7 9l2-1v8M12 12a2 2 0 1 0 4 0 2 2 0 1 0-4 0', pgw: 'M7 4h10v16H7zM2 12h4M18 12h4M4 10l-2 2 2 2M20 10l2 2-2 2',
       nwin: 'M3 7h18v13H3zM3 11h18M14 3v4M12 5h4', arr: 'M3 4h18v7H3zM3 13h18v7H3z', split: 'M3 4h18v16H3zM3 12h18', sbs: 'M3 4h8v16H3zM13 4h8v16h-8z', sync: 'M7 4v16M17 4v16M4 8l3-3 3 3M14 16l3 3 3-3',
@@ -16570,16 +16573,28 @@ class Component extends DCLogic {
     smSoon(pvCol, 'find', 'រកអ្នកទទួល').classList.add('dim'); smSoon(pvCol, 'check', 'ពិនិត្យកំហុស').classList.add('dim');
     const gFin = group(pMail, 'បញ្ចប់');
     dimB(gFin, 'check', 'បញ្ចប់ និង<br>បញ្ចូល ▾');
-    // ═══ អ្នកអភិវឌ្ឍ (Developer) ═══
+    // ═══ អ្នកអភិវឌ្ឍ (Developer) — same groups as Word ═══
     const pDev = pane('dev');
-    const gCode = group(pDev, 'កូដ'); bigSoon(gCode, 'code', 'Visual Basic'); bigSoon(gCode, 'play', 'ម៉ាក្រូ');
-    const sCode = stack(gCode); smSoon(sCode, 'rec', 'ថតម៉ាក្រូ'); smSoon(sCode, 'mn', 'ផ្អាក'); smSoon(sCode, 'lock', 'សុវត្ថិភាពម៉ាក្រូ');
-    const gAdd = group(pDev, 'កម្មវិធីបន្ថែម'); bigSoon(gAdd, 'addin', 'Add-ins'); bigSoon(gAdd, 'addin', 'Word Add-ins'); bigSoon(gAdd, 'addin', 'COM Add-ins');
-    const gCtl = group(pDev, 'ការត្រួតពិនិត្យ'); bigSoon(gCtl, 'ctrl', 'ប្រអប់បញ្ចូល');
-    const sCtl = stack(gCtl); smSoon(sCtl, 'pen', 'របៀបរចនា'); smSoon(sCtl, 'selp', 'លក្ខណៈ'); smSoon(sCtl, 'grp', 'ក្រុម');
-    const gMap = group(pDev, 'ការផ្គូផ្គង'); bigSoon(gMap, 'xml', 'XML');
-    const gDP = group(pDev, 'ការពារ'); bigSoon(gDP, 'people', 'ហាមអ្នកនិពន្ធ'); bigSoon(gDP, 'lock', 'ហាមកែ');
-    const gTpl = group(pDev, 'ពុម្ព'); bigSoon(gTpl, 'file', 'ពុម្ពឯកសារ');
+    const gCode = group(pDev, 'កូដ');
+    bigSoon(gCode, 'vba', 'Visual<br>Basic'); bigSoon(gCode, 'macros', 'ម៉ាក្រូ');
+    const sCode = stack(gCode); smSoon(sCode, 'rec', 'ថតម៉ាក្រូ'); smSoon(sCode, 'pause', 'ផ្អាកការថត').classList.add('dim'); smSoon(sCode, 'warn', 'សុវត្ថិភាពម៉ាក្រូ');
+    const gAdd = group(pDev, 'កម្មវិធីបន្ថែម');
+    bigSoon(gAdd, 'addin', 'Add-<br>ins'); bigSoon(gAdd, 'addin', 'Word<br>Add-ins'); bigSoon(gAdd, 'addin', 'COM<br>Add-ins');
+    const gCtl = group(pDev, 'ការត្រួតពិនិត្យ');
+    const cr = rows(gCtl); cr.style.gap = '1px';
+    const cr1 = row(cr), cr2 = row(cr), cr3 = row(cr);
+    btn(cr1, '<b style="font-size:12px">Aa</b>', 'ប្រអប់អត្ថបទសម្បូរ', soon('ប្រអប់អត្ថបទសម្បូរ'));
+    btn(cr1, '<span style="font-size:12px">Aa</span>', 'ប្រអប់អត្ថបទធម្មតា', soon('ប្រអប់អត្ថបទធម្មតា'));
+    btn(cr1, 'img', 'ប្រអប់រូបភាព', soon('ប្រអប់រូបភាព')); btn(cr1, 'qparts', 'ប្លុកអត្ថបទ', soon('ប្លុកអត្ថបទ'));
+    btn(cr2, 'chkb', 'ប្រអប់ធីក', soon('ប្រអប់ធីក')); btn(cr2, 'cbox', 'ប្រអប់ជ្រើស (combo)', soon('ប្រអប់ជ្រើស'));
+    btn(cr2, 'dd2', 'បញ្ជីទម្លាក់ចុះ', soon('បញ្ជីទម្លាក់ចុះ')); btn(cr2, 'date', 'ជ្រើសកាលបរិច្ឆេទ', soon('ជ្រើសកាលបរិច្ឆេទ'));
+    btn(cr3, 'rep', 'ផ្នែកដដែលៗ', soon('ផ្នែកដដែលៗ')); btn(cr3, 'legacy', 'ឧបករណ៍ចាស់ ▾', soon('ឧបករណ៍ចាស់'), 'ewd-dd');
+    cr.querySelectorAll('.ewd-row').forEach(x => { x.style.height = '22px'; });
+    const sCtl = stack(gCtl); smSoon(sCtl, 'dmode', 'របៀបរចនា'); smSoon(sCtl, 'selp', 'លក្ខណៈ').classList.add('dim'); smSoon(sCtl, 'grp', 'ក្រុម ▾').classList.add('dim');
+    const gMap = group(pDev, 'ការផ្គូផ្គង'); bigSoon(gMap, 'xmlp', 'ផ្ទាំងផ្គូផ្គង<br>XML');
+    const gDP = group(pDev, 'ការពារ');
+    bigSoon(gDP, 'blockA', 'ហាមអ្នក<br>និពន្ធ ▾').classList.add('dim'); bigSoon(gDP, 'lock', 'ហាម<br>កែ');
+    const gTpl = group(pDev, 'ពុម្ព'); bigSoon(gTpl, 'dtpl', 'ពុម្ព<br>ឯកសារ');
     // ═══ ជំនួយ (Help) ═══
     const pHelp = pane('help');
     const gHelp = group(pHelp, 'ជំនួយ'); bigSoon(gHelp, 'help', 'ជំនួយ'); bigSoon(gHelp, 'support', 'ទាក់ទងជំនួយ'); bigSoon(gHelp, 'fb', 'មតិកែលម្អ'); bigSoon(gHelp, 'train', 'វគ្គបណ្ដុះបណ្ដាល'); bigSoon(gHelp, 'star', 'អ្វីដែលថ្មី');
