@@ -15870,6 +15870,7 @@ class Component extends DCLogic {
         '.ewd-menu{position:fixed;z-index:150;background:#fff;border:1px solid #c8c6c4;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.18);padding:4px;min-width:190px;display:flex;flex-direction:column}',
         '.ewd-menu button{border:none;background:transparent;text-align:left;font:inherit;font-size:13px;color:#323130;padding:9px 12px;border-radius:4px;cursor:pointer;display:flex;gap:10px;align-items:center}.ewd-menu button:hover{background:#f3f2f1}',
         '.ewd-hr{flex:none;height:20px;background:#e6e6e6;position:relative;overflow:hidden;border-bottom:1px solid #d2d0ce}',
+        '.ewd-tabsel{position:absolute;left:2px;top:3px;width:14px;height:14px;padding:0;border:1px solid #a19f9d;background:#fff;color:#323130;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}.ewd-tabsel:hover{background:#e1dfdd}',
         '.ewd-vr{flex:none;width:18px;background:#e6e6e6;position:relative;overflow:hidden}',
         '.ewd-rl{position:absolute;background:#fff}',
         '.ewd-hr .ewd-rl{top:3px;height:14px}.ewd-vr .ewd-rl{left:2px;width:14px}',
@@ -17035,7 +17036,7 @@ class Component extends DCLogic {
     paintLang(); langB.addEventListener('mousedown', e => e.preventDefault());
     langB.addEventListener('click', () => {
       uiLang = uiLang === 'en' ? 'kh' : 'en'; try { localStorage.setItem('dict_ed_lang', uiLang); } catch(e){}
-      paintLang(); trTree(ov); if (this._edViewHook) this._edViewHook(); fold.title = tr(curTab ? 'បង្រួម Ribbon' : 'បង្ហាញ Ribbon'); setTimeout(ribArrows, 0);
+      paintLang(); trTree(ov); if (this._edTabSelPaint) this._edTabSelPaint(); if (this._edViewHook) this._edViewHook(); fold.title = tr(curTab ? 'បង្រួម Ribbon' : 'បង្ហាញ Ribbon'); setTimeout(ribArrows, 0);
     });
     tabsBar.appendChild(langB);
     fold.addEventListener('click', () => showTab(curTab ? '' : 'home'));
@@ -17081,6 +17082,20 @@ class Component extends DCLogic {
     // ── horizontal ruler (margins shaded), kept in line with the sheet ──
     const hRul = document.createElement('div'); hRul.className = 'ewd-hr';
     const hBar = document.createElement('div'); hBar.className = 'ewd-rl'; hRul.appendChild(hBar);
+    // the tab selector in the ruler corner, as in Word: tap to cycle the kind of tab stop / indent marker
+    const TABKINDS = [
+      ['ថេបឆ្វេង', 'Left Tab', '<path d="M4 2v8h7"/>'], ['ថេបកណ្ដាល', 'Center Tab', '<path d="M7 2v8M2 10h10"/>'], ['ថេបស្ដាំ', 'Right Tab', '<path d="M10 2v8H3"/>'],
+      ['ថេបទសភាគ', 'Decimal Tab', '<path d="M6 2v8M1 10h10"/><circle cx="9" cy="6" r=".9" fill="currentColor"/>'], ['ថេបរបារ', 'Bar Tab', '<path d="M7 1v11"/>'],
+      ['ចូលបន្ទាត់ជួរទីមួយ', 'First Line Indent', '<path d="M2 3h10L7 9z"/>'], ['ចូលបន្ទាត់ព្យួរ', 'Hanging Indent', '<path d="M2 10h10L7 4z"/>'],
+    ];
+    let tabKind = 0;
+    const tabSel = document.createElement('button'); tabSel.type = 'button'; tabSel.className = 'ewd-tabsel';
+    const paintTabSel = () => { const k = TABKINDS[tabKind]; tabSel.innerHTML = '<svg viewBox="0 0 14 13" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">' + k[2] + '</svg>'; tabSel.title = uiLang === 'en' ? k[1] : k[0]; tabSel.setAttribute('aria-label', tabSel.title); };
+    paintTabSel();
+    tabSel.addEventListener('mousedown', e => e.preventDefault());
+    tabSel.addEventListener('click', () => { tabKind = (tabKind + 1) % TABKINDS.length; paintTabSel(); toast(uiLang === 'en' ? TABKINDS[tabKind][1] : TABKINDS[tabKind][0]); });
+    hRul.appendChild(tabSel);
+    this._edTabSelPaint = paintTabSel;
     ov.appendChild(hRul);
     // ── canvas: fills the rest; the sheet floats centred, ‹ › on the edges ──
     const canvasWrap = document.createElement('div'); canvasWrap.style.cssText = 'position:relative;flex:1;min-height:0;display:flex;';
