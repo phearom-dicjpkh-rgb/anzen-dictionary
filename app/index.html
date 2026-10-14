@@ -14061,9 +14061,15 @@ class Component extends DCLogic {
   _bookWordMap(){
     if (this._bwMap && this._bwMapLen === WORDS.length) return this._bwMap;   // rebuild when new (custom) words are added
     this._bwMap = new Map(); this._bwMax = 0; this._bwMapLen = WORDS.length;
+    const gram = [];     // grammar points written with a leading 〜 — tappable as the text after the 〜
     for (const w of WORDS) {
       if (!w || !w.jp) continue;
       const jp = w.jp;
+      if (/^[〜～~]/.test(jp) && !/[（）()s/、。，,！!？?・「」]/.test(jp)) {
+        const core = jp.replace(/^[〜～~]+/, '');
+        if (core && !/[〜～~]/.test(core) && core.length <= 20 && HAS_JP.test(core) && (core.length >= 3 || HAS_KANJI.test(core))) gram.push({ core, w });
+        continue;
+      }
       // keep real words (incl. kana-only ones like デジタコ / あいさつ); skip grammar
       // placeholders (〜…) and multi-token / sentence entries that never appear verbatim
       if (jp.length > 20 || jp.indexOf('〜') >= 0 || /[（）()\s\/、。，,！!？?・「」]/.test(jp)) continue;
@@ -14082,6 +14088,12 @@ class Component extends DCLogic {
         const fj = f && (f.jp || '').trim(); if (!fj || fj.length > 20 || this._bwMap.has(fj) || !HAS_JP.test(fj) || /[（）()\s\/、。，,！!？?・「」]/.test(fj)) continue;
         this._bwMap.set(fj, { kana: jpRelatedKana(w.jp, w.kana, fj), km: f.km || w.km || '', img: w.img || '', id: w.id, pos: w.pos || '' }); if (fj.length > this._bwMax) this._bwMax = fj.length;
       }
+    }
+    // grammar after everything else, so a real word of the same spelling keeps its card
+    for (const g of gram) {
+      if (this._bwMap.has(g.core)) continue;
+      this._bwMap.set(g.core, { kana: '', km: g.w.km || '', img: g.w.img || '', id: g.w.id, pos: g.w.pos || '', rules: g.w.rules || [], label: g.w.jp });
+      if (g.core.length > this._bwMax) this._bwMax = g.core.length;
     }
     return this._bwMap;
   }
@@ -14159,13 +14171,13 @@ class Component extends DCLogic {
     const host = sideOk ? rd.row : (document.getElementById('lib-read-root') || document.body);
     const pop = document.createElement('div'); pop.id = 'bookword-pop'; pop.className = sideOk ? 'rd-side' : 'rd-sheet';
     { const ovn = document.getElementById('book-reader-overlay'); const m = ovn && /rd-t-(white|cream|dark)/.exec(ovn.className); if (m) pop.classList.add('rd-t-' + m[1]); }   // the sheet sits outside the overlay, so it carries the paper theme itself
-    const isAdmin = this.state.role === 'admin', baseRow = isAdmin && info.id ? WORDS.find(w => w.id === info.id) : null, canEdit = !!(baseRow && baseRow.jp === jp);
+    const isAdmin = this.state.role === 'admin', baseRow = isAdmin && info.id ? WORDS.find(w => w.id === info.id) : null, canEdit = !!(baseRow && baseRow.jp === (info.label || jp));
     const means = String(info.km || '').split(/\s*\/\s*/).map(s => s.trim()).filter(Boolean);
     const fav = !!(info.id && this.state.favorites.includes(info.id));
     pop.innerHTML = '<button class="rd-x" id="bwp-close" aria-label="បិទ"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
       + (info.pos ? '<span class="rd-chip">' + _escHtml(info.pos) + '</span>' : '')
       + (info.kana ? '<div class="rd-kana">' + _escHtml(info.kana) + '</div>' : '')
-      + '<div class="rd-jp">' + _escHtml(jp) + '</div>'
+      + '<div class="rd-jp">' + _escHtml(info.label || jp) + '</div>'
       + '<div class="rd-mean">' + means.map((m, i) => '<div class="rd-m">' + (means.length > 1 ? '<i>' + (i + 1) + '</i>' : '') + '<span>' + _escHtml(m) + '</span></div>').join('') + '</div>'
       + ((info.rules || []).length ? '<div class="rd-rh">ក្បួនផ្សំ</div>' + info.rules.map(ru => '<div class="rd-rule"><div class="rd-rf">' + (ru.pre ? '<span class="t pre">' + _escHtml(ru.pre) + '</span><i>＋</i>' : '') + '<span class="t gr">' + _escHtml(ru.post) + '</span></div>' + (ru.km ? '<div class="rd-rr">＝ ' + _escHtml(ru.km) + '</div>' : '') + (ru.ex ? '<div class="rd-rx">' + _escHtml(ru.ex.jp) + (ru.ex.km ? '<small>' + _escHtml(ru.ex.km) + '</small>' : '') + '</div>' : '') + '</div>').join('') : '')
       + '<div class="rd-acts"><button class="rd-spk" id="bwp-speak"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/></svg>ស្តាប់</button>'
