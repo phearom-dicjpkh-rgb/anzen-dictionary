@@ -15912,6 +15912,10 @@ class Component extends DCLogic {
       nav: 'M4 4h16v16H4zM9 4v16M5.5 8h2M5.5 11h2M5.5 14h2', onep: 'M7 3h10v18H7z', multp: 'M3 5h8v14H3zM13 5h8v14h-8z', z100: 'M4 12h16M12 4v16',
       new: 'M6 3h8l4 4v14H6zM14 3v4h4M12 11v6M9 14h6',
       env: 'M3 6h18v12H3zM3 6l9 7 9-7',
+      outln: 'M4 5h3M10 5h10M7 10h3M13 10h7M7 15h3M13 15h7M4 20h3M10 20h10', draft: 'M4 5h16M4 10h16M4 15h16M4 20h10', vert: 'M7 3h10v18H7zM4 8l-2 4 2 4M20 8l2 4-2 4', side: 'M3 5h8v14H3zM13 5h8v14h-8zM7 9h1M17 9h1',
+      zoomQ: 'M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-6-6', z100b: 'M4 4h16v16H4zM7 9l2-1v8M12 12a2 2 0 1 0 4 0 2 2 0 1 0-4 0', pgw: 'M7 4h10v16H7zM2 12h4M18 12h4M4 10l-2 2 2 2M20 10l2 2-2 2',
+      nwin: 'M3 7h18v13H3zM3 11h18M14 3v4M12 5h4', arr: 'M3 4h18v7H3zM3 13h18v7H3z', split: 'M3 4h18v16H3zM3 12h18', sbs: 'M3 4h8v16H3zM13 4h8v16h-8z', sync: 'M7 4v16M17 4v16M4 8l3-3 3 3M14 16l3 3 3-3',
+      rwin: 'M3 4h18v16H3zM8 9h8v6H8z', swin: 'M4 8h11v11H4zM9 4h11v11h-3', macro: 'M4 4h16v16H4zM8 9h8M8 13h5M15 17l2-2 2 2', props: 'M5 4h11l3 3v13H5zM9 9h6M9 13h6M14 17h4',
       abc: 'M3 11l2.5-6 2.5 6M3.8 9h3.4M10 5h2.5a1.5 1.5 0 0 1 0 3H10zM10 8h3a1.5 1.5 0 0 1 0 3h-3zM20 6a2.5 2.5 0 1 0 0 4M6 17l3 3 7-7', accs: 'M6 3h9l4 4v14H6zM12 11a1 1 0 1 0 0-2M9 13h6M12 13v5M10 18l2-2 2 2',
       langA: 'M4 20l5-14h2l5 14M6.5 14h7M17 4v6M15 7h4', jchk: 'M5 4h11l3 3v13H5zM9 13l2 2 4-4', ime: 'M4 7h16v10H4zM7 10h1M10 10h1M13 10h1M16 10h1M8 14h8', mkup: 'M5 4h11l3 3v13H5zM9 9h6M9 13h6',
       rpane: 'M4 4h16v16H4zM9 4v16', rej: 'M5 4h11l3 3v13H5zM9 10l6 6M15 10l-6 6', blockA: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM3 21v-1a6 6 0 0 1 12 0v1M17 13l4 4M21 13l-4 4',
@@ -16497,25 +16501,45 @@ class Component extends DCLogic {
     const gFix = group(pRev, 'ជួសជុលអត្ថបទ');
     big(gFix, 'spark', 'សម្អាត paste', () => this._edFixLayout());
     big(gFix, 'link', 'ភ្ជាប់បន្ទាត់', () => this._edJoinLines());
-    // ═══ មើល (View) ═══
+    // ═══ មើល (View) — same groups as Word (+ "go to page" at the end) ═══
     const pView = pane('view');
     const gViews = group(pView, 'ទិដ្ឋភាព');
-    bigSoon(gViews, 'rmode', 'អានសៀវភៅ');
-    const pvB = big(gViews, 'pview', 'ប្លង់បោះពុម្ព', () => {}); pvB.classList.add('on'); pvB.style.background = '#c7dcf3';
-    bigSoon(gViews, 'web', 'ប្លង់វេប');
+    // Read Mode opens this book in the reader (saving first if needed)
+    big(gViews, 'rmode', 'របៀប<br>អាន', async () => {
+      if (!this._edBookId || this._edDirty) { if (!window.confirm('ត្រូវរក្សាទុកសៀវភៅជាមុនសិន ដើម្បីអាន។ រក្សាទុកឥឡូវ?')) return; const ok = await this.saveBook(); if (ok === false) return; }
+      const id = this._edBookId; if (id) this.libReadBook(id);
+    });
+    const pvB = big(gViews, 'pview', 'ប្លង់<br>បោះពុម្ព', () => {}); pvB.style.background = '#e1dfdd';
+    bigSoon(gViews, 'web', 'ប្លង់<br>វេប');
+    const sViews = stack(gViews); smSoon(sViews, 'outln', 'គ្រោង'); smSoon(sViews, 'draft', 'សេចក្ដីព្រាង');
     const gImm = group(pView, 'ផ្ដោតអារម្មណ៍');
-    bigSoon(gImm, 'focus', 'ផ្ដោត'); bigSoon(gImm, 'imm', 'អានងាយ');
+    bigSoon(gImm, 'focus', 'ផ្ដោត'); bigSoon(gImm, 'imm', 'អ្នកអាន<br>ងាយស្រួល');
+    const gMove = group(pView, 'ចលនាទំព័រ');
+    const vtB = big(gMove, 'vert', 'បញ្ឈរ', () => {}); vtB.style.background = '#e1dfdd';
+    bigSoon(gMove, 'side', 'ចំហៀង<br>ទៅចំហៀង');
     const gShow = group(pView, 'បង្ហាញ'); const sShow = stack(gShow);
-    const rulB = sm(sShow, 'ruler', 'បន្ទាត់វាស់ ✓', () => { const on = hRul.style.display === 'none'; hRul.style.display = on ? '' : 'none'; vRul.style.display = on ? '' : 'none'; rulB.querySelector('span').textContent = 'បន្ទាត់វាស់' + (on ? ' ✓' : ''); setTimeout(() => { try { refit(); } catch(e){} }, 30); });
-    smSoon(sShow, 'grid', 'ក្រឡាជំនួយ'); smSoon(sShow, 'nav', 'ផ្ទាំងរុករក');
-    const gZoom = group(pView, 'ទំហំមើល');
+    const chk = (b, on) => { b.querySelector('svg').outerHTML = '<span style="width:15px;height:15px;border:1px solid #605e5c;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;background:#fff">' + (on ? '✓' : '') + '</span>'; };
+    const rulB = sm(sShow, 'ruler', 'បន្ទាត់វាស់', () => { const on = hRul.style.display === 'none'; hRul.style.display = on ? '' : 'none'; vRul.style.display = on ? '' : 'none'; chk(rulB, on); setTimeout(() => { try { refit(); } catch(e){} }, 30); });
+    chk(rulB, true);
+    chk(smSoon(sShow, 'grid', 'ក្រឡាជំនួយ'), false); chk(smSoon(sShow, 'nav', 'ផ្ទាំងរុករក'), false);
+    const gZoom = group(pView, 'ពង្រីក/បង្រួម');
     const zoomBy = d => { this._edScale = Math.max(1, Math.min(4, Math.round((this._edScale + d) * 4) / 4)); this._edApplyView(); };
-    big(gZoom, 'zo', 'បង្រួម', () => zoomBy(-0.25), true);
-    const zlabel = document.createElement('span'); zlabel.className = 'ewd-val'; zlabel.style.alignSelf = 'center'; this._edZlabel = zlabel; gZoom.appendChild(zlabel);
-    big(gZoom, 'zi', 'ពង្រីក', () => zoomBy(0.25), true);
+    const setZoom = z => { this._edScale = Math.max(1, Math.min(4, z)); this._edApplyView(); };
+    const zqB = big(gZoom, 'zoomQ', 'ពង្រីក', () => menuUnder(zqB, [
+      ...[1, 1.25, 1.5, 2, 3, 4].map(z => [(Math.round((this._edScale || 1) * 100) === z * 100 ? '✓ ' : '') + Math.round(z * 100) + '%', () => setZoom(z)]),
+      ['ពង្រីក +25%', () => zoomBy(0.25)], ['បង្រួម −25%', () => zoomBy(-0.25)],
+    ]), true); zqB.dataset.pop = '1';
+    big(gZoom, 'z100b', '100%', () => setZoom(1), true);
+    const zlabel = document.createElement('span'); zlabel.style.display = 'none'; this._edZlabel = zlabel; gZoom.appendChild(zlabel);
     const sZoom = stack(gZoom);
     smSoon(sZoom, 'onep', 'មួយទំព័រ'); smSoon(sZoom, 'multp', 'ច្រើនទំព័រ');
-    sm(sZoom, 'fit', 'ពេញទទឹង', () => { this._edScale = 1; this._edApplyView(); }, true);
+    sm(sZoom, 'pgw', 'ទទឹងទំព័រ', () => setZoom(1), true);
+    const gWin = group(pView, 'បង្អួច');
+    bigSoon(gWin, 'nwin', 'បង្អួច<br>ថ្មី'); bigSoon(gWin, 'arr', 'រៀប<br>ទាំងអស់'); bigSoon(gWin, 'split', 'បំបែក');
+    const sWin = stack(gWin); smSoon(sWin, 'sbs', 'មើលចំហៀងគ្នា').classList.add('dim'); smSoon(sWin, 'sync', 'រំកិលព្រមគ្នា').classList.add('dim'); smSoon(sWin, 'rwin', 'កំណត់ទីតាំងបង្អួចឡើងវិញ').classList.add('dim');
+    bigSoon(gWin, 'swin', 'ប្ដូរ<br>បង្អួច ▾');
+    const gMac = group(pView, 'ម៉ាក្រូ'); bigSoon(gMac, 'macro', 'ម៉ាក្រូ<br>▾');
+    const gSp = group(pView, 'SharePoint'); bigSoon(gSp, 'props', 'លក្ខណៈ');
     const gGo = group(pView, 'ទៅទំព័រ');
     big(gGo, 'l', 'ទំព័រមុន', () => this._edShowPage(this._edCur - 1), true);
     const goBox = document.createElement('span'); goBox.style.cssText = 'display:flex;align-items:center;gap:4px;align-self:center;font-size:12px;';
