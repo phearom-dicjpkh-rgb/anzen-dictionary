@@ -9329,6 +9329,33 @@ function jpRubyRuns(jp, kana){
     return { kanji: !!reading, notKanji: !reading, text: r.text, reading };
   });
 }
+// The reading of a conjugated form (運んで) from its base word (運びます / はこびます). The kanji keep their
+// reading and only the kana after them change, so each kanji run of the form takes the reading of the same
+// kanji run in the base. 来る is the exception (く / き / こ): its reading is conjugated as kana instead.
+function jpRelatedKana(bjp, bkana, fjp){
+  bjp = String(bjp || '').trim(); bkana = String(bkana || '').trim(); fjp = String(fjp || '').trim();
+  if (!bjp || !bkana || !fjp || bjp === bkana || !HAS_KANJI.test(fjp)) return '';
+  if (/来/.test(bjp)) {
+    // bring the base reading to its dictionary form (きます → くる) so the same rules can run on the kana
+    let kd = bkana;
+    if (kd.endsWith('ます') && kd.slice(-3, -2) === 'き') kd = kd.slice(0, -3) + 'くる';
+    if (jpDetectType(jpToDict(kd)) !== 'kuru') return '';
+    const A = jpConjugate(bjp).forms, B = jpConjugate(kd).forms, i = A.findIndex(f => f.jp === fjp);
+    const k = i >= 0 ? B.find(x => x.form === A[i].form) : null;
+    return k ? k.jp : '';
+  }
+  const map = parseKanaIntoRuns(bjp, bkana), readings = [];
+  splitKanaRuns(bjp).forEach((r, i) => { if (r.kanji) readings.push({ text: r.text, rd: map[i + ':' + r.text] || '' }); });
+  let used = 0, out = '';
+  for (const r of splitKanaRuns(fjp)) {
+    if (!r.kanji) { out += r.text; continue; }
+    let hit = -1;
+    for (let j = used; j < readings.length; j++) if (readings[j].text === r.text && readings[j].rd) { hit = j; break; }
+    if (hit < 0) return '';
+    used = hit + 1; out += readings[hit].rd;
+  }
+  return out;
+}
 let _furiMap = null, _furiMax = 0;
 function furiMap(){
   if (_furiMap) return _furiMap;
@@ -9337,6 +9364,12 @@ function furiMap(){
     if (!w || !w.jp || !w.kana || w.jp === w.kana) continue;
     if (!HAS_KANJI.test(w.jp)) continue;
     if (!_furiMap.has(w.jp)){ _furiMap.set(w.jp, w.kana); if (w.jp.length > _furiMax) _furiMax = w.jp.length; }
+    // the conjugations kept with the word (運んで, 運びません …) read the same way
+    if (Array.isArray(w.related)) for (const f of w.related) {
+      const fj = f && String(f.jp || '').trim(); if (!fj || _furiMap.has(fj)) continue;
+      const k = jpRelatedKana(w.jp, w.kana, fj);
+      if (k) { _furiMap.set(fj, k); if (fj.length > _furiMax) _furiMax = fj.length; }
+    }
   }
   return _furiMap;
 }
@@ -9460,6 +9493,7 @@ let PAGE_UNIQUE = new Map();      // book -> Map(page -> its distinct words), fo
 let WORD_KEY = new Map();         // id -> jp|kana, so a repeated word counts once
 let WORD_BY_ID = new Map();       // id -> the word itself, so a favorites/lookup list needn't scan all of WORDS
 function rebuildIndexes(){
+  _furiMap = null; _furiMax = 0;      // the reading table follows the words (new words / their conjugations)
   shareExamples();
   BOOKS = Array.from(new Set(WORDS.map(w => w.book)));
   UNIQUE_WORDS = dedupeWords(WORDS);
@@ -13751,7 +13785,7 @@ class Component extends DCLogic {
       // related conjugation forms (食べない, 食べた…) attached to the word are tappable too
       if (Array.isArray(w.related)) for (const f of w.related) {
         const fj = f && (f.jp || '').trim(); if (!fj || fj.length > 20 || this._bwMap.has(fj) || !HAS_JP.test(fj) || /[（）()\s\/、。，,！!？?・「」]/.test(fj)) continue;
-        this._bwMap.set(fj, { kana: '', km: f.km || w.km || '', img: w.img || '', id: w.id, pos: w.pos || '' }); if (fj.length > this._bwMax) this._bwMax = fj.length;
+        this._bwMap.set(fj, { kana: jpRelatedKana(w.jp, w.kana, fj), km: f.km || w.km || '', img: w.img || '', id: w.id, pos: w.pos || '' }); if (fj.length > this._bwMax) this._bwMax = fj.length;
       }
     }
     return this._bwMap;
@@ -16919,7 +16953,7 @@ class Component extends DCLogic {
           const fj = (f.jp || '').trim(); if (!fj || seen.has(fj)) continue;
           if (fj.includes(s.search) || (f.km || '').toLowerCase().includes(q)) {
             seen.add(fj);
-            rel.push({ ...w, id: w.id + '::' + fj, _baseId: w.id, jp: fj, kana: '', km: f.km || w.km, starred: false, related: [], _relatedOf: w.jp });
+            rel.push({ ...w, id: w.id + '::' + fj, _baseId: w.id, jp: fj, kana: jpRelatedKana(w.jp, w.kana, fj), km: f.km || w.km, starred: false, related: [], _relatedOf: w.jp });
           }
         }
       }
