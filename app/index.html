@@ -15473,44 +15473,95 @@ class Component extends DCLogic {
     this._edDirty = true; ed.focus(); this._edScheduleReflow(this._edCur);
   }
   // tap an image in the editor → a bar to resize / align / move / delete it
+  // a selected picture gets a Word-style frame: 8 sizing handles, a rotate handle and the Layout Options button;
+  // the Picture Format tab of the ribbon holds the rest. The frame lives in the stage (never inside the sheet), so it is never saved.
   _selectEditorImage(img){
-    if (this._edSelImg && this._edSelImg !== img) { this._edSelImg.style.outline = ''; this._edSelImg.style.outlineOffset = ''; }
-    this._edSelImg = img;
-    img.style.outline = '3px solid var(--color-accent)'; img.style.outlineOffset = '2px';
-    this._showImgBar();
+    if (this._edSelImg && this._edSelImg !== img) this._edImgOverlayRemove();
+    this._edSelImg = img; img.style.outline = ''; img.style.outlineOffset = '';
+    this._edImgOverlay();
+    if (this._edPicTabHook) this._edPicTabHook(true);
   }
   _deselectEditorImage(){
     const b = document.getElementById('lib-img-bar'); if (b) b.remove();
+    this._edImgOverlayRemove();
     if (this._edSelImg) { this._edSelImg.style.outline = ''; this._edSelImg.style.outlineOffset = ''; this._edSelImg = null; }
+    if (this._edPicTabHook) this._edPicTabHook(false);
   }
-  _showImgBar(){
-    const img = this._edSelImg, host = document.getElementById('lib-editor-root'); if (!img || !host) return;
-    const old = document.getElementById('lib-img-bar'); if (old) old.remove();
-    const bar = document.createElement('div'); bar.id = 'lib-img-bar';
-    bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:130;background:var(--color-surface);border-top:1px solid var(--color-divider);box-shadow:0 -4px 20px rgba(0,0,0,0.3);padding:8px 10px calc(8px + env(safe-area-inset-bottom, 0px));display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;';
-    const ed = this._edCurPage();
-    const mk = (label, fn, active) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.style.cssText = 'height:36px;padding:0 11px;border:1px solid var(--color-divider);border-radius:8px;background:' + (active ? 'var(--color-accent-700);color:#fff;' : 'var(--color-bg);') + 'cursor:pointer;font-size:13px;'; b.addEventListener('click', fn); return b; };
-    const getPct = () => img.dataset.w ? +img.dataset.w : Math.max(10, Math.min(100, Math.round(img.offsetWidth / ((ed && ed.clientWidth) || img.offsetWidth) * 100)));
-    const setPct = p => { p = Math.max(10, Math.min(100, p)); img.style.width = p + '%'; img.style.maxWidth = '100%'; img.style.height = 'auto'; img.dataset.w = p; this._edDirty = true; this._edScheduleReflow(this._edCur); };
-    bar.appendChild(mk('− តូច', () => setPct(getPct() - 10)));
-    bar.appendChild(mk('+ ធំ', () => setPct(getPct() + 10)));
-    // text-wrap mode (the active one is highlighted)
-    const wrap = img.dataset.wrap || 'center';
-    const wbtn = (label, mode) => mk(label, () => { this._edSetImgWrap(img, mode); this._showImgBar(); }, wrap === mode);
-    bar.appendChild(wbtn('⬍ ក្នុងជួរ', 'inline'));
-    bar.appendChild(wbtn('◧ រុំឆ្វេង', 'left'));
-    bar.appendChild(wbtn('◨ រុំស្ដាំ', 'right'));
-    bar.appendChild(wbtn('▤ កណ្ដាល', 'center'));
-    bar.appendChild(wbtn('⬆ លើអក្សរ', 'front'));
-    bar.appendChild(wbtn('⬇ ក្រោមអក្សរ', 'behind'));
-    bar.appendChild(mk('🗑 លុប', () => { img.remove(); this._deselectEditorImage(); this._edDirty = true; this._edScheduleReflow(this._edCur); }));
-    bar.appendChild(mk('✕', () => this._deselectEditorImage()));
-    if (wrap === 'front' || wrap === 'behind') {
-      const h = document.createElement('div'); h.style.cssText = 'flex-basis:100%;text-align:center;font-size:11px;opacity:0.6;margin-top:2px;';
-      h.textContent = '↔ អូសរូបភាពនៅលើក្រដាស់ ដើម្បីផ្លាស់ទីតាំង';
-      bar.appendChild(h);
+  _edImgOverlayRemove(){ ['ed-img-sel', 'ed-img-lo'].forEach(id => { const n = document.getElementById(id); if (n) n.remove(); }); }
+  // rotation and flips live in data-* and are written out as one transform
+  _edImgXf(img){
+    const rot = +img.dataset.rot || 0, fh = img.dataset.fh === '1', fv = img.dataset.fv === '1';
+    const t = (rot ? 'rotate(' + rot + 'deg) ' : '') + (fh ? 'scaleX(-1) ' : '') + (fv ? 'scaleY(-1)' : '');
+    img.style.transform = t.trim(); this._edDirty = true;
+  }
+  _edImgOverlay(){
+    const img = this._edSelImg, st = this._edStage;
+    if (!img || !st || !img.isConnected) { this._edImgOverlayRemove(); return; }
+    let o = document.getElementById('ed-img-sel');
+    if (!o) {
+      o = document.createElement('div'); o.id = 'ed-img-sel';
+      const z = () => (this._edFitZoom || 1) * (this._edScale || 1);
+      // sizing handles keep the picture's proportions (its height follows the width)
+      [['nw', -1, -1], ['n', 0, -1], ['ne', 1, -1], ['e', 1, 0], ['se', 1, 1], ['s', 0, 1], ['sw', -1, 1], ['w', -1, 0]].forEach(([k, sx, sy]) => {
+        const hd = document.createElement('i'); hd.className = 'ed-h ed-h-' + k; o.appendChild(hd);
+        hd.addEventListener('pointerdown', e => {
+          e.preventDefault(); e.stopPropagation();
+          const im = this._edSelImg; if (!im) return; const pg = im.closest('.lib-epage'); if (!pg) return;
+          const r0 = im.getBoundingClientRect(), x0 = e.clientX, y0 = e.clientY, ratio = r0.height / Math.max(1, r0.width);
+          const cs = getComputedStyle(pg), cw = pg.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+          const move = ev => {
+            const dx = (ev.clientX - x0) * sx, dy = (ev.clientY - y0) * sy;
+            const dw = sx === 0 ? dy / ratio : (sy === 0 ? dx : Math.max(dx, dy / ratio));
+            const wpx = Math.max(24, (r0.width + dw) / z());
+            const pct = Math.max(5, Math.min(100, Math.round(wpx / cw * 1000) / 10));
+            im.style.width = pct + '%'; im.style.maxWidth = '100%'; im.style.height = 'auto'; im.dataset.w = pct; this._edDirty = true; this._edImgOverlay();
+          };
+          const up = () => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); this._edScheduleReflow(this._edCur); setTimeout(() => this._edImgOverlay(), 250); };
+          document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
+        });
+      });
+      // rotate handle: drag around the centre (snaps to 15°)
+      const rot = document.createElement('i'); rot.className = 'ed-rot'; rot.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>'; o.appendChild(rot);
+      rot.addEventListener('pointerdown', e => {
+        e.preventDefault(); e.stopPropagation();
+        const im = this._edSelImg; if (!im) return; const rc = im.getBoundingClientRect(), cx = rc.left + rc.width / 2, cy = rc.top + rc.height / 2;
+        const move = ev => { let a = Math.atan2(ev.clientY - cy, ev.clientX - cx) * 180 / Math.PI + 90; if (!ev.shiftKey) a = Math.round(a / 15) * 15; a = ((a % 360) + 360) % 360; im.dataset.rot = a; this._edImgXf(im); this._edImgOverlay(); };
+        const up = () => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); };
+        document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
+      });
+      // Layout Options (the little button beside the picture, as in Word)
+      const lob = document.createElement('button'); lob.type = 'button'; lob.className = 'ed-lob'; lob.title = 'ជម្រើសប្លង់';
+      lob.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 5h18M3 19h18M3 9h4M3 15h4M17 9h4M17 15h4"/><path d="M9 15v-3a3 3 0 0 1 6 0v3z"/></svg>';
+      lob.addEventListener('pointerdown', e => e.stopPropagation());
+      lob.addEventListener('mousedown', e => e.preventDefault());
+      lob.addEventListener('click', () => { const p = document.getElementById('ed-img-lo'); if (p) p.remove(); else this._edImgLayoutPop(); });
+      o.appendChild(lob);
+      st.appendChild(o);
     }
-    host.appendChild(bar);
+    const sr = st.getBoundingClientRect(), r = img.getBoundingClientRect();
+    o.style.left = (r.left - sr.left) + 'px'; o.style.top = (r.top - sr.top) + 'px'; o.style.width = r.width + 'px'; o.style.height = r.height + 'px';
+    const lo = document.getElementById('ed-img-lo'); if (lo) { lo.style.left = (r.right - sr.left + 44) + 'px'; lo.style.top = (r.top - sr.top) + 'px'; }
+  }
+  // Layout Options: in line with text, or one of the text-wrapping placements
+  _edImgLayoutPop(){
+    const img = this._edSelImg, st = this._edStage; if (!img || !st) return;
+    const old = document.getElementById('ed-img-lo'); if (old) old.remove();
+    const en = (() => { try { return localStorage.getItem('dict_ed_lang') === 'en'; } catch(e) { return false; } })();
+    const L = (kh, e2) => en ? e2 : kh;
+    const p = document.createElement('div'); p.id = 'ed-img-lo';
+    const cur = img.dataset.wrap || 'center';
+    const ICO = { inline: '<path d="M3 17h5M16 17h5"/><path d="M9 17v-4a3 3 0 0 1 6 0v4z"/>', left: '<path d="M14 6h7M14 10h7M14 14h7M3 18h18M3 6h8v8H3z"/>', right: '<path d="M3 6h7M3 10h7M3 14h7M3 18h18M13 6h8v8h-8z"/>',
+      center: '<path d="M3 4h18M3 20h18M8 8h8v8H8z"/>', behind: '<path d="M3 6h18M3 10h18M3 14h18M3 18h18" opacity=".55"/><path d="M8 7h8v10H8z" fill="#9db3d0" stroke="none" opacity=".7"/>', front: '<path d="M3 6h18M3 10h18M3 14h18M3 18h18" opacity=".55"/><path d="M8 7h8v10H8z" fill="#2b579a" stroke="#2b579a"/>' };
+    const opt = (mode, tip) => '<button type="button" data-m="' + mode + '" class="' + (cur === mode ? 'on' : '') + '" title="' + tip + '"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#2b579a" stroke-width="1.6" stroke-linecap="round">' + ICO[mode] + '</svg></button>';
+    p.innerHTML = '<div class="hd"><b>' + L('ជម្រើសប្លង់', 'Layout Options') + '</b><button type="button" class="x">✕</button></div>'
+      + '<div class="sec">' + L('ក្នុងជួរអក្សរ', 'In Line with Text') + '</div><div class="row">' + opt('inline', L('ក្នុងជួរអក្សរ', 'In Line with Text')) + '</div>'
+      + '<div class="sec">' + L('រុំអក្សរ', 'With Text Wrapping') + '</div><div class="row">' + opt('left', L('រុំការ៉េ (ឆ្វេង)', 'Square (left)')) + opt('right', L('រុំការ៉េ (ស្ដាំ)', 'Square (right)')) + opt('center', L('លើ និងក្រោម', 'Top and Bottom')) + '</div>'
+      + '<div class="row">' + opt('behind', L('នៅក្រោយអក្សរ', 'Behind Text')) + opt('front', L('នៅមុខអក្សរ', 'In Front of Text')) + '</div>';
+    p.addEventListener('pointerdown', e => e.stopPropagation());
+    p.addEventListener('mousedown', e => e.preventDefault());
+    p.querySelector('.x').addEventListener('click', () => p.remove());
+    p.querySelectorAll('button[data-m]').forEach(b => b.addEventListener('click', () => { this._edSetImgWrap(img, b.dataset.m); p.remove(); setTimeout(() => { this._edImgOverlay(); this._edImgLayoutPop(); }, 220); }));
+    st.appendChild(p); this._edImgOverlay();
   }
   // image text-wrap: in line / float-left / float-right / centred block / in front
   // of text / behind text. The last two are taken out of flow (position:absolute)
@@ -15532,6 +15583,7 @@ class Component extends DCLogic {
     }
     this._edHookImage(img);
     this._edDirty = true; this._edScheduleReflow(this._edCur);
+    setTimeout(() => this._edImgOverlay(), 220);
   }
   // reflow when an image finishes loading + let a front/behind image be dragged
   _edHookImage(img){
@@ -15547,7 +15599,7 @@ class Component extends DCLogic {
       const sx = e.clientX, sy = e.clientY;
       const x0 = parseFloat(img.style.left) || 0, y0 = parseFloat(img.style.top) || 0;
       let moved = false;
-      const move = ev => { moved = true; img.style.left = (x0 + (ev.clientX - sx) / z) + 'px'; img.style.top = (y0 + (ev.clientY - sy) / z) + 'px'; };
+      const move = ev => { moved = true; img.style.left = (x0 + (ev.clientX - sx) / z) + 'px'; img.style.top = (y0 + (ev.clientY - sy) / z) + 'px'; this._edImgOverlay(); };
       const up = () => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); if (moved) this._edDirty = true; };
       document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
     });
@@ -15765,6 +15817,16 @@ class Component extends DCLogic {
         '.ewd-tab.on:after{content:"";position:absolute;left:12px;right:12px;bottom:3px;height:3px;border-radius:2px;background:#2b579a}',
         '.ewd-tab.file{background:#2b579a;color:#fff;border-radius:4px;margin:3px 4px 3px 0}.ewd-tab.file:hover{background:#244a83}',
         '.ewd-lang{flex:none;align-self:center;display:flex;align-items:center;gap:4px;border:1px solid #c8c6c4;border-radius:12px;background:#fff;font:inherit;font-size:11.5px;padding:2px 9px;margin:0 4px;cursor:pointer;color:#605e5c}.ewd-lang b{color:#2b579a}.ewd-lang i{font-style:normal;color:#c8c6c4}',
+        '#ed-img-sel{position:absolute;z-index:7;border:1px solid #8a8886;pointer-events:none;box-sizing:border-box}',
+        '#ed-img-sel .ed-h{position:absolute;width:11px;height:11px;margin:-6px 0 0 -6px;border:1px solid #605e5c;background:#fff;border-radius:50%;pointer-events:auto;touch-action:none}',
+        '#ed-img-sel .ed-h-nw{left:0;top:0;cursor:nwse-resize}#ed-img-sel .ed-h-n{left:50%;top:0;cursor:ns-resize}#ed-img-sel .ed-h-ne{left:100%;top:0;cursor:nesw-resize}#ed-img-sel .ed-h-e{left:100%;top:50%;cursor:ew-resize}',
+        '#ed-img-sel .ed-h-se{left:100%;top:100%;cursor:nwse-resize}#ed-img-sel .ed-h-s{left:50%;top:100%;cursor:ns-resize}#ed-img-sel .ed-h-sw{left:0;top:100%;cursor:nesw-resize}#ed-img-sel .ed-h-w{left:0;top:50%;cursor:ew-resize}',
+        '#ed-img-sel .ed-rot{position:absolute;left:50%;top:-34px;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:#fff;border:1px solid #8a8886;color:#605e5c;display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:grab;touch-action:none}',
+        '#ed-img-sel .ed-lob{position:absolute;left:100%;top:0;margin-left:12px;width:28px;height:28px;border:1px solid #8a8886;background:#fff;border-radius:3px;color:#323130;display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;padding:0}',
+        '#ed-img-lo{position:absolute;z-index:8;width:160px;background:#fff;border:1px solid #2b579a;box-shadow:0 6px 18px rgba(0,0,0,.18);padding:8px 10px 10px;font-family:"Segoe UI",system-ui,"Noto Sans Khmer",sans-serif;font-size:12px;color:#323130}',
+        '#ed-img-lo .hd{display:flex;justify-content:space-between;align-items:center;color:#2b579a;margin-bottom:6px}#ed-img-lo .hd .x{border:none;background:none;cursor:pointer;font-size:13px;color:#605e5c}',
+        '#ed-img-lo .sec{background:#f3f2f1;padding:3px 6px;margin:6px 0 4px;color:#605e5c}#ed-img-lo .row{display:flex;gap:6px;margin-bottom:4px}',
+        '#ed-img-lo .row button{width:38px;height:34px;border:1px solid transparent;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}#ed-img-lo .row button:hover{background:#f3f2f1}#ed-img-lo .row button.on{background:#c7dcf3;border-color:#9cbce3}',
         '.ewd-sp{flex:1}.ewd-fold{flex:none;border:none;background:transparent;color:#605e5c;cursor:pointer;padding:0 10px;display:flex;align-items:center}',
         '.ewd-rib{flex:none;display:flex;align-items:stretch;height:96px;background:#fff;border-top:1px solid #edebe9;border-bottom:1px solid #d2d0ce;box-shadow:0 1px 3px rgba(0,0,0,.07);overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;position:relative;z-index:2}',
         '.ewd-rib::-webkit-scrollbar{display:none}',
@@ -15914,6 +15976,10 @@ class Component extends DCLogic {
       nav: 'M4 4h16v16H4zM9 4v16M5.5 8h2M5.5 11h2M5.5 14h2', onep: 'M7 3h10v18H7z', multp: 'M3 5h8v14H3zM13 5h8v14h-8z', z100: 'M4 12h16M12 4v16',
       new: 'M6 3h8l4 4v14H6zM14 3v4h4M12 11v6M9 14h6',
       env: 'M3 6h18v12H3zM3 6l9 7 9-7',
+      rmbg: 'M4 4h16v16H4zM8 15l3-4 2 3 2-2 3 3M8 8h.01', sun: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
+      pcolor2: 'M4 4h16v16H4zM4 14l5-5 4 4 3-3 4 4', art: 'M4 4h16v16H4zM7 16c2-4 4-6 7-7M14 9l2 2', transp: 'M4 4h16v16H4zM4 4l16 16M12 4v16M4 12h16',
+      compress: 'M4 4h16v16H4zM9 9l3 3 3-3M12 12V6M9 15h6', chpic: 'M4 4h16v16H4zM14 8l3 3-3 3M17 11H9', resetp: 'M4 4h16v16H4zM9 10a4 4 0 1 1 1 5M9 6v4h4', pborder2: 'M4 4h16v16H4zM7 7h10v10H7z',
+      peff: 'M4 4h12v12H4zM8 20h12V8', playout: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h16v7H4z', crop: 'M6 2v16h16M2 6h16v16',
       vba: 'M4 6h9v13H4zM13 9h7v10h-7M7 10h3M7 13h3M16 13l1.5 1.5L20 12', macros: 'M4 4h13v16H4zM7 8h7M7 12h7M7 16h4M17 13l3 3-3 3', pause: 'M8 6v12M16 6v12', warn: 'M12 3l10 18H2zM12 10v5M12 18h.01',
       cbox: 'M4 6h16v12H4zM14 6v12M16 11l1.5 1.5L19 11', dd2: 'M4 8h16v8H4zM15 11l1.5 1.5L18 11', rep: 'M4 5h16v6H4zM4 13h16v6H4zM17 8h.01', legacy: 'M4 5h16v14H4zM8 9h3M8 13h8', chkb: 'M4 4h16v16H4zM8 12l3 3 5-6',
       dmode: 'M4 4h16v16H4zM4 9h16M9 9v11', xmlp: 'M4 4h16v16H4zM4 9h16M8 13h8M8 16h5', dtpl: 'M5 3h11l3 3v15H5zM8 9l1.5 6 2-4 2 4L15 9',
@@ -16004,7 +16070,7 @@ class Component extends DCLogic {
     };
     // ── interface language: Khmer or English (KH / EN switch in the tab row), remembered on this device ──
     let uiLang = (() => { try { return localStorage.getItem('dict_ed_lang') === 'en' ? 'en' : 'kh'; } catch(e) { return 'kh'; } })();
-    const EN = {"រក្សាទុក":"Save","ថយក្រោយ (undo)":"Undo","ទៅមុខវិញ (redo)":"Redo","ចំណងជើងសៀវភៅ":"Book title","ទាញយកជា PDF":"Download as PDF","បិទ":"Close","លំនាំដើម":"Default","ឯកសារ":"File","ទំព័រដើម":"Home","បញ្ចូល":"Insert","រចនា":"Design","ប្លង់":"Layout","ឯកសារយោង":"References","សំបុត្រ":"Mailings","ពិនិត្យ":"Review","មើល":"View","អ្នកអភិវឌ្ឍ":"Developer","ជំនួយ":"Help","ពិនិត្យអក្សរ":"Text Check","បង្រួម Ribbon":"Collapse the Ribbon","បង្ហាញ Ribbon":"Show the Ribbon","ទម្រង់រាង":"Shape Format","ក្ដារតម្បៀតខ្ទាស់":"Clipboard","បិទភ្ជាប់":"Paste","កាត់":"Cut","ចម្លង":"Copy","ចម្លងទម្រង់":"Format Painter","ពុម្ពអក្សរ":"Font","ទំហំអក្សរ":"Font Size","ពង្រីកអក្សរ":"Grow Font","បង្រួមអក្សរ":"Shrink Font","ប្ដូរទម្រង់អក្សរ":"Change Case","អក្សរធំដើមប្រយោគ":"Sentence case.","អក្សរតូចទាំងអស់":"lowercase","អក្សរធំទាំងអស់":"UPPERCASE","អក្សរធំដើមពាក្យ":"Capitalize Each Word","លុបទម្រង់អក្សរ":"Clear All Formatting","ដិត":"Bold","ទ្រេត":"Italic","គូសបន្ទាត់ក្រោម":"Underline","គូសកាត់":"Strikethrough","អក្សរក្រោម":"Subscript","អក្សរលើ":"Superscript","បែបផែនអក្សរ (មិនទាន់ដំណើរការ)":"Text Effects","បែបផែនអក្សរ":"Text Effects","ពណ៌គូសលើអក្សរ (highlight)":"Text Highlight Color","គ្មានពណ៌":"No Color","ពណ៌អក្សរ":"Font Color","កថាខណ្ឌ":"Paragraph","បញ្ជីចំណុច":"Bullets","បញ្ជីលេខ":"Numbering","ស្តាយបញ្ជី (ច្រើនកម្រិត)":"Multilevel List","ចំណុចមូល":"Bullet","រង្វង់":"Circle","ការ៉េ":"Square","ចុច «បង្កើនការចូលបន្ទាត់» ដើម្បីបង្កើតកម្រិតរង":"Use “Increase Indent” for a sub-level","បន្ថយការចូលបន្ទាត់":"Decrease Indent","បង្កើនការចូលបន្ទាត់":"Increase Indent","តម្រៀប":"Sort","បង្ហាញ/លាក់ សញ្ញា ¶":"Show/Hide ¶","តម្រឹមឆ្វេង":"Align Left","តម្រឹមកណ្ដាល":"Center","តម្រឹមស្ដាំ":"Align Right","តម្រឹមសងខាង":"Justify","គម្លាតបន្ទាត់":"Line Spacing","ពណ៌ផ្ទៃកថាខណ្ឌ":"Shading","ស៊ុម":"Borders","ស៊ុមជុំវិញ":"Outside Borders","ស៊ុមមូលពណ៌ខៀវ":"Rounded Blue Border","បន្ទាត់ក្រោម":"Bottom Border","បន្ទាត់លើ":"Top Border","គ្មានស៊ុម":"No Border","រចនាប័ទ្ម":"Styles","ធម្មតា":"Normal","គ្មានគម្លាត":"No Spacing","ចំណងជើង ១":"Heading 1","ចំណងជើង ២":"Heading 2","ចំណងជើងធំ":"Title","ចំណងជើងរង":"Subtitle","សង្កត់ធ្ងន់":"Emphasis","ដិតខ្លាំង":"Strong","សម្រង់":"Quote","កែសម្រួល":"Editing","ស្វែងរក និងជំនួស":"Find and Replace","ស្វែងរក…":"Find…","មុន":"Previous","បន្ទាប់":"Next","ជំនួសដោយ…":"Replace with…","ជំនួស":"Replace","ជំនួសទាំងអស់":"Replace All","ស្វែងរក":"Find","ជ្រើសទាំងអស់":"Select All","ទំព័រ":"Pages","ទំព័រ គម្រប":"Cover<br>Page","ទំព័រ ទទេ":"Blank<br>Page","បំបែក ទំព័រ":"Page<br>Break","តារាង":"Table","បញ្ចូលតារាង":"Insert Table","បញ្ចូលតារាង… (កំណត់ចំនួន)":"Insert Table…","រូបភាពប្រកប":"Illustrations","រូបភាព":"Pictures","រាង":"Shapes","ប្រអប់":"Rectangle","គូសពណ៌":"Highlight","បន្ទាត់គូស":"Line","ព្រួញ":"Arrow","បន្ទាត់ផ្ដេក":"Horizontal Line","រូប តំណាង":"Icons","គំរូ 3D":"3D<br>Models","គំនូស តាង":"Chart","ថតរូប អេក្រង់":"Screen-<br>shot","កម្មវិធីបន្ថែម":"Add-ins","យក Add-ins":"Get Add-ins","Add-ins របស់ខ្ញុំ":"My Add-ins","មេឌៀ":"Media","វីដេអូ អនឡាញ":"Online<br>Videos","តំណ":"Link","ចំណាំ":"Bookmark","យោង ឆ្លង":"Cross-<br>reference","មតិ":"Comment","ក្បាល និងបាតទំព័រ":"Header & Footer","ក្បាល ទំព័រ":"Header","បាត ទំព័រ":"Footer","លេខ ទំព័រ":"Page<br>Number","កំពូលទំព័រ":"Top of Page","បាតទំព័រ (កំពុងប្រើ)":"Bottom of Page (in use)","ទម្រង់លេខទំព័រ…":"Format Page Numbers…","ទម្រង់លេខទំព័រ":"Format Page Numbers","លេខទំព័រចាប់ផ្ដើម":"Starting page number","អត្ថបទ":"Text","ស្វាគមន៍ ជប៉ុន":"Japanese<br>Greetings","ប្រអប់ អត្ថបទ":"Text<br>Box","ផ្នែក រហ័ស":"Quick<br>Parts","អក្សរធំ ដើម":"Drop<br>Cap","បន្ទាត់ហត្ថលេខា":"Signature Line","កាលបរិច្ឆេទ និងម៉ោង":"Date & Time","វត្ថុ":"Object","និមិត្តសញ្ញា":"Symbols","សមីការ":"Equation","និមិត្ត សញ្ញា":"Symbol","ទម្រង់ឯកសារ":"Document Formatting","ប្រធាន បទ":"Themes","ពណ៌":"Colors","ពុម្ព អក្សរ":"Fonts","គម្លាតកថាខណ្ឌ":"Paragraph Spacing","បែបផែន":"Effects","កំណត់ជាលំនាំដើម":"Set as Default","ផ្ទៃខាងក្រោយទំព័រ":"Page Background","Water mark":"Water-<br>mark","ពណ៌ ទំព័រ":"Page<br>Color","ស៊ុម ទំព័រ":"Page<br>Borders","សំណុំរចនាប័ទ្ម":"Style Set","សំណុំរចនាប័ទ្មទាំងអស់":"All Style Sets","មូលដ្ឋាន (ឆើតឆាយ)":"Basic (Elegant)","មូលដ្ឋាន (សាមញ្ញ)":"Basic (Simple)","មូលដ្ឋាន (ទាន់សម័យ)":"Basic (Stylish)","ខ្មៅស (អក្សរធំ)":"Black & White (Capitalized)","ខ្មៅស (បុរាណ)":"Black & White (Classic)","ខ្មៅស (លេខរៀង)":"Black & White (Numbered)","ខ្មៅស (Word 2013)":"Black & White (Word 2013)","កណ្ដាល":"Centered","បន្ទាត់ (ប្លែក)":"Lines (Distinctive)","បន្ទាត់ (សាមញ្ញ)":"Lines (Simple)","បន្ទាត់ (ទាន់សម័យ)":"Lines (Stylish)","សាមញ្ញបំផុត":"Minimalist","មានផ្ទៃពណ៌":"Shaded","រៀបចំទំព័រ":"Page Setup","ទិស អក្សរ":"Text<br>Direction","រឹម":"Margins","តូចចង្អៀត":"Narrow","មធ្យម":"Moderate","ធំ":"Wide","ធំខ្លាំង":"Extra Wide","រឹមតូចជាងនេះ (−8)":"Smaller margins (−8)","រឹមធំជាងនេះ (+8)":"Larger margins (+8)","ទិស ក្រដាស":"Orien-<br>tation","ទំហំ":"Size","ជួរ ឈរ":"Columns","បំបែក":"Breaks","បំបែកទំព័រ (ក្រដាសថ្មី)":"Page Break (new sheet)","បំបែកជួរឈរ":"Column Break","បំបែកផ្នែក":"Section Break","លុបក្រដាសទំព័រនេះ":"Delete this sheet","លេខបន្ទាត់":"Line Numbers","ដាច់ពាក្យ":"Hyphenation","កំណត់ Genko":"Genko<br>Setting","គម្លាត":"Spacing","ចូលបន្ទាត់":"Indent","ឆ្វេង":"Left","ស្ដាំ":"Right","ខាងមុខ":"Before","ខាងក្រោយ":"After","រៀបចំ":"Arrange","ទីតាំង":"Position","រុំ អត្ថបទ":"Wrap<br>Text","នាំទៅ មុខ":"Bring<br>Forward","រុញទៅ ក្រោយ":"Send<br>Backward","ផ្ទាំង ជ្រើសរើស":"Selection<br>Pane","តម្រឹម":"Align","ដាក់ជាក្រុម":"Group","បង្វិល":"Rotate","តារាងមាតិកា":"Table of Contents","តារាង មាតិកា":"Table of<br>Contents","បន្ថែមអត្ថបទ":"Add Text","ធ្វើបច្ចុប្បន្នភាពតារាង":"Update Table","លេខយោងខាងក្រោម":"Footnotes","បញ្ចូល លេខយោង":"Insert<br>Footnote","បញ្ចូលលេខយោងចុង":"Insert Endnote","លេខយោងបន្ទាប់":"Next Footnote","បង្ហាញកំណត់ចំណាំ":"Show Notes","ស្រាវជ្រាវ":"Research","ការដកស្រង់ និងគន្ថនិទ្ទេស":"Citations & Bibliography","បញ្ចូល ការដកស្រង់":"Insert<br>Citation","គ្រប់គ្រងប្រភព":"Manage Sources","ស្តាយ៖":"Style:","ស្តាយការដកស្រង់":"Citation Style","គន្ថនិទ្ទេស":"Bibliography","ចំណងជើងរូប":"Captions","បញ្ចូល ចំណងជើង":"Insert<br>Caption","បញ្ចូលតារាងរូបភាព":"Insert Table of Figures","យោងឆ្លង":"Cross-reference","លិបិក្រម":"Index","សម្គាល់ ធាតុ":"Mark<br>Entry","បញ្ចូលលិបិក្រម":"Insert Index","ធ្វើបច្ចុប្បន្នភាពលិបិក្រម":"Update Index","តារាងសិទ្ធិអំណាច":"Table of Authorities","សម្គាល់ ការដកស្រង់":"Mark<br>Citation","បញ្ចូលតារាងសិទ្ធិអំណាច":"Insert Table of Authorities","បង្កើត":"Create","កាតប៉ុស្ដាល់ ជប៉ុន":"Japanese<br>Postcard","ស្រោម សំបុត្រ":"Envelopes","ស្លាក":"Labels","ចាប់ផ្ដើមបញ្ចូលសំបុត្រ":"Start Mail Merge","ចាប់ផ្ដើម បញ្ចូល":"Start Mail<br>Merge","ជ្រើស អ្នកទទួល":"Select<br>Recipients","កែបញ្ជី អ្នកទទួល":"Edit<br>Recipient List","សរសេរ និងបញ្ចូលវាល":"Write & Insert Fields","គូសវាល បញ្ចូល":"Highlight<br>Merge Fields","វាលបាកូដ":"Insert Barcode<br>Field","ប្លុក អាសយដ្ឋាន":"Address<br>Block","បន្ទាត់ ស្វាគមន៍":"Greeting<br>Line","បញ្ចូលវាល":"Insert Merge<br>Field","ក្បួន":"Rules","ផ្គូផ្គងវាល":"Match Fields","ធ្វើបច្ចុប្បន្នភាពស្លាក":"Update Labels","មើលលទ្ធផល":"Preview Results","មើល លទ្ធផល":"Preview<br>Results","អ្នកទទួល":"Recipient","រុករកអ្នកទទួល":"Recipient navigation","រកអ្នកទទួល":"Find Recipient","ពិនិត្យកំហុស":"Check for Errors","បញ្ចប់":"Finish","បញ្ចប់ និង បញ្ចូល":"Finish &<br>Merge","ពិនិត្យអក្ខរាវិរុទ្ធ":"Proofing","អក្ខរាវិរុទ្ធ និងវេយ្យាករណ៍":"Spelling &<br>Grammar","វចនានុក្រម សទិសន័យ":"Thesaurus","រាប់ ពាក្យ":"Word<br>Count","ពាក្យ (ប្រហែល)":"Words (approx.)","តួអក្សរ (គ្មានដកឃ្លា)":"Characters (no spaces)","តួអក្សរ (មានដកឃ្លា)":"Characters (with spaces)","សំឡេង":"Speech","អាន ឮៗ":"Read<br>Aloud","ភាពងាយស្រួល":"Accessibility","ពិនិត្យ ភាពងាយស្រួល":"Check<br>Accessibility","ភាសា":"Language","បកប្រែ":"Translate","ពិនិត្យភាពស៊ីសង្វាក់ជប៉ុន":"Japanese Consistency Checker","ធ្វើបច្ចុប្បន្នភាពវចនានុក្រម IME":"Update IME Dictionary","មតិ ថ្មី":"New<br>Comment","លុប":"Delete","បង្ហាញ មតិ":"Show<br>Comments","តាមដានការកែ":"Tracking","តាមដាន ការកែ":"Track<br>Changes","សម្គាល់ទាំងអស់":"All Markup","សម្គាល់សាមញ្ញ":"Simple Markup","គ្មានការសម្គាល់":"No Markup","ដើម":"Original","ការបង្ហាញការសម្គាល់":"Markup display","បង្ហាញការសម្គាល់":"Show Markup","ផ្ទាំងពិនិត្យ":"Reviewing Pane","ការផ្លាស់ប្ដូរ":"Changes","ទទួល យក":"Accept","បដិសេធ":"Reject","ប្រៀបធៀប":"Compare","ប្រៀប ធៀប":"Compare","ការពារ":"Protect","ហាមអ្នក និពន្ធ":"Block<br>Authors","ហាម កែ":"Restrict<br>Editing","ទឹកខ្មៅ":"Ink","លាក់ ទឹកខ្មៅ":"Hide<br>Ink","កំណត់ចំណាំ ភ្ជាប់":"Linked<br>Notes","ជួសជុលអត្ថបទ":"Text Clean-up","សម្អាត paste":"Clean<br>Paste","ភ្ជាប់បន្ទាត់":"Join<br>Lines","ទិដ្ឋភាព":"Views","របៀប អាន":"Read<br>Mode","ប្លង់ បោះពុម្ព":"Print<br>Layout","ប្លង់ វេប":"Web<br>Layout","គ្រោង":"Outline","សេចក្ដីព្រាង":"Draft","ផ្ដោតអារម្មណ៍":"Immersive","ផ្ដោត":"Focus","អ្នកអាន ងាយស្រួល":"Immersive<br>Reader","ចលនាទំព័រ":"Page Movement","បញ្ឈរ":"Vertical","ចំហៀង ទៅចំហៀង":"Side<br>to Side","បង្ហាញ":"Show","បន្ទាត់វាស់":"Ruler","ក្រឡាជំនួយ":"Gridlines","ផ្ទាំងរុករក":"Navigation Pane","ពង្រីក/បង្រួម":"Zoom","ពង្រីក":"Zoom","ពង្រីក +25%":"Zoom in +25%","បង្រួម −25%":"Zoom out −25%","មួយទំព័រ":"One Page","ច្រើនទំព័រ":"Multiple Pages","ទទឹងទំព័រ":"Page Width","បង្អួច":"Window","បង្អួច ថ្មី":"New<br>Window","រៀប ទាំងអស់":"Arrange<br>All","បំបែក បង្អួច":"Split","មើលចំហៀងគ្នា":"View Side by Side","រំកិលព្រមគ្នា":"Synchronous Scrolling","កំណត់ទីតាំងបង្អួចឡើងវិញ":"Reset Window Position","ប្ដូរ បង្អួច":"Switch<br>Windows","ម៉ាក្រូ":"Macros","លក្ខណៈ":"Properties","ទៅទំព័រ":"Go to Page","ទំព័រមុន":"Previous Page","ទំព័របន្ទាប់":"Next Page","បង្រួម":"Zoom Out","ទំហំមើល":"Zoom","កូដ":"Code","ថតម៉ាក្រូ":"Record Macro","ផ្អាកការថត":"Pause Recording","សុវត្ថិភាពម៉ាក្រូ":"Macro Security","ការត្រួតពិនិត្យ":"Controls","ប្រអប់អត្ថបទសម្បូរ":"Rich Text Content Control","ប្រអប់អត្ថបទធម្មតា":"Plain Text Content Control","ប្រអប់រូបភាព":"Picture Content Control","ប្លុកអត្ថបទ":"Building Block Gallery","ប្រអប់ធីក":"Check Box","ប្រអប់ជ្រើស (combo)":"Combo Box","ប្រអប់ជ្រើស":"Combo Box","បញ្ជីទម្លាក់ចុះ":"Drop-Down List","ជ្រើសកាលបរិច្ឆេទ":"Date Picker","ផ្នែកដដែលៗ":"Repeating Section","ឧបករណ៍ចាស់":"Legacy Tools","របៀបរចនា":"Design Mode","ក្រុម":"Group","ការផ្គូផ្គង":"Mapping","ផ្ទាំងផ្គូផ្គង XML":"XML Mapping<br>Pane","ពុម្ព":"Templates","ពុម្ព ឯកសារ":"Document<br>Template","ទាក់ទងជំនួយ":"Contact<br>Support","មតិកែលម្អ":"Feedback","វគ្គបណ្ដុះបណ្ដាល":"Show<br>Training","អ្វីដែលថ្មី":"What’s<br>New","បើក":"Open","កែតម្រូវ":"Correct","សរសេរឡើងវិញ":"Rephrase","ស្តាប់":"Listen","បញ្ចូលរាង":"Insert Shapes","ស្តាយរាង":"Shape Styles","ពណ៌ខាងក្នុង":"Shape Fill","ពណ៌ស៊ុម":"Shape Outline","ស៊ុមក្រាស់ +":"Thicker outline +","ស៊ុមស្ដើង −":"Thinner outline −","បែបផែនរាង":"Shape Effects","ស្តាយ WordArt":"WordArt Styles","រចនាប័ទ្មរហ័ស":"Quick Styles","ស៊ុមអក្សរ":"Text Outline","ទិសអក្សរ":"Text Direction","តម្រឹមអក្សរ":"Align Text","បង្កើតតំណ":"Create Link","អត្ថបទជំនួស":"Alt Text","រុំអត្ថបទ":"Wrap Text","នាំទៅមុខ":"Bring Forward","រុញទៅក្រោយ":"Send Backward","ផ្ទាំងជ្រើសរើស":"Selection Pane","កម្ពស់":"Height","ទទឹង":"Width","កម្ពស់ តូច":"Shorter","កម្ពស់ ធំ":"Taller","ទទឹង តូច":"Narrower","ទទឹង ធំ":"Wider","លុបរាង":"Delete<br>Shape","ជួរដេក និងជួរឈរ":"Rows & Columns","បញ្ចូលខាងលើ":"Insert<br>Above","បញ្ចូលខាងក្រោម":"Insert<br>Below","បញ្ចូលខាងឆ្វេង":"Insert<br>Left","បញ្ចូលខាងស្ដាំ":"Insert<br>Right","លុបជួរដេក":"Delete Rows","លុបជួរឈរ":"Delete Columns","លុបតារាង":"Delete Table","ស្តាយតារាង":"Table Styles","ស៊ុមពេញ":"Grid","ក្បាលពណ៌":"Header Row","ឆ្លាស់ពណ៌":"Banded","ក្រឡា":"Cell","ពណ៌ក្រឡា":"Cell<br>Shading","តម្រឹមលើ":"Align Top","តម្រឹមក្រោម":"Align Bottom","សៀវភៅទទេ":"Blank book","មេរៀនពាក្យ":"Vocabulary lesson","តារាងពាក្យ":"Word list","ទំព័រគម្រប":"Cover page","ឧទាហរណ៍ប្រយោគ":"Example sentences","លំហាត់":"Exercises","ដកការខ្ទាស់":"Unpin","ខ្ទាស់":"Pin","ឈ្មោះ":"Name","កាលបរិច្ឆេទកែ":"Date modified","កំពុងផ្ទុក…":"Loading…","ថ្មី":"New","អរុណសួស្តី":"Good morning","ទិវាសួស្តី":"Good afternoon","សាយណ្ហសួស្តី":"Good evening","ពុម្ពច្រើនទៀត →":"More templates →","ពុម្ពច្រើនទៀត":"More templates","ថ្មីៗ":"Recent","បានខ្ទាស់":"Pinned","មិនទាន់មានសៀវភៅដែលបានខ្ទាស់ទេ — ចុចរូប 🔖 ដើម្បីខ្ទាស់":"No pinned books yet — tap 🔖 to pin one","មិនទាន់មានសៀវភៅទេ":"No books yet","សៀវភៅច្រើនទៀត →":"More books →","ស្វែងរកសៀវភៅ…":"Search books…","រកមិនឃើញ":"Nothing found","ព័ត៌មាន":"Info","ចំណងជើង":"Title","ទំហំក្រដាស":"Paper size","រឹមក្រដាស":"Margins","លេខចាប់ផ្ដើម":"Starting number","កែចុងក្រោយ":"Last modified","មិនទាន់រក្សាទុក":"Not saved yet","ស្ថានភាព":"Status","មានការកែមិនទាន់រក្សាទុក":"Unsaved changes","បានរក្សាទុក":"Saved","ត្រឡប់":"Back","រក្សាទុកជា":"Save As","ប្រវត្តិ":"History","បោះពុម្ព":"Print","ចែករំលែក":"Share","នាំចេញ (PDF)":"Export (PDF)","គណនី":"Account","ជម្រើស":"Options","សៀវភៅ":"Book","· កំពុងបើក":"· open now","(គ្មានចំណងជើង)":"(untitled)","លេខទំព័រផ្ទាល់ខ្លួន (ទុកទទេ = រាប់ស្វ័យប្រវត្តិ)":"Custom page number (blank = automatic)","កថាខណ្ឌ ":"Paragraphs","សូមជ្រើសអក្សរជាមុនសិន":"Select some text first","សូមចុចសង្កត់លើក្រដាស ហើយជ្រើស «Paste»":"Press and hold on the page, then choose “Paste”","សូមដាក់ cursor លើអក្សរដែលមានទម្រង់ចង់ចម្លង":"Put the cursor in text whose format you want to copy","ឥឡូវជ្រើសអក្សរដែលចង់ដាក់ទម្រង់នេះ":"Now select the text to apply this format to","សូមជ្រើសកថាខណ្ឌ ឬបញ្ជីច្រើនជួរ ដើម្បីតម្រៀប":"Select several paragraphs or list items to sort","សូមវាយជាទម្រង់ 4x3":"Type it like 4x3","សូមចុចលើរាងជាមុនសិន":"Select a shape first","សូមដាក់ cursor ក្នុងតារាងជាមុនសិន":"Put the cursor in a table first","បានរក្សាទុក ✓":"Saved ✓","បានរក្សាទុកជាសៀវភៅថ្មី ✓":"Saved as a new book ✓","លេខទំព័រនៅបាតទំព័ររួចហើយ — វាយលេខក្នុងប្រអប់ខាងក្រោមក្រដាសដើម្បីកំណត់ផ្ទាល់":"Page numbers are already at the bottom — type a number in the box under the sheet to set one"};
+    const EN = {"ទម្រង់រូបភាព":"Picture Format","កែសម្រួលរូប":"Adjust","ដកផ្ទៃ ក្រោយ":"Remove<br>Background","ការ កែតម្រូវ":"Corrections","ពន្លឺ +":"Brightness +","ពន្លឺ −":"Brightness −","កម្រិតពណ៌ +":"Contrast +","កម្រិតពណ៌ −":"Contrast −","កំណត់ឡើងវិញ":"Reset","ពណ៌ដើម":"Original Color","ស-ខ្មៅ":"Grayscale","ពណ៌ចាស់ (Sepia)":"Sepia","ពណ៌ស្រាល":"Washed Out","ពណ៌ឆ្អៅ":"Vivid","បែបផែន សិល្បៈ":"Artistic<br>Effects","គ្មាន":"None","ព្រិល":"Blur","ព្រិលខ្លាំង":"Strong Blur","បញ្ច្រាសពណ៌":"Invert","ភាពថ្លា":"Transparency","បង្រួមរូបភាព":"Compress Pictures","ប្ដូររូបភាព":"Change Picture","កំណត់រូបភាពឡើងវិញ":"Reset Picture","ស្តាយរូបភាព":"Picture Styles","ស៊ុមស្ដើង":"Simple Frame","ស៊ុមខ្មៅក្រាស់":"Thick Matte, Black","ស្រមោល":"Drop Shadow","ជ្រុងមូល":"Rounded Rectangle","ជ្រុងមូល + ស្រមោល":"Rounded, Shadow","ស៊ុមស + ស្រមោល":"Simple Frame, White","ស៊ុមក្រាស់ + ស្រមោល":"Thick Frame, Shadow","រាងពងក្រពើ":"Oval","ស៊ុមខៀវ":"Blue Frame","ស៊ុមរូបភាព":"Picture Border","បែបផែនរូបភាព":"Picture Effects","គ្មានស្រមោល":"No Shadow","ស្រមោលខាងក្រោម":"Shadow Below","ស្រមោលស្ដាំ":"Offset Shadow","ពន្លឺខៀវជុំវិញ":"Blue Glow","គែមទន់":"Soft Edges","ប្លង់រូបភាព":"Picture Layout","អត្ថបទ ជំនួស":"Alt<br>Text","ក្នុងជួរអក្សរ":"In Line with Text","រុំការ៉េ (ឆ្វេង)":"Square (left)","រុំការ៉េ (ស្ដាំ)":"Square (right)","លើ និងក្រោម":"Top and Bottom","នៅក្រោយអក្សរ":"Behind Text","នៅមុខអក្សរ":"In Front of Text","បង្វិលស្ដាំ 90°":"Rotate Right 90°","បង្វិលឆ្វេង 90°":"Rotate Left 90°","ត្រឡប់បញ្ឈរ":"Flip Vertical","ត្រឡប់ផ្ដេក":"Flip Horizontal","ច្រឹប":"Crop","លុប រូបភាព":"Delete<br>Picture","ជម្រើសប្លង់":"Layout Options","សូមចុចលើរូបភាពជាមុនសិន":"Select a picture first","រក្សាទុក":"Save","ថយក្រោយ (undo)":"Undo","ទៅមុខវិញ (redo)":"Redo","ចំណងជើងសៀវភៅ":"Book title","ទាញយកជា PDF":"Download as PDF","បិទ":"Close","លំនាំដើម":"Default","ឯកសារ":"File","ទំព័រដើម":"Home","បញ្ចូល":"Insert","រចនា":"Design","ប្លង់":"Layout","ឯកសារយោង":"References","សំបុត្រ":"Mailings","ពិនិត្យ":"Review","មើល":"View","អ្នកអភិវឌ្ឍ":"Developer","ជំនួយ":"Help","ពិនិត្យអក្សរ":"Text Check","បង្រួម Ribbon":"Collapse the Ribbon","បង្ហាញ Ribbon":"Show the Ribbon","ទម្រង់រាង":"Shape Format","ក្ដារតម្បៀតខ្ទាស់":"Clipboard","បិទភ្ជាប់":"Paste","កាត់":"Cut","ចម្លង":"Copy","ចម្លងទម្រង់":"Format Painter","ពុម្ពអក្សរ":"Font","ទំហំអក្សរ":"Font Size","ពង្រីកអក្សរ":"Grow Font","បង្រួមអក្សរ":"Shrink Font","ប្ដូរទម្រង់អក្សរ":"Change Case","អក្សរធំដើមប្រយោគ":"Sentence case.","អក្សរតូចទាំងអស់":"lowercase","អក្សរធំទាំងអស់":"UPPERCASE","អក្សរធំដើមពាក្យ":"Capitalize Each Word","លុបទម្រង់អក្សរ":"Clear All Formatting","ដិត":"Bold","ទ្រេត":"Italic","គូសបន្ទាត់ក្រោម":"Underline","គូសកាត់":"Strikethrough","អក្សរក្រោម":"Subscript","អក្សរលើ":"Superscript","បែបផែនអក្សរ (មិនទាន់ដំណើរការ)":"Text Effects","បែបផែនអក្សរ":"Text Effects","ពណ៌គូសលើអក្សរ (highlight)":"Text Highlight Color","គ្មានពណ៌":"No Color","ពណ៌អក្សរ":"Font Color","កថាខណ្ឌ":"Paragraph","បញ្ជីចំណុច":"Bullets","បញ្ជីលេខ":"Numbering","ស្តាយបញ្ជី (ច្រើនកម្រិត)":"Multilevel List","ចំណុចមូល":"Bullet","រង្វង់":"Circle","ការ៉េ":"Square","ចុច «បង្កើនការចូលបន្ទាត់» ដើម្បីបង្កើតកម្រិតរង":"Use “Increase Indent” for a sub-level","បន្ថយការចូលបន្ទាត់":"Decrease Indent","បង្កើនការចូលបន្ទាត់":"Increase Indent","តម្រៀប":"Sort","បង្ហាញ/លាក់ សញ្ញា ¶":"Show/Hide ¶","តម្រឹមឆ្វេង":"Align Left","តម្រឹមកណ្ដាល":"Center","តម្រឹមស្ដាំ":"Align Right","តម្រឹមសងខាង":"Justify","គម្លាតបន្ទាត់":"Line Spacing","ពណ៌ផ្ទៃកថាខណ្ឌ":"Shading","ស៊ុម":"Borders","ស៊ុមជុំវិញ":"Outside Borders","ស៊ុមមូលពណ៌ខៀវ":"Rounded Blue Border","បន្ទាត់ក្រោម":"Bottom Border","បន្ទាត់លើ":"Top Border","គ្មានស៊ុម":"No Border","រចនាប័ទ្ម":"Styles","ធម្មតា":"Normal","គ្មានគម្លាត":"No Spacing","ចំណងជើង ១":"Heading 1","ចំណងជើង ២":"Heading 2","ចំណងជើងធំ":"Title","ចំណងជើងរង":"Subtitle","សង្កត់ធ្ងន់":"Emphasis","ដិតខ្លាំង":"Strong","សម្រង់":"Quote","កែសម្រួល":"Editing","ស្វែងរក និងជំនួស":"Find and Replace","ស្វែងរក…":"Find…","មុន":"Previous","បន្ទាប់":"Next","ជំនួសដោយ…":"Replace with…","ជំនួស":"Replace","ជំនួសទាំងអស់":"Replace All","ស្វែងរក":"Find","ជ្រើសទាំងអស់":"Select All","ទំព័រ":"Pages","ទំព័រ គម្រប":"Cover<br>Page","ទំព័រ ទទេ":"Blank<br>Page","បំបែក ទំព័រ":"Page<br>Break","តារាង":"Table","បញ្ចូលតារាង":"Insert Table","បញ្ចូលតារាង… (កំណត់ចំនួន)":"Insert Table…","រូបភាពប្រកប":"Illustrations","រូបភាព":"Pictures","រាង":"Shapes","ប្រអប់":"Rectangle","គូសពណ៌":"Highlight","បន្ទាត់គូស":"Line","ព្រួញ":"Arrow","បន្ទាត់ផ្ដេក":"Horizontal Line","រូប តំណាង":"Icons","គំរូ 3D":"3D<br>Models","គំនូស តាង":"Chart","ថតរូប អេក្រង់":"Screen-<br>shot","កម្មវិធីបន្ថែម":"Add-ins","យក Add-ins":"Get Add-ins","Add-ins របស់ខ្ញុំ":"My Add-ins","មេឌៀ":"Media","វីដេអូ អនឡាញ":"Online<br>Videos","តំណ":"Link","ចំណាំ":"Bookmark","យោង ឆ្លង":"Cross-<br>reference","មតិ":"Comment","ក្បាល និងបាតទំព័រ":"Header & Footer","ក្បាល ទំព័រ":"Header","បាត ទំព័រ":"Footer","លេខ ទំព័រ":"Page<br>Number","កំពូលទំព័រ":"Top of Page","បាតទំព័រ (កំពុងប្រើ)":"Bottom of Page (in use)","ទម្រង់លេខទំព័រ…":"Format Page Numbers…","ទម្រង់លេខទំព័រ":"Format Page Numbers","លេខទំព័រចាប់ផ្ដើម":"Starting page number","អត្ថបទ":"Text","ស្វាគមន៍ ជប៉ុន":"Japanese<br>Greetings","ប្រអប់ អត្ថបទ":"Text<br>Box","ផ្នែក រហ័ស":"Quick<br>Parts","អក្សរធំ ដើម":"Drop<br>Cap","បន្ទាត់ហត្ថលេខា":"Signature Line","កាលបរិច្ឆេទ និងម៉ោង":"Date & Time","វត្ថុ":"Object","និមិត្តសញ្ញា":"Symbols","សមីការ":"Equation","និមិត្ត សញ្ញា":"Symbol","ទម្រង់ឯកសារ":"Document Formatting","ប្រធាន បទ":"Themes","ពណ៌":"Colors","ពុម្ព អក្សរ":"Fonts","គម្លាតកថាខណ្ឌ":"Paragraph Spacing","បែបផែន":"Effects","កំណត់ជាលំនាំដើម":"Set as Default","ផ្ទៃខាងក្រោយទំព័រ":"Page Background","Water mark":"Water-<br>mark","ពណ៌ ទំព័រ":"Page<br>Color","ស៊ុម ទំព័រ":"Page<br>Borders","សំណុំរចនាប័ទ្ម":"Style Set","សំណុំរចនាប័ទ្មទាំងអស់":"All Style Sets","មូលដ្ឋាន (ឆើតឆាយ)":"Basic (Elegant)","មូលដ្ឋាន (សាមញ្ញ)":"Basic (Simple)","មូលដ្ឋាន (ទាន់សម័យ)":"Basic (Stylish)","ខ្មៅស (អក្សរធំ)":"Black & White (Capitalized)","ខ្មៅស (បុរាណ)":"Black & White (Classic)","ខ្មៅស (លេខរៀង)":"Black & White (Numbered)","ខ្មៅស (Word 2013)":"Black & White (Word 2013)","កណ្ដាល":"Centered","បន្ទាត់ (ប្លែក)":"Lines (Distinctive)","បន្ទាត់ (សាមញ្ញ)":"Lines (Simple)","បន្ទាត់ (ទាន់សម័យ)":"Lines (Stylish)","សាមញ្ញបំផុត":"Minimalist","មានផ្ទៃពណ៌":"Shaded","រៀបចំទំព័រ":"Page Setup","ទិស អក្សរ":"Text<br>Direction","រឹម":"Margins","តូចចង្អៀត":"Narrow","មធ្យម":"Moderate","ធំ":"Wide","ធំខ្លាំង":"Extra Wide","រឹមតូចជាងនេះ (−8)":"Smaller margins (−8)","រឹមធំជាងនេះ (+8)":"Larger margins (+8)","ទិស ក្រដាស":"Orien-<br>tation","ទំហំ":"Size","ជួរ ឈរ":"Columns","បំបែក":"Breaks","បំបែកទំព័រ (ក្រដាសថ្មី)":"Page Break (new sheet)","បំបែកជួរឈរ":"Column Break","បំបែកផ្នែក":"Section Break","លុបក្រដាសទំព័រនេះ":"Delete this sheet","លេខបន្ទាត់":"Line Numbers","ដាច់ពាក្យ":"Hyphenation","កំណត់ Genko":"Genko<br>Setting","គម្លាត":"Spacing","ចូលបន្ទាត់":"Indent","ឆ្វេង":"Left","ស្ដាំ":"Right","ខាងមុខ":"Before","ខាងក្រោយ":"After","រៀបចំ":"Arrange","ទីតាំង":"Position","រុំ អត្ថបទ":"Wrap<br>Text","នាំទៅ មុខ":"Bring<br>Forward","រុញទៅ ក្រោយ":"Send<br>Backward","ផ្ទាំង ជ្រើសរើស":"Selection<br>Pane","តម្រឹម":"Align","ដាក់ជាក្រុម":"Group","បង្វិល":"Rotate","តារាងមាតិកា":"Table of Contents","តារាង មាតិកា":"Table of<br>Contents","បន្ថែមអត្ថបទ":"Add Text","ធ្វើបច្ចុប្បន្នភាពតារាង":"Update Table","លេខយោងខាងក្រោម":"Footnotes","បញ្ចូល លេខយោង":"Insert<br>Footnote","បញ្ចូលលេខយោងចុង":"Insert Endnote","លេខយោងបន្ទាប់":"Next Footnote","បង្ហាញកំណត់ចំណាំ":"Show Notes","ស្រាវជ្រាវ":"Research","ការដកស្រង់ និងគន្ថនិទ្ទេស":"Citations & Bibliography","បញ្ចូល ការដកស្រង់":"Insert<br>Citation","គ្រប់គ្រងប្រភព":"Manage Sources","ស្តាយ៖":"Style:","ស្តាយការដកស្រង់":"Citation Style","គន្ថនិទ្ទេស":"Bibliography","ចំណងជើងរូប":"Captions","បញ្ចូល ចំណងជើង":"Insert<br>Caption","បញ្ចូលតារាងរូបភាព":"Insert Table of Figures","យោងឆ្លង":"Cross-reference","លិបិក្រម":"Index","សម្គាល់ ធាតុ":"Mark<br>Entry","បញ្ចូលលិបិក្រម":"Insert Index","ធ្វើបច្ចុប្បន្នភាពលិបិក្រម":"Update Index","តារាងសិទ្ធិអំណាច":"Table of Authorities","សម្គាល់ ការដកស្រង់":"Mark<br>Citation","បញ្ចូលតារាងសិទ្ធិអំណាច":"Insert Table of Authorities","បង្កើត":"Create","កាតប៉ុស្ដាល់ ជប៉ុន":"Japanese<br>Postcard","ស្រោម សំបុត្រ":"Envelopes","ស្លាក":"Labels","ចាប់ផ្ដើមបញ្ចូលសំបុត្រ":"Start Mail Merge","ចាប់ផ្ដើម បញ្ចូល":"Start Mail<br>Merge","ជ្រើស អ្នកទទួល":"Select<br>Recipients","កែបញ្ជី អ្នកទទួល":"Edit<br>Recipient List","សរសេរ និងបញ្ចូលវាល":"Write & Insert Fields","គូសវាល បញ្ចូល":"Highlight<br>Merge Fields","វាលបាកូដ":"Insert Barcode<br>Field","ប្លុក អាសយដ្ឋាន":"Address<br>Block","បន្ទាត់ ស្វាគមន៍":"Greeting<br>Line","បញ្ចូលវាល":"Insert Merge<br>Field","ក្បួន":"Rules","ផ្គូផ្គងវាល":"Match Fields","ធ្វើបច្ចុប្បន្នភាពស្លាក":"Update Labels","មើលលទ្ធផល":"Preview Results","មើល លទ្ធផល":"Preview<br>Results","អ្នកទទួល":"Recipient","រុករកអ្នកទទួល":"Recipient navigation","រកអ្នកទទួល":"Find Recipient","ពិនិត្យកំហុស":"Check for Errors","បញ្ចប់":"Finish","បញ្ចប់ និង បញ្ចូល":"Finish &<br>Merge","ពិនិត្យអក្ខរាវិរុទ្ធ":"Proofing","អក្ខរាវិរុទ្ធ និងវេយ្យាករណ៍":"Spelling &<br>Grammar","វចនានុក្រម សទិសន័យ":"Thesaurus","រាប់ ពាក្យ":"Word<br>Count","ពាក្យ (ប្រហែល)":"Words (approx.)","តួអក្សរ (គ្មានដកឃ្លា)":"Characters (no spaces)","តួអក្សរ (មានដកឃ្លា)":"Characters (with spaces)","សំឡេង":"Speech","អាន ឮៗ":"Read<br>Aloud","ភាពងាយស្រួល":"Accessibility","ពិនិត្យ ភាពងាយស្រួល":"Check<br>Accessibility","ភាសា":"Language","បកប្រែ":"Translate","ពិនិត្យភាពស៊ីសង្វាក់ជប៉ុន":"Japanese Consistency Checker","ធ្វើបច្ចុប្បន្នភាពវចនានុក្រម IME":"Update IME Dictionary","មតិ ថ្មី":"New<br>Comment","លុប":"Delete","បង្ហាញ មតិ":"Show<br>Comments","តាមដានការកែ":"Tracking","តាមដាន ការកែ":"Track<br>Changes","សម្គាល់ទាំងអស់":"All Markup","សម្គាល់សាមញ្ញ":"Simple Markup","គ្មានការសម្គាល់":"No Markup","ដើម":"Original","ការបង្ហាញការសម្គាល់":"Markup display","បង្ហាញការសម្គាល់":"Show Markup","ផ្ទាំងពិនិត្យ":"Reviewing Pane","ការផ្លាស់ប្ដូរ":"Changes","ទទួល យក":"Accept","បដិសេធ":"Reject","ប្រៀបធៀប":"Compare","ប្រៀប ធៀប":"Compare","ការពារ":"Protect","ហាមអ្នក និពន្ធ":"Block<br>Authors","ហាម កែ":"Restrict<br>Editing","ទឹកខ្មៅ":"Ink","លាក់ ទឹកខ្មៅ":"Hide<br>Ink","កំណត់ចំណាំ ភ្ជាប់":"Linked<br>Notes","ជួសជុលអត្ថបទ":"Text Clean-up","សម្អាត paste":"Clean<br>Paste","ភ្ជាប់បន្ទាត់":"Join<br>Lines","ទិដ្ឋភាព":"Views","របៀប អាន":"Read<br>Mode","ប្លង់ បោះពុម្ព":"Print<br>Layout","ប្លង់ វេប":"Web<br>Layout","គ្រោង":"Outline","សេចក្ដីព្រាង":"Draft","ផ្ដោតអារម្មណ៍":"Immersive","ផ្ដោត":"Focus","អ្នកអាន ងាយស្រួល":"Immersive<br>Reader","ចលនាទំព័រ":"Page Movement","បញ្ឈរ":"Vertical","ចំហៀង ទៅចំហៀង":"Side<br>to Side","បង្ហាញ":"Show","បន្ទាត់វាស់":"Ruler","ក្រឡាជំនួយ":"Gridlines","ផ្ទាំងរុករក":"Navigation Pane","ពង្រីក/បង្រួម":"Zoom","ពង្រីក":"Zoom","ពង្រីក +25%":"Zoom in +25%","បង្រួម −25%":"Zoom out −25%","មួយទំព័រ":"One Page","ច្រើនទំព័រ":"Multiple Pages","ទទឹងទំព័រ":"Page Width","បង្អួច":"Window","បង្អួច ថ្មី":"New<br>Window","រៀប ទាំងអស់":"Arrange<br>All","បំបែក បង្អួច":"Split","មើលចំហៀងគ្នា":"View Side by Side","រំកិលព្រមគ្នា":"Synchronous Scrolling","កំណត់ទីតាំងបង្អួចឡើងវិញ":"Reset Window Position","ប្ដូរ បង្អួច":"Switch<br>Windows","ម៉ាក្រូ":"Macros","លក្ខណៈ":"Properties","ទៅទំព័រ":"Go to Page","ទំព័រមុន":"Previous Page","ទំព័របន្ទាប់":"Next Page","បង្រួម":"Zoom Out","ទំហំមើល":"Zoom","កូដ":"Code","ថតម៉ាក្រូ":"Record Macro","ផ្អាកការថត":"Pause Recording","សុវត្ថិភាពម៉ាក្រូ":"Macro Security","ការត្រួតពិនិត្យ":"Controls","ប្រអប់អត្ថបទសម្បូរ":"Rich Text Content Control","ប្រអប់អត្ថបទធម្មតា":"Plain Text Content Control","ប្រអប់រូបភាព":"Picture Content Control","ប្លុកអត្ថបទ":"Building Block Gallery","ប្រអប់ធីក":"Check Box","ប្រអប់ជ្រើស (combo)":"Combo Box","ប្រអប់ជ្រើស":"Combo Box","បញ្ជីទម្លាក់ចុះ":"Drop-Down List","ជ្រើសកាលបរិច្ឆេទ":"Date Picker","ផ្នែកដដែលៗ":"Repeating Section","ឧបករណ៍ចាស់":"Legacy Tools","របៀបរចនា":"Design Mode","ក្រុម":"Group","ការផ្គូផ្គង":"Mapping","ផ្ទាំងផ្គូផ្គង XML":"XML Mapping<br>Pane","ពុម្ព":"Templates","ពុម្ព ឯកសារ":"Document<br>Template","ទាក់ទងជំនួយ":"Contact<br>Support","មតិកែលម្អ":"Feedback","វគ្គបណ្ដុះបណ្ដាល":"Show<br>Training","អ្វីដែលថ្មី":"What’s<br>New","បើក":"Open","កែតម្រូវ":"Correct","សរសេរឡើងវិញ":"Rephrase","ស្តាប់":"Listen","បញ្ចូលរាង":"Insert Shapes","ស្តាយរាង":"Shape Styles","ពណ៌ខាងក្នុង":"Shape Fill","ពណ៌ស៊ុម":"Shape Outline","ស៊ុមក្រាស់ +":"Thicker outline +","ស៊ុមស្ដើង −":"Thinner outline −","បែបផែនរាង":"Shape Effects","ស្តាយ WordArt":"WordArt Styles","រចនាប័ទ្មរហ័ស":"Quick Styles","ស៊ុមអក្សរ":"Text Outline","ទិសអក្សរ":"Text Direction","តម្រឹមអក្សរ":"Align Text","បង្កើតតំណ":"Create Link","អត្ថបទជំនួស":"Alt Text","រុំអត្ថបទ":"Wrap Text","នាំទៅមុខ":"Bring Forward","រុញទៅក្រោយ":"Send Backward","ផ្ទាំងជ្រើសរើស":"Selection Pane","កម្ពស់":"Height","ទទឹង":"Width","កម្ពស់ តូច":"Shorter","កម្ពស់ ធំ":"Taller","ទទឹង តូច":"Narrower","ទទឹង ធំ":"Wider","លុបរាង":"Delete<br>Shape","ជួរដេក និងជួរឈរ":"Rows & Columns","បញ្ចូលខាងលើ":"Insert<br>Above","បញ្ចូលខាងក្រោម":"Insert<br>Below","បញ្ចូលខាងឆ្វេង":"Insert<br>Left","បញ្ចូលខាងស្ដាំ":"Insert<br>Right","លុបជួរដេក":"Delete Rows","លុបជួរឈរ":"Delete Columns","លុបតារាង":"Delete Table","ស្តាយតារាង":"Table Styles","ស៊ុមពេញ":"Grid","ក្បាលពណ៌":"Header Row","ឆ្លាស់ពណ៌":"Banded","ក្រឡា":"Cell","ពណ៌ក្រឡា":"Cell<br>Shading","តម្រឹមលើ":"Align Top","តម្រឹមក្រោម":"Align Bottom","សៀវភៅទទេ":"Blank book","មេរៀនពាក្យ":"Vocabulary lesson","តារាងពាក្យ":"Word list","ទំព័រគម្រប":"Cover page","ឧទាហរណ៍ប្រយោគ":"Example sentences","លំហាត់":"Exercises","ដកការខ្ទាស់":"Unpin","ខ្ទាស់":"Pin","ឈ្មោះ":"Name","កាលបរិច្ឆេទកែ":"Date modified","កំពុងផ្ទុក…":"Loading…","ថ្មី":"New","អរុណសួស្តី":"Good morning","ទិវាសួស្តី":"Good afternoon","សាយណ្ហសួស្តី":"Good evening","ពុម្ពច្រើនទៀត →":"More templates →","ពុម្ពច្រើនទៀត":"More templates","ថ្មីៗ":"Recent","បានខ្ទាស់":"Pinned","មិនទាន់មានសៀវភៅដែលបានខ្ទាស់ទេ — ចុចរូប 🔖 ដើម្បីខ្ទាស់":"No pinned books yet — tap 🔖 to pin one","មិនទាន់មានសៀវភៅទេ":"No books yet","សៀវភៅច្រើនទៀត →":"More books →","ស្វែងរកសៀវភៅ…":"Search books…","រកមិនឃើញ":"Nothing found","ព័ត៌មាន":"Info","ចំណងជើង":"Title","ទំហំក្រដាស":"Paper size","រឹមក្រដាស":"Margins","លេខចាប់ផ្ដើម":"Starting number","កែចុងក្រោយ":"Last modified","មិនទាន់រក្សាទុក":"Not saved yet","ស្ថានភាព":"Status","មានការកែមិនទាន់រក្សាទុក":"Unsaved changes","បានរក្សាទុក":"Saved","ត្រឡប់":"Back","រក្សាទុកជា":"Save As","ប្រវត្តិ":"History","បោះពុម្ព":"Print","ចែករំលែក":"Share","នាំចេញ (PDF)":"Export (PDF)","គណនី":"Account","ជម្រើស":"Options","សៀវភៅ":"Book","· កំពុងបើក":"· open now","(គ្មានចំណងជើង)":"(untitled)","លេខទំព័រផ្ទាល់ខ្លួន (ទុកទទេ = រាប់ស្វ័យប្រវត្តិ)":"Custom page number (blank = automatic)","កថាខណ្ឌ ":"Paragraphs","សូមជ្រើសអក្សរជាមុនសិន":"Select some text first","សូមចុចសង្កត់លើក្រដាស ហើយជ្រើស «Paste»":"Press and hold on the page, then choose “Paste”","សូមដាក់ cursor លើអក្សរដែលមានទម្រង់ចង់ចម្លង":"Put the cursor in text whose format you want to copy","ឥឡូវជ្រើសអក្សរដែលចង់ដាក់ទម្រង់នេះ":"Now select the text to apply this format to","សូមជ្រើសកថាខណ្ឌ ឬបញ្ជីច្រើនជួរ ដើម្បីតម្រៀប":"Select several paragraphs or list items to sort","សូមវាយជាទម្រង់ 4x3":"Type it like 4x3","សូមចុចលើរាងជាមុនសិន":"Select a shape first","សូមដាក់ cursor ក្នុងតារាងជាមុនសិន":"Put the cursor in a table first","បានរក្សាទុក ✓":"Saved ✓","បានរក្សាទុកជាសៀវភៅថ្មី ✓":"Saved as a new book ✓","លេខទំព័រនៅបាតទំព័ររួចហើយ — វាយលេខក្នុងប្រអប់ខាងក្រោមក្រដាសដើម្បីកំណត់ផ្ទាល់":"Page numbers are already at the bottom — type a number in the box under the sheet to set one"};
     const EN_NS = {}; Object.keys(EN).forEach(k => { EN_NS[k.replace(/\s/g, '')] = EN[k]; });
     const KM_M = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'], EN_M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const TR_RX = [
@@ -16654,6 +16720,104 @@ class Component extends DCLogic {
     const pGin = pane('ginger');
     const gGin = group(pGin, 'ពិនិត្យអក្សរ'); bigSoon(gGin, 'gcheck', 'បើក');
     const sGin = stack(gGin); smSoon(sGin, 'check', 'កែតម្រូវ'); smSoon(sGin, 'spark', 'សរសេរឡើងវិញ'); smSoon(sGin, 'speak', 'ស្តាប់');
+    // ═══ ទម្រង់រូបភាព (contextual: Word's Picture Format, while a picture is selected) ═══
+    const pPic = pane('pic');
+    const selImg = fn => () => { const im = this._edSelImg; if (!im) { toast('សូមចុចលើរូបភាពជាមុនសិន'); return; } fn(im); this._edDirty = true; setTimeout(() => this._edImgOverlay(), 60); };
+    // filters (corrections / colour / artistic / transparency) are kept in data-* and written as one CSS filter
+    const setFx = (im, patch) => {
+      let fx = {}; try { fx = JSON.parse(im.dataset.fx || '{}'); } catch(e){}
+      Object.assign(fx, patch); Object.keys(fx).forEach(k => { if (fx[k] == null) delete fx[k]; }); im.dataset.fx = JSON.stringify(fx);
+      const parts = []; if (fx.br != null) parts.push('brightness(' + fx.br + ')'); if (fx.ct != null) parts.push('contrast(' + fx.ct + ')'); if (fx.sat != null) parts.push('saturate(' + fx.sat + ')');
+      if (fx.gray) parts.push('grayscale(1)'); if (fx.sepia) parts.push('sepia(.85)'); if (fx.blur) parts.push('blur(' + fx.blur + 'px)'); if (fx.inv) parts.push('invert(1)');
+      im.style.filter = parts.join(' '); im.style.opacity = fx.op != null ? String(fx.op) : '';
+      if (!parts.length && fx.op == null) delete im.dataset.fx;
+    };
+    const fxOf = im => { try { return JSON.parse(im.dataset.fx || '{}'); } catch(e) { return {}; } };
+    const gAdj = group(pPic, 'កែសម្រួលរូប');
+    bigSoon(gAdj, 'rmbg', 'ដកផ្ទៃ<br>ក្រោយ');
+    const corB = big(gAdj, 'sun', 'ការ<br>កែតម្រូវ ▾', () => menuUnder(corB, [
+      ['ពន្លឺ +', selImg(im => setFx(im, { br: Math.min(2, (fxOf(im).br || 1) + 0.15) }))], ['ពន្លឺ −', selImg(im => setFx(im, { br: Math.max(0.2, (fxOf(im).br || 1) - 0.15) }))],
+      ['កម្រិតពណ៌ +', selImg(im => setFx(im, { ct: Math.min(2, (fxOf(im).ct || 1) + 0.15) }))], ['កម្រិតពណ៌ −', selImg(im => setFx(im, { ct: Math.max(0.2, (fxOf(im).ct || 1) - 0.15) }))],
+      ['កំណត់ឡើងវិញ', selImg(im => setFx(im, { br: null, ct: null }))],
+    ]), true); corB.dataset.pop = '1';
+    const colB2 = big(gAdj, 'pcolor2', 'ពណ៌<br>▾', () => menuUnder(colB2, [
+      ['ពណ៌ដើម', selImg(im => setFx(im, { sat: null, gray: null, sepia: null }))], ['ស-ខ្មៅ', selImg(im => setFx(im, { gray: 1, sepia: null, sat: null }))], ['ពណ៌ចាស់ (Sepia)', selImg(im => setFx(im, { sepia: 1, gray: null }))],
+      ['ពណ៌ស្រាល', selImg(im => setFx(im, { sat: 0.5, gray: null }))], ['ពណ៌ឆ្អៅ', selImg(im => setFx(im, { sat: 1.6, gray: null }))],
+    ]), true); colB2.dataset.pop = '1';
+    const artB = big(gAdj, 'art', 'បែបផែន<br>សិល្បៈ ▾', () => menuUnder(artB, [
+      ['គ្មាន', selImg(im => setFx(im, { blur: null, inv: null }))], ['ព្រិល', selImg(im => setFx(im, { blur: 2, inv: null }))], ['ព្រិលខ្លាំង', selImg(im => setFx(im, { blur: 5, inv: null }))], ['បញ្ច្រាសពណ៌', selImg(im => setFx(im, { inv: 1, blur: null }))],
+    ]), true); artB.dataset.pop = '1';
+    const trB = big(gAdj, 'transp', 'ភាពថ្លា<br>▾', () => menuUnder(trB, [0, 20, 40, 60, 80].map(t => [t + '%', selImg(im => setFx(im, { op: t ? (100 - t) / 100 : null }))])), true); trB.dataset.pop = '1';
+    const sAdj = stack(gAdj);
+    smSoon(sAdj, 'compress', 'បង្រួមរូបភាព');
+    sm(sAdj, 'chpic', 'ប្ដូររូបភាព ▾', selImg(im => { const u = normalizeImgUrl(window.prompt('Link រូបភាពថ្មី (https://…)', im.getAttribute('src') || '') || ''); if (u) { im.src = u; this._edScheduleReflow(this._edCur); } }), true);
+    sm(sAdj, 'resetp', 'កំណត់រូបភាពឡើងវិញ ▾', selImg(im => { setFx(im, { br: null, ct: null, sat: null, gray: null, sepia: null, blur: null, inv: null, op: null }); ['border', 'borderRadius', 'boxShadow', 'padding', 'background'].forEach(k => { im.style[k] = ''; }); im.dataset.rot = ''; im.dataset.fh = ''; im.dataset.fv = ''; this._edImgXf(im); }), true);
+    // picture styles: frames, shadows and shapes, as inline CSS so the reader shows the same
+    const PSTY = [
+      ['គ្មាន', {}], ['ស៊ុមស្ដើង', { border: '1px solid #8a8886' }], ['ស៊ុមខ្មៅក្រាស់', { border: '6px solid #201f1d' }], ['ស្រមោល', { boxShadow: '4px 4px 10px rgba(0,0,0,.35)' }],
+      ['ជ្រុងមូល', { borderRadius: '14px' }], ['ជ្រុងមូល + ស្រមោល', { borderRadius: '14px', boxShadow: '0 6px 16px rgba(0,0,0,.3)' }], ['ស៊ុមស + ស្រមោល', { border: '8px solid #fff', boxShadow: '0 3px 12px rgba(0,0,0,.35)' }],
+      ['ស៊ុមក្រាស់ + ស្រមោល', { border: '10px solid #fff', outline: '', boxShadow: '0 0 0 1px #bbb, 0 6px 14px rgba(0,0,0,.3)' }], ['រាងពងក្រពើ', { borderRadius: '50%' }], ['ស៊ុមខៀវ', { border: '4px solid #2b579a', borderRadius: '6px' }],
+    ];
+    const gPS = group(pPic, 'ស្តាយរូបភាព');
+    const psGal = document.createElement('div'); psGal.className = 'ewd-gal'; gPS.appendChild(psGal);
+    const psIn = document.createElement('div'); psIn.className = 'ewd-galin'; psIn.style.width = (56 * 8) + 'px'; psGal.appendChild(psIn);
+    PSTY.forEach(([name, css]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-sty'; b.style.width = '56px'; b.title = name; keep(b);
+      const th = Object.assign({ width: '34px', height: '26px', background: 'linear-gradient(160deg,#cfe3f7 55%,#7fb36b 56%)', boxSizing: 'border-box' }, css);
+      if (th.border && /^(\d+)px/.test(th.border)) th.border = th.border.replace(/^(\d+)px/, (m, n) => Math.max(1, Math.round(n / 3)) + 'px');
+      const sp = document.createElement('span'); Object.assign(sp.style, th); sp.style.display = 'block'; b.appendChild(sp);
+      b.addEventListener('click', selImg(im => { ['border', 'borderRadius', 'boxShadow', 'padding', 'background'].forEach(k => { im.style[k] = ''; }); Object.keys(css).forEach(k => { if (k !== 'outline') im.style[k] = css[k]; }); }));
+      psIn.appendChild(b);
+    });
+    const psB = document.createElement('div'); psB.className = 'ewd-galbtn'; psGal.appendChild(psB);
+    [['▲', () => { psIn.scrollTop -= 64; }], ['▼', () => { psIn.scrollTop += 64; }], ['⊽', () => { psIn.scrollTop += 64; }]].forEach(([t, fn]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; keep(b); b.addEventListener('click', fn); psB.appendChild(b); });
+    const sPS = stack(gPS);
+    const pbB = sm(sPS, 'pborder2', 'ស៊ុមរូបភាព ▾', () => palette(pbB, ['#201f1d', '#6b7280', '#ffffff', '#c0342c', '#ea580c', '#b6810f', '#2f8f57', '#1558b0', '#2b579a', '#7c3aed'], c => selImg(im => { im.style.border = c ? '3px solid ' + c : ''; })(), 'គ្មានស៊ុម'), true); pbB.dataset.pop = '1';
+    const peB = sm(sPS, 'peff', 'បែបផែនរូបភាព ▾', () => menuUnder(peB, [
+      ['គ្មានស្រមោល', selImg(im => { im.style.boxShadow = ''; })], ['ស្រមោលខាងក្រោម', selImg(im => { im.style.boxShadow = '0 6px 14px rgba(0,0,0,.35)'; })], ['ស្រមោលស្ដាំ', selImg(im => { im.style.boxShadow = '6px 6px 0 rgba(0,0,0,.25)'; })],
+      ['ពន្លឺខៀវជុំវិញ', selImg(im => { im.style.boxShadow = '0 0 0 4px rgba(43,87,154,.35), 0 0 14px rgba(43,87,154,.6)'; })], ['គែមទន់', selImg(im => { im.style.boxShadow = 'inset 0 0 18px 8px #fff'; })],
+    ]), true); peB.dataset.pop = '1';
+    smSoon(sPS, 'playout', 'ប្លង់រូបភាព ▾');
+    const gPAcc = group(pPic, 'ភាពងាយស្រួល');
+    big(gPAcc, 'alt', 'អត្ថបទ<br>ជំនួស', selImg(im => { const v = window.prompt('អត្ថបទពិពណ៌នារូបភាព (Alt Text)', im.getAttribute('alt') || ''); if (v != null) im.setAttribute('alt', v.trim()); }), true);
+    const gPAr = group(pPic, 'រៀបចំ');
+    bigSoon(gPAr, 'posn', 'ទីតាំង<br>▾');
+    const wrapMenu = anchor => menuUnder(anchor, [['ក្នុងជួរអក្សរ', 'inline'], ['រុំការ៉េ (ឆ្វេង)', 'left'], ['រុំការ៉េ (ស្ដាំ)', 'right'], ['លើ និងក្រោម', 'center'], ['នៅក្រោយអក្សរ', 'behind'], ['នៅមុខអក្សរ', 'front']]
+      .map(([l, m]) => [((this._edSelImg && (this._edSelImg.dataset.wrap || 'center') === m) ? '✓ ' : '') + l, selImg(im => this._edSetImgWrap(im, m))]));
+    const pwB = big(gPAr, 'wrap', 'រុំ<br>អត្ថបទ ▾', () => wrapMenu(pwB), true); pwB.dataset.pop = '1';
+    big(gPAr, 'fwd', 'នាំទៅ<br>មុខ ▾', selImg(im => this._edSetImgWrap(im, 'front')), true);
+    big(gPAr, 'bwd', 'រុញទៅ<br>ក្រោយ ▾', selImg(im => this._edSetImgWrap(im, 'behind')), true);
+    bigSoon(gPAr, 'selp', 'ផ្ទាំង<br>ជ្រើសរើស');
+    const sPAr = stack(gPAr);
+    const alB = sm(sPAr, 'alobj', 'តម្រឹម ▾', () => menuUnder(alB, [['តម្រឹមឆ្វេង', selImg(im => this._edSetImgWrap(im, 'left'))], ['តម្រឹមកណ្ដាល', selImg(im => this._edSetImgWrap(im, 'center'))], ['តម្រឹមស្ដាំ', selImg(im => this._edSetImgWrap(im, 'right'))]]), true); alB.dataset.pop = '1';
+    smSoon(sPAr, 'grp', 'ដាក់ជាក្រុម ▾').classList.add('dim');
+    const roB = sm(sPAr, 'rot', 'បង្វិល ▾', () => menuUnder(roB, [
+      ['បង្វិលស្ដាំ 90°', selImg(im => { im.dataset.rot = ((+im.dataset.rot || 0) + 90) % 360; this._edImgXf(im); })], ['បង្វិលឆ្វេង 90°', selImg(im => { im.dataset.rot = ((+im.dataset.rot || 0) + 270) % 360; this._edImgXf(im); })],
+      ['ត្រឡប់បញ្ឈរ', selImg(im => { im.dataset.fv = im.dataset.fv === '1' ? '' : '1'; this._edImgXf(im); })], ['ត្រឡប់ផ្ដេក', selImg(im => { im.dataset.fh = im.dataset.fh === '1' ? '' : '1'; this._edImgXf(im); })],
+    ]), true); roB.dataset.pop = '1';
+    const gPSz = group(pPic, 'ទំហំ');
+    bigSoon(gPSz, 'crop', 'ច្រឹប<br>▾');
+    const szCol = document.createElement('div'); szCol.style.cssText = 'display:flex;flex-direction:column;gap:6px;padding-top:6px;'; gPSz.appendChild(szCol);
+    const CMPX2 = 37.8;
+    const szIn = {};
+    [['hgt', 'កម្ពស់', 'h'], ['wid', 'ទទឹង', 'w']].forEach(([ic, lbl, k]) => {
+      const rr = document.createElement('div'); rr.className = 'ewd-spin';
+      const lb = document.createElement('span'); lb.className = 'lb'; lb.innerHTML = svg(ic, 15) + '<span>' + lbl + '</span>'; rr.appendChild(lb);
+      const inp = document.createElement('input'); inp.type = 'number'; inp.step = '0.1'; inp.min = '0.5'; inp.title = lbl + ' (cm)'; szIn[k] = inp; rr.appendChild(inp);
+      const u = document.createElement('span'); u.textContent = 'cm'; u.style.color = '#605e5c'; rr.appendChild(u);
+      inp.addEventListener('change', selImg(im => {
+        const pg = im.closest('.lib-epage'); if (!pg) return; const z = (this._edFitZoom || 1) * (this._edScale || 1); const r0 = im.getBoundingClientRect(); const ratio = r0.height / Math.max(1, r0.width);
+        const cs = getComputedStyle(pg), cw = pg.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        let wpx = (parseFloat(inp.value) || 1) * CMPX2; if (k === 'h') wpx = wpx / ratio;
+        const pct = Math.max(5, Math.min(100, Math.round(wpx / cw * 1000) / 10)); im.style.width = pct + '%'; im.style.maxWidth = '100%'; im.style.height = 'auto'; im.dataset.w = pct;
+        this._edScheduleReflow(this._edCur); setTimeout(syncSize, 120);
+      }));
+      szCol.appendChild(rr);
+    });
+    const syncSize = () => { const im = this._edSelImg; if (!im) return; const z = (this._edFitZoom || 1) * (this._edScale || 1); const r0 = im.getBoundingClientRect();
+      [['w', r0.width], ['h', r0.height]].forEach(([k, v]) => { if (document.activeElement !== szIn[k]) szIn[k].value = (v / z / CMPX2).toFixed(2); }); };
+    const gPDel = group(pPic, 'លុប');
+    big(gPDel, 'trash', 'លុប<br>រូបភាព', selImg(im => { im.remove(); this._deselectEditorImage(); this._edScheduleReflow(this._edCur); }), true, 'red');
     // ═══ ទម្រង់រាង (contextual: shows while a shape is selected) ═══
     const pShp = pane('shape');
     const selShp = fn => () => { const el = this._edSelShape; if (!el) { toast('សូមចុចលើរាងជាមុនសិន'); return; } fn(el); };
@@ -16883,13 +17047,22 @@ class Component extends DCLogic {
     shpTab.addEventListener('mousedown', e => e.preventDefault());
     shpTab.addEventListener('click', () => showTab(curTab === 'shape' ? '' : 'shape'));
     tabBtns.shape = shpTab; tabsBar.insertBefore(shpTab, tsp);
+    const picTab = document.createElement('button'); picTab.type = 'button'; picTab.className = 'ewd-tab ctx'; picTab.textContent = 'ទម្រង់រូបភាព'; picTab.style.display = 'none';
+    picTab.addEventListener('mousedown', e => e.preventDefault());
+    picTab.addEventListener('click', () => showTab(curTab === 'pic' ? '' : 'pic'));
+    tabBtns.pic = picTab; tabsBar.insertBefore(picTab, tsp);
+    this._edPicTabHook = on => {
+      if (!ov.isConnected) return;
+      picTab.style.display = on ? '' : 'none'; if (uiLang === 'en') trTree(tabsBar);
+      if (on) { if (curTab !== '') showTab('pic'); setTimeout(syncSize, 30); } else if (curTab === 'pic') showTab('home');
+    };
     this._edShapeTabHook = on => {
       if (!ov.isConnected) return;
       shpTab.style.display = on ? '' : 'none';
       if (on && curTab !== '') showTab('shape'); else if (!on && curTab === 'shape') showTab('home');
     };
     tabsBar.appendChild(fold);
-    if (curTab === 'table' || curTab === 'shape') curTab = 'home';
+    if (curTab === 'table' || curTab === 'shape' || curTab === 'pic') curTab = 'home';
     showTab(curTab);
     // show the table tab while the caret is inside a table (and open it the moment a table is first entered)
     let inTbl = false;
@@ -16967,6 +17140,7 @@ class Component extends DCLogic {
       vBar.style.top = (sr.top - vr.top) + 'px'; vBar.style.height = H + 'px';
       vBar.style.background = 'linear-gradient(180deg,' + shade + ' 0 ' + m + 'px,transparent ' + m + 'px ' + (H - (PAD + 24) * z) + 'px,' + shade + ' ' + (H - (PAD + 24) * z) + 'px) no-repeat,' + tickBg(z, true) + ' 9px 0/5px 100% repeat-y,#fff';
       stPage.textContent = tr('ទំព័រ ' + (this._edCur + 1) + ' នៃ ' + pages.length);
+      if (this._edSelImg) { if (this._edSelImg.closest('.lib-epage') !== pg) this._deselectEditorImage(); else this._edImgOverlay(); }
       zRange.value = String(Math.round((this._edScale || 1) * 100)); zPct.textContent = Math.round((this._edScale || 1) * 100) + '%';
     };
     canvas.addEventListener('scroll', () => { if (this._edViewHook) this._edViewHook(); }, { passive: true });
