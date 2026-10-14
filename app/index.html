@@ -9509,6 +9509,29 @@ function jpAllForms(jp, kana, pos){
   _formsCache.set(key, v);
   return v;
 }
+// What a combination rule's front part (動詞 ます形 ＋ ません, V (ます削除) ＋ たい, 名詞, い形容詞 …) asks of a word:
+// { kind: 'v' | 'i' | 'n', forms: [jpConjugate form keys, or 'stem'], suf: literal text after the stem } — or null when it can't be derived
+function ruleFormSpec(pre){
+  const t = String(pre || '').replace(/[\s\u3000]/g, '');
+  if (!t) return null;
+  if (/^(名詞|N)$/.test(t)) return { kind: 'n', forms: ['dict'], suf: '' };
+  if (/^い形容詞$/.test(t)) return { kind: 'i', forms: ['dict'], suf: '' };
+  if (!/^(動詞|V)/.test(t)) return null;
+  const s = t.replace(/^(動詞|V)/, '').replace(/[＋+()（）〜～]/g, '');
+  if (!s) return null;
+  let m = s.match(/(?:ます削除|語幹)(.*)$/);
+  if (m) return { kind: 'v', forms: ['stem'], suf: m[1] };
+  if (/ませんでした$/.test(s)) return { kind: 'v', forms: ['masu_past_neg'], suf: '' };
+  if (/ません$/.test(s)) return { kind: 'v', forms: ['masu_neg'], suf: '' };
+  if (/ました$/.test(s)) return { kind: 'v', forms: ['masu_past'], suf: '' };
+  if (/ます形?$/.test(s)) return { kind: 'v', forms: ['masu'], suf: '' };
+  if (/て形|で形/.test(s)) return { kind: 'v', forms: ['te'], suf: '' };
+  if (/ない形/.test(s)) return { kind: 'v', forms: ['neg'], suf: '' };
+  if (/た形/.test(s)) return { kind: 'v', forms: ['past'], suf: '' };
+  if (/辞書形/.test(s)) return { kind: 'v', forms: ['dict'], suf: '' };
+  if (/普通形/.test(s)) return { kind: 'v', forms: ['dict', 'neg', 'past', 'past_neg'], suf: '' };
+  return null;
+}
 let _furiMap = null, _furiMax = 0;
 function furiMap(){
   if (_furiMap) return _furiMap;
@@ -14151,6 +14174,48 @@ class Component extends DCLogic {
         this._bwMap.set(fj, { kana: jpRelatedKana(w.jp, w.kana, fj), km: f.km || w.km || '', img: w.img || '', id: w.id, pos: w.pos || '' }); if (fj.length > this._bwMax) this._bwMax = fj.length;
       }
     }
+    // combination rules (飲みません ＋ か → 飲みませんか "តោះផឹក"): every verb / adjective / noun in the form the rule asks for,
+    // followed by the rule's grammar, becomes one tappable unit; its meaning is the rule's meaning put in front of the word's own
+    const combo = [];
+    for (const w of WORDS) if (w && w.rules && w.rules.length) for (const ru of w.rules) {
+      const sp = ruleFormSpec(ru.pre), post = String(ru.post || '').trim(), rkm = String(ru.km || '').trim();
+      if (sp && post && rkm && HAS_JP.test(post) && post.length <= 10) combo.push({ sp, post, rkm, pre: String(ru.pre).trim() });
+    }
+    if (combo.length) {
+      const seen = new Set(), VERB_POS = /^(កិរិយា|កិ\.?)$/, ADJ_POS = /^(គុណនាម|គុណ\.?)$/, NOUN_POS = /^(នាម|ន\.)$/;
+      for (const w of [...WORDS.filter(x => x && x._ov), ...WORDS]) {
+        if (!w || !w.jp || seen.has(w.jp) || w.jp.length > 12 || /[〜～~（）()\s\/、。，,！!？?・「」]/.test(w.jp) || !HAS_JP.test(w.jp) || w.cat === 'grammar') continue;
+        seen.add(w.jp);
+        const pos = w.pos || '';
+        let kind = '';
+        if (VERB_POS.test(pos)) kind = 'v'; else if (ADJ_POS.test(pos)) kind = 'i'; else if (NOUN_POS.test(pos)) kind = 'n';
+        else if (!pos) {                                   // unlabelled rows: tell them apart by their spelling
+          const ty = jpDetectType(jpToDict(w.jp));
+          if (/[ぁ-ゖ]$/.test(w.jp) && w.jp.length >= 2) {
+            if (['godan', 'ichidan', 'suru', 'kuru'].includes(ty) && (HAS_KANJI.test(w.jp) || ty === 'suru')) kind = 'v';
+            else if (ty === 'iadj' && HAS_KANJI.test(w.jp)) kind = 'i';
+          } else if (/^[㐀-鿿々゠-ヿー]+$/.test(w.jp) && w.jp.length <= 8) kind = 'n';
+        }
+        if (!kind) continue;
+        const mine = combo.filter(c => c.sp.kind === kind); if (!mine.length) continue;
+        const baseKm = String(w.km || '').split(/\s*\/\s*/)[0].trim();
+        let conj = null; if (kind === 'v') { try { conj = jpConjugate(w.jp, baseKm); } catch(e) { conj = null; } if (!conj || !conj.forms) continue; }
+        const byForm = {}; if (conj) for (const x of [...conj.forms, ...(conj.extra || [])]) if (!byForm[x.form]) byForm[x.form] = x.jp;
+        for (const c of mine) for (const key of c.sp.forms) {
+          let surf = '';
+          if (kind === 'v') { surf = key === 'stem' ? String(byForm.masu || '').replace(/ます$/, '') : (byForm[key] || ''); if (surf && key === 'stem') surf += c.sp.suf; }
+          else surf = w.jp;
+          if (!surf) continue;
+          const full = surf + c.post; if (full.length > 20 || this._bwMap.has(full)) continue;
+          const fk = HAS_KANJI.test(w.jp) && w.kana ? jpRelatedKana(w.jp, w.kana, surf) : (HAS_KANJI.test(surf) ? '' : surf);
+          const kana = fk && !HAS_KANJI.test(c.post) ? fk + c.post : '';
+          const km = !baseKm ? c.rkm : (/[…〜～]/.test(c.rkm) ? c.rkm.replace(/[…〜～]+/, baseKm) : c.rkm + baseKm);
+          const surfKm = kind === 'v' && key !== 'stem' ? jpKhmer(baseKm, key) : baseKm;
+          this._bwMap.set(full, { kana, km, img: w.img || '', id: w.id, pos: 'ក្បួនផ្សំ', parts: [{ jp: surf, km: surfKm, role: c.pre }, { jp: c.post, km: c.rkm }] });
+          if (full.length > this._bwMax) this._bwMax = full.length;
+        }
+      }
+    }
     // grammar after everything else, so a real word of the same spelling keeps its card
     for (const g of gram) {
       if (this._bwMap.has(g.core)) continue;
@@ -14241,6 +14306,7 @@ class Component extends DCLogic {
       + (info.kana ? '<div class="rd-kana">' + _escHtml(info.kana) + '</div>' : '')
       + '<div class="rd-jp">' + _escHtml(info.label || jp) + '</div>'
       + '<div class="rd-mean">' + means.map((m, i) => '<div class="rd-m">' + (means.length > 1 ? '<i>' + (i + 1) + '</i>' : '') + '<span>' + _escHtml(m) + '</span></div>').join('') + '</div>'
+      + ((info.parts || []).length ? '<div class="rd-rh">ការផ្សំ</div><div class="rd-rule"><div class="rd-rf">' + info.parts.map((p, i) => (i ? '<i>＋</i>' : '') + '<span class="t ' + (i ? 'gr' : 'pre') + '">' + _escHtml(p.jp) + '</span>').join('') + '</div>' + info.parts.map(p => '<div class="rd-rr">' + _escHtml(p.jp) + ' ＝ ' + _escHtml(p.km) + '</div>').join('') + '</div>' : '')
       + ((info.rules || []).length ? '<div class="rd-rh">ក្បួនផ្សំ</div>' + info.rules.map(ru => '<div class="rd-rule"><div class="rd-rf">' + (ru.pre ? '<span class="t pre">' + _escHtml(ru.pre) + '</span><i>＋</i>' : '') + '<span class="t gr">' + _escHtml(ru.post) + '</span></div>' + (ru.km ? '<div class="rd-rr">＝ ' + _escHtml(ru.km) + '</div>' : '') + (ru.ex ? '<div class="rd-rx">' + _escHtml(ru.ex.jp) + (ru.ex.km ? '<small>' + _escHtml(ru.ex.km) + '</small>' : '') + '</div>' : '') + '</div>').join('') : '')
       + '<div class="rd-acts"><button class="rd-spk" id="bwp-speak"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/></svg>ស្តាប់</button>'
       + (info.id ? '<button class="rd-sq' + (fav ? ' on' : '') + '" id="bwp-fav" aria-label="សំណព្វ"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button>' : '') + '</div>'
