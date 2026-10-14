@@ -12699,7 +12699,8 @@ class Component extends DCLogic {
   }
   // The combination rules of a grammar point as formula chips:  [名詞] ＋ [になります]  ＝ meaning.
   // Returns { h, draw(x, y) }; bw is the block width.
-  _ruleBlock(ctx, rules, bw, size, c){
+  _ruleBlock(ctx, rules, bw, size, c, o){
+    o = o || {};
     const pad = size * 0.8, chipH = Math.round(size * 2), gapS = size * 0.5, lkH = size * 0.9 * 1.4, inner = bw - pad * 2;
     const rows = rules.map(ru => {
       const parts = [];
@@ -12709,7 +12710,7 @@ class Component extends DCLogic {
       let ws = meas(fs), tot = ws.reduce((a, b) => a + b, 0) + (parts.length - 1) * size * 0.3;
       if (tot > inner) { fs = Math.max(size * 0.6, size * inner / tot); ws = meas(fs); }
       const kmFont = `600 ${Math.round(size * 0.9)}px sans-serif`;
-      const kmLines = ru.km ? this._wrapLines(ctx, '＝ ' + ru.km, inner, kmFont) : [];
+      const kmLines = (ru.km && !o.hideKm) ? this._wrapLines(ctx, '＝ ' + ru.km, inner, kmFont) : [];
       return { parts, ws, fs, kmFont, kmLines, h: pad + chipH + (kmLines.length ? gapS + kmLines.length * lkH : 0) + pad };
     });
     const gap = size * 0.5, h = rows.reduce((a, b) => a + b.h, 0) + gap * Math.max(0, rows.length - 1);
@@ -12741,6 +12742,36 @@ class Component extends DCLogic {
         y += rw.h + gap;
       });
     } };
+  }
+  // One rule on one line, drawn small:  [名詞] ＋ [になります]  ＝ meaning (cut with … when it does not fit).
+  // Returns the line's height. x/y = left/top.
+  _ruleLine(ctx, ru, x, y, size, maxW, dark){
+    const chipH = Math.round(size * 1.75), px = size * 0.6, op = size * 1.1, g = size * 0.25;
+    const parts = [];
+    if (ru.pre) { parts.push({ t: ru.pre, k: 'pre' }); parts.push({ t: '＋', k: 'op' }); }
+    parts.push({ t: ru.post || '…', k: 'gr' });
+    ctx.font = `700 ${size}px sans-serif`;
+    const ws = parts.map(p => p.k === 'op' ? op : Math.min(maxW * 0.55, ctx.measureText(p.t).width + px * 2));
+    let cx = x;
+    parts.forEach((p, i) => {
+      if (p.k === 'op') { ctx.fillStyle = dark ? '#cdd2dc' : '#555'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `800 ${Math.round(size * 1.05)}px sans-serif`; ctx.fillText(p.t, cx + ws[i] / 2, y + chipH / 2); }
+      else {
+        const pre = p.k === 'pre';
+        this._roundPath(ctx, cx, y, ws[i], chipH, size * 0.5);
+        ctx.fillStyle = pre ? (dark ? 'rgba(120,180,240,0.22)' : '#e3eefa') : (dark ? 'rgba(255,160,100,0.2)' : '#fff0e6'); ctx.fill();
+        ctx.strokeStyle = pre ? (dark ? 'rgba(120,180,240,0.5)' : '#b9d0ea') : (dark ? 'rgba(255,160,100,0.5)' : '#f3c9a8'); ctx.lineWidth = Math.max(1.2, size * 0.07); ctx.stroke();
+        ctx.fillStyle = pre ? (dark ? '#cfe6ff' : '#1d4f86') : (dark ? '#ffd4b8' : '#c2410c');
+        ctx.font = `700 ${size}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(this._fitText(ctx, p.t, ws[i] - px * 2), cx + ws[i] / 2, y + chipH / 2 + size * 0.04);
+      }
+      cx += ws[i] + g;
+    });
+    const room = x + maxW - cx - size * 0.3;
+    if (ru.km && room > size * 3) {
+      ctx.font = `600 ${Math.round(size * 0.95)}px sans-serif`; ctx.fillStyle = dark ? '#8fe0b0' : '#1f6b40'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(this._fitText(ctx, '＝ ' + ru.km, room), cx + size * 0.3, y + chipH / 2);
+    }
+    return chipH;
   }
   // The example sentence, in one of four looks. The headword is marked inside the sentence.
   // Returns { h, draw(x, y) } — x/y is the block's left/top, bw its width.
@@ -13009,32 +13040,42 @@ class Component extends DCLogic {
     const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, this._lighten(base, 0.945)); g.addColorStop(1, this._lighten(base, 0.82));
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     this._header(ctx, W, pad, ms, logoImg, base, '#fff8ec', dark, shortWordCode(word), this._lighten(base, 0.9), dark);
-    const top = pad + ms, bottom = H - Math.round(H * 0.075), cw = W - 2 * pad, cx = W / 2;
-    let jpSize = Math.round(W * 0.16); ctx.font = `800 ${jpSize}px sans-serif`;
-    while (ctx.measureText(word.jp).width > cw * 0.92 && (jpSize -= 6) > 24) ctx.font = `800 ${jpSize}px sans-serif`;
-    const qSize = Math.round(W * 0.042), gap = Math.round(W * 0.04), fGap = Math.round(W * 0.01 * so.gap);
-    const jpH = this._jpBlock(ctx, word, { W, mode: so.furi, kana: so.showKana, gap: fGap, jpSize });
-    const boxH = Math.round(W * 0.2), qH = Math.round(qSize * 2);
-    const total = qH + gap + jpH + gap * 1.4 + boxH;
-    let y = top + Math.max(0, (bottom - top - total) / 2);
-    const q = 'តើពាក្យនេះមានន័យអ្វី?'; ctx.font = `800 ${qSize}px sans-serif`;
-    const qw = Math.min(cw, ctx.measureText(q).width + qSize * 2);
+    const top = pad + ms, bottom = H - Math.round(H * 0.075), cw = W - 2 * pad, cx = W / 2, avail = bottom - top;
+    const rules = so.rules && Array.isArray(word.rules) && word.rules.length ? word.rules.slice(0, 2) : null;   // formula only — the meaning stays hidden
+    const rc = { accent: base, card: '#ffffff', line: this._mix(base, '#ffffff', 0.6), km: dark, dark: false };
+    const calc = k => {
+      let jpSize = Math.round(W * 0.16); ctx.font = `800 ${jpSize}px sans-serif`;
+      while (ctx.measureText(word.jp).width > cw * 0.92 && (jpSize -= 6) > 24) ctx.font = `800 ${jpSize}px sans-serif`;
+      jpSize = Math.max(20, Math.round(jpSize * k));
+      const qSize = Math.round(W * 0.042 * k), gap = Math.round(W * 0.04 * k), fGap = Math.round(W * 0.01 * so.gap * k);
+      const jpH = this._jpBlock(ctx, word, { W, mode: so.furi, kana: so.showKana, gap: fGap, jpSize });
+      const boxH = Math.round(W * 0.2 * k), qH = Math.round(qSize * 2);
+      const rb = rules ? this._ruleBlock(ctx, rules, cw * 0.92, Math.max(9, Math.round(W * 0.03 * so.exScale * k)), rc, { hideKm: true }) : null;
+      return { jpSize, qSize, gap, fGap, jpH, boxH, qH, rb, total: qH + gap + jpH + gap * 1.4 + (rb ? rb.h + gap * 1.2 : 0) + boxH };
+    };
+    let k = 1, m = calc(1);
+    for (let i = 0; i < 12 && m.total > avail; i++) { k *= 0.92; m = calc(k); }       // shrink until it all fits
+    let y = top + Math.max(0, (avail - m.total) / 2);
+    const q = 'តើពាក្យនេះមានន័យអ្វី?'; ctx.font = `800 ${m.qSize}px sans-serif`;
+    const qw = Math.min(cw, ctx.measureText(q).width + m.qSize * 2);
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.14)'; ctx.shadowBlur = W * 0.02; ctx.shadowOffsetY = W * 0.006;
-    this._roundPath(ctx, cx - qw / 2, y, qw, qH, qH / 2); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.restore();
-    ctx.fillStyle = dark; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(q, cx, y + qH / 2);
-    y += qH + gap;
-    this._jpBlock(ctx, word, { W, mode: so.furi, kana: so.showKana, gap: fGap, jpSize, cx, y, maxW: cw, left: false, draw: true, cJp: '#1c1a17', cKana: this._mix(dark, '#8a8a8a', 0.4) });
-    y += jpH + gap * 1.4;
+    this._roundPath(ctx, cx - qw / 2, y, qw, m.qH, m.qH / 2); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.restore();
+    ctx.fillStyle = dark; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(q, cx, y + m.qH / 2);
+    y += m.qH + m.gap;
+    this._jpBlock(ctx, word, { W, mode: so.furi, kana: so.showKana, gap: m.fGap, jpSize: m.jpSize, cx, y, maxW: cw, left: false, draw: true, cJp: '#1c1a17', cKana: this._mix(dark, '#8a8a8a', 0.4) });
+    y += m.jpH + m.gap * 1.4;
+    if (m.rb) { m.rb.draw(cx - cw * 0.92 / 2, y); y += m.rb.h + m.gap * 1.2; }
     const bw = Math.round(cw * 0.62);
     ctx.save(); ctx.setLineDash([W * 0.02, W * 0.014]); ctx.lineWidth = Math.max(3, W * 0.006); ctx.strokeStyle = base;
-    this._roundPath(ctx, cx - bw / 2, y, bw, boxH, W * 0.035); ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.fill(); ctx.stroke(); ctx.restore();
-    ctx.fillStyle = base; ctx.font = `800 ${Math.round(boxH * 0.55)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', cx, y + boxH / 2);
+    this._roundPath(ctx, cx - bw / 2, y, bw, m.boxH, W * 0.035); ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.fill(); ctx.stroke(); ctx.restore();
+    ctx.fillStyle = base; ctx.font = `800 ${Math.round(m.boxH * 0.55)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', cx, y + m.boxH / 2);
     this._footer(ctx, W, H, this._mix(base, '#b8b8b8', 0.6));
   }
-  // list: up to five words in one picture (the words picked while "បញ្ជីពាក្យ" is the layout)
+  // list: up to five words in one picture (the words picked while "បញ្ជីពាក្យ" is the layout);
+  // a word with combination rules gets its first rule as a one-line formula under the meaning
   _paintList(ctx, S, word, wordImg, logoImg){
     const W = S.w, H = S.h, pad = Math.round(W * 0.08), ms = Math.round(W * 0.10);
-    const base = this._shareBase(), dark = this._darken(base, 0.42);
+    const base = this._shareBase(), dark = this._darken(base, 0.42), so = this._shareOpt();
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
     const lw = Math.max(2, W * 0.004); ctx.strokeStyle = '#e3e6ec'; ctx.lineWidth = lw; ctx.strokeRect(lw / 2, lw / 2, W - lw, H - lw);
     this._header(ctx, W, pad, ms, logoImg, base, '#fff8ec', dark, '', this._lighten(base, 0.9), dark);
@@ -13045,18 +13086,22 @@ class Component extends DCLogic {
     ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = dark; ctx.font = `800 ${titleSize}px sans-serif`;
     ctx.fillText('ពាក្យថ្ងៃនេះ', pad, top + Math.round(W * 0.01));
     const y0 = top + Math.round(titleSize * 1.6);
-    const rowH = Math.min(Math.round(W * 0.17), Math.floor((bottom - y0) / words.length));
-    const num = Math.round(rowH * 0.5), jpS = Math.round(rowH * 0.36), kmS = Math.round(rowH * 0.23);
+    const ruleOf = w => (so.rules && Array.isArray(w.rules) && w.rules.length) ? w.rules[0] : null;
+    const withRules = words.some(ruleOf), mul = withRules ? 1.45 : 1;
+    const unit = Math.min(Math.round(W * 0.17), Math.floor((bottom - y0) / words.length / mul));
+    const rowH = Math.round(unit * mul);
+    const num = Math.round(unit * 0.5), jpS = Math.round(unit * 0.36), kmS = Math.round(unit * 0.23);
     words.forEach((w, i) => {
       const ry = y0 + i * rowH, tx = pad + num + Math.round(W * 0.03), maxW = W - pad - tx;
       ctx.strokeStyle = '#eceef2'; ctx.lineWidth = Math.max(1.5, W * 0.003); ctx.beginPath(); ctx.moveTo(pad, ry + rowH); ctx.lineTo(W - pad, ry + rowH); ctx.stroke();
+      const top0 = ry + (rowH - unit * (ruleOf(w) ? 1.45 : 1)) / 2;                 // rows with a formula use the taller block
       this._roundPath(ctx, pad, ry + (rowH - num) / 2, num, num, num * 0.28); ctx.fillStyle = base; ctx.fill();
       ctx.fillStyle = '#ffffff'; ctx.font = `800 ${Math.round(num * 0.5)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(String(i + 1), pad + num / 2, ry + rowH / 2 + 1);
       ctx.textAlign = 'left'; ctx.textBaseline = 'top';
       let fs = jpS; ctx.font = `800 ${fs}px sans-serif`;
       while (ctx.measureText(w.jp).width > maxW * 0.62 && (fs -= 2) > 10) ctx.font = `800 ${fs}px sans-serif`;
-      const jy = ry + rowH * 0.1;
+      const jy = (withRules ? ry + unit * 0.08 : ry + rowH * 0.1);
       ctx.fillStyle = '#1c1a17'; ctx.fillText(w.jp, tx, jy);
       const jw = ctx.measureText(w.jp).width;
       if (w.kana && w.kana !== w.jp) {
@@ -13064,8 +13109,11 @@ class Component extends DCLogic {
         const kx = tx + jw + Math.round(W * 0.02);
         if (kx + ctx.measureText(w.kana).width < tx + maxW) ctx.fillText(w.kana, kx, jy + fs * 0.32);
       }
-      ctx.font = `600 ${kmS}px sans-serif`; ctx.fillStyle = dark;
-      ctx.fillText(this._fitText(ctx, w.km || '', maxW), tx, ry + rowH * 0.1 + fs * 1.18);
+      ctx.font = `600 ${kmS}px sans-serif`; ctx.fillStyle = dark; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      const ky = jy + fs * 1.18;
+      ctx.fillText(this._fitText(ctx, w.km || '', maxW), tx, ky);
+      const ru = ruleOf(w);
+      if (ru) this._ruleLine(ctx, ru, tx, ky + kmS * 1.5, Math.max(9, Math.round(kmS * 0.95)), maxW, false);
     });
     this._footer(ctx, W, H, '#a2a8b5');
   }
