@@ -15802,6 +15802,28 @@ class Component extends DCLogic {
         '.ewd-st button{border:none;background:transparent;color:#323130;font:inherit;font-size:14px;width:22px;height:22px;border-radius:4px;cursor:pointer;padding:0}.ewd-st button:hover{background:#e1dfdd}',
         '.ewd-st input[type=range]{width:110px;accent-color:#2b579a}',
         '.ewd-sm.on,.ewd-b.on2{background:#c7dcf3;box-shadow:inset 0 0 0 1px #9cbce3}',
+        '.ewd-bs{position:absolute;inset:0;z-index:40;display:flex;background:#fff;color:#323130;font-size:13px}',
+        '.ewd-bs-side{flex:none;width:160px;background:#2b579a;color:#fff;display:flex;flex-direction:column;padding:calc(10px + env(safe-area-inset-top,0px)) 0 10px;overflow-y:auto}',
+        '.ewd-bs-side button{border:none;background:transparent;color:#fff;font:inherit;font-size:13px;text-align:left;padding:10px 20px;display:flex;align-items:center;gap:10px;cursor:pointer;border:1px solid transparent}',
+        '.ewd-bs-side button:hover{background:rgba(255,255,255,.12)}.ewd-bs-side button.on{background:#1e4479;border-color:#fff}.ewd-bs-side button.dis{color:rgba(255,255,255,.45);cursor:default}',
+        '.ewd-bs-side .back{padding:12px 20px 18px}.ewd-bs-side hr{border:none;border-top:1px solid rgba(255,255,255,.3);margin:8px 20px}.ewd-bs-side .sp{flex:1}',
+        '.ewd-bs-main{flex:1;min-width:0;overflow-y:auto;padding:calc(18px + env(safe-area-inset-top,0px)) 36px 30px}',
+        '.ewd-bs-main h2{font-size:22px;font-weight:600;margin:0 0 14px}.ewd-bs-main h3{font-size:15px;font-weight:600;margin:6px 0 12px;display:flex;align-items:center;gap:8px}',
+        '.ewd-tpls{display:flex;gap:22px;overflow-x:auto;padding:4px 2px 14px;border-bottom:1px solid #e1dfdd}',
+        '.ewd-tpl{flex:none;width:118px;border:none;background:transparent;cursor:pointer;font:inherit;font-size:12px;color:#323130;text-align:center;padding:0}',
+        '.ewd-tpl .th{width:86px;height:112px;margin:0 auto 8px;background:#fff;border:1px solid #d2d0ce;box-shadow:0 1px 3px rgba(0,0,0,.1);padding:8px 7px;display:flex;flex-direction:column;gap:3px;overflow:hidden;text-align:left}',
+        '.ewd-tpl:hover .th{border-color:#2b579a;box-shadow:0 0 0 2px #c7dcf3}',
+        '.ewd-tpl .th i{display:block;height:3px;background:#c8c6c4;border-radius:1px}.ewd-tpl .th b{display:block;height:6px;background:#2b579a;border-radius:1px;width:70%}',
+        '.ewd-more{display:flex;justify-content:flex-end;margin:10px 0 18px}.ewd-more button{border:none;background:none;color:#2b579a;font:inherit;font-size:13px;cursor:pointer}',
+        '.ewd-rtabs{display:flex;gap:22px;margin-bottom:6px}.ewd-rtabs button{border:none;background:none;font:inherit;font-size:14px;padding:4px 2px 6px;cursor:pointer;color:#323130;border-bottom:3px solid transparent}.ewd-rtabs button.on{border-bottom-color:#2b579a;font-weight:600}',
+        '.ewd-doc{display:grid;grid-template-columns:30px 1fr 150px 30px;align-items:center;gap:10px;padding:9px 8px;border-bottom:1px solid #edebe9;cursor:pointer}',
+        '.ewd-doc:hover{background:#f3f2f1}.ewd-doc.hd{cursor:default;color:#605e5c;font-size:12px;padding:6px 8px}.ewd-doc.hd:hover{background:none}',
+        '.ewd-doc .nm{min-width:0}.ewd-doc .nm div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}.ewd-doc .nm small{color:#605e5c;font-size:11.5px}',
+        '.ewd-doc .pin{border:none;background:none;cursor:pointer;color:#a19f9d;padding:4px;display:flex}.ewd-doc .pin.on{color:#2b579a}',
+        '.ewd-bs-empty{color:#605e5c;padding:18px 8px}',
+        '.ewd-info{display:grid;grid-template-columns:150px 1fr;gap:10px 18px;max-width:560px;font-size:13.5px}.ewd-info span:nth-child(odd){color:#605e5c}',
+        '.ewd-bs-search{width:100%;max-width:420px;height:34px;border:1px solid #8a8886;border-radius:4px;padding:0 10px;font:inherit;font-size:13px;margin-bottom:10px}',
+        '@media (max-width:640px){.ewd-bs-side{width:118px}.ewd-bs-side button{padding:9px 12px}.ewd-bs-main{padding:16px}.ewd-doc{grid-template-columns:26px 1fr 30px}.ewd-doc .dt{display:none}}',
         '.ewd-tpick{position:fixed;z-index:150;background:#fff;border:1px solid #c8c6c4;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.18);padding:8px;font-size:12px;color:#323130}',
         '.ewd-tpick .lb{margin-bottom:6px;font-weight:600}.ewd-tpick .gr{display:grid;grid-template-columns:repeat(10,20px);gap:3px}',
         '.ewd-tpick .gr i{width:20px;height:20px;border:1px solid #c8c6c4;background:#fff;cursor:pointer}.ewd-tpick .gr i.on{background:#c7dcf3;border-color:#2b579a}',
@@ -16201,7 +16223,7 @@ class Component extends DCLogic {
     };
     sm(sEd, 'find', 'ស្វែងរក', () => openFind(false));
     sm(sEd, 'repl', 'ជំនួស', () => openFind(true));
-    ov.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'h')) { e.preventDefault(); openFind(e.key === 'h'); } });
+    ov.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'h')) { e.preventDefault(); openFind(e.key === 'h'); } if (e.key === 'Escape') { const b = ov.querySelector('.ewd-bs'); if (b) b.remove(); } });
     sm(sEd, 'selall', 'ជ្រើសទាំងអស់', () => { const p = this._edCurPage(); if (!p) return; p.focus(); const rg = document.createRange(); rg.selectNodeContents(p); const s = window.getSelection(); s.removeAllRanges(); s.addRange(rg); this._saveLibSel(); }, true);
     const bigSoon = (parent, key, label) => big(parent, key, label, soon(label));
     const smSoon = (parent, key, label) => sm(parent, key, label, soon(label));
@@ -16509,13 +16531,119 @@ class Component extends DCLogic {
       setTimeout(() => { try { refit(); } catch(e){} }, 30);     // refit is defined further down, after the toolbar
     };
     const fileB = document.createElement('button'); fileB.type = 'button'; fileB.className = 'ewd-tab file'; fileB.textContent = 'ឯកសារ'; fileB.dataset.pop = '1';
-    fileB.addEventListener('click', () => {
-      const m = document.createElement('div'); m.className = 'ewd-menu';
-      [['info', 'ព័ត៌មាន', soon('ព័ត៌មាន')], ['new', 'ថ្មី', soon('ថ្មី')], ['open', 'បើក', soon('បើក')], ['save', 'រក្សាទុក', () => save.click()], ['saveas', 'រក្សាទុកជា', soon('រក្សាទុកជា')], ['print', 'បោះពុម្ព', soon('បោះពុម្ព')], ['down', 'ទាញយកជា PDF', doPdf], ['back', 'ចាកចេញ', () => this._edTryExit()]].forEach(([k, lbl, fn]) => {
-        const b = document.createElement('button'); b.type = 'button'; b.innerHTML = svg(k, 16) + '<span>' + lbl + '</span>'; b.addEventListener('click', () => { closePops(); fn(); }); m.appendChild(b);
+    // ── File: a full-screen "backstage" like Word — home (new from a template · recent / pinned books), open, info, save … ──
+    const KM_MON = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
+    const fmtDate = iso => { if (!iso) return ''; const d = new Date(iso); if (isNaN(d)) return ''; return d.getDate() + ' ' + KM_MON[d.getMonth()] + (d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : ''); };
+    const pins = () => { try { return JSON.parse(localStorage.getItem('dict_ed_pins') || '[]') || []; } catch(e) { return []; } };
+    const setPins = a => { try { localStorage.setItem('dict_ed_pins', JSON.stringify(a)); } catch(e){} };
+    const TH = { blank: '', lesson: '<b></b><i></i><i style="width:80%"></i><i style="height:22px;background:#dbe5f1;border:1px solid #9db3d0"></i><i></i><i style="width:60%"></i>',
+      words: '<b style="width:50%"></b><i style="height:60px;background:repeating-linear-gradient(180deg,#2b579a 0 8px,#fff 8px 9px,#eef3fa 9px 17px,#fff 17px 18px);border:1px solid #9db3d0"></i>',
+      cover: '<i style="height:24px;background:none"></i><b style="width:90%;height:9px;margin:0 auto"></b><i style="width:60%;margin:4px auto 0"></i><i style="height:30px;background:none"></i><i style="width:40%;margin:0 auto"></i>',
+      sent: '<b style="width:55%"></b><i></i><i style="width:70%;background:#9db3d0"></i><i></i><i style="width:65%;background:#9db3d0"></i><i></i><i style="width:75%;background:#9db3d0"></i>',
+      quiz: '<b style="width:45%"></b><i style="width:90%"></i><i style="width:40%;background:none;border-bottom:1px solid #605e5c;height:6px"></i><i style="width:85%"></i><i style="width:40%;background:none;border-bottom:1px solid #605e5c;height:6px"></i><i style="width:90%"></i>' };
+    const TC = 'border:1px solid #9db3d0;padding:6px 8px;vertical-align:top;';
+    const tRow = (cells, head, alt) => '<tr>' + cells.map(c => '<td style="' + TC + (head ? 'background:#2b579a;color:#fff;font-weight:700;' : (alt ? 'background:#eef3fa;' : '')) + '">' + (c || '<br>') + '</td>').join('') + '</tr>';
+    const TEMPLATES = [
+      ['blank', 'សៀវភៅទទេ', '<p><br></p>'],
+      ['lesson', 'មេរៀនពាក្យ', '<h2>មេរៀនទី ១ · ចំណងជើង</h2><p>សេចក្ដីណែនាំខ្លីអំពីមេរៀននេះ…</p><table style="width:100%;border-collapse:collapse;table-layout:fixed;margin:8px 0;">' + tRow(['ពាក្យ', 'ការអាន', 'អត្ថន័យ'], true) + tRow(['', '', '']) + tRow(['', '', ''], false, true) + tRow(['', '', '']) + '</table><h3>ឧទាហរណ៍</h3><ol style="list-style-type:decimal"><li><br></li><li><br></li></ol>'],
+      ['words', 'តារាងពាក្យ', '<h2>បញ្ជីពាក្យ</h2><table style="width:100%;border-collapse:collapse;table-layout:fixed;margin:8px 0;">' + tRow(['ល.រ', 'ពាក្យ', 'ការអាន', 'អត្ថន័យ'], true) + [1, 2, 3, 4, 5, 6].map(n => tRow([String(n), '', '', ''], false, n % 2 === 0)).join('') + '</table><p><br></p>'],
+      ['cover', 'ទំព័រគម្រប', '<p style="margin:0"><br></p><p style="margin:0"><br></p><p style="margin:0"><br></p><h1 style="font-size:40px;text-align:center">ចំណងជើងសៀវភៅ</h1><p style="text-align:center;font-size:19px;color:#595959;letter-spacing:.02em">ចំណងជើងរង</p><p style="margin:0"><br></p><p style="margin:0"><br></p><p style="text-align:center">អ្នកនិពន្ធ · ឆ្នាំ</p>'],
+      ['sent', 'ឧទាហរណ៍ប្រយោគ', '<h2>ឧទាហរណ៍ប្រយោគ</h2><ol style="list-style-type:decimal"><li>日本語の文。<br><span style="color:#2b579a">ការបកប្រែជាភាសាខ្មែរ។</span></li><li>日本語の文。<br><span style="color:#2b579a">ការបកប្រែជាភាសាខ្មែរ។</span></li><li>日本語の文。<br><span style="color:#2b579a">ការបកប្រែជាភាសាខ្មែរ។</span></li></ol>'],
+      ['quiz', 'លំហាត់', '<h2>លំហាត់</h2><ol style="list-style-type:decimal"><li>សំណួរ…<br>ចម្លើយ៖ ____________________</li><li>សំណួរ…<br>ចម្លើយ៖ ____________________</li><li>សំណួរ…<br>ចម្លើយ៖ ____________________</li></ol>'],
+    ];
+    const leaveTo = go => { if (this._edDirty && !window.confirm('មានការកែប្រែមិនទាន់រក្សាទុក។ បោះបង់ការកែប្រែទាំងនោះ ហើយបន្តមែនទេ?')) return; this._edDirty = false; closeBs(); go(); };
+    const newFrom = html => leaveTo(() => { this._edReturnToRead = null; this.setState({ libMode: 'edit', libBookId: null, libErr: '' }, () => this._buildEditorSoon({ title: '', content: html })); });
+    const openBook = id => { if (id === this._edBookId) { closeBs(); return; } leaveTo(() => this.libEditBook(id)); };
+    let bs = null, bsView = 'home', books = null, recentTab = 'recent';
+    const closeBs = () => { if (bs) bs.remove(); bs = null; };
+    const loadBooks = async () => { try { const { rows } = await Backend.listBooks(); books = (rows || []).slice().sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || ''))); } catch(e) { books = []; } if (bs) paint(); };
+    const docRow = b => {
+      const d = document.createElement('div'); d.className = 'ewd-doc';
+      const pinned = pins().includes(b.id);
+      d.innerHTML = '<span style="color:#2b579a;display:flex">' + svg('file', 22) + '</span><div class="nm"><div>' + _escHtml(b.title || '(គ្មានចំណងជើង)') + (b.id === this._edBookId ? ' <small style="color:#2b579a">· កំពុងបើក</small>' : '') + '</div><small>សៀវភៅ' + (b.locked ? ' · 🔒' : '') + '</small></div><span class="dt">' + fmtDate(b.updated_at) + '</span>';
+      const pb = document.createElement('button'); pb.type = 'button'; pb.className = 'pin' + (pinned ? ' on' : ''); pb.title = pinned ? 'ដកការខ្ទាស់' : 'ខ្ទាស់'; pb.innerHTML = svg('bookmark', 16);
+      pb.addEventListener('click', e => { e.stopPropagation(); const a = pins(); setPins(a.includes(b.id) ? a.filter(x => x !== b.id) : [b.id, ...a]); paint(); });
+      d.appendChild(pb);
+      d.addEventListener('click', () => openBook(b.id));
+      return d;
+    };
+    const docList = (main, list, emptyMsg) => {
+      const hd = document.createElement('div'); hd.className = 'ewd-doc hd'; hd.innerHTML = '<span style="display:flex">' + svg('file', 16) + '</span><span>ឈ្មោះ</span><span class="dt">កាលបរិច្ឆេទកែ</span><span></span>'; main.appendChild(hd);
+      if (books === null) { const e = document.createElement('div'); e.className = 'ewd-bs-empty'; e.textContent = 'កំពុងផ្ទុក…'; main.appendChild(e); return; }
+      if (!list.length) { const e = document.createElement('div'); e.className = 'ewd-bs-empty'; e.textContent = emptyMsg; main.appendChild(e); return; }
+      list.forEach(b => main.appendChild(docRow(b)));
+    };
+    const paint = () => {
+      if (!bs) return;
+      const main = bs.querySelector('.ewd-bs-main'); main.innerHTML = '';
+      bs.querySelectorAll('.ewd-bs-side button[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === bsView));
+      const H = t => { const e = document.createElement('h2'); e.textContent = t; main.appendChild(e); return e; };
+      if (bsView === 'home' || bsView === 'new') {
+        const hr = new Date().getHours();
+        H(bsView === 'new' ? 'ថ្មី' : (hr < 12 ? 'អរុណសួស្តី' : hr < 17 ? 'ទិវាសួស្តី' : 'សាយណ្ហសួស្តី'));
+        const h3 = document.createElement('h3'); h3.innerHTML = svg('dn', 14) + '<span>ថ្មី</span>'; main.appendChild(h3);
+        const tp = document.createElement('div'); tp.className = 'ewd-tpls';
+        TEMPLATES.forEach(([k, name, html]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-tpl'; b.innerHTML = '<div class="th">' + TH[k] + '</div>' + name; b.addEventListener('click', () => newFrom(html)); tp.appendChild(b); });
+        main.appendChild(tp);
+        if (bsView === 'new') return;
+        const more = document.createElement('div'); more.className = 'ewd-more'; more.innerHTML = '<button type="button">ពុម្ពច្រើនទៀត →</button>'; more.querySelector('button').addEventListener('click', soon('ពុម្ពច្រើនទៀត')); main.appendChild(more);
+        const rt = document.createElement('div'); rt.className = 'ewd-rtabs';
+        [['recent', 'ថ្មីៗ'], ['pinned', 'បានខ្ទាស់']].forEach(([k, l]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = l; b.classList.toggle('on', recentTab === k); b.addEventListener('click', () => { recentTab = k; paint(); }); rt.appendChild(b); });
+        main.appendChild(rt);
+        const all = books || [];
+        docList(main, recentTab === 'pinned' ? all.filter(b => pins().includes(b.id)) : all.slice(0, 10), recentTab === 'pinned' ? 'មិនទាន់មានសៀវភៅដែលបានខ្ទាស់ទេ — ចុចរូប 🔖 ដើម្បីខ្ទាស់' : 'មិនទាន់មានសៀវភៅទេ');
+        if (books && books.length > 10 && recentTab === 'recent') { const mm = document.createElement('div'); mm.className = 'ewd-more'; mm.innerHTML = '<button type="button">សៀវភៅច្រើនទៀត →</button>'; mm.querySelector('button').addEventListener('click', () => { bsView = 'open'; paint(); }); main.appendChild(mm); }
+      } else if (bsView === 'open') {
+        H('បើក');
+        const q = document.createElement('input'); q.className = 'ewd-bs-search'; q.placeholder = 'ស្វែងរកសៀវភៅ…'; main.appendChild(q);
+        const box = document.createElement('div'); main.appendChild(box);
+        const draw = () => { box.innerHTML = ''; const t = q.value.trim().toLowerCase(); docList(box, (books || []).filter(b => !t || String(b.title || '').toLowerCase().includes(t)), 'រកមិនឃើញ'); };
+        q.addEventListener('input', draw); draw(); setTimeout(() => q.focus(), 30);
+      } else if (bsView === 'info') {
+        H('ព័ត៌មាន');
+        const pages = this._edPages || [], text = pages.map(p => p.innerText || '').join('\n');
+        const chars = text.replace(/\s/g, '').length, words = (text.match(/[A-Za-z0-9]+|[\u1780-\u17FF]+|[\u3040-\u30FF\u4E00-\u9FFF]/g) || []).length;
+        const cur = (books || []).find(b => b.id === this._edBookId);
+        const g = document.createElement('div'); g.className = 'ewd-info';
+        [['ចំណងជើង', title.value || '(គ្មានចំណងជើង)'], ['ទំព័រ', String(pages.length)], ['តួអក្សរ (គ្មានដកឃ្លា)', chars.toLocaleString()], ['ពាក្យ (ប្រហែល)', words.toLocaleString()],
+         ['ទំហំក្រដាស', 'A4'], ['រឹមក្រដាស', PAD + ' px'], ['លេខទំព័រចាប់ផ្ដើម', String(this._libStartPage || 1)], ['កែចុងក្រោយ', cur ? fmtDate(cur.updated_at) : (this._edBookId ? '—' : 'មិនទាន់រក្សាទុក')],
+         ['ស្ថានភាព', this._edDirty ? 'មានការកែមិនទាន់រក្សាទុក' : 'បានរក្សាទុក']].forEach(([k, v]) => { const a = document.createElement('span'); a.textContent = k; const b = document.createElement('span'); b.textContent = v; g.appendChild(a); g.appendChild(b); });
+        main.appendChild(g);
+      }
+    };
+    const openBackstage = () => {
+      closePops(); closeBs();
+      bs = document.createElement('div'); bs.className = 'ewd-bs';
+      const side = document.createElement('div'); side.className = 'ewd-bs-side';
+      const item = (key, label, fn, v, dis) => { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = svg(key, 17) + '<span>' + label + '</span>'; if (v) b.dataset.v = v; if (dis) b.className = 'dis'; else b.addEventListener('click', fn); side.appendChild(b); return b; };
+      const back = item('back', '', () => closeBs()); back.className = 'back'; back.title = 'ត្រឡប់';
+      item('pview', 'ទំព័រដើម', () => { bsView = 'home'; paint(); }, 'home');
+      item('new', 'ថ្មី', () => { bsView = 'new'; paint(); }, 'new');
+      item('open', 'បើក', () => { bsView = 'open'; paint(); }, 'open');
+      side.appendChild(document.createElement('hr'));
+      item('info', 'ព័ត៌មាន', () => { bsView = 'info'; paint(); }, 'info');
+      item('save', 'រក្សាទុក', async () => { const ok = await this.saveBook(); if (ok !== false) { closeBs(); toast('បានរក្សាទុក ✓'); } });
+      item('saveas', 'រក្សាទុកជា', async () => {
+        const t = window.prompt('ចំណងជើងសៀវភៅថ្មី (ច្បាប់ចម្លង)', (title.value || '') + ' (ច្បាប់ចម្លង)'); if (!t || !t.trim()) return;
+        const keep = this._edBookId; title.value = t.trim(); this._edBookId = null;
+        const ok = await this.saveBook(); if (ok === false) { this._edBookId = keep; return; }
+        closeBs(); toast('បានរក្សាទុកជាសៀវភៅថ្មី ✓');
       });
-      popUnder(fileB, m);
-    });
+      item('rot', 'ប្រវត្តិ', null, null, true);
+      item('print', 'បោះពុម្ព', soon('បោះពុម្ព'));
+      item('people', 'ចែករំលែក', soon('ចែករំលែក'));
+      item('down', 'នាំចេញ (PDF)', () => { closeBs(); doPdf(); });
+      item('x', 'បិទ', () => { closeBs(); this._edTryExit(); });
+      const sp = document.createElement('div'); sp.className = 'sp'; side.appendChild(sp);
+      side.appendChild(document.createElement('hr'));
+      item('people', 'គណនី', soon('គណនី'));
+      item('fb', 'មតិកែលម្អ', soon('មតិកែលម្អ'));
+      item('selp', 'ជម្រើស', soon('ជម្រើស'));
+      const main = document.createElement('div'); main.className = 'ewd-bs-main';
+      bs.appendChild(side); bs.appendChild(main); ov.appendChild(bs);
+      bsView = 'home'; books = null; paint(); loadBooks();
+    };
+    fileB.addEventListener('click', openBackstage);
     tabsBar.appendChild(fileB);
     TABS.forEach(([k, label]) => {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-tab'; b.textContent = label;
