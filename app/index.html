@@ -15774,7 +15774,7 @@ class Component extends DCLogic {
         '.ewd-big:hover,.ewd-sm:hover,.ewd-b:hover{background:#f3f2f1}.ewd-big:active,.ewd-sm:active,.ewd-b:active{background:#e1dfdd}',
         '.ewd-big.red{color:#a4262c}',
         '.ewd-big span{text-align:center;line-height:1.2}',
-        '.ewd-big.dim,.ewd-sm.dim{opacity:.45}',
+        '.ewd-big.dim,.ewd-sm.dim,.ewd-b.dim{opacity:.45}',
         '.ewd-spin{display:flex;align-items:center;gap:5px;height:26px;font-size:12px}.ewd-spin .lb{width:58px;display:flex;align-items:center;gap:4px}',
         '.ewd-spin input{width:66px;height:24px;border:1px solid #8a8886;border-radius:3px;font:inherit;font-size:12px;padding:0 4px;text-align:right}',
         '.ewd-gh{font-size:12px;color:#323130;padding:2px 2px 0}',
@@ -15912,6 +15912,8 @@ class Component extends DCLogic {
       nav: 'M4 4h16v16H4zM9 4v16M5.5 8h2M5.5 11h2M5.5 14h2', onep: 'M7 3h10v18H7z', multp: 'M3 5h8v14H3zM13 5h8v14h-8z', z100: 'M4 12h16M12 4v16',
       new: 'M6 3h8l4 4v14H6zM14 3v4h4M12 11v6M9 14h6',
       env: 'M3 6h18v12H3zM3 6l9 7 9-7',
+      postcard: 'M5 3h14v18H5zM14 6h3v3h-3zM8 7h4M8 10h4', barcode: 'M4 5v14M7 5v14M9 5v14M12 5v14M15 5v14M17 5v14M20 5v14', abc: 'M3 17l3-8 3 8M4.2 14h3.6M11 9h3a2 2 0 0 1 0 4h-3zM11 13h3.5a2 2 0 0 1 0 4H11zM21.5 10.5a3 3 0 1 0 0 5M5 5l2-2 2 2M15 5l2-2 2 2',
+      first: 'M6 5v14M18 6l-8 6 8 6', last: 'M18 5v14M6 6l8 6-8 6', addr: 'M4 5h16v14H4zM8 9h8M8 12h8M8 15h5',
       fnote1: 'M3 18l3.5-9 3.5 9M4.3 15h4.4M12 18v-6a2.5 2.5 0 0 1 5 0v6M12 15.5h5M19 4v5', enote: 'M4 5h16M4 9h16M4 13h10M14 17h7M17.5 15v5', citeI: 'M5 4h11l3 3v13H5zM9 12l2 2 4-4', research: 'M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-6-6M10 7v1M10 10v4',
       margins: 'M4 3h16v18H4zM8 3v18M16 3v18M4 7h16M4 17h16', genko: 'M5 3h14v18H5zM9 3v18M13 3v18M5 8h14M5 13h14', posn: 'M4 4h16v16H4zM9 9h6v6H9z',
       indL: 'M3 4h18M9 9h12M9 14h12M3 19h18M3 9l3 2.5L3 14', indR: 'M3 4h18M3 9h12M3 14h12M3 19h18M21 9l-3 2.5 3 2.5',
@@ -16502,15 +16504,25 @@ class Component extends DCLogic {
     jin.addEventListener('keydown', e => { if (e.key === 'Enter') { goInput(); jin.blur(); } });
     goBox.appendChild(jin); goBox.appendChild(jtot); gGo.appendChild(goBox);
     big(gGo, 'r', 'ទំព័របន្ទាប់', () => this._edShowPage(this._edCur + 1), true);
-    // ═══ សំបុត្រ (Mailings) ═══
+    // ═══ សំបុត្រ (Mailings) — same groups as Word; the merge buttons stay dimmed until there is a recipient list ═══
     const pMail = pane('mail');
-    const gCreate = group(pMail, 'បង្កើត'); bigSoon(gCreate, 'env', 'ស្រោមសំបុត្រ'); bigSoon(gCreate, 'lbl', 'ស្លាក');
-    const gMerge = group(pMail, 'ចាប់ផ្ដើមបញ្ចូលទិន្នន័យ'); bigSoon(gMerge, 'merge', 'ចាប់ផ្ដើម'); bigSoon(gMerge, 'people', 'ជ្រើសអ្នកទទួល'); bigSoon(gMerge, 'field', 'កែបញ្ជី');
-    const gFields = group(pMail, 'សរសេរ និងបញ្ចូលវាល'); bigSoon(gFields, 'hl', 'គូសវាល'); bigSoon(gFields, 'env', 'ប្លុកអាសយដ្ឋាន'); bigSoon(gFields, 'comment', 'ពាក្យស្វាគមន៍'); bigSoon(gFields, 'field', 'បញ្ចូលវាល');
-    const sFields = stack(gFields); smSoon(sFields, 'list', 'ក្បួន'); smSoon(sFields, 'link', 'ផ្គូផ្គងវាល'); smSoon(sFields, 'rot', 'ធ្វើបច្ចុប្បន្នភាពស្លាក');
-    const gPrev = group(pMail, 'មើលលទ្ធផល'); bigSoon(gPrev, 'play', 'មើលជាមុន');
-    const sPrev = stack(gPrev); smSoon(sPrev, 'find', 'រកអ្នកទទួល'); smSoon(sPrev, 'check', 'ពិនិត្យកំហុស');
-    const gFin = group(pMail, 'បញ្ចប់'); bigSoon(gFin, 'check', 'បញ្ចប់ និងបញ្ចូល');
+    const dimB = (g, k, l) => { const x = bigSoon(g, k, l); x.classList.add('dim'); return x; };
+    const gCreate = group(pMail, 'បង្កើត');
+    bigSoon(gCreate, 'greet', 'ស្វាគមន៍<br>ជប៉ុន ▾'); bigSoon(gCreate, 'postcard', 'កាតប៉ុស្ដាល់<br>ជប៉ុន ▾'); bigSoon(gCreate, 'env', 'ស្រោម<br>សំបុត្រ'); bigSoon(gCreate, 'lbl', 'ស្លាក');
+    const gMerge = group(pMail, 'ចាប់ផ្ដើមបញ្ចូលសំបុត្រ');
+    bigSoon(gMerge, 'merge', 'ចាប់ផ្ដើម<br>បញ្ចូល ▾'); bigSoon(gMerge, 'people', 'ជ្រើស<br>អ្នកទទួល ▾'); dimB(gMerge, 'field', 'កែបញ្ជី<br>អ្នកទទួល');
+    const gFields = group(pMail, 'សរសេរ និងបញ្ចូលវាល');
+    dimB(gFields, 'hl', 'គូសវាល<br>បញ្ចូល'); dimB(gFields, 'barcode', 'វាលបាកូដ<br>▾'); dimB(gFields, 'addr', 'ប្លុក<br>អាសយដ្ឋាន'); dimB(gFields, 'comment', 'បន្ទាត់<br>ស្វាគមន៍'); dimB(gFields, 'field', 'បញ្ចូលវាល<br>▾');
+    const sFields = stack(gFields); smSoon(sFields, 'list', 'ក្បួន ▾').classList.add('dim'); smSoon(sFields, 'link', 'ផ្គូផ្គងវាល').classList.add('dim'); smSoon(sFields, 'rot', 'ធ្វើបច្ចុប្បន្នភាពស្លាក').classList.add('dim');
+    const gPrev = group(pMail, 'មើលលទ្ធផល');
+    dimB(gPrev, 'abc', 'មើល<br>លទ្ធផល');
+    const pvCol = stack(gPrev); const pvNav = document.createElement('div'); pvNav.className = 'ewd-row'; pvNav.style.height = '24px'; pvCol.appendChild(pvNav);
+    ['first', 'l'].forEach(k => btn(pvNav, k, 'អ្នកទទួល', soon('រុករកអ្នកទទួល')).classList.add('dim'));
+    const pvBox = document.createElement('input'); pvBox.className = 'ewd-in'; pvBox.readOnly = true; pvBox.style.cssText = 'width:44px;height:22px;background:#f3f2f1;opacity:.6;'; pvNav.appendChild(pvBox);
+    ['r', 'last'].forEach(k => btn(pvNav, k, 'អ្នកទទួល', soon('រុករកអ្នកទទួល')).classList.add('dim'));
+    smSoon(pvCol, 'find', 'រកអ្នកទទួល').classList.add('dim'); smSoon(pvCol, 'check', 'ពិនិត្យកំហុស').classList.add('dim');
+    const gFin = group(pMail, 'បញ្ចប់');
+    dimB(gFin, 'check', 'បញ្ចប់ និង<br>បញ្ចូល ▾');
     // ═══ អ្នកអភិវឌ្ឍ (Developer) ═══
     const pDev = pane('dev');
     const gCode = group(pDev, 'កូដ'); bigSoon(gCode, 'code', 'Visual Basic'); bigSoon(gCode, 'play', 'ម៉ាក្រូ');
