@@ -9525,6 +9525,40 @@ function linkKmSegments(sentence){
 // WORDS at load and after each add, keyed by a "c-" id so re-applying is safe.
 // A Google Drive "share" link is not an <img> src; rewrite it to the thumbnail
 // endpoint (same rule the sync uses), so an admin can paste a Drive link.
+// Books kept on this device (IndexedDB — a book can be megabytes, too big for localStorage), so opening a
+// book does not download it again, and the page breaks of its first layout are reused instead of measured again.
+// A record is { id, v: the book's updated_at when it was stored, book, breaks }.
+const BookStore = {
+  _db: null,
+  _open(){
+    if (this._db) return this._db;
+    return this._db = new Promise(res => {
+      try {
+        if (!window.indexedDB) return res(null);
+        const q = indexedDB.open('dict_books', 1);
+        q.onupgradeneeded = () => { try { q.result.createObjectStore('books', { keyPath: 'id' }); } catch(e){} };
+        q.onsuccess = () => res(q.result);
+        q.onerror = q.onblocked = () => res(null);
+      } catch(e){ res(null); }
+    });
+  },
+  async get(id){
+    const db = await this._open(); if (!db || !id) return null;
+    return new Promise(res => { try { const q = db.transaction('books').objectStore('books').get(id); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); } catch(e){ res(null); } });
+  },
+  async put(rec){
+    const db = await this._open(); if (!db || !rec || !rec.id) return;
+    return new Promise(res => { try { const tx = db.transaction('books', 'readwrite'); tx.objectStore('books').put(rec); tx.oncomplete = tx.onerror = tx.onabort = () => res(); } catch(e){ res(); } });
+  },
+  async del(id){
+    const db = await this._open(); if (!db || !id) return;
+    return new Promise(res => { try { const tx = db.transaction('books', 'readwrite'); tx.objectStore('books').delete(id); tx.oncomplete = tx.onerror = tx.onabort = () => res(); } catch(e){ res(); } });
+  },
+  async setBreaks(id, breaks){
+    const rec = await this.get(id); if (!rec) return;
+    rec.breaks = breaks; await this.put(rec);
+  },
+};
 // image link → something an <img> can show while typing (Drive links, or a plain image address); '' when it is not one
 function ewImgPreview(url){
   const n = normalizeImgUrl(url);
@@ -13421,6 +13455,7 @@ class Component extends DCLogic {
       if (this.state.screen !== 'readbooks' || this.state.rbMode !== 'list') return;
       try {
         const { book } = await Backend.getBook(b.id);
+        if (book) BookStore.put({ id: b.id, v: b.updated_at || book.updated_at || null, book, breaks: null });   // so opening it later costs no download
         const cover = this._firstBookImage((book && book.content) || '');
         covers[b.id] = { v: b.updated_at, c: cover };
         try { localStorage.setItem('dict_book_covers', JSON.stringify(covers)); } catch(e){}
@@ -13444,10 +13479,21 @@ class Component extends DCLogic {
   }
   // Keep the last few books opened this session, so going back to the shelf and
   // into the same book again is instant instead of another full download.
+  // the book's "version" from whatever list we already loaded (shelf or library) — no extra request
+  _bookStamp(id){
+    const pools = [this._rbCache, this.state.rbBooks, this.state.libBooks];
+    for (const p of pools) { const b = Array.isArray(p) ? p.find(x => x && x.id === id) : null; if (b && b.updated_at) return b.updated_at; }
+    return null;
+  }
   async _bookCached(id){
     this._bookMem = this._bookMem || new Map();
     if (this._bookMem.has(id)) return this._bookMem.get(id);
+    const stamp = this._bookStamp(id);
+    const hit = await BookStore.get(id);                       // stored on this device last time?
+    if (hit && hit.book && stamp && hit.v === stamp) { this._bookMem.set(id, hit.book); return hit.book; }
     const { book } = await Backend.getBook(id);
+    if (book) BookStore.put({ id, v: stamp || book.updated_at || null, book, breaks: (hit && hit.v === (stamp || book.updated_at) && hit.breaks) || null });
+    else if (hit && hit.book) { this._bookMem.set(id, hit.book); return hit.book; }   // offline / failed: the copy we have is better than nothing
     this._bookMem.set(id, book || null);
     if (this._bookMem.size > 3) this._bookMem.delete(this._bookMem.keys().next().value);
     return book || null;
@@ -14043,7 +14089,12 @@ class Component extends DCLogic {
     pre.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.setAttribute('src', s); });
     const finalHtml = pre.innerHTML;
     const pend = [...pre.querySelectorAll('img')].filter(im => !im.complete);
-    const build = () => this._buildReadViewNow(book, root, finalHtml, bmeta.margin, bmeta.startPage);
+    const build = () => {
+      // page breaks measured on an earlier open of this same version of the book (this device)
+      const id = book && book.id;
+      (id ? BookStore.get(id) : Promise.resolve(null)).then(rec => rec && rec.breaks, () => null)
+        .then(br => this._buildReadViewNow(book, root, finalHtml, bmeta.margin, bmeta.startPage, br || null));
+    };
     if (!pend.length) { build(); return; }
     let left = pend.length, fired = false;
     const done = () => { if (!fired && --left <= 0) { fired = true; build(); } };
@@ -14056,14 +14107,14 @@ class Component extends DCLogic {
   // ✕ (bottom-nav taps, the bell, etc.), since React unmounting
   // #lib-read-root/#rb-read-root no longer takes a body-level node down with it.
   _clearBodyOverlay(){ const el = document.getElementById('book-reader-overlay'); if (el && el.parentNode) el.parentNode.removeChild(el); }
-  _buildReadViewNow(book, root, html, margin, startPage){
+  _buildReadViewNow(book, root, html, margin, startPage, savedBreaks){
     root.innerHTML = '';
     this._clearBodyOverlay();
     const A4W = 794, A4H = 1123, PAD = margin || 48, START = startPage || 1;
     const bookId = (book && book.id) || null;
     // what an admin needs to come back to this page, and to rebuild it after a word was edited
     this._rdCtx = { id: bookId, origin: this._readRootId === 'rb-read-root' ? 'readbooks' : 'library' };
-    this._rdRebuild = () => { this._bwMap = null; _furiMap = null; _furiMax = 0; this._buildReadViewNow(book, root, html, margin, startPage); };
+    this._rdRebuild = () => { this._bwMap = null; _furiMap = null; _furiMax = 0; this._buildReadViewNow(book, root, html, margin, startPage, savedBreaks); };
     const marks = new Set(this._getBookmarks(bookId));   // pages the reader flagged
     // Full-screen overlay, the page fills the screen, no app chrome — mounted
     // directly on <body>, NOT inside #lib-read-root/#rb-read-root. Those sit
@@ -14230,10 +14281,32 @@ class Component extends DCLogic {
       stage.appendChild(p); return p; };
     let page = mkPage();
     const blocks = [...src.childNodes].filter(n => n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim()));
-    for (const n of blocks) {
-      if (n.nodeType === 1 && n.classList && n.classList.contains('pgbrk')) { if (page.childNodes.length) page = mkPage(); continue; }
-      page.appendChild(n);
-      if (page.scrollHeight > A4H && page.childNodes.length > 1) { page.removeChild(n); page = mkPage(); page.appendChild(n); }
+    const isBrk = n => n.nodeType === 1 && n.classList && n.classList.contains('pgbrk');
+    // The measuring loop below forces a layout after every block — most of the time spent opening a long
+    // book. The page breaks do not change unless the book (or the margin) does, so they are kept per
+    // device and replayed: the blocks are simply dealt onto the pages, nothing is measured.
+    const brkKey = `v1|${(book && book.updated_at) || ''}|${PAD}|${blocks.length}|${A4H}`;
+    const saved = savedBreaks && savedBreaks.key === brkKey && Array.isArray(savedBreaks.starts) && savedBreaks.starts.length ? savedBreaks : null;
+    const starts = [];
+    if (saved) {
+      const st = saved.starts;
+      for (let i = 0; i < st.length; i++) {
+        const p = i === 0 ? page : mkPage(), to = i + 1 < st.length ? st[i + 1] : blocks.length;
+        for (let j = st[i]; j < to; j++) { if (!isBrk(blocks[j])) p.appendChild(blocks[j]); }
+        page = p;
+      }
+      if (saved.trailingEmpty) page = mkPage();
+    } else {
+      let bi = -1;
+      for (const n of blocks) {
+        bi++;
+        if (isBrk(n)) { if (page.childNodes.length) page = mkPage(); continue; }
+        const wasEmpty = page.childNodes.length === 0;
+        page.appendChild(n);
+        if (wasEmpty) starts.push(bi);
+        if (page.scrollHeight > A4H && page.childNodes.length > 1) { page.removeChild(n); page = mkPage(); page.appendChild(n); starts.push(bi); }
+      }
+      if (bookId && starts.length) BookStore.setBreaks(bookId, { key: brkKey, starts, trailingEmpty: page.childNodes.length === 0 });
     }
     let pages = [...stage.querySelectorAll('.a4page')];
     if (!pages.length) { const p = mkPage(); p.innerHTML = '<p style="opacity:0.5;">(សៀវភៅទទេ)</p>'; pages = [p]; }
@@ -14722,6 +14795,7 @@ class Component extends DCLogic {
     this._edDirty = false;
     // the shelf's cached copy and cover are now stale
     if (this._bookMem) this._bookMem.delete(this._edBookId);
+    BookStore.del(this._edBookId);
     this._rbCache = null;
     try { const m = this._coverMap(); delete m[this._edBookId]; localStorage.setItem('dict_book_covers', JSON.stringify(m)); } catch(e){}
     if (btn) { btn.textContent = '✓'; clearTimeout(this._edSaveT); this._edSaveT = setTimeout(() => { if (btn) { if (btn.dataset.ico) btn.innerHTML = btn.dataset.ico; else btn.textContent = '💾'; } }, 1200); }
