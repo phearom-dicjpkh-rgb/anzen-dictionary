@@ -15607,10 +15607,12 @@ class Component extends DCLogic {
     this._edSelShape = el;
     el.style.outline = '2px dashed var(--color-accent)'; el.style.outlineOffset = '3px';
     this._showShapeBar();
+    if (this._edShapeTabHook) this._edShapeTabHook(true);
   }
   _deselectShape(){
     const b = document.getElementById('lib-shape-bar'); if (b) b.remove();
     if (this._edSelShape) { this._edSelShape.style.outline = ''; this._edSelShape.style.outlineOffset = ''; this._edSelShape = null; }
+    if (this._edShapeTabHook) this._edShapeTabHook(false);
   }
   _edSetShapeColor(el, c){
     this._edShapeColor = c; const type = el.dataset.shape;
@@ -15898,6 +15900,13 @@ class Component extends DCLogic {
       focus: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5M9 12h6', imm: 'M4 5h16v14H4zM8 9h8M8 12h8M8 15h5', ruler: 'M3 8h18v8H3zM7 8v3M11 8v4M15 8v3M19 8v4', grid: 'M4 4h16v16H4zM4 9h16M4 14h16M9 4v16M14 4v16',
       nav: 'M4 4h16v16H4zM9 4v16M5.5 8h2M5.5 11h2M5.5 14h2', onep: 'M7 3h10v18H7z', multp: 'M3 5h8v14H3zM13 5h8v14h-8z', z100: 'M4 12h16M12 4v16',
       new: 'M6 3h8l4 4v14H6zM14 3v4h4M12 11v6M9 14h6',
+      env: 'M3 6h18v12H3zM3 6l9 7 9-7', lbl: 'M4 4h16v16H4zM4 9h16M4 14h16', merge: 'M6 3v6a6 6 0 0 0 6 6h6M15 12l3 3-3 3',
+      people: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a7 7 0 0 1 14 0v1M17 7a3 3 0 0 1 0 6M22 21v-1a5 5 0 0 0-3-4.5', field: 'M4 6h16v12H4zM8 10h3M13 10h3M8 14h8',
+      play: 'M7 4l12 8-12 8z', code: 'M8 7l-5 5 5 5M16 7l5 5-5 5', rec: 'M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z', addin: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM16.5 13v7M13 16.5h7',
+      ctrl: 'M4 6h16v12H4zM8 10h8M8 14h5', xml: 'M4 7l-2 5 2 5M20 7l2 5-2 5M14 4l-4 16', help: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.3-1 .9-1 1.7M12 17h.01',
+      support: 'M4 14v-2a8 8 0 0 1 16 0v2M4 14h3v5H4zM17 14h3v5h-3z', fb: 'M4 5h16v11H9l-5 4zM9 10h.01M12 10h.01M15 10h.01', train: 'M3 8l9-4 9 4-9 4zM7 10v5c3 2 7 2 10 0v-5',
+      gcheck: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 12l3 3 5-6', fill: 'M5 12l6-6 6 6-6 6zM11 6L8 3M19 13c0 1.5 1 2.2 1 3.2a1 1 0 0 1-2 0c0-1 1-1.7 1-3.2z', outline: 'M4 4h16v16H4z',
+      thk: 'M4 6h16M4 11h16M4 17h16', alt: 'M4 5h16v14H4zM8 15l3-4 2 2 3-4 2 6M8 9h.01', tdir: 'M8 4v16M4 16l4 4 4-4M14 6h6M14 10h6M14 14h4', hgt: 'M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4', wid: 'M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4',
       rowup: 'M3 12h18v8H3zM3 16h18M9 12v8M15 12v8M12 3v6M9 6h6', rowdn: 'M3 4h18v8H3zM3 8h18M9 4v8M15 4v8M12 15v6M9 18h6',
       colL: 'M12 3h9v18h-9zM12 9h9M12 15h9M16.5 3v18M3 12h6M6 9v6', colR: 'M3 3h9v18H3zM3 9h9M3 15h9M7.5 3v18M15 12h6M18 9v6',
       vtop: 'M4 4h16M12 8v12M8 12l4-4 4 4', vmid: 'M4 12h16M12 3v5M12 16v5', vbot: 'M4 20h16M12 4v12M8 12l4 4 4-4', open: 'M3 7h6l2 2h10v10H3z', saveas: 'M5 4h11l3 3v13H5zM9 4v5h6M14 14l4 4M18 14l-4 4', print: 'M7 9V3h10v6M5 9h14v8h-2M7 14h10v7H7z', info: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v6M12 7.5h.01',
@@ -16409,6 +16418,63 @@ class Component extends DCLogic {
     jin.addEventListener('keydown', e => { if (e.key === 'Enter') { goInput(); jin.blur(); } });
     goBox.appendChild(jin); goBox.appendChild(jtot); gGo.appendChild(goBox);
     big(gGo, 'r', 'ទំព័របន្ទាប់', () => this._edShowPage(this._edCur + 1), true);
+    // ═══ សំបុត្រ (Mailings) ═══
+    const pMail = pane('mail');
+    const gCreate = group(pMail, 'បង្កើត'); bigSoon(gCreate, 'env', 'ស្រោមសំបុត្រ'); bigSoon(gCreate, 'lbl', 'ស្លាក');
+    const gMerge = group(pMail, 'ចាប់ផ្ដើមបញ្ចូលទិន្នន័យ'); bigSoon(gMerge, 'merge', 'ចាប់ផ្ដើម'); bigSoon(gMerge, 'people', 'ជ្រើសអ្នកទទួល'); bigSoon(gMerge, 'field', 'កែបញ្ជី');
+    const gFields = group(pMail, 'សរសេរ និងបញ្ចូលវាល'); bigSoon(gFields, 'hl', 'គូសវាល'); bigSoon(gFields, 'env', 'ប្លុកអាសយដ្ឋាន'); bigSoon(gFields, 'comment', 'ពាក្យស្វាគមន៍'); bigSoon(gFields, 'field', 'បញ្ចូលវាល');
+    const sFields = stack(gFields); smSoon(sFields, 'list', 'ក្បួន'); smSoon(sFields, 'link', 'ផ្គូផ្គងវាល'); smSoon(sFields, 'rot', 'ធ្វើបច្ចុប្បន្នភាពស្លាក');
+    const gPrev = group(pMail, 'មើលលទ្ធផល'); bigSoon(gPrev, 'play', 'មើលជាមុន');
+    const sPrev = stack(gPrev); smSoon(sPrev, 'find', 'រកអ្នកទទួល'); smSoon(sPrev, 'check', 'ពិនិត្យកំហុស');
+    const gFin = group(pMail, 'បញ្ចប់'); bigSoon(gFin, 'check', 'បញ្ចប់ និងបញ្ចូល');
+    // ═══ អ្នកអភិវឌ្ឍ (Developer) ═══
+    const pDev = pane('dev');
+    const gCode = group(pDev, 'កូដ'); bigSoon(gCode, 'code', 'Visual Basic'); bigSoon(gCode, 'play', 'ម៉ាក្រូ');
+    const sCode = stack(gCode); smSoon(sCode, 'rec', 'ថតម៉ាក្រូ'); smSoon(sCode, 'mn', 'ផ្អាក'); smSoon(sCode, 'lock', 'សុវត្ថិភាពម៉ាក្រូ');
+    const gAdd = group(pDev, 'កម្មវិធីបន្ថែម'); bigSoon(gAdd, 'addin', 'Add-ins'); bigSoon(gAdd, 'addin', 'Word Add-ins'); bigSoon(gAdd, 'addin', 'COM Add-ins');
+    const gCtl = group(pDev, 'ការត្រួតពិនិត្យ'); bigSoon(gCtl, 'ctrl', 'ប្រអប់បញ្ចូល');
+    const sCtl = stack(gCtl); smSoon(sCtl, 'pen', 'របៀបរចនា'); smSoon(sCtl, 'selp', 'លក្ខណៈ'); smSoon(sCtl, 'grp', 'ក្រុម');
+    const gMap = group(pDev, 'ការផ្គូផ្គង'); bigSoon(gMap, 'xml', 'XML');
+    const gDP = group(pDev, 'ការពារ'); bigSoon(gDP, 'people', 'ហាមអ្នកនិពន្ធ'); bigSoon(gDP, 'lock', 'ហាមកែ');
+    const gTpl = group(pDev, 'ពុម្ព'); bigSoon(gTpl, 'file', 'ពុម្ពឯកសារ');
+    // ═══ ជំនួយ (Help) ═══
+    const pHelp = pane('help');
+    const gHelp = group(pHelp, 'ជំនួយ'); bigSoon(gHelp, 'help', 'ជំនួយ'); bigSoon(gHelp, 'support', 'ទាក់ទងជំនួយ'); bigSoon(gHelp, 'fb', 'មតិកែលម្អ'); bigSoon(gHelp, 'train', 'វគ្គបណ្ដុះបណ្ដាល'); bigSoon(gHelp, 'star', 'អ្វីដែលថ្មី');
+    // ═══ ពិនិត្យអក្សរ (in place of the Ginger Writer add-in) ═══
+    const pGin = pane('ginger');
+    const gGin = group(pGin, 'ពិនិត្យអក្សរ'); bigSoon(gGin, 'gcheck', 'បើក');
+    const sGin = stack(gGin); smSoon(sGin, 'check', 'កែតម្រូវ'); smSoon(sGin, 'spark', 'សរសេរឡើងវិញ'); smSoon(sGin, 'speak', 'ស្តាប់');
+    // ═══ ទម្រង់រាង (contextual: shows while a shape is selected) ═══
+    const pShp = pane('shape');
+    const selShp = fn => () => { const el = this._edSelShape; if (!el) { toast('សូមចុចលើរាងជាមុនសិន'); return; } fn(el); };
+    const gIS = group(pShp, 'បញ្ចូលរាង');
+    const shapeB2 = big(gIS, 'sq', 'រាង ▾', () => menuUnder(shapeB2, [
+      [svg('sq', 16) + '<span>ប្រអប់</span>', () => this._edInsertShape('rect')], [svg('ci', 16) + '<span>រង្វង់</span>', () => this._edInsertShape('ellipse')],
+      [svg('hl', 16) + '<span>គូសពណ៌</span>', () => this._edInsertShape('highlight')], [svg('ln', 16) + '<span>បន្ទាត់គូស</span>', () => this._edInsertShape('line')],
+      [svg('ar2', 16) + '<span>ព្រួញ</span>', () => this._edInsertShape('arrow')],
+    ]), true); shapeB2.dataset.pop = '1';
+    const gSS = group(pShp, 'ស្តាយរាង');
+    bigSoon(gSS, 'fill', 'ពណ៌ខាងក្នុង');
+    const olB = big(gSS, 'outline', 'ពណ៌ស៊ុម ▾', () => palette(olB, ['#c0342c', '#ea580c', '#b6810f', '#2f8f57', '#1558b0', '#2b579a', '#7a3fb0', '#6b7280', '#201f1d', '#ffffff'], c => { if (c) selShp(el => this._edSetShapeColor(el, c))(); }), true); olB.dataset.pop = '1';
+    const sSS = stack(gSS);
+    sm(sSS, 'thk', 'ស៊ុមក្រាស់ +', selShp(el => this._edSetShapeThickness(el, 1)), true);
+    sm(sSS, 'thk', 'ស៊ុមស្ដើង −', selShp(el => this._edSetShapeThickness(el, -1)), true);
+    smSoon(sSS, 'spark', 'បែបផែនរាង');
+    const gWA = group(pShp, 'ស្តាយ WordArt'); bigSoon(gWA, 'wordart', 'រចនាប័ទ្មរហ័ស');
+    const sWA = stack(gWA); smSoon(sWA, 'fontc', 'ពណ៌អក្សរ'); smSoon(sWA, 'outline', 'ស៊ុមអក្សរ'); smSoon(sWA, 'te', 'បែបផែនអក្សរ');
+    const gTx = group(pShp, 'អត្ថបទ'); const sTx = stack(gTx); smSoon(sTx, 'tdir', 'ទិសអក្សរ'); smSoon(sTx, 'vmid', 'តម្រឹមអក្សរ'); smSoon(sTx, 'link', 'បង្កើតតំណ');
+    const gAcc = group(pShp, 'ភាពងាយស្រួល'); bigSoon(gAcc, 'alt', 'អត្ថបទជំនួស');
+    const gAr = group(pShp, 'រៀបចំ'); bigSoon(gAr, 'wrap', 'រុំអត្ថបទ');
+    const sAr = stack(gAr); smSoon(sAr, 'fwd', 'នាំទៅមុខ'); smSoon(sAr, 'bwd', 'រុញទៅក្រោយ'); smSoon(sAr, 'selp', 'ផ្ទាំងជ្រើសរើស');
+    const sAr2 = stack(gAr); smSoon(sAr2, 'alobj', 'តម្រឹម'); smSoon(sAr2, 'grp', 'ដាក់ជាក្រុម'); smSoon(sAr2, 'rot', 'បង្វិល');
+    const gSz = group(pShp, 'ទំហំ'); const szr = rows(gSz);
+    const rs = (dw, dh) => selShp(el => { el.style.width = Math.max(16, el.offsetWidth + dw) + 'px'; el.style.height = Math.max(4, el.offsetHeight + dh) + 'px'; this._edDirty = true; })();
+    [['hgt', 'កម្ពស់', 0, 20], ['wid', 'ទទឹង', 20, 0]].forEach(([k, l, dw, dh]) => {
+      const rr = row(szr); const ic = document.createElement('span'); ic.innerHTML = svg(k, 15); ic.style.cssText = 'display:flex;width:22px;justify-content:center;'; rr.appendChild(ic);
+      const s = document.createElement('span'); s.textContent = l; s.style.cssText = 'width:48px;font-size:12px;'; rr.appendChild(s);
+      btn(rr, 'mn', l + ' តូច', () => rs(-dw, -dh)); btn(rr, 'plus', l + ' ធំ', () => rs(dw, dh));
+    });
+    const gDel = group(pShp, 'លុប'); big(gDel, 'trash', 'លុបរាង', selShp(el => { el.remove(); this._deselectShape(); this._edDirty = true; }), true, 'red');
     // ═══ តារាង (contextual: shows while the caret is inside a table) ═══
     const curCell = () => { this._restoreLibSel(); const s = window.getSelection(); let n = s && s.rangeCount ? s.getRangeAt(0).startContainer : null; if (n && n.nodeType === 3) n = n.parentElement; const p = this._edCurPage(); const c = n && n.closest ? n.closest('td,th') : null; return c && p && p.contains(c) ? c : null; };
     const tblOp = fn => () => { const c = curCell(); if (!c) { toast('សូមដាក់ cursor ក្នុងតារាងជាមុនសិន'); return; } const tr = c.parentElement, tb = c.closest('table'); fn(c, tr, tb, [...tr.children].indexOf(c)); touched(); };
@@ -16451,7 +16517,7 @@ class Component extends DCLogic {
     const sCell = stack(gCell);
     [['vtop', 'តម្រឹមលើ', 'top'], ['vmid', 'តម្រឹមកណ្ដាល', 'middle'], ['vbot', 'តម្រឹមក្រោម', 'bottom']].forEach(([k, l, v]) => sm(sCell, k, l, tblOp(c => { c.style.verticalAlign = v; }), true));
     // ── tabs: tap one to show its ribbon; tap the open one (or ˄) to fold the ribbon away ──
-    const TABS = [['home', 'ទំព័រដើម'], ['insert', 'បញ្ចូល'], ['design', 'រចនា'], ['layout', 'ប្លង់'], ['refs', 'ឯកសារយោង'], ['review', 'ពិនិត្យ'], ['view', 'មើល']];
+    const TABS = [['home', 'ទំព័រដើម'], ['insert', 'បញ្ចូល'], ['design', 'រចនា'], ['layout', 'ប្លង់'], ['refs', 'ឯកសារយោង'], ['mail', 'សំបុត្រ'], ['review', 'ពិនិត្យ'], ['view', 'មើល'], ['dev', 'អ្នកអភិវឌ្ឍ'], ['help', 'ជំនួយ'], ['ginger', 'ពិនិត្យអក្សរ']];
     const tabBtns = {};
     let curTab = 'home';
     try { const t = localStorage.getItem('dict_ed_tab'); if (t === '' || (t && panes[t])) curTab = t; } catch(e){}
@@ -16486,8 +16552,17 @@ class Component extends DCLogic {
     tblTab.addEventListener('mousedown', e => e.preventDefault());
     tblTab.addEventListener('click', () => showTab(curTab === 'table' ? '' : 'table'));
     tabBtns.table = tblTab; tabsBar.insertBefore(tblTab, tsp);
+    const shpTab = document.createElement('button'); shpTab.type = 'button'; shpTab.className = 'ewd-tab ctx'; shpTab.textContent = 'ទម្រង់រាង'; shpTab.style.display = 'none';
+    shpTab.addEventListener('mousedown', e => e.preventDefault());
+    shpTab.addEventListener('click', () => showTab(curTab === 'shape' ? '' : 'shape'));
+    tabBtns.shape = shpTab; tabsBar.insertBefore(shpTab, tsp);
+    this._edShapeTabHook = on => {
+      if (!ov.isConnected) return;
+      shpTab.style.display = on ? '' : 'none';
+      if (on && curTab !== '') showTab('shape'); else if (!on && curTab === 'shape') showTab('home');
+    };
     tabsBar.appendChild(fold);
-    if (curTab === 'table') curTab = 'home';
+    if (curTab === 'table' || curTab === 'shape') curTab = 'home';
     showTab(curTab);
     // show the table tab while the caret is inside a table (and open it the moment a table is first entered)
     let inTbl = false;
