@@ -48,7 +48,9 @@ self.addEventListener('fetch', (e) => {
   // stale-while-revalidate for the HTML shell / config / anything else
   const isShell = url.pathname.endsWith('/') || url.pathname.endsWith('/index.html');
   e.respondWith(caches.match(req).then((hit) => {
-    const net = fetch(req).then(async (res) => {
+    // no-cache: revalidate with the server instead of the browser HTTP cache (GitHub Pages sends max-age=600,
+    // which otherwise keeps handing back the previous deploy for up to 10 minutes)
+    const net = fetch(req, { cache: 'no-cache' }).then(async (res) => {
       // the page we just served from cache is out of date → tell the open tabs, so the
       // app can offer "new version — reload" instead of staying on the old one until next time
       if (isShell && hit && res.ok) { try { if ((await digest(hit)) !== (await digest(res))) notifyUpdate(); } catch (err) {} }
