@@ -15912,6 +15912,10 @@ class Component extends DCLogic {
       nav: 'M4 4h16v16H4zM9 4v16M5.5 8h2M5.5 11h2M5.5 14h2', onep: 'M7 3h10v18H7z', multp: 'M3 5h8v14H3zM13 5h8v14h-8z', z100: 'M4 12h16M12 4v16',
       new: 'M6 3h8l4 4v14H6zM14 3v4h4M12 11v6M9 14h6',
       env: 'M3 6h18v12H3zM3 6l9 7 9-7',
+      abc: 'M3 11l2.5-6 2.5 6M3.8 9h3.4M10 5h2.5a1.5 1.5 0 0 1 0 3H10zM10 8h3a1.5 1.5 0 0 1 0 3h-3zM20 6a2.5 2.5 0 1 0 0 4M6 17l3 3 7-7', accs: 'M6 3h9l4 4v14H6zM12 11a1 1 0 1 0 0-2M9 13h6M12 13v5M10 18l2-2 2 2',
+      langA: 'M4 20l5-14h2l5 14M6.5 14h7M17 4v6M15 7h4', jchk: 'M5 4h11l3 3v13H5zM9 13l2 2 4-4', ime: 'M4 7h16v10H4zM7 10h1M10 10h1M13 10h1M16 10h1M8 14h8', mkup: 'M5 4h11l3 3v13H5zM9 9h6M9 13h6',
+      rpane: 'M4 4h16v16H4zM9 4v16', rej: 'M5 4h11l3 3v13H5zM9 10l6 6M15 10l-6 6', blockA: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM3 21v-1a6 6 0 0 1 12 0v1M17 13l4 4M21 13l-4 4',
+      hink: 'M4 20c4-8 8-12 12-14M14 6l4 4M4 4l16 16', onote: 'M4 4h16v16H4zM8 16V8l6 8V8',
       postcard: 'M5 3h14v18H5zM14 6h3v3h-3zM8 7h4M8 10h4', barcode: 'M4 5v14M7 5v14M9 5v14M12 5v14M15 5v14M17 5v14M20 5v14', abc: 'M3 17l3-8 3 8M4.2 14h3.6M11 9h3a2 2 0 0 1 0 4h-3zM11 13h3.5a2 2 0 0 1 0 4H11zM21.5 10.5a3 3 0 1 0 0 5M5 5l2-2 2 2M15 5l2-2 2 2',
       first: 'M6 5v14M18 6l-8 6 8 6', last: 'M18 5v14M6 6l8 6-8 6', addr: 'M4 5h16v14H4zM8 9h8M8 12h8M8 15h5',
       fnote1: 'M3 18l3.5-9 3.5 9M4.3 15h4.4M12 18v-6a2.5 2.5 0 0 1 5 0v6M12 15.5h5M19 4v5', enote: 'M4 5h16M4 9h16M4 13h10M14 17h7M17.5 15v5', citeI: 'M5 4h11l3 3v13H5zM9 12l2 2 4-4', research: 'M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-6-6M10 7v1M10 10v4',
@@ -16453,24 +16457,43 @@ class Component extends DCLogic {
     const gAuth = group(pRef, 'តារាងសិទ្ធិអំណាច');
     bigSoon(gAuth, 'mark', 'សម្គាល់<br>ការដកស្រង់');
     const sAuth = stack(gAuth); smSoon(sAuth, 'idx', 'បញ្ចូលតារាងសិទ្ធិអំណាច'); smSoon(sAuth, 'rot', 'ធ្វើបច្ចុប្បន្នភាពតារាង').classList.add('dim');
-    // ═══ ពិនិត្យ (Review) ═══
+    // ═══ ពិនិត្យ (Review) — same groups as Word, plus the clean-up tools for pasted text ═══
     const pRev = pane('review');
+    const dimR = (g, k, l) => { const x = bigSoon(g, k, l); x.classList.add('dim'); return x; };
     const gProof = group(pRev, 'ពិនិត្យអក្ខរាវិរុទ្ធ');
-    bigSoon(gProof, 'spell', 'អក្ខរាវិរុទ្ធ');
-    const sProof = stack(gProof); smSoon(sProof, 'thes', 'វចនានុក្រមសទិសន័យ'); smSoon(sProof, 'wcount', 'រាប់ពាក្យ');
-    const gSpeech = group(pRev, 'សំឡេង');
-    bigSoon(gSpeech, 'speak', 'អានឮៗ');
+    bigSoon(gProof, 'abc', 'អក្ខរាវិរុទ្ធ<br>និងវេយ្យាករណ៍'); bigSoon(gProof, 'thes', 'វចនានុក្រម<br>សទិសន័យ');
+    // word count works now: a small card under the button, like Word's dialog
+    const wcB = big(gProof, 'wcount', 'រាប់<br>ពាក្យ', () => {
+      const pages = this._edPages || [], text = pages.map(p => p.innerText || '').join('\n');
+      const words = (text.match(/[A-Za-z0-9]+|[\u1780-\u17FF]+|[\u3040-\u30FF\u4E00-\u9FFF]/g) || []).length;
+      const chars = text.replace(/\n/g, '').length, charsNs = text.replace(/\s/g, '').length;
+      const paras = pages.reduce((n, p) => n + [...p.children].filter(el => (el.textContent || '').trim()).length, 0);
+      const lines = [['ទំព័រ', pages.length], ['ពាក្យ (ប្រហែល)', words], ['តួអក្សរ (គ្មានដកឃ្លា)', charsNs], ['តួអក្សរ (មានដកឃ្លា)', chars], ['កថាខណ្ឌ', paras]];
+      menuUnder(wcB, lines.map(([k, v]) => ['<span style="display:flex;justify-content:space-between;gap:28px;width:100%"><span>' + k + '</span><b>' + Number(v).toLocaleString() + '</b></span>', () => {}]));
+    }); wcB.dataset.pop = '1';
+    const gSpch = group(pRev, 'សំឡេង'); bigSoon(gSpch, 'speak', 'អាន<br>ឮៗ');
+    const gAcc2 = group(pRev, 'ភាពងាយស្រួល'); bigSoon(gAcc2, 'accs', 'ពិនិត្យ<br>ភាពងាយស្រួល ▾');
     const gLang = group(pRev, 'ភាសា');
-    bigSoon(gLang, 'trans', 'បកប្រែ'); bigSoon(gLang, 'globe', 'ភាសា');
+    bigSoon(gLang, 'trans', 'បកប្រែ<br>▾'); bigSoon(gLang, 'langA', 'ភាសា<br>▾');
+    const sLang = stack(gLang); smSoon(sLang, 'jchk', 'ពិនិត្យភាពស៊ីសង្វាក់ជប៉ុន'); smSoon(sLang, 'ime', 'ធ្វើបច្ចុប្បន្នភាពវចនានុក្រម IME').classList.add('dim');
     const gCmt = group(pRev, 'មតិ');
-    bigSoon(gCmt, 'cnew', 'មតិថ្មី');
-    const sCmt = stack(gCmt); smSoon(sCmt, 'cdel', 'លុប'); smSoon(sCmt, 'l', 'មុន'); smSoon(sCmt, 'r', 'បន្ទាប់');
-    bigSoon(gCmt, 'cshow', 'បង្ហាញមតិ');
+    bigSoon(gCmt, 'cnew', 'មតិ<br>ថ្មី'); dimR(gCmt, 'cdel', 'លុប'); dimR(gCmt, 'l', 'មុន'); dimR(gCmt, 'r', 'បន្ទាប់'); dimR(gCmt, 'cshow', 'បង្ហាញ<br>មតិ');
     const gTrk = group(pRev, 'តាមដានការកែ');
-    bigSoon(gTrk, 'track', 'តាមដានការកែ');
-    const sTrk = stack(gTrk); smSoon(sTrk, 'check', 'ទទួលយក'); smSoon(sTrk, 'x', 'បដិសេធ'); smSoon(sTrk, 'cmp', 'ប្រៀបធៀប');
-    const gProt = group(pRev, 'ការពារ');
-    bigSoon(gProt, 'lock', 'ហាមកែ');
+    bigSoon(gTrk, 'track', 'តាមដាន<br>ការកែ ▾');
+    const sTrk = stack(gTrk);
+    const mkRow = smSoon(sTrk, 'mkup', '');
+    const mkSel = document.createElement('select'); mkSel.className = 'ewd-sel'; mkSel.style.width = '118px';
+    ['សម្គាល់ទាំងអស់', 'សម្គាល់សាមញ្ញ', 'គ្មានការសម្គាល់', 'ដើម'].forEach(v => { const o = document.createElement('option'); o.textContent = v; mkSel.appendChild(o); });
+    mkSel.addEventListener('click', e => e.stopPropagation()); mkSel.addEventListener('change', soon('ការបង្ហាញការសម្គាល់'));
+    mkRow.querySelector('span').replaceWith(mkSel);
+    smSoon(sTrk, 'mkup', 'បង្ហាញការសម្គាល់ ▾'); smSoon(sTrk, 'rpane', 'ផ្ទាំងពិនិត្យ ▾');
+    const gChg = group(pRev, 'ការផ្លាស់ប្ដូរ');
+    bigSoon(gChg, 'jchk', 'ទទួល<br>យក ▾'); bigSoon(gChg, 'rej', 'បដិសេធ<br>▾');
+    const sChg = stack(gChg); smSoon(sChg, 'l', 'មុន'); smSoon(sChg, 'r', 'បន្ទាប់');
+    const gCmp = group(pRev, 'ប្រៀបធៀប'); bigSoon(gCmp, 'cmp', 'ប្រៀប<br>ធៀប ▾');
+    const gProt = group(pRev, 'ការពារ'); dimR(gProt, 'blockA', 'ហាមអ្នក<br>និពន្ធ ▾'); bigSoon(gProt, 'lock', 'ហាម<br>កែ');
+    const gInk = group(pRev, 'ទឹកខ្មៅ'); bigSoon(gInk, 'hink', 'លាក់<br>ទឹកខ្មៅ ▾');
+    const gOne = group(pRev, 'OneNote'); bigSoon(gOne, 'onote', 'កំណត់ចំណាំ<br>ភ្ជាប់');
     const gFix = group(pRev, 'ជួសជុលអត្ថបទ');
     big(gFix, 'spark', 'សម្អាត paste', () => this._edFixLayout());
     big(gFix, 'link', 'ភ្ជាប់បន្ទាត់', () => this._edJoinLines());
