@@ -15773,6 +15773,9 @@ class Component extends DCLogic {
         '.ewd-big{flex:none;min-width:50px;height:70px;border:none;border-radius:4px;background:transparent;color:#323130;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px 0;font:inherit;font-size:11.5px;line-height:1.15;cursor:pointer}',
         '.ewd-big:hover,.ewd-sm:hover,.ewd-b:hover{background:#f3f2f1}.ewd-big:active,.ewd-sm:active,.ewd-b:active{background:#e1dfdd}',
         '.ewd-big.red{color:#a4262c}',
+        '.ewd-big span{text-align:center;line-height:1.2}',
+        '.ewd-rarr{position:absolute;top:0;bottom:0;z-index:3;width:26px;border:none;background:linear-gradient(90deg,rgba(255,255,255,.96),rgba(255,255,255,.96));color:#323130;display:none;align-items:center;justify-content:center;cursor:pointer;padding:0;box-shadow:0 0 10px rgba(0,0,0,.15)}',
+        '.ewd-rarr:hover{background:#f3f2f1}',
         '.ewd-stack{display:flex;flex-direction:column;gap:1px;padding-top:2px}',
         '.ewd-rows{display:flex;flex-direction:column;gap:5px;padding-top:4px}',
         '.ewd-row{display:flex;align-items:center;gap:1px;height:26px}',
@@ -15899,7 +15902,10 @@ class Component extends DCLogic {
       focus: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5M9 12h6', imm: 'M4 5h16v14H4zM8 9h8M8 12h8M8 15h5', ruler: 'M3 8h18v8H3zM7 8v3M11 8v4M15 8v3M19 8v4', grid: 'M4 4h16v16H4zM4 9h16M4 14h16M9 4v16M14 4v16',
       nav: 'M4 4h16v16H4zM9 4v16M5.5 8h2M5.5 11h2M5.5 14h2', onep: 'M7 3h10v18H7z', multp: 'M3 5h8v14H3zM13 5h8v14h-8z', z100: 'M4 12h16M12 4v16',
       new: 'M6 3h8l4 4v14H6zM14 3v4h4M12 11v6M9 14h6',
-      env: 'M3 6h18v12H3zM3 6l9 7 9-7', lbl: 'M4 4h16v16H4zM4 9h16M4 14h16', merge: 'M6 3v6a6 6 0 0 0 6 6h6M15 12l3 3-3 3',
+      env: 'M3 6h18v12H3zM3 6l9 7 9-7',
+      cube: 'M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5', shot: 'M4 7h4l2-2h4l2 2h4v12H4zM12 10a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
+      wiki: 'M3 5l4 14 5-12 5 12 4-14', greet: 'M5 4h14v16H5zM9 8h6M9 12h6M9 16h3', qparts: 'M4 5h16v5H4zM4 14h7v5H4zM14 14h6v5h-6z',
+      sign: 'M3 17c3-6 5-6 6-2s3 2 4-1 3 0 4 2M3 21h18', obj: 'M4 4h16v16H4zM8 8h8v8H8z', lbl: 'M4 4h16v16H4zM4 9h16M4 14h16', merge: 'M6 3v6a6 6 0 0 0 6 6h6M15 12l3 3-3 3',
       people: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a7 7 0 0 1 14 0v1M17 7a3 3 0 0 1 0 6M22 21v-1a5 5 0 0 0-3-4.5', field: 'M4 6h16v12H4zM8 10h3M13 10h3M8 14h8',
       play: 'M7 4l12 8-12 8z', code: 'M8 7l-5 5 5 5M16 7l5 5-5 5', rec: 'M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z', addin: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM16.5 13v7M13 16.5h7',
       ctrl: 'M4 6h16v12H4zM8 10h8M8 14h5', xml: 'M4 7l-2 5 2 5M20 7l2 5-2 5M14 4l-4 16', help: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.3-1 .9-1 1.7M12 17h.01',
@@ -15938,10 +15944,16 @@ class Component extends DCLogic {
     const tabsBar = document.createElement('div'); tabsBar.className = 'ewd-tabs';
     ov.appendChild(tabsBar);
     const rib = document.createElement('div'); rib.className = 'ewd-rib';
-    ov.appendChild(rib);
+    // a ribbon wider than the screen (e.g. Insert on a tablet) gets ‹ › arrows at its edges, like Word's collapsed groups
+    const ribWrap = document.createElement('div'); ribWrap.style.cssText = 'flex:none;position:relative;';
+    ribWrap.appendChild(rib); ov.appendChild(ribWrap);
+    const ribArrow = (side, d) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-rarr'; b.style[side] = '0'; b.innerHTML = svg(d < 0 ? 'l' : 'r', 16); b.addEventListener('mousedown', e => e.preventDefault()); b.addEventListener('click', () => { rib.scrollLeft += d * Math.max(200, rib.clientWidth * 0.6); ribArrows(); }); ribWrap.appendChild(b); return b; };
+    const raL = ribArrow('left', -1), raR = ribArrow('right', 1);
+    const ribArrows = () => { const on = rib.style.display !== 'none', max = rib.scrollWidth - rib.clientWidth; raL.style.display = on && rib.scrollLeft > 4 ? 'flex' : 'none'; raR.style.display = on && rib.scrollLeft < max - 4 ? 'flex' : 'none'; };
+    rib.addEventListener('scroll', ribArrows, { passive: true });
     // builders for the ribbon
     const group = (pane, label) => { const g = document.createElement('div'); g.className = 'ewd-g'; const gb = document.createElement('div'); gb.className = 'ewd-gb'; const gl = document.createElement('div'); gl.className = 'ewd-gl'; gl.textContent = label; g.appendChild(gb); g.appendChild(gl); pane.appendChild(g); return gb; };
-    const big = (parent, key, label, fn, keepSel, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-big' + (cls ? ' ' + cls : ''); b.innerHTML = svg(key, 28) + '<span>' + label + '</span>'; b.title = label; if (keepSel) keep(b); b.addEventListener('click', fn); parent.appendChild(b); return b; };
+    const big = (parent, key, label, fn, keepSel, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-big' + (cls ? ' ' + cls : ''); b.innerHTML = svg(key, 28) + '<span>' + label + '</span>'; b.title = label.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); if (keepSel) keep(b); b.addEventListener('click', fn); parent.appendChild(b); return b; };
     const stack = parent => { const s = document.createElement('div'); s.className = 'ewd-stack'; parent.appendChild(s); return s; };
     const sm = (parent, key, label, fn, keepSel) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-sm'; b.innerHTML = svg(key, 15) + '<span>' + label + '</span>'; if (keepSel) keep(b); b.addEventListener('click', fn); parent.appendChild(b); return b; };
     const rows = parent => { const s = document.createElement('div'); s.className = 'ewd-rows'; parent.appendChild(s); return s; };
@@ -16225,14 +16237,15 @@ class Component extends DCLogic {
     sm(sEd, 'repl', 'ជំនួស', () => openFind(true));
     ov.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'h')) { e.preventDefault(); openFind(e.key === 'h'); } if (e.key === 'Escape') { const b = ov.querySelector('.ewd-bs'); if (b) b.remove(); } });
     sm(sEd, 'selall', 'ជ្រើសទាំងអស់', () => { const p = this._edCurPage(); if (!p) return; p.focus(); const rg = document.createRange(); rg.selectNodeContents(p); const s = window.getSelection(); s.removeAllRanges(); s.addRange(rg); this._saveLibSel(); }, true);
-    const bigSoon = (parent, key, label) => big(parent, key, label, soon(label));
-    const smSoon = (parent, key, label) => sm(parent, key, label, soon(label));
-    // ═══ បញ្ចូល (Insert) ═══
+    const plain = l => l.replace(/<[^>]+>/g, '').replace(/▾/g, '').replace(/\s+/g, ' ').trim();
+    const bigSoon = (parent, key, label) => big(parent, key, label, soon(plain(label)));
+    const smSoon = (parent, key, label) => sm(parent, key, label, soon(plain(label)));
+    // ═══ បញ្ចូល (Insert) — same groups and order as Word ═══
     const pIns = pane('insert');
     const gPages = group(pIns, 'ទំព័រ');
-    bigSoon(gPages, 'cover', 'ទំព័រគម្រប');
-    big(gPages, 'file', 'ក្រដាសទទេ', () => this._edNewPage());
-    bigSoon(gPages, 'pbreak', 'បំបែកទំព័រ');
+    bigSoon(gPages, 'cover', 'ទំព័រ<br>គម្រប ▾');
+    big(gPages, 'file', 'ទំព័រ<br>ទទេ', () => this._edNewPage());
+    bigSoon(gPages, 'pbreak', 'បំបែក<br>ទំព័រ');
     const gTbl = group(pIns, 'តារាង');
     // tables: inline styles only, so the reader and the PDF draw them exactly as written
     const CELL = 'border:1px solid #444;padding:6px 8px;vertical-align:top;';
@@ -16249,7 +16262,7 @@ class Component extends DCLogic {
       const last = td || [...tbls].pop(); const c0 = last && last.querySelector('td');
       if (c0) { const rg = document.createRange(); rg.setStart(c0, 0); rg.collapse(true); const s = window.getSelection(); s.removeAllRanges(); s.addRange(rg); this._saveLibSel(); }
     };
-    const tblB = big(gTbl, 'table', 'តារាង ▾', () => {
+    const tblB = big(gTbl, 'table', 'តារាង<br>▾', () => {
       this._saveLibSel();
       const pk = document.createElement('div'); pk.className = 'ewd-tpick';
       const lb = document.createElement('div'); lb.className = 'lb'; lb.textContent = 'បញ្ចូលតារាង'; pk.appendChild(lb);
@@ -16272,36 +16285,41 @@ class Component extends DCLogic {
       pk.appendChild(more);
       popUnder(tblB, pk);
     }, true); tblB.dataset.pop = '1';
-    const gIll = group(pIns, 'រូបភាព');
-    big(gIll, 'img', 'រូបភាព', () => {
+    const gIll = group(pIns, 'រូបភាពប្រកប');
+    big(gIll, 'img', 'រូបភាព<br>▾', () => {
       const url = normalizeImgUrl(window.prompt('Link រូបភាព (https://…)') || '');
       if (!url) return;
       exec('insertHTML', '<img src="' + url.replace(/"/g, '&quot;') + '" data-wrap="center" data-w="55" style="width:55%;max-width:100%;height:auto;border-radius:6px;display:block;margin:8px auto;">');
       const p = this._edCurPage();
       if (p) p.querySelectorAll('img').forEach(im => this._edHookImage(im));
     }, true);
-    const shapeB = big(gIll, 'sq', 'រាង ▾', () => menuUnder(shapeB, [
+    const shapeB = big(gIll, 'sq', 'រាង<br>▾', () => menuUnder(shapeB, [
       [svg('sq', 16) + '<span>ប្រអប់</span>', () => this._edInsertShape('rect')], [svg('ci', 16) + '<span>រង្វង់</span>', () => this._edInsertShape('ellipse')],
       [svg('hl', 16) + '<span>គូសពណ៌</span>', () => this._edInsertShape('highlight')], [svg('ln', 16) + '<span>បន្ទាត់គូស</span>', () => this._edInsertShape('line')],
       [svg('ar2', 16) + '<span>ព្រួញ</span>', () => this._edInsertShape('arrow')], [svg('hr', 16) + '<span>បន្ទាត់ផ្ដេក</span>', () => exec('insertHorizontalRule')],
     ]), true); shapeB.dataset.pop = '1';
-    bigSoon(gIll, 'star', 'រូបតំណាង');
-    bigSoon(gIll, 'smart', 'SmartArt');
-    bigSoon(gIll, 'chart', 'គំនូសតាង');
+    bigSoon(gIll, 'star', 'រូប<br>តំណាង');
+    bigSoon(gIll, 'cube', 'គំរូ 3D<br>▾');
+    bigSoon(gIll, 'smart', 'Smart<br>Art');
+    bigSoon(gIll, 'chart', 'គំនូស<br>តាង');
+    bigSoon(gIll, 'shot', 'ថតរូប<br>អេក្រង់ ▾');
+    const gAddIns = group(pIns, 'កម្មវិធីបន្ថែម');
+    const sAddIns = stack(gAddIns); smSoon(sAddIns, 'addin', 'យក Add-ins'); smSoon(sAddIns, 'addin', 'Add-ins របស់ខ្ញុំ ▾');
+    bigSoon(gAddIns, 'wiki', 'Wikipedia');
     const gMed = group(pIns, 'មេឌៀ');
-    bigSoon(gMed, 'video', 'វីដេអូ');
-    const gLnk = group(pIns, 'តំណ'); const sLnk = stack(gLnk);
-    smSoon(sLnk, 'link', 'តំណ'); smSoon(sLnk, 'bookmark', 'ចំណាំ'); smSoon(sLnk, 'link', 'យោងឆ្លង');
+    bigSoon(gMed, 'video', 'វីដេអូ<br>អនឡាញ');
+    const gLnk = group(pIns, 'តំណ');
+    bigSoon(gLnk, 'link', 'តំណ'); bigSoon(gLnk, 'bookmark', 'ចំណាំ'); bigSoon(gLnk, 'link', 'យោង<br>ឆ្លង');
     const gCom = group(pIns, 'មតិ');
     bigSoon(gCom, 'comment', 'មតិ');
-    const gHF = group(pIns, 'ក្បាល និងបាតទំព័រ'); const sHF = stack(gHF);
-    smSoon(sHF, 'header', 'ក្បាលទំព័រ'); smSoon(sHF, 'footer', 'បាតទំព័រ'); smSoon(sHF, 'pgnum', 'លេខទំព័រ');
+    const gHF = group(pIns, 'ក្បាល និងបាតទំព័រ');
+    bigSoon(gHF, 'header', 'ក្បាល<br>ទំព័រ ▾'); bigSoon(gHF, 'footer', 'បាត<br>ទំព័រ ▾'); bigSoon(gHF, 'pgnum', 'លេខ<br>ទំព័រ ▾');
     const gTxt = group(pIns, 'អត្ថបទ');
-    bigSoon(gTxt, 'textbox', 'ប្រអប់អត្ថបទ');
+    bigSoon(gTxt, 'greet', 'ស្វាគមន៍<br>ជប៉ុន ▾'); bigSoon(gTxt, 'textbox', 'ប្រអប់<br>អត្ថបទ ▾'); bigSoon(gTxt, 'qparts', 'ផ្នែក<br>រហ័ស ▾'); bigSoon(gTxt, 'wordart', 'WordArt<br>▾'); bigSoon(gTxt, 'dropcap', 'អក្សរធំ<br>ដើម ▾');
     const sTxt = stack(gTxt);
-    smSoon(sTxt, 'wordart', 'WordArt'); smSoon(sTxt, 'dropcap', 'អក្សរធំដើម'); smSoon(sTxt, 'date', 'កាលបរិច្ឆេទ');
+    smSoon(sTxt, 'sign', 'បន្ទាត់ហត្ថលេខា ▾'); smSoon(sTxt, 'date', 'កាលបរិច្ឆេទ និងម៉ោង'); smSoon(sTxt, 'obj', 'វត្ថុ ▾');
     const gSym = group(pIns, 'និមិត្តសញ្ញា');
-    bigSoon(gSym, 'eq', 'សមីការ'); bigSoon(gSym, 'omega', 'និមិត្តសញ្ញា');
+    bigSoon(gSym, 'eq', 'សមីការ<br>▾'); bigSoon(gSym, 'omega', 'និមិត្ត<br>សញ្ញា ▾');
     // ═══ រចនា (Design) ═══
     const pDes = pane('design');
     const gDoc = group(pDes, 'ទម្រង់ឯកសារ');
@@ -16526,6 +16544,7 @@ class Component extends DCLogic {
       Object.keys(panes).forEach(n => { panes[n].style.display = n === curTab ? 'flex' : 'none'; });
       Object.keys(tabBtns).forEach(n => tabBtns[n].classList.toggle('on', n === curTab));
       rib.style.display = curTab ? 'flex' : 'none';
+      rib.scrollLeft = 0; setTimeout(ribArrows, 0);
       fold.innerHTML = svg(curTab ? 'up' : 'dn', 16); fold.title = curTab ? 'បង្រួម Ribbon' : 'បង្ហាញ Ribbon';
       try { localStorage.setItem('dict_ed_tab', curTab); } catch(e){}
       setTimeout(() => { try { refit(); } catch(e){} }, 30);     // refit is defined further down, after the toolbar
@@ -16749,7 +16768,7 @@ class Component extends DCLogic {
     canvas.addEventListener('scroll', () => { if (this._edViewHook) this._edViewHook(); }, { passive: true });
     // turning the tablet / resizing the window refits the sheet to the new width (one handler, replaced on each open)
     if (this._edResizeH) window.removeEventListener('resize', this._edResizeH);
-    this._edResizeH = () => { if (!hRul.isConnected) return; clearTimeout(this._edResizeT); this._edResizeT = setTimeout(() => { try { refit(); } catch(e){} }, 120); };
+    this._edResizeH = () => { if (!hRul.isConnected) return; ribArrows(); clearTimeout(this._edResizeT); this._edResizeT = setTimeout(() => { try { refit(); } catch(e){} }, 120); };
     window.addEventListener('resize', this._edResizeH);
     // hidden error line (saveBook writes here)
     const err = document.createElement('div'); err.id = 'lib-err';
