@@ -2554,6 +2554,7 @@ textarea.input { min-height: 90px; resize: vertical; }
             <div class="ew-sh"><i class="ew-num"></i><b>{{ awRelatedCount }}</b>
               <div class="r">
                 <a href="#" style="color:var(--color-accent-700);" sc-camel-on-click="{{ genRelated }}">⚙️ បង្កើតស្វ័យ</a>
+                <a href="#" style="color:var(--color-accent-700);" sc-camel-on-click="{{ genRelatedMore }}">＋ ទម្រង់បន្ថែម</a>
                 <sc-if value="{{ hasAwRelated }}"><a href="#" style="color:#c0392b;" sc-camel-on-click="{{ clearAwRelated }}">សម្អាត</a></sc-if>
               </div>
             </div>
@@ -9234,30 +9235,70 @@ function jpKhmer(base,form){ const M=(base||'').trim()||'…';
     case 'volitional': case 'volitional_polite': return 'តោះ '+M;
     case 'tai': return 'ចង់'+M;
     case 'ba': return 'បើ'+M;
+    // — more forms (rough drafts, editable) —
+    case 'nakute': return 'មិន'+M+' ហើយ…';
+    case 'naku': return 'មិន'+M;
+    case 'nakunaru': return 'លែងបាន'+M+' (ទៀត)';
+    case 'nakunatta': return 'បានលែង'+M;
+    case 'nakunatte': return 'លែងបាន'+M+' ហើយ…';
+    case 'nakunarimasu': return 'លែងបាន'+M+' (ទៀត)';
+    case 'nakereba': return 'បើមិន'+M;
+    case 'nakerebanaranai': return 'ត្រូវតែ'+M;
+    case 'naide': return 'ដោយមិន'+M;
+    case 'teiru': case 'teimasu': return 'កំពុង'+M;
+    case 'teita': case 'teimashita': return 'កំពុង'+M+' (កាលនោះ)';
+    case 'tekudasai': return 'សូម'+M;
+    case 'tekara': return 'បន្ទាប់ពី'+M;
+    case 'teshimau': return M+' អស់/រួចហើយ';
+    case 'teshimatta': return 'បាន'+M+' អស់/ខុស';
+    case 'temiru': return 'សាកល្បង'+M;
+    case 'tara': return 'បើ'+M+' ហើយ';
+    case 'tari': return M+' ផង…';
+    case 'nagara': return M+' ក្នុងពេលជាមួយគ្នា';
+    case 'sugiru': return M+' ហួសកម្រិត';
+    case 'yasui': return 'ងាយ'+M;
+    case 'nikui': return 'ពិបាក'+M;
+    case 'sou': return 'ទំនងជា'+M;
+    case 'nasai': return 'ចូរ'+M;
+    case 'adv': return M+' (ក្រិយាវិសេសន៍)';
+    case 'kunaru': case 'kunatte': return 'ក្លាយជា'+M;
+    case 'kunatta': return 'បានក្លាយជា'+M;
+    case 'sa': return 'ភាព'+M;
     default: return M; } }
 function jpToDict(jp){ jp=(jp||'').trim(); if(jp.endsWith('ます')){ const stem=jp.slice(0,-2), ls=stem.slice(-1);
     if(JP_IROW.includes(ls)) return stem.slice(0,-1)+JP_UROW[JP_IROW.indexOf(ls)]; return stem+'る'; } return jp; }
 // related conjugation forms (with a rough, editable Khmer draft) for a verb/adjective
 function jpConjugate(jpIn,baseKm){
-  const jp=(jpIn||'').trim(); if(!jp) return {type:'',forms:[]};
-  const dict=jpToDict(jp); const type=jpDetectType(dict); const out=[]; const IDX=c=>JP_UROW.indexOf(c);
+  const jp=(jpIn||'').trim(); if(!jp) return {type:'',forms:[],extra:[]};
+  const dict=jpToDict(jp); const type=jpDetectType(dict); const out=[], extra=[]; const IDX=c=>JP_UROW.indexOf(c);
   const add=(f,w)=>{ if(w) out.push({form:f,jp:w,km:jpKhmer(baseKm,f)}); };
+  const X=(f,w)=>{ if(w) extra.push({form:f,jp:w,km:jpKhmer(baseKm,f)}); };
   if(type==='iadj'){ const s=dict.slice(0,-1);
     add('dict',dict); add('neg',s+'くない'); add('past',s+'かった'); add('past_neg',s+'くなかった'); add('te',s+'くて'); add('ba',s+'ければ');
-    out.push({form:'masu',jp:dict+'です',km:jpKhmer(baseKm,'masu')}); out.push({form:'masu_neg',jp:s+'くないです',km:jpKhmer(baseKm,'neg')}); return {type,forms:out}; }
-  if(type==='noun') return {type,forms:[]};
-  let ms='';
-  if(type==='ichidan'){ const s=dict.slice(0,-1); ms=s;
+    out.push({form:'masu',jp:dict+'です',km:jpKhmer(baseKm,'masu')}); out.push({form:'masu_neg',jp:s+'くないです',km:jpKhmer(baseKm,'neg')});
+    X('adv',s+'く'); X('kunaru',s+'くなる'); X('kunatta',s+'くなった'); X('kunatte',s+'くなって'); X('tara',s+'かったら'); X('sugiru',s+'すぎる'); X('sou',s+'そう'); X('sa',s+'さ');
+    return {type,forms:out,extra}; }
+  if(type==='noun') return {type,forms:[],extra:[]};
+  let ms='', te='', ta='', nai='';
+  if(type==='ichidan'){ const s=dict.slice(0,-1); ms=s; te=s+'て'; ta=s+'た'; nai=s+'ない';
     add('dict',dict); add('neg',s+'ない'); add('past',s+'た'); add('past_neg',s+'なかった'); add('te',s+'て'); add('potential',s+'られる'); add('passive',s+'られる'); add('causative',s+'させる'); add('imperative',s+'ろ'); add('volitional',s+'よう'); add('ba',s+'れば'); add('tai',s+'たい');
-  } else if(type==='godan'){ const last=dict.slice(-1),s=dict.slice(0,-1); ms=s+JP_IROW[IDX(last)];
+  } else if(type==='godan'){ const last=dict.slice(-1),s=dict.slice(0,-1); ms=s+JP_IROW[IDX(last)]; te=jpGodanTe(dict,false); ta=jpGodanTe(dict,true); nai=s+JP_AROW[IDX(last)]+'ない';
     add('dict',dict); add('neg',s+JP_AROW[IDX(last)]+'ない'); add('past',jpGodanTe(dict,true)); add('past_neg',s+JP_AROW[IDX(last)]+'なかった'); add('te',jpGodanTe(dict,false)); add('potential',s+JP_EROW[IDX(last)]+'る'); add('passive',s+JP_AROW[IDX(last)]+'れる'); add('causative',s+JP_AROW[IDX(last)]+'せる'); add('imperative',s+JP_EROW[IDX(last)]); add('volitional',s+JP_OROW[IDX(last)]+'う'); add('ba',s+JP_EROW[IDX(last)]+'ば'); add('tai',ms+'たい');
-  } else if(type==='suru'){ const p=dict.slice(0,-2); ms=p+'し';
+  } else if(type==='suru'){ const p=dict.slice(0,-2); ms=p+'し'; te=p+'して'; ta=p+'した'; nai=p+'しない';
     add('dict',dict); add('neg',p+'しない'); add('past',p+'した'); add('past_neg',p+'しなかった'); add('te',p+'して'); add('potential',p+'できる'); add('passive',p+'される'); add('causative',p+'させる'); add('imperative',p+'しろ'); add('volitional',p+'しよう'); add('ba',p+'すれば'); add('tai',p+'したい');
-  } else if(type==='kuru'){ const p=dict.slice(0,-2), k=dict.slice(-2)==='来る'; ms=p+(k?'来':'き');
+  } else if(type==='kuru'){ const p=dict.slice(0,-2), k=dict.slice(-2)==='来る'; ms=p+(k?'来':'き'); te=p+(k?'来て':'きて'); ta=p+(k?'来た':'きた'); nai=p+(k?'来ない':'こない');
     add('dict',dict); add('neg',p+(k?'来ない':'こない')); add('past',p+(k?'来た':'きた')); add('past_neg',p+(k?'来なかった':'こなかった')); add('te',p+(k?'来て':'きて')); add('potential',p+(k?'来られる':'こられる')); add('passive',p+(k?'来られる':'こられる')); add('causative',p+(k?'来させる':'こさせる')); add('imperative',p+(k?'来い':'こい')); add('volitional',p+(k?'来よう':'こよう')); add('ba',p+(k?'来れば':'くれば')); add('tai',p+(k?'来たい':'きたい'));
   }
   if(ms){ out.push({form:'masu',jp:ms+'ます',km:jpKhmer(baseKm,'masu')}); out.push({form:'masu_neg',jp:ms+'ません',km:jpKhmer(baseKm,'masu_neg')}); out.push({form:'masu_past',jp:ms+'ました',km:jpKhmer(baseKm,'masu_past')}); out.push({form:'masu_past_neg',jp:ms+'ませんでした',km:jpKhmer(baseKm,'masu_past_neg')}); out.push({form:'volitional_polite',jp:ms+'ましょう',km:jpKhmer(baseKm,'volitional_polite')}); }
-  return {type,forms:out}; }
+  // more forms that real sentences use: the negative stem (買えなくなる…), the て / た forms (ている, たら…) and the masu stem (ながら, すぎる…)
+  if(nai){ const sn=nai.slice(0,-1);
+    X('nakute',sn+'くて'); X('naku',sn+'く'); X('nakunaru',sn+'くなる'); X('nakunatta',sn+'くなった'); X('nakunatte',sn+'くなって'); X('nakunarimasu',sn+'くなります');
+    X('nakereba',sn+'ければ'); X('nakerebanaranai',sn+'ければならない'); X('naide',nai+'で'); }
+  if(te){ X('teiru',te+'いる'); X('teimasu',te+'います'); X('teita',te+'いた'); X('teimashita',te+'いました'); X('tekudasai',te+'ください'); X('tekara',te+'から');
+    X('teshimau',te+'しまう'); X('teshimatta',te+'しまった'); X('temiru',te+'みる'); }
+  if(ta){ X('tara',ta+'ら'); X('tari',ta+'り'); }
+  if(ms){ X('nagara',ms+'ながら'); X('sugiru',ms+'すぎる'); X('yasui',ms+'やすい'); X('nikui',ms+'にくい'); X('sou',ms+'そう'); X('nasai',ms+'なさい'); }
+  return {type,forms:out,extra}; }
 // free ja→km machine translation for example sentences (sends text to MyMemory; editable after)
 async function mmTranslate(text){
   const q=(text||'').trim(); if(!q) return '';
@@ -9356,6 +9397,26 @@ function jpRelatedKana(bjp, bkana, fjp){
   }
   return out;
 }
+// All the forms of a verb / adjective with their readings — basic + extra — so the book reader recognises
+// 買えなくなって or 運んでいる even when nobody generated them for that word.
+const _formsCache = new Map();
+function jpAllForms(jp, kana, pos){
+  jp = String(jp || '').trim(); kana = String(kana || '').trim();
+  if (!jp || !kana || jp === kana || !HAS_KANJI.test(jp) || jp.length > 8 || pos === 'ន.') return [];
+  const key = jp + '|' + kana;
+  let v = _formsCache.get(key); if (v) return v;
+  v = [];
+  try {
+    const r = jpConjugate(jp, '');
+    if (r.type && r.type !== 'noun') for (const f of [...r.forms, ...(r.extra || [])]) {
+      if (!f.jp || !HAS_KANJI.test(f.jp)) continue;
+      const k = jpRelatedKana(jp, kana, f.jp);
+      if (k) v.push({ jp: f.jp, kana: k });
+    }
+  } catch(e) {}
+  _formsCache.set(key, v);
+  return v;
+}
 let _furiMap = null, _furiMax = 0;
 function furiMap(){
   if (_furiMap) return _furiMap;
@@ -9364,6 +9425,7 @@ function furiMap(){
     if (!w || !w.jp || !w.kana || w.jp === w.kana) continue;
     if (!HAS_KANJI.test(w.jp)) continue;
     if (!_furiMap.has(w.jp)){ _furiMap.set(w.jp, w.kana); if (w.jp.length > _furiMax) _furiMax = w.jp.length; }
+    for (const f of jpAllForms(w.jp, w.kana, w.pos)) if (!_furiMap.has(f.jp)) { _furiMap.set(f.jp, f.kana); if (f.jp.length > _furiMax) _furiMax = f.jp.length; }
     // the conjugations kept with the word (運んで, 運びません …) read the same way
     if (Array.isArray(w.related)) for (const f of w.related) {
       const fj = f && String(f.jp || '').trim(); if (!fj || _furiMap.has(fj)) continue;
@@ -13289,6 +13351,12 @@ class Component extends DCLogic {
   onAwLevel(e){ this.setState({ awLevel: e.target.value }); }
   onAwLink(e){ this.setState({ awLink: e.target.value }); }
   // — related words (auto-generated conjugations, editable) —
+  genRelatedMore(){
+    const s = this.state, r = jpConjugate(s.awJp, s.awKm), have = new Set(s.awRelated.map(x => x.jp));
+    if (!(r.extra || []).length) { this.setState({ awMsg: '', awError: 'ពាក្យនេះមិនមែនកិរិយាស័ព្ទ/គុណនាម' }); return; }
+    const more = r.extra.filter(f => !have.has(f.jp)).map(f => ({ jp: f.jp, km: f.km }));
+    this.setState({ awRelated: [...s.awRelated, ...more], awMsg: more.length ? `បន្ថែម ${more.length} ទម្រង់ ✓ (កែបាន)` : 'ទម្រង់បន្ថែមមានរួចហើយ', awError: '' });
+  }
   genRelated(){ const s = this.state; const r = jpConjugate(s.awJp, s.awKm); this.setState({ awRelated: r.forms.map(f => ({ jp: f.jp, km: f.km })), awMsg: r.forms.length ? `បង្កើត ${r.forms.length} ពាក្យពាក់ព័ន្ធ (${r.type}) ✓ — កែបាន` : 'ពាក្យនេះមិនមែនកិរិយាស័ព្ទ/គុណនាម', awError: '' }); }
   onAwRelatedJp(i, e){ const v = e.target.value; this.setState(s => ({ awRelated: s.awRelated.map((x, k) => k === i ? { ...x, jp: v } : x) })); }
   onAwRelatedKm(i, e){ const v = e.target.value; this.setState(s => ({ awRelated: s.awRelated.map((x, k) => k === i ? { ...x, km: v } : x) })); }
@@ -13782,6 +13850,11 @@ class Component extends DCLogic {
       if (!HAS_JP.test(jp)) continue;
       if (!this._bwMap.has(jp)) { this._bwMap.set(jp, { kana: w.kana || '', km: w.km || '', img: w.img || '', id: w.id, pos: w.pos || '' }); if (jp.length > this._bwMax) this._bwMax = jp.length; }
       else if (w.img && !this._bwMap.get(jp).img) this._bwMap.get(jp).img = w.img;   // fill an image in from a later duplicate row
+      // every conjugation of a verb / adjective is tappable and carries its reading (買えなくなって → 買えなく…)
+      for (const f of jpAllForms(w.jp, w.kana, w.pos)) {
+        if (this._bwMap.has(f.jp) || f.jp.length > 20) continue;
+        this._bwMap.set(f.jp, { kana: f.kana, km: w.km || '', img: w.img || '', id: w.id, pos: w.pos || '' }); if (f.jp.length > this._bwMax) this._bwMax = f.jp.length;
+      }
       // related conjugation forms (食べない, 食べた…) attached to the word are tappable too
       if (Array.isArray(w.related)) for (const f of w.related) {
         const fj = f && (f.jp || '').trim(); if (!fj || fj.length > 20 || this._bwMap.has(fj) || !HAS_JP.test(fj) || /[（）()\s\/、。，,！!？?・「」]/.test(fj)) continue;
@@ -18364,7 +18437,7 @@ class Component extends DCLogic {
       awRelated: s.awRelated.map((x, i) => ({ jp: x.jp, km: x.km, num: `#${i + 1}`,
         onJp: e => this.onAwRelatedJp(i, e), onKm: e => this.onAwRelatedKm(i, e), onRemove: () => this.removeAwRelated(i) })),
       hasAwRelated: s.awRelated.length > 0, awRelatedCount: `ពាក្យពាក់ព័ន្ធ (${s.awRelated.length})`,
-      genRelated: () => this.genRelated(), clearAwRelated: () => this.clearAwRelated(),
+      genRelated: () => this.genRelated(), genRelatedMore: () => this.genRelatedMore(), clearAwRelated: () => this.clearAwRelated(),
       awExamples: s.awExamples.map((x, i) => ({ jp: x.jp, km: x.km, num: `ឧទាហរណ៍ ${i + 1}`,
         transLabel: x.translating ? '…' : '🌐 បកប្រែ',
         onJp: e => this.onAwExampleJp(i, e), onKm: e => this.onAwExampleKm(i, e), onRemove: () => this.removeAwExample(i), onTranslate: () => this.translateAwExample(i) })),
