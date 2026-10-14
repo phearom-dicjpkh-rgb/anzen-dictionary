@@ -14405,10 +14405,14 @@ class Component extends DCLogic {
     const isAdmin = this.state.role === 'admin', baseRow = isAdmin && info.id ? WORDS.find(w => w.id === info.id) : null, canEdit = !!(baseRow && baseRow.jp === (info.label || jp));
     const means = String(info.km || '').split(/\s*\/\s*/).map(s => s.trim()).filter(Boolean);
     const fav = !!(info.id && this.state.favorites.includes(info.id));
-    pop.innerHTML = '<div class="rd-head"><div class="rd-hrow">' + (info.pos ? '<span class="rd-chip">' + _escHtml(info.pos) + '</span>' : '<span></span>')
+    // the word with its furigana sitting right over each kanji; when the reading can't be laid over the kanji it stays a line above
+    const headJp = info.label || jp, runs = info.kana && info.kana !== headJp ? jpRubyRuns(headJp, info.kana) : [];
+    const rubyOk = runs.some(x => x.kanji);
+    const jpHtml = rubyOk ? runs.map(x => x.kanji ? '<ruby>' + _escHtml(x.text) + '<rt>' + _escHtml(x.reading) + '</rt></ruby>' : _escHtml(x.text)).join('') : _escHtml(headJp);
+    pop.innerHTML = '<div class="rd-head"><span class="rd-hbar"></span><div class="rd-hmain"><div class="rd-hrow">' + (info.pos ? '<span class="rd-chip">' + _escHtml(info.pos) + '</span>' : '')
       + '<button class="rd-x" id="bwp-close" aria-label="បិទ"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
-      + (info.kana ? '<div class="rd-kana">' + _escHtml(info.kana) + '</div>' : '')
-      + '<div class="rd-jp">' + _escHtml(info.label || jp) + '</div></div>'
+      + (info.kana && !rubyOk && info.kana !== headJp && HAS_KANJI.test(headJp) ? '<div class="rd-kana">' + _escHtml(info.kana) + '</div>' : '')
+      + '<div class="rd-jp">' + jpHtml + '</div></div></div>'
       + '<div class="rd-mean">' + means.map((m, i) => '<div class="rd-m">' + (means.length > 1 ? '<i>' + (i + 1) + '</i>' : '') + '<span>' + _escHtml(m) + '</span></div>').join('') + '</div>'
       + ((info.parts || []).length ? '<div class="rd-rh">ការផ្សំ</div><div class="rd-rule"><div class="rd-rf">' + info.parts.map((p, i) => (i ? '<i>＋</i>' : '') + '<span class="t ' + (i ? 'gr' : 'pre') + '">' + _escHtml(p.jp) + '</span>').join('') + '</div></div>' : '')
       + ((info.rules || []).length ? '<div class="rd-rh">ក្បួនផ្សំ</div>' + info.rules.map(ru => '<div class="rd-rule"><div class="rd-rf">' + (ru.pre ? '<span class="t pre">' + _escHtml(ru.pre) + '</span><i>＋</i>' : '') + '<span class="t gr">' + _escHtml(ru.post) + '</span></div>' + (ru.km ? '<div class="rd-rr">＝ ' + _escHtml(ru.km) + '</div>' : '') + (ru.ex ? '<div class="rd-rx">' + _escHtml(ru.ex.jp) + (ru.ex.km ? '<small>' + _escHtml(ru.ex.km) + '</small>' : '') + '</div>' : '') + '</div>').join('') : '')
@@ -14575,12 +14579,15 @@ class Component extends DCLogic {
 .rd-x{position:absolute;top:10px;right:10px;width:30px;height:30px;border:none;border-radius:50%;background:#e6eaf1;color:#4a5160;display:grid;place-items:center;cursor:pointer;padding:0}
 .rd-x svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round}
 /* header of the word card: badge + close on one row, then reading and word, with room above and a hairline below */
-.rd-head{padding:8px 4px 14px;margin:0 0 14px;border-bottom:1px solid #e3e8f0}
-.rd-hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:32px;margin-bottom:12px}
-.rd-head .rd-x{position:static;flex:none;width:32px;height:32px}
-.rd-head .rd-chip{margin:0;font-size:11px;padding:4px 12px}
-.rd-head .rd-kana{margin:0 0 4px;font-size:14px;letter-spacing:.04em}
-.rd-head .rd-jp{margin:0;line-height:1.2}
+.rd-head{display:flex;gap:12px;margin:4px 0 16px}
+.rd-hbar{flex:none;width:4px;border-radius:4px;background:linear-gradient(180deg,var(--rdA,#2f6fb0),color-mix(in srgb,var(--rdA,#2f6fb0) 40%,#fff))}
+.rd-hmain{flex:1;min-width:0}
+.rd-hrow{display:flex;align-items:center;gap:8px;min-height:30px;margin-bottom:6px}
+.rd-head .rd-x{position:static;flex:none;margin-left:auto}
+.rd-head .rd-chip{margin:0;font-size:11px;padding:3px 11px}
+.rd-head .rd-kana{margin:0 0 2px;font-size:13.5px;letter-spacing:.04em}
+.rd-head .rd-jp{margin:0;font-size:34px;line-height:1.45}
+.rd-head .rd-jp rt{font-size:.36em;font-weight:500;color:#7a8190;letter-spacing:.05em}
 .rd-chip{align-self:flex-start;font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--rdA);background:color-mix(in srgb,var(--rdA) 14%,#fff);border-radius:99px;padding:2px 10px;margin-right:34px}
 .rd-kana{font-size:13px;color:#7a8190;margin-top:8px;font-family:var(--font-jp),sans-serif;margin-right:34px}
 .rd-jp{font-size:34px;font-weight:700;line-height:1.15;margin:2px 34px 10px 0;font-family:var(--font-heading),var(--font-jp),sans-serif;word-break:break-all}
@@ -14612,7 +14619,7 @@ class Component extends DCLogic {
 .rd-sq.on{color:#e0a100}.rd-sq.on svg{fill:#ffcf4a}
 .rd-t-dark .rd-side,.rd-t-dark .rd-sheet,.rd-sheet.rd-t-dark{background:linear-gradient(180deg,#2a2d35,#23262d);color:#f1f3f7;box-shadow:0 10px 30px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.07)}
 .rd-t-dark .rd-x{background:rgba(255,255,255,.1);color:#cdd2dc}
-.rd-t-dark .rd-head{border-color:rgba(255,255,255,.1)}
+.rd-t-dark .rd-head .rd-jp rt{color:#9aa1b0}
 .rd-t-dark .rd-chip{background:rgba(120,180,240,.18);color:#9ccaf7}
 .rd-t-dark .rd-kana{color:#9aa1b0}
 .rd-t-dark .rd-m{background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
@@ -14620,7 +14627,7 @@ class Component extends DCLogic {
 /* cream (sepia) paper: the word card takes the same paper colour */
 .rd-t-cream .rd-side,.rd-t-cream .rd-sheet,.rd-sheet.rd-t-cream{background:linear-gradient(180deg,#f7eed6,#efe2c2);color:#2b2417;box-shadow:0 10px 30px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,248,226,.8)}
 .rd-t-cream .rd-x{background:#e6d8b6;color:#5b4c30}
-.rd-t-cream .rd-head{border-color:#e4d6b4}
+.rd-t-cream .rd-head .rd-jp rt{color:#8a7a58}
 .rd-t-cream .rd-chip{background:color-mix(in srgb,var(--rdA) 16%,#f7eed6);color:var(--rdA)}
 .rd-t-cream .rd-kana{color:#8a7954}
 .rd-t-cream .rd-m{background:#fbf5e3;box-shadow:0 1px 2px rgba(80,60,20,.1),inset 0 0 0 1px #e4d6b0}
