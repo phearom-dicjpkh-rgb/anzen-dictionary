@@ -15778,6 +15778,7 @@ class Component extends DCLogic {
         '.ewd-spin{display:flex;align-items:center;gap:5px;height:26px;font-size:12px}.ewd-spin .lb{width:58px;display:flex;align-items:center;gap:4px}',
         '.ewd-spin input{width:66px;height:24px;border:1px solid #8a8886;border-radius:3px;font:inherit;font-size:12px;padding:0 4px;text-align:right}',
         '.ewd-gh{font-size:12px;color:#323130;padding:2px 2px 0}',
+        '.ewd-sm .ewd-sel{height:20px;font-size:11.5px;margin-left:2px}',
         '.ewd-sset{flex:none;width:72px;height:64px;border:none;background:#fff;cursor:pointer;padding:5px 6px;display:flex;flex-direction:column;gap:2px;text-align:left;overflow:hidden;font-family:Georgia,serif}',
         '.ewd-sset:hover{box-shadow:inset 0 0 0 1px #c8c6c4;background:#f3f2f1}.ewd-sset.on{box-shadow:inset 0 0 0 1.5px #8a8886}',
         '.ewd-sset .t{font-size:13px;line-height:1.1;white-space:nowrap}.ewd-sset .hh{font-size:6.5px;line-height:1.2;white-space:nowrap}.ewd-sset i{display:block;height:2px;background:#c8c6c4;margin-top:2px}',
@@ -15911,6 +15912,7 @@ class Component extends DCLogic {
       nav: 'M4 4h16v16H4zM9 4v16M5.5 8h2M5.5 11h2M5.5 14h2', onep: 'M7 3h10v18H7z', multp: 'M3 5h8v14H3zM13 5h8v14h-8z', z100: 'M4 12h16M12 4v16',
       new: 'M6 3h8l4 4v14H6zM14 3v4h4M12 11v6M9 14h6',
       env: 'M3 6h18v12H3zM3 6l9 7 9-7',
+      fnote1: 'M3 18l3.5-9 3.5 9M4.3 15h4.4M12 18v-6a2.5 2.5 0 0 1 5 0v6M12 15.5h5M19 4v5', enote: 'M4 5h16M4 9h16M4 13h10M14 17h7M17.5 15v5', citeI: 'M5 4h11l3 3v13H5zM9 12l2 2 4-4', research: 'M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-6-6M10 7v1M10 10v4',
       margins: 'M4 3h16v18H4zM8 3v18M16 3v18M4 7h16M4 17h16', genko: 'M5 3h14v18H5zM9 3v18M13 3v18M5 8h14M5 13h14', posn: 'M4 4h16v16H4zM9 9h6v6H9z',
       indL: 'M3 4h18M9 9h12M9 14h12M3 19h18M3 9l3 2.5L3 14', indR: 'M3 4h18M3 9h12M3 14h12M3 19h18M21 9l-3 2.5 3 2.5',
       spB: 'M10 8h11M10 13h11M10 18h11M5 3v8M2 8l3 3 3-3', spA: 'M10 4h11M10 9h11M10 14h11M5 13v8M2 16l3-3 3 3',
@@ -16421,22 +16423,34 @@ class Component extends DCLogic {
     ['posn|ទីតាំង<br>▾', 'wrap|រុំ<br>អត្ថបទ ▾', 'fwd|នាំទៅ<br>មុខ ▾', 'bwd|រុញទៅ<br>ក្រោយ ▾'].forEach(sp => { const [k, l] = sp.split('|'); bigSoon(gArr, k, l).classList.add('dim'); });
     bigSoon(gArr, 'selp', 'ផ្ទាំង<br>ជ្រើសរើស');
     const sArr = stack(gArr); smSoon(sArr, 'alobj', 'តម្រឹម ▾'); smSoon(sArr, 'grp', 'ដាក់ជាក្រុម ▾').classList.add('dim'); smSoon(sArr, 'rot', 'បង្វិល ▾').classList.add('dim');
-    // ═══ ឯកសារយោង (References) ═══
+    // ═══ ឯកសារយោង (References) — same groups as Word ═══
     const pRef = pane('refs');
     const gToc = group(pRef, 'តារាងមាតិកា');
-    bigSoon(gToc, 'toc', 'តារាងមាតិកា');
-    const sToc = stack(gToc); smSoon(sToc, 'addt', 'បន្ថែមអត្ថបទ'); smSoon(sToc, 'rot', 'ធ្វើបច្ចុប្បន្នភាព');
+    bigSoon(gToc, 'toc', 'តារាង<br>មាតិកា ▾');
+    const sToc = stack(gToc); smSoon(sToc, 'addt', 'បន្ថែមអត្ថបទ ▾'); smSoon(sToc, 'rot', 'ធ្វើបច្ចុប្បន្នភាពតារាង');
     const gFn = group(pRef, 'លេខយោងខាងក្រោម');
-    bigSoon(gFn, 'fnote', 'លេខយោង');
-    const sFn = stack(gFn); smSoon(sFn, 'fnote', 'លេខយោងចុងក្រោយ'); smSoon(sFn, 'r', 'លេខយោងបន្ទាប់'); smSoon(sFn, 'cshow', 'បង្ហាញកំណត់ចំណាំ');
+    bigSoon(gFn, 'fnote1', 'បញ្ចូល<br>លេខយោង');
+    const sFn = stack(gFn); smSoon(sFn, 'enote', 'បញ្ចូលលេខយោងចុង'); smSoon(sFn, 'fnote', 'លេខយោងបន្ទាប់ ▾'); smSoon(sFn, 'cshow', 'បង្ហាញកំណត់ចំណាំ').classList.add('dim');
+    const gRes = group(pRef, 'ស្រាវជ្រាវ');
+    bigSoon(gRes, 'research', 'ស្វែងរក');
     const gCit = group(pRef, 'ការដកស្រង់ និងគន្ថនិទ្ទេស');
-    bigSoon(gCit, 'cite', 'ដកស្រង់');
-    const sCit = stack(gCit); smSoon(sCit, 'src', 'គ្រប់គ្រងប្រភព'); smSoon(sCit, 'fonts', 'ស្តាយ'); smSoon(sCit, 'biblio', 'គន្ថនិទ្ទេស');
+    bigSoon(gCit, 'citeI', 'បញ្ចូល<br>ការដកស្រង់ ▾');
+    const sCit = stack(gCit); smSoon(sCit, 'src', 'គ្រប់គ្រងប្រភព');
+    const styRow = smSoon(sCit, 'fonts', 'ស្តាយ៖');
+    const citSel = document.createElement('select'); citSel.className = 'ewd-sel';
+    ['APA', 'Chicago', 'GB7714', 'GOST', 'Harvard', 'IEEE', 'ISO 690', 'MLA', 'SIST02', 'Turabian'].forEach(v => { const o = document.createElement('option'); o.textContent = v; citSel.appendChild(o); });
+    citSel.addEventListener('click', e => e.stopPropagation()); citSel.addEventListener('change', soon('ស្តាយការដកស្រង់'));
+    styRow.appendChild(citSel);
+    smSoon(sCit, 'biblio', 'គន្ថនិទ្ទេស ▾');
     const gCap = group(pRef, 'ចំណងជើងរូប');
-    bigSoon(gCap, 'capt', 'ចំណងជើងរូប');
-    const sCap = stack(gCap); smSoon(sCap, 'tof', 'តារាងរូបភាព'); smSoon(sCap, 'link', 'យោងឆ្លង');
+    bigSoon(gCap, 'capt', 'បញ្ចូល<br>ចំណងជើង');
+    const sCap = stack(gCap); smSoon(sCap, 'tof', 'បញ្ចូលតារាងរូបភាព'); smSoon(sCap, 'rot', 'ធ្វើបច្ចុប្បន្នភាពតារាង').classList.add('dim'); smSoon(sCap, 'link', 'យោងឆ្លង');
     const gIdx = group(pRef, 'លិបិក្រម');
-    bigSoon(gIdx, 'mark', 'សម្គាល់ធាតុ'); bigSoon(gIdx, 'idx', 'លិបិក្រម');
+    bigSoon(gIdx, 'mark', 'សម្គាល់<br>ធាតុ');
+    const sIdx = stack(gIdx); smSoon(sIdx, 'idx', 'បញ្ចូលលិបិក្រម'); smSoon(sIdx, 'rot', 'ធ្វើបច្ចុប្បន្នភាពលិបិក្រម').classList.add('dim');
+    const gAuth = group(pRef, 'តារាងសិទ្ធិអំណាច');
+    bigSoon(gAuth, 'mark', 'សម្គាល់<br>ការដកស្រង់');
+    const sAuth = stack(gAuth); smSoon(sAuth, 'idx', 'បញ្ចូលតារាងសិទ្ធិអំណាច'); smSoon(sAuth, 'rot', 'ធ្វើបច្ចុប្បន្នភាពតារាង').classList.add('dim');
     // ═══ ពិនិត្យ (Review) ═══
     const pRev = pane('review');
     const gProof = group(pRev, 'ពិនិត្យអក្ខរាវិរុទ្ធ');
