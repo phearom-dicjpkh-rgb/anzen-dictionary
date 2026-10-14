@@ -14310,7 +14310,7 @@ class Component extends DCLogic {
       + ((info.rules || []).length ? '<div class="rd-rh">ក្បួនផ្សំ</div>' + info.rules.map(ru => '<div class="rd-rule"><div class="rd-rf">' + (ru.pre ? '<span class="t pre">' + _escHtml(ru.pre) + '</span><i>＋</i>' : '') + '<span class="t gr">' + _escHtml(ru.post) + '</span></div>' + (ru.km ? '<div class="rd-rr">＝ ' + _escHtml(ru.km) + '</div>' : '') + (ru.ex ? '<div class="rd-rx">' + _escHtml(ru.ex.jp) + (ru.ex.km ? '<small>' + _escHtml(ru.ex.km) + '</small>' : '') + '</div>' : '') + '</div>').join('') : '')
       + '<div class="rd-acts"><button class="rd-spk" id="bwp-speak"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/></svg>ស្តាប់</button>'
       + (info.id ? '<button class="rd-sq' + (fav ? ' on' : '') + '" id="bwp-fav" aria-label="សំណព្វ"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button>' : '') + '</div>'
-      + (isAdmin ? '<div class="rd-adm">' + (canEdit ? '<button id="bwp-edit" type="button">✏️ កែពាក្យ</button>' : '') + '<button id="bwp-add" type="button">➕ បញ្ចូលពាក្យថ្មី</button></div>' : '');
+      + (isAdmin ? '<div class="rd-adm">' + (canEdit ? '<button id="bwp-edit" type="button">✏️ កែពាក្យ</button>' : '') + ((info.parts || []).length ? '<button id="bwp-editcombo" type="button">✏️ កែអត្ថន័យនេះ</button>' : '') + '<button id="bwp-add" type="button">➕ បញ្ចូលពាក្យថ្មី</button></div>' : '');
     // if the dictionary word has a picture, show it under the translation
     if (info.img) {
       const im = document.createElement('img');
@@ -14323,6 +14323,7 @@ class Component extends DCLogic {
     pop.querySelector('#bwp-close').addEventListener('click', () => this._bwClose());
     pop.querySelector('#bwp-speak').addEventListener('click', () => this.playAudio(jp));
     const eb = pop.querySelector('#bwp-edit'); if (eb) eb.addEventListener('click', () => { this._rdEditing = jp; this._rdDirty = false; this.pickEditWord(info.id); });
+    const ec = pop.querySelector('#bwp-editcombo'); if (ec) ec.addEventListener('click', () => this._rdAddWord(jp, { kana: info.kana || '', km: info.km || '' }));
     const ab = pop.querySelector('#bwp-add'); if (ab) ab.addEventListener('click', () => this._rdAddWord(''));
     const fb = pop.querySelector('#bwp-fav'); if (fb) fb.addEventListener('click', () => { this.toggleFavorite(info.id); fb.classList.toggle('on'); });
     if (this._rdAuto()) this.playAudio(jp);   // read it aloud on tap (can be switched off for a lesson recording)
@@ -14409,11 +14410,14 @@ class Component extends DCLogic {
   _hlSet(bookId, arr){ if (!bookId) return; try { const o = this._hlAll(); if (arr && arr.length) o[bookId] = arr; else delete o[bookId]; localStorage.setItem('dict_book_highlights', JSON.stringify(o)); } catch(e) {} }
   // admin: add a word the book mentions but the dictionary lacks — opens the normal "បញ្ចូលពាក្យថ្មី" screen
   // (pre-filled with the selected text) and offers a way back to this very page
-  _rdAddWord(jp){
+  // pre: { kana, km } fills the form from a composed unit (飲みませんか), so its generated meaning can be corrected and kept
+  _rdAddWord(jp, pre){
     const txt = (jp || '').trim();
     this._rdAwDirty = false;
+    const map = pre && pre.kana ? parseKanaIntoRuns(txt, pre.kana) : {};
     this.setState(s => ({ awDialog: true, awMsg: '', awError: '', awIsConj: false, awReturn: null,
-      awJp: txt, awKanaMap: {}, awKana: buildKanaFromRuns(txt, {}), awPos: (s.awCat === 'vocab' && txt) ? jpDetectPos(txt) : '' }));
+      ...(pre ? { awCat: 'vocab', awKm: pre.km || '', awRelated: [], awRules: [], awExamples: [], awImg: '', awStar: false } : {}),
+      awJp: txt, awKanaMap: map, awKana: buildKanaFromRuns(txt, map), awPos: (txt && (pre || s.awCat === 'vocab')) ? jpDetectPos(txt) : '' }));
   }
   // closing the popup leaves the reader exactly where it was; if a word was added, the pages are rebuilt so it shows
   closeAwDialog(){
