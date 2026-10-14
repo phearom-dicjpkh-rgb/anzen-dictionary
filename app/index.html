@@ -15774,6 +15774,10 @@ class Component extends DCLogic {
         '.ewd-big:hover,.ewd-sm:hover,.ewd-b:hover{background:#f3f2f1}.ewd-big:active,.ewd-sm:active,.ewd-b:active{background:#e1dfdd}',
         '.ewd-big.red{color:#a4262c}',
         '.ewd-big span{text-align:center;line-height:1.2}',
+        '.ewd-big.dim,.ewd-sm.dim{opacity:.45}',
+        '.ewd-spin{display:flex;align-items:center;gap:5px;height:26px;font-size:12px}.ewd-spin .lb{width:58px;display:flex;align-items:center;gap:4px}',
+        '.ewd-spin input{width:66px;height:24px;border:1px solid #8a8886;border-radius:3px;font:inherit;font-size:12px;padding:0 4px;text-align:right}',
+        '.ewd-gh{font-size:12px;color:#323130;padding:2px 2px 0}',
         '.ewd-sset{flex:none;width:72px;height:64px;border:none;background:#fff;cursor:pointer;padding:5px 6px;display:flex;flex-direction:column;gap:2px;text-align:left;overflow:hidden;font-family:Georgia,serif}',
         '.ewd-sset:hover{box-shadow:inset 0 0 0 1px #c8c6c4;background:#f3f2f1}.ewd-sset.on{box-shadow:inset 0 0 0 1.5px #8a8886}',
         '.ewd-sset .t{font-size:13px;line-height:1.1;white-space:nowrap}.ewd-sset .hh{font-size:6.5px;line-height:1.2;white-space:nowrap}.ewd-sset i{display:block;height:2px;background:#c8c6c4;margin-top:2px}',
@@ -15907,6 +15911,9 @@ class Component extends DCLogic {
       nav: 'M4 4h16v16H4zM9 4v16M5.5 8h2M5.5 11h2M5.5 14h2', onep: 'M7 3h10v18H7z', multp: 'M3 5h8v14H3zM13 5h8v14h-8z', z100: 'M4 12h16M12 4v16',
       new: 'M6 3h8l4 4v14H6zM14 3v4h4M12 11v6M9 14h6',
       env: 'M3 6h18v12H3zM3 6l9 7 9-7',
+      margins: 'M4 3h16v18H4zM8 3v18M16 3v18M4 7h16M4 17h16', genko: 'M5 3h14v18H5zM9 3v18M13 3v18M5 8h14M5 13h14', posn: 'M4 4h16v16H4zM9 9h6v6H9z',
+      indL: 'M3 4h18M9 9h12M9 14h12M3 19h18M3 9l3 2.5L3 14', indR: 'M3 4h18M3 9h12M3 14h12M3 19h18M21 9l-3 2.5 3 2.5',
+      spB: 'M10 8h11M10 13h11M10 18h11M5 3v8M2 8l3 3 3-3', spA: 'M10 4h11M10 9h11M10 14h11M5 13v8M2 16l3-3 3 3',
       themes: 'M5 3h14v18H5zM8 14l2-6 2 6M8.7 12h2.6M14 14v-3a1.5 1.5 0 0 1 3 0v3', fontA: 'M6 20L12 4l6 16M8.5 14h7',
       cube: 'M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5', shot: 'M4 7h4l2-2h4l2 2h4v12H4zM12 10a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
       wiki: 'M3 5l4 14 5-12 5 12 4-14', greet: 'M5 4h14v16H5zM9 8h6M9 12h6M9 16h3', qparts: 'M4 5h16v5H4zM4 14h7v5H4zM14 14h6v5h-6z',
@@ -16318,7 +16325,7 @@ class Component extends DCLogic {
     const gCom = group(pIns, 'មតិ');
     bigSoon(gCom, 'comment', 'មតិ');
     const gHF = group(pIns, 'ក្បាល និងបាតទំព័រ');
-    bigSoon(gHF, 'header', 'ក្បាល<br>ទំព័រ ▾'); bigSoon(gHF, 'footer', 'បាត<br>ទំព័រ ▾'); bigSoon(gHF, 'pgnum', 'លេខ<br>ទំព័រ ▾');
+    bigSoon(gHF, 'header', 'ក្បាល<br>ទំព័រ ▾'); bigSoon(gHF, 'footer', 'បាត<br>ទំព័រ ▾'); const pgnB = big(gHF, 'pgnum', 'លេខ<br>ទំព័រ ▾', () => menuUnder(pgnB, [['កំពូលទំព័រ', soon('លេខទំព័រកំពូលទំព័រ')], ['បាតទំព័រ (កំពុងប្រើ)', () => toast('លេខទំព័រនៅបាតទំព័ររួចហើយ — វាយលេខក្នុងប្រអប់ខាងក្រោមក្រដាសដើម្បីកំណត់ផ្ទាល់')], ['ទម្រង់លេខទំព័រ…', soon('ទម្រង់លេខទំព័រ')], ['លេខចាប់ផ្ដើម… (' + (this._libStartPage || 1) + ')', () => { const v = parseInt(window.prompt('លេខទំព័រចាប់ផ្ដើម', String(this._libStartPage || 1)), 10); if (!isNaN(v) && v >= 1) { this._libStartPage = v; this._edDirty = true; this._edApplyView(); toast('លេខចាប់ផ្ដើម = ' + v); } }]]), true); pgnB.dataset.pop = '1';
     const gTxt = group(pIns, 'អត្ថបទ');
     bigSoon(gTxt, 'greet', 'ស្វាគមន៍<br>ជប៉ុន ▾'); bigSoon(gTxt, 'textbox', 'ប្រអប់<br>អត្ថបទ ▾'); bigSoon(gTxt, 'qparts', 'ផ្នែក<br>រហ័ស ▾'); bigSoon(gTxt, 'wordart', 'WordArt<br>▾'); bigSoon(gTxt, 'dropcap', 'អក្សរធំ<br>ដើម ▾');
     const sTxt = stack(gTxt);
@@ -16357,37 +16364,63 @@ class Component extends DCLogic {
     smSoon(sDoc, 'parasp', 'គម្លាតកថាខណ្ឌ ▾'); smSoon(sDoc, 'spark', 'បែបផែន ▾'); smSoon(sDoc, 'check', 'កំណត់ជាលំនាំដើម');
     const gBg = group(pDes, 'ផ្ទៃខាងក្រោយទំព័រ');
     bigSoon(gBg, 'wmark', 'Water<br>mark ▾'); bigSoon(gBg, 'pcolor', 'ពណ៌<br>ទំព័រ ▾'); bigSoon(gBg, 'pborder', 'ស៊ុម<br>ទំព័រ');
-    // ═══ ប្លង់ (Layout) ═══
+    // ═══ ប្លង់ (Layout) — Word's Page Setup · Genko · Paragraph · Arrange ═══
     const pLay = pane('layout');
     const gSetup = group(pLay, 'រៀបចំទំព័រ');
-    bigSoon(gSetup, 'orient', 'ទិសដៅ'); bigSoon(gSetup, 'psize', 'ទំហំ'); bigSoon(gSetup, 'cols', 'ជួរឈរ');
-    const sSetup = stack(gSetup);
-    smSoon(sSetup, 'pbreak', 'បំបែក'); smSoon(sSetup, 'lnum', 'លេខបន្ទាត់'); smSoon(sSetup, 'hyph', 'ដាច់ពាក្យ');
-    const gSheet = group(pLay, 'ទំព័រ');
-    big(gSheet, 'file', 'ក្រដាសថ្មី', () => this._edNewPage());
-    big(gSheet, 'trash', 'លុបទំព័រ', () => this._edDeletePage(), false, 'red');
-    const gMar = group(pLay, 'រឹម និងលេខទំព័រ'); const mr = rows(gMar);
-    const mr1 = row(mr), mr2 = row(mr);
-    const mlbl = document.createElement('span'); mlbl.textContent = 'រឹមក្រដាស'; mlbl.style.cssText = 'width:88px;font-size:12px;'; mr1.appendChild(mlbl);
-    const mlabel = document.createElement('span'); mlabel.className = 'ewd-val';
+    bigSoon(gSetup, 'tdir', 'ទិស<br>អក្សរ ▾');
+    const mlabel = document.createElement('span');   // (kept for setMargin; the value shows in the Margins menu)
     const setMargin = m => { PAD = Math.max(16, Math.min(160, m)); this._edPAD = PAD; this._libMargin = PAD; this._edPages.forEach(p => { p.style.padding = PAD + 'px ' + PAD + 'px ' + (PAD + 24) + 'px'; }); mlabel.textContent = String(PAD); this._edDirty = true; this._edScheduleReflow(0, true); if (this._edViewHook) this._edViewHook(); };
-    btn(mr1, 'mn', 'រឹមតូច', () => setMargin(PAD - 8));
-    mr1.appendChild(mlabel);
-    btn(mr1, 'plus', 'រឹមធំ', () => setMargin(PAD + 8));
-    const plbl = document.createElement('span'); plbl.textContent = 'លេខចាប់ផ្ដើម'; plbl.style.cssText = 'width:88px;font-size:12px;'; mr2.appendChild(plbl);
-    const pnInput = document.createElement('input'); pnInput.type = 'number'; pnInput.min = '1'; pnInput.value = String(this._libStartPage || 1); pnInput.title = 'លេខទំព័រចាប់ផ្ដើម'; pnInput.className = 'ewd-in';
-    pnInput.addEventListener('change', () => { const v = parseInt(pnInput.value, 10); this._libStartPage = (!isNaN(v) && v >= 1) ? v : 1; pnInput.value = String(this._libStartPage); this._edDirty = true; this._edApplyView(); });
-    mr2.appendChild(pnInput);
-    const gPara2 = group(pLay, 'កថាខណ្ឌ'); const lr = rows(gPara2);
-    [['ចូលបន្ទាត់ ឆ្វេង', 'ចន្លោះ មុន'], ['ចូលបន្ទាត់ ស្ដាំ', 'ចន្លោះ ក្រោយ']].forEach(pair => {
-      const rr = row(lr);
-      pair.forEach(lbl => { const s = document.createElement('span'); s.textContent = lbl; s.style.cssText = 'width:96px;font-size:12px;'; rr.appendChild(s);
-        const inp = document.createElement('input'); inp.className = 'ewd-in'; inp.value = '0'; inp.readOnly = true; inp.style.marginRight = '10px'; inp.addEventListener('click', soon(lbl)); rr.appendChild(inp); });
-    });
-    const gArr = group(pLay, 'រៀបចំវត្ថុ');
-    bigSoon(gArr, 'wrap', 'រុំអត្ថបទ');
-    const sArr = stack(gArr); smSoon(sArr, 'fwd', 'នាំទៅមុខ'); smSoon(sArr, 'bwd', 'រុញទៅក្រោយ'); smSoon(sArr, 'selp', 'ផ្ទាំងជ្រើសរើស');
-    const sArr2 = stack(gArr); smSoon(sArr2, 'alobj', 'តម្រឹម'); smSoon(sArr2, 'grp', 'ដាក់ជាក្រុម'); smSoon(sArr2, 'rot', 'បង្វិល');
+    const MARGINS = [['ធម្មតា', 64], ['តូចចង្អៀត', 32], ['មធ្យម', 48], ['ធំ', 96], ['ធំខ្លាំង', 128]];
+    const marB = big(gSetup, 'margins', 'រឹម<br>▾', () => menuUnder(marB, [
+      ...MARGINS.map(([l, v]) => ['<span style="display:flex;justify-content:space-between;gap:24px;width:100%"><span>' + (PAD === v ? '✓ ' : '') + l + '</span><small style="color:#605e5c">' + v + ' px</small></span>', () => setMargin(v)]),
+      ['រឹមតូចជាងនេះ (−8)', () => setMargin(PAD - 8)], ['រឹមធំជាងនេះ (+8)', () => setMargin(PAD + 8)],
+      ['<span style="color:#605e5c">បច្ចុប្បន្ន៖ ' + PAD + ' px</span>', () => {}],
+    ]), true); marB.dataset.pop = '1';
+    bigSoon(gSetup, 'orient', 'ទិស<br>ក្រដាស ▾'); bigSoon(gSetup, 'psize', 'ទំហំ<br>▾'); bigSoon(gSetup, 'cols', 'ជួរ<br>ឈរ ▾');
+    const sSetup = stack(gSetup);
+    const brkB = sm(sSetup, 'pbreak', 'បំបែក ▾', () => menuUnder(brkB, [
+      [svg('file', 16) + '<span>បំបែកទំព័រ (ក្រដាសថ្មី)</span>', () => this._edNewPage()],
+      [svg('cols', 16) + '<span>បំបែកជួរឈរ</span>', soon('បំបែកជួរឈរ')],
+      [svg('pbreak', 16) + '<span>បំបែកផ្នែក</span>', soon('បំបែកផ្នែក')],
+      [svg('trash', 16) + '<span style="color:#a4262c">លុបក្រដាសទំព័រនេះ</span>', () => this._edDeletePage()],
+    ]), true); brkB.dataset.pop = '1';
+    smSoon(sSetup, 'lnum', 'លេខបន្ទាត់ ▾'); smSoon(sSetup, 'hyph', 'ដាច់ពាក្យ ▾');
+    const gGenko = group(pLay, 'Genko');
+    bigSoon(gGenko, 'genko', 'កំណត់<br>Genko').classList.add('dim');
+    // paragraph indents and spacing, applied to the selected paragraphs (or the one holding the caret)
+    const gPar = group(pLay, 'កថាខណ្ឌ');
+    const cols2 = document.createElement('div'); cols2.style.cssText = 'display:flex;gap:16px;padding-top:2px;'; gPar.appendChild(cols2);
+    const CMPX = 37.8, PTPX = 96 / 72;
+    const spin = (parent, icon, label, unit, step, read, write) => {
+      const rr = document.createElement('div'); rr.className = 'ewd-spin';
+      const lb = document.createElement('span'); lb.className = 'lb'; lb.innerHTML = svg(icon, 15) + '<span>' + label + '</span>'; rr.appendChild(lb);
+      const inp = document.createElement('input'); inp.type = 'number'; inp.step = String(step); inp.min = '0'; inp.value = '0'; inp.title = label + ' (' + unit + ')';
+      inp.addEventListener('mousedown', () => this._saveLibSel());
+      inp.addEventListener('focus', () => this._saveLibSel());
+      inp.addEventListener('change', () => { const v = Math.max(0, parseFloat(inp.value) || 0); const bl = selBlocks(); bl.forEach(el => write(el, v)); if (bl.length) touched(); });
+      const u = document.createElement('span'); u.textContent = unit; u.style.color = '#605e5c'; rr.appendChild(inp); rr.appendChild(u);
+      parent.appendChild(rr); return { inp, read };
+    };
+    const colI = document.createElement('div'), colS = document.createElement('div'); cols2.appendChild(colI); cols2.appendChild(colS);
+    [colI, colS].forEach((c, k) => { const t = document.createElement('div'); t.className = 'ewd-gh'; t.textContent = k ? 'គម្លាត' : 'ចូលបន្ទាត់'; c.appendChild(t); });
+    const fmt1 = n => String(Math.round(n * 10) / 10);
+    const spins = [
+      spin(colI, 'indL', 'ឆ្វេង', 'cm', 0.1, cs => fmt1(parseFloat(cs.marginLeft) / CMPX), (el, v) => { el.style.marginLeft = (v * CMPX).toFixed(1) + 'px'; }),
+      spin(colI, 'indR', 'ស្ដាំ', 'cm', 0.1, cs => fmt1(parseFloat(cs.marginRight) / CMPX), (el, v) => { el.style.marginRight = (v * CMPX).toFixed(1) + 'px'; }),
+      spin(colS, 'spB', 'មុន', 'pt', 1, cs => fmt1(parseFloat(cs.marginTop) / PTPX), (el, v) => { el.style.marginTop = (v * PTPX).toFixed(1) + 'px'; }),
+      spin(colS, 'spA', 'ក្រោយ', 'pt', 1, cs => fmt1(parseFloat(cs.marginBottom) / PTPX), (el, v) => { el.style.marginBottom = (v * PTPX).toFixed(1) + 'px'; }),
+    ];
+    this._edParaSync = () => {   // show the caret paragraph's own values
+      if (!ov.isConnected || curTab !== 'layout') return;
+      const s = window.getSelection(); let n = s && s.rangeCount ? s.getRangeAt(0).startContainer : null; const p = this._edCurPage();
+      if (!n || !p || !p.contains(n) || n === p) return;
+      while (n && n.parentNode !== p) n = n.parentNode; if (!n || n.nodeType !== 1) return;
+      const cs = getComputedStyle(n); spins.forEach(sp => { if (document.activeElement !== sp.inp) sp.inp.value = sp.read(cs); });
+    };
+    const gArr = group(pLay, 'រៀបចំ');
+    ['posn|ទីតាំង<br>▾', 'wrap|រុំ<br>អត្ថបទ ▾', 'fwd|នាំទៅ<br>មុខ ▾', 'bwd|រុញទៅ<br>ក្រោយ ▾'].forEach(sp => { const [k, l] = sp.split('|'); bigSoon(gArr, k, l).classList.add('dim'); });
+    bigSoon(gArr, 'selp', 'ផ្ទាំង<br>ជ្រើសរើស');
+    const sArr = stack(gArr); smSoon(sArr, 'alobj', 'តម្រឹម ▾'); smSoon(sArr, 'grp', 'ដាក់ជាក្រុម ▾').classList.add('dim'); smSoon(sArr, 'rot', 'បង្វិល ▾').classList.add('dim');
     // ═══ ឯកសារយោង (References) ═══
     const pRef = pane('refs');
     const gToc = group(pRef, 'តារាងមាតិកា');
@@ -16565,6 +16598,7 @@ class Component extends DCLogic {
       Object.keys(tabBtns).forEach(n => tabBtns[n].classList.toggle('on', n === curTab));
       rib.style.display = curTab ? 'flex' : 'none';
       rib.scrollLeft = 0; setTimeout(ribArrows, 0);
+      if (curTab === 'layout') setTimeout(() => { if (this._edParaSync) this._edParaSync(); }, 0);
       fold.innerHTML = svg(curTab ? 'up' : 'dn', 16); fold.title = curTab ? 'បង្រួម Ribbon' : 'បង្ហាញ Ribbon';
       try { localStorage.setItem('dict_ed_tab', curTab); } catch(e){}
       setTimeout(() => { try { refit(); } catch(e){} }, 30);     // refit is defined further down, after the toolbar
@@ -16713,6 +16747,7 @@ class Component extends DCLogic {
     if (this._edSelH) document.removeEventListener('selectionchange', this._edSelH);
     this._edSelH = () => {
       if (!ov.isConnected) { document.removeEventListener('selectionchange', this._edSelH); return; }
+      if (this._edParaSync) this._edParaSync();
       const s = window.getSelection(); let n = s && s.rangeCount ? s.getRangeAt(0).startContainer : null; if (n && n.nodeType === 3) n = n.parentElement;
       const p = this._edCurPage(); const now = !!(n && n.closest && p && p.contains(n) && n.closest('td,th'));
       if (!n || !p || !p.contains(n)) return;     // focus moved to the ribbon: keep the tab as it is
