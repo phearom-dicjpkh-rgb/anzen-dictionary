@@ -16049,13 +16049,28 @@ class Component extends DCLogic {
     rib.addEventListener('scroll', ribArrows, { passive: true });
     // builders for the ribbon
     const group = (pane, label) => { const g = document.createElement('div'); g.className = 'ewd-g'; const gb = document.createElement('div'); gb.className = 'ewd-gb'; const gl = document.createElement('div'); gl.className = 'ewd-gl'; gl.textContent = label; g.appendChild(gb); g.appendChild(gl); pane.appendChild(g); return gb; };
-    const big = (parent, key, label, fn, keepSel, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-big' + (cls ? ' ' + cls : ''); b.innerHTML = svg(key, 28) + '<span>' + label + '</span>'; b.title = label.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); if (keepSel) keep(b); b.addEventListener('click', fn); parent.appendChild(b); return b; };
+    // buttons that already work get a coloured icon (by kind, like Word); buttons still to come keep a black one
+    const ICOL = { gold: '#c97d00', red: '#c0342c', green: '#2f8f57', orange: '#ea580c', purple: '#7c3aed', blue: '#2b579a' };
+    const KEYCOL = {
+      paste: 'gold', fp: 'gold', pen: 'gold',
+      cut: 'red', fontc: 'red', trash: 'red', clear: 'red', strike: 'red',
+      img: 'green', chpic: 'green', pcolor2: 'green', sun: 'green', art: 'green', transp: 'green', resetp: 'green', alt: 'green',
+      sq: 'orange', ci: 'orange', hl: 'orange', ln: 'orange', ar2: 'orange', shade: 'orange', pborder2: 'orange', peff: 'orange', border: 'orange', outline: 'orange', thk: 'orange',
+      pgnum: 'purple', margins: 'purple', pbreak: 'purple', ruler: 'purple', zoomQ: 'purple', z100b: 'purple', pgw: 'purple', zi: 'purple', zo: 'purple', fit: 'purple', rmode: 'purple', pview: 'purple', vert: 'purple', wcount: 'purple', l: 'purple', r: 'purple',
+    };
+    const colOf = key => ICOL[KEYCOL[key] || 'blue'];
+    const paintIco = (b, key, fn, whole) => {
+      if (fn && fn._soon) { b.classList.add('ph'); return; }
+      if (whole) { b.style.color = colOf(key); return; }
+      const s = b.querySelector('svg'); if (s) s.style.color = colOf(key);
+    };
+    const big = (parent, key, label, fn, keepSel, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-big' + (cls ? ' ' + cls : ''); b.innerHTML = svg(key, 28) + '<span>' + label + '</span>'; b.title = label.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); if (keepSel) keep(b); b.addEventListener('click', fn); paintIco(b, key, fn); parent.appendChild(b); return b; };
     const stack = parent => { const s = document.createElement('div'); s.className = 'ewd-stack'; parent.appendChild(s); return s; };
-    const sm = (parent, key, label, fn, keepSel) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-sm'; b.innerHTML = svg(key, 15) + '<span>' + label + '</span>'; if (keepSel) keep(b); b.addEventListener('click', fn); parent.appendChild(b); return b; };
+    const sm = (parent, key, label, fn, keepSel) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-sm'; b.innerHTML = svg(key, 15) + '<span>' + label + '</span>'; if (keepSel) keep(b); b.addEventListener('click', fn); paintIco(b, key, fn); parent.appendChild(b); return b; };
     const rows = parent => { const s = document.createElement('div'); s.className = 'ewd-rows'; parent.appendChild(s); return s; };
     const row = parent => { const s = document.createElement('div'); s.className = 'ewd-row'; parent.appendChild(s); return s; };
     const sep = parent => { const s = document.createElement('span'); s.className = 'ewd-sep'; parent.appendChild(s); };
-    const btn = (parent, inner, tip, fn, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-b' + (cls ? ' ' + cls : ''); b.innerHTML = IC[inner] ? svg(inner, 16) : inner; b.title = tip; b.setAttribute('aria-label', tip); keep(b); b.addEventListener('click', fn); parent.appendChild(b); return b; };
+    const btn = (parent, inner, tip, fn, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-b' + (cls ? ' ' + cls : ''); b.innerHTML = IC[inner] ? svg(inner, 16) : inner; b.title = tip; b.setAttribute('aria-label', tip); keep(b); b.addEventListener('click', fn); paintIco(b, IC[inner] ? inner : '', fn, true); parent.appendChild(b); return b; };
     const panes = {};
     const pane = k => { const p = document.createElement('div'); p.style.cssText = 'display:none;align-items:stretch;'; panes[k] = p; rib.appendChild(p); return p; };
     const palette = (anchor, colors, apply, noneLabel) => {
@@ -16121,7 +16136,7 @@ class Component extends DCLogic {
     };
     const toast = m => { try { this.showToast(tr(m)); } catch(e){} };
     // buttons laid out like Word whose feature comes later: they say so instead of doing nothing
-    const soon = label => () => { try { this.showToast(uiLang === 'en' ? '“' + String(tr(label)).replace(/<br>/g, ' ') + '” is not available yet — coming later' : '«' + label + '» មិនទាន់ដំណើរការ — នឹងបន្ថែមពេលក្រោយ'); } catch(e){} };
+    const soon = label => { const f = () => { try { this.showToast(uiLang === 'en' ? '“' + String(tr(label)).replace(/<br>/g, ' ') + '” is not available yet — coming later' : '«' + label + '» មិនទាន់ដំណើរការ — នឹងបន្ថែមពេលក្រោយ'); } catch(e){} }; f._soon = 1; return f; };
     const touched = () => { this._edDirty = true; this._edScheduleReflow(this._edCur); };
     // top-level blocks of the sheet touched by the selection (or the one holding the caret)
     const selBlocks = () => {
