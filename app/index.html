@@ -16619,7 +16619,28 @@ class Component extends DCLogic {
       ['<b style="font-size:20px;color:#2b579a;margin-right:6px">ក</b><span>នៅរឹម</span>', () => dropCap('margin')],
     ]), true); dcB.dataset.pop = '1';
     const sTxt = stack(gTxt);
-    smSoon(sTxt, 'sign', 'បន្ទាត់ហត្ថលេខា ▾'); smSoon(sTxt, 'date', 'កាលបរិច្ឆេទ និងម៉ោង'); smSoon(sTxt, 'obj', 'វត្ថុ ▾');
+    smSoon(sTxt, 'sign', 'បន្ទាត់ហត្ថលេខា ▾'); // Date & Time: today's date / the time now in Khmer, Japanese and English formats, typed at the caret
+    const dtB = sm(sTxt, 'date', 'កាលបរិច្ឆេទ និងម៉ោង', () => {
+      const d = new Date(), KD = s => String(s).replace(/\d/g, c => '០១២៣៤៥៦៧៨៩'[c]), p2 = n => String(n).padStart(2, '0');
+      const KW = ['អាទិត្យ', 'ច័ន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍'], KMO = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'], JW = '日月火水木金土';
+      const Y = d.getFullYear(), M = d.getMonth(), D = d.getDate(), hh = d.getHours(), mm = p2(d.getMinutes());
+      const fmts = [
+        p2(D) + '/' + p2(M + 1) + '/' + Y,
+        'ថ្ងៃ' + KW[d.getDay()] + ' ទី' + KD(D) + ' ខែ' + KMO[M] + ' ឆ្នាំ' + KD(Y),
+        KD(D) + ' ' + KMO[M] + ' ' + KD(Y),
+        Y + '年' + (M + 1) + '月' + D + '日（' + JW[d.getDay()] + '）',
+        Y + '年' + (M + 1) + '月' + D + '日',
+        d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+        Y + '-' + p2(M + 1) + '-' + p2(D),
+        p2(D) + '/' + p2(M + 1) + '/' + Y + ' ' + p2(hh) + ':' + mm,
+        p2(hh) + ':' + mm,
+        'ម៉ោង ' + KD(p2(hh)) + ':' + KD(mm),
+        (hh % 12 || 12) + ':' + mm + ' ' + (hh < 12 ? 'AM' : 'PM'),
+      ];
+      this._saveLibSel();
+      menuUnder(dtB, fmts.map(t => ['<span>' + t + '</span>', () => { this._restoreLibSel(); exec('insertText', t); }]));
+    }, true); dtB.dataset.pop = '1'; smSoon(sTxt, 'obj', 'វត្ថុ ▾');
     const gSym = group(pIns, 'និមិត្តសញ្ញា');
     bigSoon(gSym, 'eq', 'សមីការ<br>▾'); bigSoon(gSym, 'omega', 'និមិត្ត<br>សញ្ញា ▾');
     // ═══ រចនា (Design) — Word's "Document Formatting" and "Page Background" ═══
