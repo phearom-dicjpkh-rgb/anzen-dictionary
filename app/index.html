@@ -3221,14 +3221,11 @@ textarea.input { min-height: 90px; resize: vertical; }
 
         <sc-if value="{{ isLibrary }}" hint-placeholder-val="{{ false }}">
           <sc-if value="{{ libIsList }}">
-          <div style="padding:18px 20px 40px;">
+          <div style="padding:14px 16px 0;">
             <button class="btn" style="position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));z-index:25;width:46px;height:46px;border-radius:50%;background:var(--color-accent);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.28);padding:0;" sc-camel-on-click="{{ goMenu }}" aria-label="ថយក្រោយ" title="ថយក្រោយ"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg></button>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px;">
-              <h1 style="font-size:24px;margin:0;">បណ្ណាល័យសៀវភៅ</h1>
-              <button class="btn btn-primary" style="padding:9px 14px;font-size:13px;" sc-camel-on-click="{{ libNewBook }}">+ សៀវភៅថ្មី</button>
-            </div>
-            <div style="font-size:11px;opacity:0.55;margin-bottom:14px;">និពន្ធសៀវភៅដោយអក្សរ លាយរូបភាព (Link)។ រក្សាទុករួច បង្ហាញនៅទីនេះ។</div>
-            <div style="display:flex;flex-direction:column;gap:9px;">
+            <h1 style="font-size:22px;margin:0 0 10px;">បណ្ណាល័យសៀវភៅ</h1>
+            <div id="lib-explorer"></div>
+            <div style="display:none;flex-direction:column;gap:9px;">
               <sc-for list="{{ libBooks }}" as="b" hint-placeholder-count="3">
                 <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:10px;">
                   <div style="flex:1;min-width:0;cursor:pointer;" sc-camel-on-click="{{ b.onRead }}">
@@ -11096,10 +11093,17 @@ function makeSupabaseBackend(){
     async saveBookSetting(row){ const { error } = await client.from('book_settings').upsert(row, { onConflict: 'book' }); return { error: error ? error.message : null }; },
     // — authored books (បណ្ណាល័យ, Admin) —
     async listBooks(){
-      let { data, error } = await client.from('books').select('id,title,sort,updated_at,locked').order('sort').order('updated_at', { ascending: false });
+      // folder / starred / trashed_at come with supabase/38; fall back step by step on an older database
+      let { data, error } = await client.from('books').select('id,title,sort,updated_at,locked,folder,starred,trashed_at').order('sort').order('updated_at', { ascending: false });
+      if (!error) return { rows: data || [], folders: true };
+      ({ data, error } = await client.from('books').select('id,title,sort,updated_at,locked').order('sort').order('updated_at', { ascending: false }));
       if (error) { const r = await client.from('books').select('id,title,sort,updated_at').order('sort').order('updated_at', { ascending: false }); data = r.data; }   // 'locked' column not migrated yet
-      return { rows: data || [] };
+      return { rows: data || [], folders: false };
     },
+    async listBookFolders(){ const { data, error } = await client.from('book_folders').select('path'); return { rows: (data || []).map(x => x.path), error: error ? error.message : null }; },
+    async addBookFolders(paths){ const { error } = await client.from('book_folders').upsert(paths.map(path => ({ path }))); return { error: error ? error.message : null }; },
+    async deleteBookFolders(paths){ if (!paths.length) return { error: null }; const { error } = await client.from('book_folders').delete().in('path', paths); return { error: error ? error.message : null }; },
+    async updateBook(id, patch){ const { error } = await client.from('books').update(patch).eq('id', id); return { error: error ? error.message : null }; },
     async getBook(id){ const { data, error } = await client.from('books').select('*').eq('id', id).single(); return { book: data || null, error: error ? error.message : null }; },
     async setBookLock(id, locked){ const { error } = await client.from('books').update({ locked: !!locked }).eq('id', id); return { error: error ? error.message : null }; },
     async saveBook(row){
@@ -11297,7 +11301,12 @@ function makeDemoBackend(){
       return { error: null };
     },
     _books(){ try { return JSON.parse(localStorage.getItem('dict_demo_books') || '[]'); } catch(e){ return []; } },
-    async listBooks(){ return { rows: this._books().map(({ content, ...r }) => r) }; },
+    async listBooks(){ return { rows: this._books().map(({ content, ...r }) => ({ folder: '', starred: false, trashed_at: null, ...r })), folders: true }; },
+    _bf(){ try { return JSON.parse(localStorage.getItem('dict_demo_bookfolders') || '[]'); } catch(e){ return []; } },
+    async listBookFolders(){ return { rows: this._bf(), error: null }; },
+    async addBookFolders(paths){ localStorage.setItem('dict_demo_bookfolders', JSON.stringify([...new Set([...this._bf(), ...paths])])); return { error: null }; },
+    async deleteBookFolders(paths){ localStorage.setItem('dict_demo_bookfolders', JSON.stringify(this._bf().filter(p => !paths.includes(p)))); return { error: null }; },
+    async updateBook(id, patch){ const b = this._books(); const x = b.find(y => y.id === id); if (x) { Object.assign(x, patch); if ('title' in patch) x.updated_at = new Date().toISOString(); localStorage.setItem('dict_demo_books', JSON.stringify(b)); } return { error: null }; },
     async getBook(id){ return { book: this._books().find(x => x.id === id) || null, error: null }; },
     async setBookLock(id, locked){ const b = this._books(); const x = b.find(y => y.id === id); if (x) { x.locked = !!locked; localStorage.setItem('dict_demo_books', JSON.stringify(b)); } return { error: null }; },
     async saveBook(row){
@@ -13950,7 +13959,277 @@ class Component extends DCLogic {
   // — បណ្ណាល័យ: admin-authored books (rich text + image links). The editor is
   //   built imperatively so dc-runtime re-renders never wipe what's being typed. —
   goLibrary(){ this.setState({ screen: 'library', libMode: 'list', libBookId: null, libErr: '' }, () => this.loadBooks()); }
-  async loadBooks(){ this._rbCache = null; const { rows } = await Backend.listBooks(); this.setState({ libBooks: Array.isArray(rows) ? rows : [] }); }
+  async loadBooks(){
+    this._rbCache = null;
+    const [{ rows, folders }, fr] = await Promise.all([Backend.listBooks(), Backend.listBookFolders ? Backend.listBookFolders() : Promise.resolve({ rows: [] })]);
+    this._lxCanFolders = !!folders && !(fr && fr.error);
+    this._libFolders = (fr && fr.rows) || [];
+    this.setState({ libBooks: Array.isArray(rows) ? rows : [] }, () => this._libExplorerSoon());
+  }
+  _libExplorerSoon(){
+    const run = t => { const root = document.getElementById('lib-explorer'); if (!root) { if (t > 0) setTimeout(() => run(t - 1), 30); return; } this._buildLibExplorer(root); };
+    setTimeout(() => run(8), 16);
+  }
+  // ── the book library as a file explorer (folders, ★, recent, trash; icons / list; preview pane; drag & drop) ──
+  _buildLibExplorer(root){
+    const X = this._lx || (this._lx = { path: '', mode: 'folder', sel: new Set(), q: '', clip: null, hist: [''], hi: 0, prev: true });
+    try { const o = JSON.parse(localStorage.getItem('dict_lib_view') || '{}'); X.view = X.view || o.view || 'large'; X.sort = X.sort || o.sort || 'name'; X.dir = X.dir || o.dir || 1; if (o.prev === false && X.prevSet == null) X.prev = false; } catch(e) { X.view = X.view || 'large'; X.sort = X.sort || 'name'; X.dir = X.dir || 1; }
+    const keepOpt = () => { try { localStorage.setItem('dict_lib_view', JSON.stringify({ view: X.view, sort: X.sort, dir: X.dir, prev: X.prev })); } catch(e){} };
+    if (!document.getElementById('lx-css')) { const st = document.createElement('style'); st.id = 'lx-css'; st.textContent = [
+      '.lx{display:flex;flex-direction:column;background:#f6f6f5;border:1px solid #e3e1de;border-radius:12px;overflow:hidden;position:relative;font-size:13.5px;color:#222}',
+      '.lx-addr{display:flex;align-items:center;gap:4px;padding:8px 10px;background:#fff;border-bottom:1px solid #e3e1de}.lx-nav{width:32px;height:32px;border:none;background:none;border-radius:6px;font-size:17px;color:#444;cursor:pointer;flex:none}.lx-nav:hover{background:#eef0f2}.lx-nav:disabled{color:#c4c2bf;cursor:default;background:none}',
+      '.lx-crumb{flex:1;display:flex;align-items:center;gap:2px;border:1px solid #e3e1de;border-radius:6px;padding:4px 8px;min-width:0;overflow-x:auto;white-space:nowrap;scrollbar-width:none}.lx-crumb span{cursor:pointer;padding:2px 5px;border-radius:4px}.lx-crumb span:hover,.lx-crumb span.dz{background:#e3eefb}.lx-crumb i{color:#aaa;font-style:normal}',
+      '.lx-q{width:220px;border:1px solid #e3e1de;border-radius:6px;padding:6px 10px;font:inherit;font-size:13px;outline:none}.lx-q:focus{border-color:var(--color-accent,#2f6db0)}',
+      '.lx-cmd{display:flex;align-items:center;gap:2px;padding:6px 10px;background:#fff;border-bottom:1px solid #e3e1de;flex-wrap:wrap}.lx-cmd button{border:none;background:none;border-radius:6px;padding:6px 10px;font:inherit;font-size:13px;color:#333;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}',
+      '.lx-cmd button:hover{background:#eef0f2}.lx-cmd button:disabled{color:#b8b6b3;background:none;cursor:default}.lx-cmd .new{background:var(--color-accent,#2f6db0);color:#fff}.lx-cmd .new:hover{filter:brightness(.92);background:var(--color-accent,#2f6db0)}.lx-cmd .sep{width:1px;height:22px;background:#e3e1de;margin:0 4px}.lx-cmd .sp{flex:1}.lx-cmd .on{background:#e3eefb}',
+      '.lx-warn{background:#fff8e6;border-bottom:1px solid #f0d9a3;color:#7a5600;padding:6px 12px;font-size:12.5px}',
+      '.lx-chips{display:none;gap:6px;overflow-x:auto;padding:8px 10px;background:#fff;border-bottom:1px solid #e3e1de;scrollbar-width:none}.lx-chips span{white-space:nowrap;border:1px solid #c8c6c4;border-radius:14px;padding:3px 11px;font-size:12.5px;background:#fff;cursor:pointer}.lx-chips span.on{background:var(--color-accent,#2f6db0);color:#fff;border-color:transparent}',
+      '.lx-body{flex:1;display:flex;min-height:0}.lx-side{width:220px;flex:none;background:#fafafa;border-right:1px solid #e3e1de;overflow-y:auto;padding:6px 0}.lx-side .it{display:flex;align-items:center;gap:7px;padding:5px 12px 5px calc(12px + var(--d,0) * 15px);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.lx-side .it:hover,.lx-side .it.dz{background:#eef0f2}.lx-side .it.on{background:#cce4f7}.lx-side .hd{font-size:11.5px;color:#888;padding:10px 12px 3px;font-weight:600}.lx-side .tw{width:10px;flex:none;font-size:10px;color:#888}',
+      '.lx-main{flex:1;overflow-y:auto;padding:14px 16px;min-width:0;outline:none}.lx-ttl{display:flex;align-items:baseline;gap:10px;margin:0 0 12px}.lx-ttl h2{margin:0;font-size:19px}.lx-ttl small{color:#888}',
+      '.lx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--tile),1fr));gap:12px}.lx-tile{display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 8px;background:#fff;border:1px solid #e6e4e1;border-radius:10px;box-shadow:0 1px 2px rgba(0,0,0,.05);cursor:pointer;text-align:center;position:relative;user-select:none;-webkit-user-select:none}',
+      '.lx-tile:hover{border-color:#b7d3f2;background:#f7fbff}.lx-tile.on{background:#cce4f7;border-color:#99c9ef}.lx-tile.dz{outline:2px dashed var(--color-accent,#2f6db0);outline-offset:2px}.lx-tile.cut{opacity:.5}.lx-tile .nm{font-size:13px;line-height:1.35;max-height:2.7em;overflow:hidden;word-break:break-word}.lx-tile .sub{font-size:11px;color:#888;margin-top:-4px}.lx-tile .bad{position:absolute;top:6px;right:8px;font-size:12px}',
+      '.lx-fold{width:var(--ic);height:calc(var(--ic) * .76);position:relative;flex:none}.lx-fold i{position:absolute;display:block}.lx-fold .t{left:0;top:-7%;width:42%;height:22%;background:#f0b93f;border-radius:5px 5px 0 0}.lx-fold .b{inset:0;background:#f0b93f;border-radius:5px}.lx-fold .p{left:9%;right:9%;top:8%;height:50%;background:#fff;border-radius:2px;box-shadow:0 1px 2px rgba(0,0,0,.15)}.lx-fold .f{left:0;right:0;bottom:0;height:78%;background:linear-gradient(#ffd35f,#f6c445);border-radius:5px}',
+      '.lx-fold .n{position:absolute;right:6%;bottom:9%;font-size:10.5px;font-weight:700;color:#8a6200;background:rgba(255,255,255,.65);border-radius:8px;padding:0 6px;font-style:normal}',
+      '.lx-book{width:calc(var(--ic) * .8);height:var(--ic);border-radius:3px 6px 6px 3px;position:relative;box-shadow:0 2px 6px rgba(0,0,0,.22);overflow:hidden;background:#fff;display:flex;flex-direction:column;flex:none}.lx-book .bar{height:36%;padding:4px 5px 0 8px;color:#fff;font-size:9.5px;font-weight:700;line-height:1.25;text-align:left;overflow:hidden}.lx-book .ln{flex:1;background:repeating-linear-gradient(#fff 0 5px,#e8e8e8 5px 6px);margin:5px 6px 5px 9px}.lx-book .sp{position:absolute;left:0;top:0;bottom:0;width:4px;background:rgba(0,0,0,.18)}.lx-book img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}',
+      '.lx-list{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:8px;overflow:hidden}.lx-list th{text-align:left;font-weight:600;color:#777;font-size:12px;border-bottom:1px solid #e3e1de;padding:7px 10px;cursor:pointer;white-space:nowrap}.lx-list td{padding:6px 10px;border-bottom:1px solid #f1f0ee;white-space:nowrap}.lx-list td:first-child{white-space:normal}.lx-list tr:hover td{background:#f2f8fe}.lx-list tr.on td{background:#cce4f7}.lx-list tr.dz td{background:#e3eefb}.lx-list .mi{display:inline-flex;vertical-align:middle;margin-right:9px;--ic:24px}',
+      '.lx-prev{width:270px;flex:none;border-left:1px solid #e3e1de;background:#fff;padding:16px;overflow-y:auto}.lx-prev .big{display:flex;justify-content:center;padding:8px 0 14px;--ic:150px}.lx-prev h3{margin:0 0 4px;font-size:17px;word-break:break-word}.lx-prev .meta{color:#777;line-height:1.85;font-size:12.5px}.lx-prev .empty{color:#999;text-align:center;margin-top:110px;line-height:1.8}',
+      '.lx-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}.lx-acts button{border:1px solid #c8c6c4;background:#fff;border-radius:16px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}.lx-acts .p{background:var(--color-accent,#2f6db0);border-color:transparent;color:#fff}.lx-acts .d{color:#c0342c;border-color:#ebbab3}',
+      '.lx-status{display:flex;gap:16px;font-size:12px;color:#888;padding:4px 12px;background:#fff;border-top:1px solid #e3e1de}',
+      '.lx-bar{display:none;position:absolute;left:8px;right:8px;bottom:8px;background:#fff;border:1px solid #d2d0ce;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.18);padding:6px;justify-content:space-around;z-index:5}.lx-bar button{border:none;background:none;font:inherit;font-size:11.5px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 6px;border-radius:8px;color:#333}.lx-bar button b{font-size:17px;font-weight:400}',
+      '.lx-menu{position:fixed;z-index:400;background:#fff;border:1px solid #c8c6c4;border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.22);padding:4px;min-width:210px;font-size:13.5px}.lx-menu div{padding:8px 12px;border-radius:6px;cursor:pointer;display:flex;gap:10px;align-items:center}.lx-menu div:hover{background:#eef0f2}.lx-menu hr{border:none;border-top:1px solid #edebe9;margin:4px 0}.lx-menu .d{color:#c0342c}',
+      '.lx.narrow .lx-side,.lx.narrow .lx-prev,.lx.narrow .lx-q{display:none}.lx.narrow .lx-chips{display:flex}.lx.narrow .lx-cmd .lb{display:none}.lx.narrow .lx-bar.show{display:flex}.lx.narrow .lx-main{padding:10px 10px 80px}.lx.midw .lx-prev{display:none}',
+      '.lx-sbtn{display:none!important}.lx.narrow .lx-sbtn{display:flex!important}.lx.narrow [data-c=prev]{display:none}.lx.narrow .lx-list th:nth-child(n+3),.lx.narrow .lx-list td:nth-child(n+3){display:none}.lx-list .mi .bar{font-size:0}.lx.narrow .lx-bar{right:66px}.lx.narrow .lx-cmd{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.lx.narrow .lx-grid{--tile:100px!important;--ic:60px!important;gap:8px}',
+      '.lx-dlg{position:fixed;inset:0;z-index:410;background:rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;padding:14px}.lx-dlg>div{background:#fff;border-radius:12px;width:min(380px,100%);max-height:80vh;overflow:auto;padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}.lx-dlg h4{margin:0 0 10px;font-size:15px}.lx-dlg .fl div{padding:7px 10px;border-radius:6px;cursor:pointer;padding-left:calc(10px + var(--d) * 16px)}.lx-dlg .fl div:hover{background:#eef0f2}.lx-dlg .fl .on{background:#cce4f7}.lx-dlg .ft{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}.lx-dlg .ft button{border:1px solid #c8c6c4;background:#fff;border-radius:8px;padding:6px 14px;font:inherit;cursor:pointer}.lx-dlg .ft .p{background:var(--color-accent,#2f6db0);color:#fff;border-color:transparent}',
+    ].join('\n'); document.head.appendChild(st); }
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const books = () => (this.state.libBooks || []);
+    const parent = p => p.split('/').slice(0, -1).join('/');
+    const baseName = p => p.split('/').pop();
+    const allFolders = () => { const S = new Set(this._libFolders || []); books().forEach(b => { let p = b.folder || ''; while (p) { S.add(p); p = parent(p); } }); [...S].forEach(p => { let q = parent(p); while (q) { S.add(q); q = parent(q); } }); return [...S].sort((a, b) => a.localeCompare(b, 'ja')); };
+    const fmtDate = s => { if (!s) return ''; const d = new Date(s); return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear(); };
+    const COLS = ['#2b579a', '#c0342c', '#2f8f57', '#c97d00', '#7c3aed', '#0f766e', '#ea580c', '#1558b0'];
+    const colorOf = t => { let x = 0; for (const c of String(t)) x = (x * 31 + c.codePointAt(0)) >>> 0; return COLS[x % COLS.length]; };
+    const covers = (() => { try { return this._coverMap(); } catch(e) { return {}; } })();
+    const folderIc = p => { const n = items(p, 'folder').length; return '<div class="lx-fold"><i class="t"></i><i class="b"></i><i class="p"></i><i class="f"></i>' + (n ? '<i class="n">' + n + '</i>' : '') + '</div>'; };
+    const bookIc = b => { const cv = covers[b.id], img = cv && cv.v === b.updated_at && cv.c; return '<div class="lx-book">' + (img ? '<img alt="" src="' + esc(img) + '">' : '<div class="bar" style="background:' + colorOf(b.title) + '">' + esc(b.title || '') + '</div><div class="ln"></div>') + '<i class="sp"></i></div>'; };
+    // what a view shows: { type: 'folder', path } / { type: 'book', b }
+    const items = (path, mode) => {
+      const q = X.q.trim().toLowerCase();
+      if (mode === 'search') return books().filter(b => !b.trashed_at && (b.title || '').toLowerCase().includes(q)).map(b => ({ type: 'book', b }))
+        .concat(allFolders().filter(p => baseName(p).toLowerCase().includes(q)).map(p => ({ type: 'folder', path: p })));
+      if (mode === 'recent') return books().filter(b => !b.trashed_at).sort((a, c) => String(c.updated_at || '').localeCompare(String(a.updated_at || ''))).slice(0, 30).map(b => ({ type: 'book', b }));
+      if (mode === 'star') return books().filter(b => !b.trashed_at && b.starred).map(b => ({ type: 'book', b }));
+      if (mode === 'trash') return books().filter(b => b.trashed_at).map(b => ({ type: 'book', b }));
+      return allFolders().filter(p => parent(p) === path).map(p => ({ type: 'folder', path: p })).concat(books().filter(b => !b.trashed_at && (b.folder || '') === path).map(b => ({ type: 'book', b })));
+    };
+    const keyOf = it => it.type === 'folder' ? 'f:' + it.path : 'b:' + it.b.id;
+    const sorted = L => { const by = X.sort, d = X.dir; return L.slice().sort((a, b) => {
+      if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
+      const na = a.type === 'folder' ? baseName(a.path) : (a.b.title || ''), nb = b.type === 'folder' ? baseName(b.path) : (b.b.title || '');
+      if (by === 'date' && a.type === 'book') return d * String(a.b.updated_at || '').localeCompare(String(b.b.updated_at || ''));
+      return d * na.localeCompare(nb, 'ja'); }); };
+    const curItems = () => sorted(items(X.path, X.q.trim() ? 'search' : X.mode));
+    const findItem = k => k.startsWith('f:') ? { type: 'folder', path: k.slice(2) } : (() => { const b = books().find(x => x.id === k.slice(2)); return b ? { type: 'book', b } : null; })();
+    const selItems = () => [...X.sel].map(findItem).filter(Boolean);
+    const title = () => X.q.trim() ? '🔍 «' + X.q.trim() + '»' : X.mode === 'recent' ? '🕘 ' + tr('ថ្មីៗ') : X.mode === 'star' ? '★ ' + tr('ចំណូលចិត្ត') : X.mode === 'trash' ? '🗑 ' + tr('ធុងសំរាម') : (X.path ? baseName(X.path) : tr('បណ្ណាល័យ'));
+    const tr = s => s;
+    const toast = m => { try { this.showToast(m); } catch(e){} };
+    const reload = async () => { await this.loadBooks(); };
+    // ── actions ──
+    const go = (path, push = true) => { X.mode = 'folder'; X.path = path; X.q = ''; X.sel.clear(); if (push) { X.hist = X.hist.slice(0, X.hi + 1); X.hist.push(path); X.hi = X.hist.length - 1; } paint(); };
+    const setMode = m => { X.mode = m; X.q = ''; X.sel.clear(); paint(); };
+    const needMig = () => { if (this._lxCanFolders) return false; toast('សូម run supabase/38_book_folders.sql ជាមុនសិន ដើម្បីប្រើថតឯកសារ'); return true; };
+    const newFolder = async () => {
+      if (needMig()) return; const n = (window.prompt('ឈ្មោះថតថ្មី', 'ថតថ្មី') || '').trim().replace(/\//g, '／'); if (!n) return;
+      const p = (X.path ? X.path + '/' : '') + n; if (allFolders().includes(p)) { toast('មានថតឈ្មោះនេះរួចហើយ'); return; }
+      const { error } = await Backend.addBookFolders([p]); if (error) { toast(error); return; } this._libFolders = [...(this._libFolders || []), p]; X.sel = new Set(['f:' + p]); paint();
+    };
+    const moveFolder = async (from, toParent, newName) => {   // rename or move a folder (and everything under it)
+      const to = (toParent ? toParent + '/' : '') + (newName || baseName(from)); if (to === from) return true;
+      if (to.startsWith(from + '/')) { toast('មិនអាចដាក់ថតចូលក្នុងខ្លួនឯងបានទេ'); return false; }
+      if (allFolders().includes(to)) { toast('មានថតឈ្មោះនេះរួចហើយ'); return false; }
+      const sub = allFolders().filter(p => p === from || p.startsWith(from + '/'));
+      const mapP = p => to + p.slice(from.length);
+      await Backend.addBookFolders(sub.map(mapP)); await Backend.deleteBookFolders(sub.filter(p => (this._libFolders || []).includes(p)));
+      for (const b of books().filter(b => b.folder === from || (b.folder || '').startsWith(from + '/'))) await Backend.updateBook(b.id, { folder: mapP(b.folder) });
+      if (X.path === from || X.path.startsWith(from + '/')) X.path = mapP(X.path);
+      return true;
+    };
+    const rename = async it => {
+      if (it.type === 'book') { const v = (window.prompt('ប្ដូរឈ្មោះសៀវភៅ', it.b.title || '') || '').trim(); if (!v || v === it.b.title) return; const { error } = await Backend.updateBook(it.b.id, { title: v }); if (error) toast(error); await reload(); return; }
+      if (needMig()) return; const v = (window.prompt('ប្ដូរឈ្មោះថត', baseName(it.path)) || '').trim().replace(/\//g, '／'); if (!v) return;
+      if (await moveFolder(it.path, parent(it.path), v)) { X.sel = new Set(['f:' + (parent(it.path) ? parent(it.path) + '/' : '') + v]); await reload(); }
+    };
+    const moveTo = async (list, dest) => {
+      if (needMig()) return; let n = 0;
+      for (const it of list) { if (it.type === 'book') { if ((it.b.folder || '') !== dest) { await Backend.updateBook(it.b.id, { folder: dest, trashed_at: null }); n++; } } else if (parent(it.path) !== dest) { if (await moveFolder(it.path, dest)) n++; } }
+      if (n) { toast('បានផ្លាស់ទី ' + n + ' ធាតុ'); X.sel.clear(); await reload(); }
+    };
+    const copyBooks = async list => {
+      let n = 0; for (const it of list) { if (it.type !== 'book') continue; const { book } = await Backend.getBook(it.b.id); if (!book) continue;
+        const { id } = await Backend.saveBook({ title: (book.title || '') + ' (ច្បាប់ចម្លង)', content: book.content || '' }); if (id && this._lxCanFolders) await Backend.updateBook(id, { folder: X.mode === 'folder' ? X.path : (it.b.folder || '') }); n++; }
+      if (n) { toast('បានចម្លង ' + n + ' សៀវភៅ'); await reload(); } else toast('ចម្លងបានតែសៀវភៅប៉ុណ្ណោះ');
+    };
+    const trash = async list => {
+      const B = list.filter(it => it.type === 'book'), F = list.filter(it => it.type === 'folder');
+      if (X.mode === 'trash') { if (!window.confirm('លុបសៀវភៅ ' + B.length + ' ក្បាលជារៀងរហូត? មិនអាចយកមកវិញបានទេ')) return; for (const it of B) await Backend.deleteBook(it.b.id); X.sel.clear(); await reload(); return; }
+      if (!this._lxCanFolders) { for (const it of B) await this.libDeleteBook(it.b.id); return; }
+      if (F.length && !window.confirm('លុបថត ' + F.map(it => baseName(it.path)).join(', ') + '? សៀវភៅក្នុងថតនឹងត្រូវដាក់ក្នុងធុងសំរាម')) return;
+      const now = new Date().toISOString();
+      for (const it of B) await Backend.updateBook(it.b.id, { trashed_at: now });
+      for (const it of F) { const sub = allFolders().filter(p => p === it.path || p.startsWith(it.path + '/')); for (const b of books().filter(b => sub.includes(b.folder || ''))) await Backend.updateBook(b.id, { trashed_at: now, folder: '' }); await Backend.deleteBookFolders(sub); this._libFolders = (this._libFolders || []).filter(p => !sub.includes(p)); }
+      toast('បានដាក់ក្នុងធុងសំរាម'); X.sel.clear(); await reload();
+    };
+    const restore = async list => { for (const it of list) if (it.type === 'book') { const keep = !it.b.folder || allFolders().includes(it.b.folder); await Backend.updateBook(it.b.id, { trashed_at: null, folder: keep ? (it.b.folder || '') : '' }); } toast('បានយកមកវិញ'); X.sel.clear(); await reload(); };
+    const emptyTrash = async () => { const B = books().filter(b => b.trashed_at); if (!B.length || !window.confirm('សម្អាតធុងសំរាម (' + B.length + ' សៀវភៅ)? មិនអាចយកមកវិញបានទេ')) return; for (const b of B) await Backend.deleteBook(b.id); await reload(); };
+    const star = async it => { if (needMig()) return; await Backend.updateBook(it.b.id, { starred: !it.b.starred }); await reload(); };
+    const lock = async it => { if (!Backend.setBookLock) return; await Backend.setBookLock(it.b.id, !it.b.locked); toast(it.b.locked ? 'បានដោះសោ' : 'បានចាក់សោ — សិស្សមិនអាចបើកបានទេ'); await reload(); };
+    const open = it => { if (!it) return; if (it.type === 'folder') { go(it.path); return; } if (X.mode === 'trash') { toast('យកសៀវភៅមកវិញជាមុនសិន ដើម្បីបើក'); return; } this.libReadBook(it.b.id); };
+    const newBook = () => { this._libNewFolder = X.mode === 'folder' ? X.path : ''; this.libNewBook(); };
+    const pickFolder = (titleText, cb) => {   // a small folder chooser (for "Move to…")
+      const d = document.createElement('div'); d.className = 'lx-dlg'; let pick = X.path;
+      const rows = [''].concat(allFolders()).map(p => '<div data-p="' + esc(p) + '" style="--d:' + (p ? p.split('/').length : 0) + '">' + (p ? '📁 ' + esc(baseName(p)) : '📚 ' + esc(tr('បណ្ណាល័យ'))) + '</div>').join('');
+      d.innerHTML = '<div><h4>' + esc(titleText) + '</h4><div class="fl">' + rows + '</div><div class="ft"><button class="no">បោះបង់</button><button class="p">ផ្លាស់ទីទីនេះ</button></div></div>';
+      const mark = () => d.querySelectorAll('.fl div').forEach(x => x.classList.toggle('on', x.dataset.p === pick)); mark();
+      d.querySelectorAll('.fl div').forEach(x => x.addEventListener('click', () => { pick = x.dataset.p; mark(); }));
+      d.querySelector('.no').addEventListener('click', () => d.remove()); d.querySelector('.p').addEventListener('click', () => { d.remove(); cb(pick); });
+      d.addEventListener('mousedown', e => { if (e.target === d) d.remove(); }); document.body.appendChild(d);
+    };
+    // context menu
+    const menu = (x, y, list) => {
+      document.querySelectorAll('.lx-menu').forEach(m => m.remove());
+      const m = document.createElement('div'); m.className = 'lx-menu';
+      list.forEach(e => { if (e === '-') { m.appendChild(document.createElement('hr')); return; } const it = document.createElement('div'); it.innerHTML = e[0]; if (e[2]) it.className = e[2]; it.addEventListener('click', () => { m.remove(); e[1](); }); m.appendChild(it); });
+      document.body.appendChild(m); m.style.left = Math.max(6, Math.min(innerWidth - m.offsetWidth - 6, x)) + 'px'; m.style.top = Math.max(6, Math.min(innerHeight - m.offsetHeight - 6, y)) + 'px';
+      setTimeout(() => document.addEventListener('mousedown', function cl(ev){ if (!m.contains(ev.target)) { m.remove(); document.removeEventListener('mousedown', cl, true); } }, true), 0);
+    };
+    const itemMenu = (it, x, y) => {
+      if (!X.sel.has(keyOf(it))) { X.sel = new Set([keyOf(it)]); paint(); }
+      const S = selItems(), one = S.length === 1 ? S[0] : null;
+      if (X.mode === 'trash') return menu(x, y, [['↩ យកមកវិញ', () => restore(S)], '-', ['🗑 លុបជារៀងរហូត', () => trash(S), 'd']]);
+      if (one && one.type === 'folder') return menu(x, y, [['📂 បើកថត', () => open(one)], ['✎ ប្ដូរឈ្មោះ', () => rename(one)], ['📁 ផ្លាស់ទីទៅ…', () => pickFolder('ផ្លាស់ទី «' + baseName(one.path) + '» ទៅ', d => moveTo(S, d))], ['✂ កាត់', () => cut(S)], '-', ['🗑 លុបថត', () => trash(S), 'd']]);
+      const L = [];
+      if (one) L.push(['📖 បើកអាន', () => open(one)], ['✏️ កែ', () => this.libEditBook(one.b.id)], ['📋 តារាងពាក្យ', () => this.libWordTable(one.b.id)], '-', ['✎ ប្ដូរឈ្មោះ', () => rename(one)]);
+      L.push(['📁 ផ្លាស់ទីទៅ…', () => pickFolder('ផ្លាស់ទី ' + S.length + ' ធាតុទៅ', d => moveTo(S, d))], ['✂ កាត់', () => cut(S)], ['⧉ ចម្លង', () => copyBooks(S)]);
+      if (one) L.push([one.b.starred ? '☆ ដកពីចំណូលចិត្ត' : '★ ដាក់ក្នុងចំណូលចិត្ត', () => star(one)], [one.b.locked ? '🔓 ដោះសោ (សិស្សអានបាន)' : '🔒 ចាក់សោ (សិស្សមិនអាចបើក)', () => lock(one)]);
+      L.push('-', ['🗑 លុប (ធុងសំរាម)', () => trash(S), 'd']);
+      menu(x, y, L);
+    };
+    const cut = list => { X.clip = { keys: list.map(keyOf) }; toast('បានកាត់ ' + list.length + ' ធាតុ — បើកថតដែលចង់ដាក់ ហើយចុច «បិទភ្ជាប់»'); paint(); };
+    const paste = async () => { if (!X.clip) return; const list = X.clip.keys.map(findItem).filter(Boolean); X.clip = null; await moveTo(list, X.path); paint(); };
+    // ── drawing ──
+    root.innerHTML = '';
+    const el = document.createElement('div'); el.className = 'lx'; root.appendChild(el);
+    const fit = () => { const rc = root.getBoundingClientRect(); el.style.height = Math.max(420, window.innerHeight - rc.top - 86) + 'px'; el.classList.toggle('narrow', rc.width < 760); el.classList.toggle('midw', rc.width >= 760 && rc.width < 1080); };
+    if (this._lxResize) window.removeEventListener('resize', this._lxResize); this._lxResize = () => { if (!root.isConnected) { window.removeEventListener('resize', this._lxResize); return; } fit(); }; window.addEventListener('resize', this._lxResize);
+    let lastTap = { k: '', t: 0 }, press = null;
+    const paint = () => {
+      const L = curItems(), sel = selItems(), one = sel.length === 1 ? sel[0] : null, inFolder = X.mode === 'folder' && !X.q.trim();
+      const crumbs = [''].concat(X.path ? X.path.split('/').map((_, i, a) => a.slice(0, i + 1).join('/')) : []);
+      const crumbHtml = X.mode === 'folder' && !X.q.trim() ? crumbs.map(p => '<span data-cr="' + esc(p) + '">' + (p ? esc(baseName(p)) : '📚 ' + esc(tr('បណ្ណាល័យ'))) + '</span>').join('<i>›</i>') : '<span data-cr="">📚 ' + esc(tr('បណ្ណាល័យ')) + '</span><i>›</i><span>' + esc(title()) + '</span>';
+      const tile = X.view === 'medium' ? ['112px', '68px'] : ['138px', '86px'];
+      let main = '<div class="lx-ttl"><h2>' + esc(title()) + '</h2><small>' + L.filter(i => i.type === 'folder').length + ' ថត · ' + L.filter(i => i.type === 'book').length + ' សៀវភៅ</small></div>';
+      if (!L.length) main += '<div style="color:#999;text-align:center;padding:60px 20px;line-height:1.9">' + (X.mode === 'trash' ? 'ធុងសំរាមទទេ' : X.q.trim() ? 'រកមិនឃើញ' : X.mode === 'star' ? 'មិនទាន់មានសៀវភៅក្នុងចំណូលចិត្តទេ<br>ចុចស្ដាំលើសៀវភៅ › ★' : 'ថតនេះទទេ<br>ចុច «＋ ថ្មី» ដើម្បីបង្កើតសៀវភៅ ឬទាញសៀវភៅមកដាក់ទីនេះ') + '</div>';
+      else if (X.view === 'list') main += '<table class="lx-list"><tr><th data-so="name">ឈ្មោះ' + (X.sort === 'name' ? (X.dir > 0 ? ' ▲' : ' ▼') : '') + '</th><th data-so="date">កែប្រែចុងក្រោយ' + (X.sort === 'date' ? (X.dir > 0 ? ' ▲' : ' ▼') : '') + '</th><th>ប្រភេទ</th><th>' + (X.q.trim() || X.mode !== 'folder' ? 'ថត' : 'ស្ថានភាព') + '</th></tr>'
+        + L.map(it => { const k = keyOf(it), on = X.sel.has(k) ? ' on' : ''; if (it.type === 'folder') return '<tr class="it' + on + '" data-k="' + esc(k) + '" draggable="true"><td><span class="mi">' + folderIc(it.path) + '</span>' + esc(baseName(it.path)) + '</td><td></td><td>ថតឯកសារ</td><td>' + items(it.path, 'folder').length + ' ធាតុ</td></tr>';
+          const b = it.b; return '<tr class="it' + on + (X.clip && X.clip.keys.includes(k) ? ' cut' : '') + '" data-k="' + esc(k) + '" draggable="true"><td><span class="mi">' + bookIc(b) + '</span>' + esc(b.title || '(គ្មានចំណងជើង)') + '</td><td>' + fmtDate(b.updated_at) + '</td><td>សៀវភៅ</td><td>' + (X.q.trim() || X.mode !== 'folder' ? esc(b.folder || '—') : (b.locked ? '🔒 ' : '') + (b.starred ? '★' : '')) + '</td></tr>'; }).join('') + '</table>';
+      else main += '<div class="lx-grid" style="--tile:' + tile[0] + ';--ic:' + tile[1] + '">' + L.map(it => { const k = keyOf(it), on = X.sel.has(k) ? ' on' : '', ct = X.clip && X.clip.keys.includes(k) ? ' cut' : '';
+          if (it.type === 'folder') return '<div class="lx-tile it' + on + ct + '" data-k="' + esc(k) + '" draggable="true">' + folderIc(it.path) + '<div class="nm">' + esc(baseName(it.path)) + '</div></div>';
+          const b = it.b; return '<div class="lx-tile it' + on + ct + '" data-k="' + esc(k) + '" draggable="true"><span class="bad">' + (b.locked ? '🔒' : '') + (b.starred ? '<span style="color:#f0a800">★</span>' : '') + '</span>' + bookIc(b) + '<div class="nm">' + esc(b.title || '(គ្មានចំណងជើង)') + '</div><div class="sub">' + fmtDate(b.updated_at) + '</div></div>'; }).join('') + '</div>';
+      // side tree
+      let side = '<div class="hd">ចូលលឿន</div><div class="it' + (X.mode === 'folder' && !X.path && !X.q ? ' on' : '') + '" data-cr="">🏠 ទំព័រដើម</div><div class="it' + (X.mode === 'recent' ? ' on' : '') + '" data-mode="recent">🕘 ថ្មីៗ</div><div class="it' + (X.mode === 'star' ? ' on' : '') + '" data-mode="star">★ ចំណូលចិត្ត</div><div class="hd">ថតឯកសារ</div>';
+      const F = allFolders(), openSet = new Set(crumbs);
+      const walk = (p, d) => F.filter(x => parent(x) === p).forEach(x => { const has = F.some(y => parent(y) === x); side += '<div class="it' + (X.mode === 'folder' && X.path === x && !X.q ? ' on' : '') + '" style="--d:' + d + '" data-cr="' + esc(x) + '" data-drop="' + esc(x) + '"><span class="tw">' + (has ? (openSet.has(x) ? '▾' : '▸') : '') + '</span>📁 ' + esc(baseName(x)) + '</div>'; if (openSet.has(x)) walk(x, d + 1); });
+      side += '<div class="it" style="--d:0" data-cr="" data-drop="">📚 ' + esc(tr('បណ្ណាល័យ')) + '</div>'; walk('', 1);
+      side += '<div class="hd">ផ្សេងៗ</div><div class="it' + (X.mode === 'trash' ? ' on' : '') + '" data-mode="trash">🗑 ធុងសំរាម (' + books().filter(b => b.trashed_at).length + ')</div>';
+      // preview
+      let prev = '<div class="empty">ជ្រើសសៀវភៅ ឬថត<br>ដើម្បីមើលព័ត៌មាន</div>';
+      if (one && one.type === 'folder') prev = '<div class="big">' + folderIc(one.path) + '</div><h3>' + esc(baseName(one.path)) + '</h3><div class="meta">ថតឯកសារ · ' + items(one.path, 'folder').length + ' ធាតុ<br>📍 ' + esc(one.path.split('/').join(' › ')) + '</div><div class="lx-acts"><button class="p" data-a="open">📂 បើកថត</button><button data-a="rename">✎ ប្ដូរឈ្មោះ</button><button class="d" data-a="trash">🗑 លុប</button></div>';
+      else if (one) { const b = one.b; prev = '<div class="big">' + bookIc(b) + '</div><h3>' + esc(b.title || '') + '</h3><div class="meta">សៀវភៅ · កែប្រែ ' + fmtDate(b.updated_at) + '<br>📍 ' + esc((b.folder || tr('បណ្ណាល័យ')).split('/').join(' › ')) + (b.locked ? '<br>🔒 ចាក់សោ (សិស្សមិនអាចបើក)' : '') + '</div>'
+        + (X.mode === 'trash' ? '<div class="lx-acts"><button class="p" data-a="restore">↩ យកមកវិញ</button><button class="d" data-a="trash">🗑 លុបជារៀងរហូត</button></div>' : '<div class="lx-acts"><button class="p" data-a="open">📖 អាន</button><button data-a="edit">✏️ កែ</button><button data-a="words">📋 តារាងពាក្យ</button><button data-a="move">📁 ផ្លាស់ទី</button><button data-a="star">' + (b.starred ? '☆' : '★') + '</button><button class="d" data-a="trash">🗑 លុប</button></div>'); }
+      else if (sel.length > 1) prev = '<div class="empty">បានជ្រើស ' + sel.length + ' ធាតុ</div><div class="lx-acts" style="justify-content:center"><button data-a="move">📁 ផ្លាស់ទី</button><button data-a="cut">✂ កាត់</button><button class="d" data-a="trash">🗑 លុប</button></div>';
+      const chips = '<span data-cr="" class="' + (X.mode === 'folder' && !X.path && !X.q ? 'on' : '') + '">🏠</span><span data-mode="recent" class="' + (X.mode === 'recent' ? 'on' : '') + '">🕘 ថ្មីៗ</span><span data-mode="star" class="' + (X.mode === 'star' ? 'on' : '') + '">★</span>' + F.filter(p => !parent(p)).map(p => '<span data-cr="' + esc(p) + '" class="' + (X.mode === 'folder' && (X.path === p || X.path.startsWith(p + '/')) ? 'on' : '') + '">📁 ' + esc(p) + '</span>').join('') + '<span data-mode="trash" class="' + (X.mode === 'trash' ? 'on' : '') + '">🗑</span>';
+      el.innerHTML = '<div class="lx-addr"><button class="lx-nav" data-nav="back"' + (X.hi > 0 ? '' : ' disabled') + ' title="ថយក្រោយ">←</button><button class="lx-nav" data-nav="fwd"' + (X.hi < X.hist.length - 1 ? '' : ' disabled') + ' title="ទៅមុខ">→</button><button class="lx-nav" data-nav="up"' + (inFolder && X.path ? '' : ' disabled') + ' title="ទៅថតមេ">↑</button><div class="lx-crumb">' + crumbHtml + '</div><input class="lx-q" type="search" placeholder="🔍 ស្វែងរកសៀវភៅ…" value="' + esc(X.q) + '"></div>'
+        + '<div class="lx-cmd"><button class="new" data-c="new">＋ <span class="lb">ថ្មី ▾</span></button><span class="sep"></span>'
+        + '<button data-c="cut"' + (sel.length && X.mode !== 'trash' ? '' : ' disabled') + ' title="កាត់">✂<span class="lb"> កាត់</span></button><button data-c="copy"' + (sel.some(i => i.type === 'book') && X.mode !== 'trash' ? '' : ' disabled') + ' title="ចម្លង">⧉<span class="lb"> ចម្លង</span></button><button data-c="paste"' + (X.clip && inFolder ? '' : ' disabled') + ' title="បិទភ្ជាប់">📋<span class="lb"> បិទភ្ជាប់</span></button>'
+        + '<button data-c="rename"' + (one && X.mode !== 'trash' ? '' : ' disabled') + ' title="ប្ដូរឈ្មោះ">✎<span class="lb"> ប្ដូរឈ្មោះ</span></button><button data-c="trash"' + (sel.length ? '' : ' disabled') + ' title="លុប">🗑<span class="lb"> លុប</span></button><span class="sep"></span>'
+        + '<button data-c="sort">⇅<span class="lb"> តម្រៀប ▾</span></button><button data-c="view">▦<span class="lb"> មើល ▾</span></button><span class="sp"></span>'
+        + (X.mode === 'trash' ? '<button data-c="empty" style="color:#c0342c">🗑<span class="lb"> សម្អាតធុងសំរាម</span></button>' : '') + '<button data-c="search" class="lx-sbtn" title="ស្វែងរក">🔍</button><button data-c="prev" class="' + (X.prev ? 'on' : '') + '" title="ផ្ទាំងមើលជាមុន">◫<span class="lb"> មើលជាមុន</span></button></div>'
+        + (this._lxCanFolders ? '' : '<div class="lx-warn">⚠ ដើម្បីប្រើថតឯកសារ ចំណូលចិត្ត និងធុងសំរាម សូម run <b>supabase/38_book_folders.sql</b> ក្នុង Supabase SQL Editor</div>')
+        + '<div class="lx-chips">' + chips + '</div>'
+        + '<div class="lx-body"><div class="lx-side">' + side + '</div><div class="lx-main" tabindex="0"' + (inFolder ? ' data-drop="' + esc(X.path) + '"' : '') + '>' + main + '</div>' + (X.prev ? '<div class="lx-prev">' + prev + '</div>' : '') + '</div>'
+        + '<div class="lx-status"><span>' + L.length + ' ធាតុ</span>' + (sel.length ? '<span>បានជ្រើស ' + sel.length + '</span>' : '') + (X.clip ? '<span>✂ ' + X.clip.keys.length + ' នៅក្នុងក្ដារតម្បៀតខ្ទាស់</span>' : '') + '</div>'
+        + '<div class="lx-bar' + (sel.length ? ' show' : '') + '">' + (one && one.type === 'book' && X.mode !== 'trash' ? '<button data-a="open"><b>📖</b>អាន</button><button data-a="edit"><b>✏️</b>កែ</button>' : one && one.type === 'folder' ? '<button data-a="open"><b>📂</b>បើក</button>' : '') + (X.mode === 'trash' ? '<button data-a="restore"><b>↩</b>យកមកវិញ</button>' : '<button data-a="move"><b>📁</b>ផ្លាស់ទី</button>') + '<button data-a="trash"><b>🗑</b>លុប</button><button data-a="more"><b>⋯</b>ផ្សេងៗ</button></div>';
+      fit();
+      const q = el.querySelector('.lx-q'); q.addEventListener('input', () => { X.q = q.value; X.sel.clear(); const pos = q.selectionStart; paint(); const q2 = el.querySelector('.lx-q'); if (q2) { q2.focus(); try { q2.setSelectionRange(pos, pos); } catch(e){} } });
+    };
+    // ── events (delegated; the DOM is redrawn on every change) ──
+    el.addEventListener('click', e => {
+      const t = e.target;
+      const nav = t.closest('[data-nav]'); if (nav && !nav.disabled) { if (nav.dataset.nav === 'up') go(parent(X.path)); else { X.hi = Math.max(0, Math.min(X.hist.length - 1, X.hi + (nav.dataset.nav === 'back' ? -1 : 1))); go(X.hist[X.hi], false); } return; }
+      const cr = t.closest('[data-cr]'); if (cr && !t.closest('.it.lx-tile')) { go(cr.dataset.cr); return; }
+      const md = t.closest('[data-mode]'); if (md) { setMode(md.dataset.mode); return; }
+      const so = t.closest('th[data-so]'); if (so) { if (X.sort === so.dataset.so) X.dir = -X.dir; else { X.sort = so.dataset.so; X.dir = 1; } keepOpt(); paint(); return; }
+      const c = t.closest('[data-c]'); if (c && !c.disabled) {
+        const S = selItems(), rc = c.getBoundingClientRect();
+        if (c.dataset.c === 'new') menu(rc.left, rc.bottom + 4, [['📘 សៀវភៅថ្មី', newBook], ['📁 ថតថ្មី', newFolder]]);
+        else if (c.dataset.c === 'cut') cut(S); else if (c.dataset.c === 'copy') copyBooks(S); else if (c.dataset.c === 'paste') paste();
+        else if (c.dataset.c === 'rename' && S[0]) rename(S[0]); else if (c.dataset.c === 'trash') trash(S); else if (c.dataset.c === 'empty') emptyTrash();
+        else if (c.dataset.c === 'sort') menu(rc.left, rc.bottom + 4, [['name', 'ឈ្មោះ'], ['date', 'កាលបរិច្ឆេទកែប្រែ']].map(([k, l]) => [(X.sort === k ? '✓ ' : '　') + l, () => { X.sort = k; keepOpt(); paint(); }]).concat(['-', [(X.dir > 0 ? '✓ ' : '　') + 'ឡើង (ក → អ, ចាស់ → ថ្មី)', () => { X.dir = 1; keepOpt(); paint(); }], [(X.dir < 0 ? '✓ ' : '　') + 'ចុះ', () => { X.dir = -1; keepOpt(); paint(); }]]));
+        else if (c.dataset.c === 'view') menu(rc.left, rc.bottom + 4, [['large', '▦ រូបតំណាងធំ'], ['medium', '▤ រូបតំណាងមធ្យម'], ['list', '☰ បញ្ជីលម្អិត']].map(([k, l]) => [(X.view === k ? '✓ ' : '　') + l, () => { X.view = k; keepOpt(); paint(); }]));
+        else if (c.dataset.c === 'prev') { X.prev = !X.prev; X.prevSet = 1; keepOpt(); paint(); }
+        else if (c.dataset.c === 'search') { const v = window.prompt('ស្វែងរកសៀវភៅ', X.q); if (v != null) { X.q = v; X.sel.clear(); paint(); } }
+        return;
+      }
+      const a = t.closest('[data-a]'); if (a) {
+        const S = selItems(), one = S[0];
+        ({ open: () => open(one), edit: () => one && this.libEditBook(one.b.id), words: () => one && this.libWordTable(one.b.id), move: () => pickFolder('ផ្លាស់ទី ' + S.length + ' ធាតុទៅ', d => moveTo(S, d)), star: () => star(one), trash: () => trash(S), rename: () => rename(one), restore: () => restore(S), cut: () => cut(S),
+          more: () => { const rc = a.getBoundingClientRect(); if (one) itemMenu(one, rc.left, rc.top - 280); } }[a.dataset.a] || (() => {}))();
+        return;
+      }
+      const it = t.closest('.it[data-k]');
+      if (!it) { if (t.closest('.lx-main') && !t.closest('.lx-ttl')) { X.sel.clear(); paint(); } return; }
+      const k = it.dataset.k;
+      if (e.ctrlKey || e.metaKey) { if (X.sel.has(k)) X.sel.delete(k); else X.sel.add(k); }
+      else if (e.shiftKey && X.anchor) { const keys = curItems().map(keyOf), i0 = keys.indexOf(X.anchor), i1 = keys.indexOf(k); if (i0 >= 0 && i1 >= 0) X.sel = new Set(keys.slice(Math.min(i0, i1), Math.max(i0, i1) + 1)); }
+      else {
+        // touch: a second tap on the same item opens it
+        const now = Date.now(); if (e.pointerType !== 'mouse' && lastTap.k === k && now - lastTap.t < 1200 && X.sel.has(k) && X.sel.size === 1) { lastTap = { k: '', t: 0 }; open(findItem(k)); return; }
+        lastTap = { k, t: now }; X.sel = new Set([k]);
+      }
+      X.anchor = k; paint();
+    });
+    el.addEventListener('dblclick', e => { const it = e.target.closest('.it[data-k]'); if (it) open(findItem(it.dataset.k)); });
+    el.addEventListener('contextmenu', e => { const it = e.target.closest('.it[data-k]'); if (!it) { if (e.target.closest('.lx-main') && X.mode === 'folder' && !X.q) { e.preventDefault(); menu(e.clientX, e.clientY, [['📘 សៀវភៅថ្មី', newBook], ['📁 ថតថ្មី', newFolder]].concat(X.clip ? [['📋 បិទភ្ជាប់', paste]] : [])); } return; } e.preventDefault(); itemMenu(findItem(it.dataset.k), e.clientX, e.clientY); });
+    // long press = menu (touch)
+    el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') return; const it = e.target.closest('.it[data-k]'); if (!it) return; const x = e.clientX, y = e.clientY; clearTimeout(press); press = setTimeout(() => { press = null; itemMenu(findItem(it.dataset.k), x, y); }, 560); });
+    ['pointerup', 'pointercancel', 'pointermove'].forEach(ev => el.addEventListener(ev, e => { if (press && (ev !== 'pointermove' || Math.abs(e.movementX) + Math.abs(e.movementY) > 6)) { clearTimeout(press); press = null; } }));
+    // drag & drop into folders (tiles, the tree, the breadcrumb, the open folder)
+    let dragKeys = null;
+    el.addEventListener('dragstart', e => { const it = e.target.closest('.it[data-k]'); if (!it) return; const k = it.dataset.k; if (!X.sel.has(k)) { X.sel = new Set([k]); } dragKeys = [...X.sel]; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', k); } catch(x){} });
+    const dropTarget = t => { const tile = t.closest('.it[data-k^="f:"]'); if (tile) return { el: tile, path: tile.dataset.k.slice(2) }; const d = t.closest('[data-drop]'); if (d) return { el: d, path: d.dataset.drop }; const c = t.closest('.lx-crumb [data-cr]'); if (c) return { el: c, path: c.dataset.cr }; return null; };
+    el.addEventListener('dragover', e => { if (!dragKeys) return; const d = dropTarget(e.target); el.querySelectorAll('.dz').forEach(x => x.classList.remove('dz')); if (!d || dragKeys.includes('f:' + d.path)) return; e.preventDefault(); if (d.el.classList.contains('lx-main')) return; d.el.classList.add('dz'); });
+    el.addEventListener('dragleave', e => { const d = e.target.closest && e.target.closest('.dz'); if (d && !d.contains(e.relatedTarget)) d.classList.remove('dz'); });
+    el.addEventListener('drop', async e => { if (!dragKeys) return; e.preventDefault(); const d = dropTarget(e.target); const keys = dragKeys; dragKeys = null; el.querySelectorAll('.dz').forEach(x => x.classList.remove('dz')); if (!d) return; await moveTo(keys.map(findItem).filter(Boolean).filter(it => !(it.type === 'folder' && (d.path === it.path || d.path.startsWith(it.path + '/')))), d.path); });
+    el.addEventListener('dragend', () => { dragKeys = null; el.querySelectorAll('.dz').forEach(x => x.classList.remove('dz')); });
+    // keyboard
+    el.addEventListener('keydown', e => {
+      if (e.target.closest('input')) return; const S = selItems();
+      if (e.key === 'Delete' && S.length) { e.preventDefault(); trash(S); }
+      else if (e.key === 'F2' && S.length === 1) { e.preventDefault(); rename(S[0]); }
+      else if (e.key === 'Enter' && S.length === 1) { e.preventDefault(); open(S[0]); }
+      else if (e.key === 'Backspace' && X.mode === 'folder' && X.path) { e.preventDefault(); go(parent(X.path)); }
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') { e.preventDefault(); X.sel = new Set(curItems().map(keyOf)); paint(); }
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'x' && S.length) { e.preventDefault(); cut(S); }
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && S.length) { e.preventDefault(); copyBooks(S); }
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v' && X.clip) { e.preventDefault(); paste(); }
+    });
+    // keep the selection only for items that still exist
+    X.sel = new Set([...X.sel].filter(k => findItem(k) && (k.startsWith('b:') || allFolders().includes(k.slice(2)))));
+    if (X.path && !allFolders().includes(X.path)) X.path = '';
+    paint();
+  }
   // ── អានសៀវភៅ (everyone): browse book covers, then read (read-only) ──
   goReadBooks(){ this.setState({ screen: 'readbooks', rbMode: 'list', libBookId: null }, () => this.loadReadBooks()); }
   // The shelf used to download EVERY book in full — the whole HTML, pictures and
@@ -13963,7 +14242,7 @@ class Component extends DCLogic {
     this.setState({ rbBusy: true });
     const { rows } = await Backend.listBooks();
     const covers = this._coverMap();
-    const list = (Array.isArray(rows) ? rows : []).map(b => {
+    const list = (Array.isArray(rows) ? rows : []).filter(b => !b.trashed_at).map(b => {
       const hit = covers[b.id];
       return { id: b.id, title: b.title, updated_at: b.updated_at, locked: !!b.locked,
         cover: (hit && hit.v === b.updated_at) ? hit.c : '' };
@@ -15909,9 +16188,11 @@ class Component extends DCLogic {
     if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
     // save WITHOUT leaving the editor. We track the book id locally (not via
     // setState) because a re-render would wipe the imperative editor overlay.
+    const isNew = !this._edBookId;
     const { id, error } = await Backend.saveBook({ id: this._edBookId, title, content });
     if (btn) { btn.disabled = false; btn.style.opacity = ''; }
     if (error) { showErr(error); return false; }
+    if (isNew && id && this._libNewFolder) { Backend.updateBook(id, { folder: this._libNewFolder }); }
     this._edBookId = id || this._edBookId;   // remember new id so later saves update the same book
     this._edDirty = false;
     // the shelf's cached copy and cover are now stale
@@ -19557,7 +19838,7 @@ class Component extends DCLogic {
       const bg = document.createElement('div'); bg.className = 'ewd-eqbg';
       const d = document.createElement('div'); d.className = 'ewd-eqd'; d.style.width = 'min(480px,100%)'; bg.appendChild(d);
       const files = {}; let fseq = 0;
-      const books = (this.state.libBooks || this.state.rbBooks || []).filter(x => x && x.id);
+      const books = (this.state.libBooks || this.state.rbBooks || []).filter(x => x && x.id && !x.trashed_at);
       const opts = () => '<option value="now">' + srcEsc(tr('សៀវភៅនេះ (ឥឡូវ)')) + '</option><option value="open">' + srcEsc(tr('សៀវភៅនេះ (ពេលបើក)')) + '</option>'
         + (books.length ? '<optgroup label="' + srcEsc(tr('សៀវភៅក្នុងបណ្ណាល័យ')) + '">' + books.map(x => '<option value="b:' + srcEsc(x.id) + '">' + srcEsc(x.title || x.id) + '</option>').join('') + '</optgroup>' : '')
         + Object.entries(files).map(([k, v]) => '<option value="' + k + '">📄 ' + srcEsc(v.name) + '</option>').join('') + '<option value="pick">📂 ' + srcEsc(tr('ឯកសារពីឧបករណ៍…')) + '</option>';
@@ -20033,7 +20314,7 @@ class Component extends DCLogic {
     const openBook = id => { if (id === this._edBookId) { closeBs(); return; } leaveTo(() => this.libEditBook(id)); };
     let bs = null, bsView = 'home', books = null, recentTab = 'recent';
     const closeBs = () => { if (bs) bs.remove(); bs = null; };
-    const loadBooks = async () => { try { const { rows } = await Backend.listBooks(); books = (rows || []).slice().sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || ''))); } catch(e) { books = []; } if (bs) paint(); };
+    const loadBooks = async () => { try { const { rows } = await Backend.listBooks(); books = (rows || []).filter(b => !b.trashed_at).slice().sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || ''))); } catch(e) { books = []; } if (bs) paint(); };
     const docRow = b => {
       const d = document.createElement('div'); d.className = 'ewd-doc';
       const pinned = pins().includes(b.id);
