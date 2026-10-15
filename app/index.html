@@ -20824,6 +20824,26 @@ class Component extends DCLogic {
       const r1 = document.createRange(); r1.setStartAfter(zw); r1.collapse(true); s.removeAllRanges(); s.addRange(r1); this._saveLibSel();
       this._edDirty = true; this._edTabsLayout(pg); this._edScheduleReflow(this._edPages.indexOf(pg));
     });
+    // Backspace at the very start of a sheet / Delete at the very end: delete across the page boundary (as in Word)
+    stage.addEventListener('keydown', e => {
+      if ((e.key !== 'Backspace' && e.key !== 'Delete') || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || e.isComposing) return;
+      const pg = e.target; if (!pg || !pg.classList || !pg.classList.contains('lib-epage')) return;   // not inside a text box
+      const s = window.getSelection(); if (!s.rangeCount || !s.isCollapsed) return;
+      const rg = s.getRangeAt(0); if (!pg.contains(rg.startContainer)) return;
+      const i = this._edPages.indexOf(pg); if (i < 0) return;
+      let top = rg.startContainer; while (top && top.parentNode !== pg) top = top.parentNode;   // the caret's block on the sheet
+      const real = [...pg.childNodes].filter(n => !(n.nodeType === 3 && !n.nodeValue.trim()));
+      const empty = r2 => !r2.toString().replace(/[\s\u200B]/g, '') && !r2.cloneContents().querySelector('img,hr,table,.lib-shape,.tab,model-viewer,svg,video,iframe');
+      if (e.key === 'Backspace') {
+        if (i === 0 || (top && top !== real[0])) return;
+        const pre = document.createRange(); pre.setStart(pg, 0); pre.setEnd(rg.startContainer, rg.startOffset); if (!empty(pre)) return;
+        e.preventDefault(); this._edJoinSheets(i, 'back');
+      } else {
+        if (i >= this._edPages.length - 1 || (top && top !== real[real.length - 1])) return;
+        const post = document.createRange(); post.setStart(rg.startContainer, rg.startOffset); post.setEnd(pg, pg.childNodes.length); if (!empty(post)) return;
+        e.preventDefault(); this._edJoinSheets(i + 1, 'fwd');
+      }
+    });
     // turning the tablet / resizing the window refits the sheet to the new width (one handler, replaced on each open)
     if (this._edResizeH) window.removeEventListener('resize', this._edResizeH);
     this._edResizeH = () => { if (!hRul.isConnected) return; ribArrows(); clearTimeout(this._edResizeT); this._edResizeT = setTimeout(() => { try { refit(); } catch(e){} }, 120); };
@@ -21123,6 +21143,47 @@ class Component extends DCLogic {
       const rg = s.getRangeAt(0); let rc = rg.getBoundingClientRect(); if (!rc.height) { const n = rg.startContainer; const el = n.nodeType === 1 ? n : n.parentElement; if (!el) return; rc = el.getBoundingClientRect(); }
       const c = cv.getBoundingClientRect(); if (rc.top < c.top + 20 || rc.bottom > c.bottom - 20) cv.scrollBy({ top: rc.top - c.top - c.height / 3, behavior: 'smooth' }); } catch(e){}
   }
+  // Join sheet i onto sheet i-1 (the page boundary is deleted): an empty line at the boundary is what goes first; when
+  // the earlier sheet has room the text simply flows back up; when it is full, the two paragraphs are joined (Word's
+  // Backspace / Delete). Then the sheets re-flow forward from the earlier one, so the gap at the bottom of a page closes.
+  _edJoinSheets(i, mode){
+    const pages = this._edPages, A = pages && pages[i - 1], B = pages && pages[i]; if (!A || !B) return;
+    const s = window.getSelection(); let cn = null, co = 0;
+    if (s && s.rangeCount) { const r0 = s.getRangeAt(0); cn = r0.startContainer; co = r0.startOffset; }
+    const blank = el => !!el && (el.nodeType === 3 ? !el.nodeValue.replace(/[\s\u200B]/g, '') : el.nodeType === 1 && !/^(IMG|HR|TABLE)$/.test(el.tagName) && !(el.textContent || '').replace(/[\s\u200B]/g, '') && !el.querySelector('img,hr,table,.lib-shape,.tab,model-viewer,svg,video,iframe'));
+    const endOf = el => { if (!el) return [A, A.childNodes.length]; if (el.nodeType === 3) return [el, el.nodeValue.length]; const L = el.lastChild; if (L && L.nodeName === 'BR') return [el, el.childNodes.length - 1]; return [el, el.childNodes.length]; };
+    while (A.lastChild && A.lastChild.nodeType === 3 && !A.lastChild.nodeValue.trim()) A.lastChild.remove();
+    while (B.firstChild && B.firstChild.nodeType === 3 && !B.firstChild.nodeValue.trim()) B.firstChild.remove();
+    const aLast = A.lastChild, bFirst = B.firstChild;
+    const free = () => { const padB = parseFloat(getComputedStyle(A).paddingBottom) || 0, le = A.lastElementChild; return (this._edA4H - padB) - (le ? le.offsetTop + le.offsetHeight : 0); };
+    const JOIN = /^(P|H[1-6]|DIV|BLOCKQUOTE)$/;
+    if (mode === 'back' ? blank(bFirst) : blank(aLast)) {          // the empty line the caret is on is deleted
+      if (mode === 'back') { bFirst.remove(); [cn, co] = endOf(A.lastChild); }
+      else { aLast.remove(); const f = B.firstChild; if (f) { cn = f.nodeType === 3 ? f : f; co = 0; } else [cn, co] = endOf(A.lastChild); }
+    } else if (mode === 'back' ? blank(aLast) : blank(bFirst)) {   // an empty line on the other side of the boundary is deleted
+      (mode === 'back' ? aLast : bFirst).remove();
+    } else if (aLast && bFirst && free() < (bFirst.nodeType === 1 ? bFirst.offsetHeight + (parseFloat(getComputedStyle(bFirst).marginTop) || 0) + (parseFloat(getComputedStyle(bFirst).marginBottom) || 0) : 30) && aLast.nodeType === 1 && bFirst.nodeType === 1 && JOIN.test(aLast.tagName) && JOIN.test(bFirst.tagName)
+      && !aLast.matches('.book-toc,.lib-shape,[contenteditable="false"]') && !bFirst.matches('.book-toc,.lib-shape,[contenteditable="false"]')) {
+      while (aLast.lastChild && aLast.lastChild.nodeName === 'BR') aLast.lastChild.remove();     // no room: join the two paragraphs
+      const first = bFirst.firstChild; while (bFirst.firstChild) aLast.appendChild(bFirst.firstChild); bFirst.remove();
+      if (first) { if (first.nodeType === 3) { cn = first; co = 0; } else { cn = aLast; co = [...aLast.childNodes].indexOf(first); } }
+      else [cn, co] = endOf(aLast);
+      if (!aLast.childNodes.length) aLast.innerHTML = '<br>';
+    }
+    while (B.firstChild) A.appendChild(B.firstChild);   // the rest of the later sheet flows up
+    if (!A.childNodes.length) A.innerHTML = '<p><br></p>';
+    if (this._edRO) try { this._edRO.unobserve(B); } catch(e){}
+    B.remove(); pages.splice(i, 1);
+    this._edDirty = true; this._edCur = i - 1;
+    try { A.focus({ preventScroll: true }); } catch(e){}
+    if (cn && A.contains(cn)) { try { const r1 = document.createRange(); r1.setStart(cn, Math.min(co, cn.nodeType === 3 ? cn.nodeValue.length : cn.childNodes.length)); r1.collapse(true); s.removeAllRanges(); s.addRange(r1); } catch(e){} }
+    this._edReflow(i - 1, false);
+    this._edApplyView();
+    this._edTabsLayout(A);
+    if (pages.some(pg => pg.querySelector('.fn-ref'))) setTimeout(() => this._edFnLayout(), 0);
+    this._saveLibSel();
+    setTimeout(() => this._edCaretIntoView(), 0);
+  }
   _edIsEmpty(p){ return !(p.textContent || '').trim() && !p.querySelector('img,hr'); }
   // Debounced: several requests inside the window are merged (earliest sheet wins, any "full" wins).
   _edScheduleReflow(fromIdx, full){
@@ -21162,7 +21223,7 @@ class Component extends DCLogic {
         const kids = p.childNodes; let k = -1;
         for (let j = 1; j < kids.length; j++) { const c = kids[j]; if (c.nodeType === 1 && c.offsetTop >= limit) { k = j; break; } }
         let next = pages[i + 1];
-        const ensureNext = () => { if (!next) { next = this._edMakePage(''); next.style.display = 'block'; next.style.transform = 'none'; temp.push(next); } return next; };
+        const ensureNext = () => { if (!next) { next = this._edMakePage(''); next.innerHTML = ''; next.style.display = 'block'; next.style.transform = 'none'; temp.push(next); } return next; };
         if (k > 0) {
           const frag = document.createDocumentFragment();
           while (p.childNodes.length > k) frag.insertBefore(p.lastChild, frag.firstChild);
