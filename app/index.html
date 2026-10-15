@@ -15153,7 +15153,7 @@ class Component extends DCLogic {
       ov.style.setProperty('--rd-rt', furiSt.color);
       furiPop.querySelectorAll('.rd-clr button').forEach(b => b.classList.toggle('on', b.dataset.c.toLowerCase() === furiSt.color.toLowerCase()));
     };
-    const applyFuri = () => { paintFuri(); pages.forEach(furiPage); renderHl(); applyView(); };
+    const applyFuri = () => { paintFuri(); pages.forEach(furiPage); pages.forEach(p => { if (p.querySelector('.tab')) this._tabsLayout(p, PAD); }); renderHl(); applyView(); };
     furiPop.querySelectorAll('.rd-tog').forEach(b => b.addEventListener('click', () => { furiSt = { ...furiSt, [b.dataset.k]: !furiSt[b.dataset.k] }; this._rdSetFuri(furiSt); applyFuri(); }));
     furiPop.querySelectorAll('.rd-fz button').forEach(b => b.addEventListener('click', () => { furiSt = { ...furiSt, size: b.dataset.z }; this._rdSetFuri(furiSt); applyFuri(); }));
     furiPop.querySelectorAll('.rd-clr button').forEach(b => b.addEventListener('click', () => { furiSt = { ...furiSt, color: b.dataset.c }; this._rdSetFuri(furiSt); paintFuri(); }));
@@ -15209,7 +15209,7 @@ class Component extends DCLogic {
     if (!pages.length) { const p = mkPage(); p.innerHTML = '<p style="opacity:0.5;">(សៀវភៅទទេ)</p>'; pages = [p]; }
     // wrap tap-to-translate words lazily — only the page(s) actually shown, so
     // opening a long book is instant instead of pre-scanning every page up front
-    const wrapOne = p => { if (p && !p._bwWrapped) { p._bwWrapped = true; this._wrapBookWords(p); if (furiSt.on) furiPage(p); renderHl(); } };
+    const wrapOne = p => { if (p && !p._bwWrapped) { p._bwWrapped = true; this._wrapBookWords(p); if (furiSt.on) furiPage(p); if (p.querySelector('.tab')) this._tabsLayout(p, PAD); renderHl(); } };
     // fix Google-Drive share links so the pictures actually load
     pages.forEach(p => p.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; }));
     pages.forEach(p => p.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable')));   // text boxes / notes are read-only here
@@ -15233,6 +15233,7 @@ class Component extends DCLogic {
       const id = decodeURIComponent(a.getAttribute('href').slice(1)); const pi = id === 'book-top' ? 0 : pages.findIndex(p => p.querySelector('[id="' + CSS.escape(id) + '"]'));
       if (pi >= 0) goPage(pi);
     }, true);
+    pages.forEach(p => { if (p.querySelector('.tab')) this._tabsLayout(p, PAD); });
     const total = pages.length;
     jin.max = String(total); jtot.textContent = '/ ' + total;
     // reopen where the reader left off last time
@@ -16150,7 +16151,13 @@ class Component extends DCLogic {
   _edTabsStr(list){ return list.slice().sort((a, c) => a.x - c.x).map(s => s.k + ':' + Math.round(s.x * 10) / 10 + (s.l ? ':' + s.l : '')).join(','); }
   _edTabsLayout(pg){
     pg = pg || this._edCurPage(); if (!pg) return;
-    const z = (this._edFitZoom || 1) * (this._edScale || 1), PAD = this._edPAD || 64, pr = pg.getBoundingClientRect(), DEF = 48;
+    this._tabsLayout(pg, this._edPAD || 64);
+  }
+  // works out every tab's width on one page (editor sheet, reader page or PDF page). The reader and the PDF run it again
+  // after tap-to-translate / furigana have changed the text's width, so a "title ······ 12" line never wraps there.
+  _tabsLayout(pg, PAD){
+    if (!pg || !pg.isConnected) return;
+    const pr = pg.getBoundingClientRect(), z = (pr.width / (pg.offsetWidth || 1)) || 1, DEF = 48;
     const BLK = 'p,h1,h2,h3,li,td,th,blockquote,div:not(.lib-epage)', blkOf = t => t.closest(BLK) || pg;
     // bar tabs: a thin vertical line at the stop, drawn as the paragraph's background
     pg.querySelectorAll('[data-tabs]').forEach(b => {
@@ -22034,6 +22041,7 @@ class Component extends DCLogic {
       if (!pages.length) { const p = mkPage(); p.innerHTML = '<p style="opacity:0.5;">(សៀវភៅទទេ)</p>'; pages = [p]; }
       pages.forEach(p => p.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; }));
     pages.forEach(p => p.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable')));   // text boxes / notes are read-only here
+      pages.forEach(p => { if (p.querySelector('.tab')) this._tabsLayout(p, PAD); });   // tab widths for this page's own text (furigana, no JP spaces)
       const pnAnchors = pages.map(p => {
         const mark = p.querySelector('.pgnum-mark[data-pn]');
         const v = mark ? (mark.getAttribute('data-pn') || '').trim() : '';
