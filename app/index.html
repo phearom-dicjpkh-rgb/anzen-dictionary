@@ -871,6 +871,7 @@ textarea.input { min-height: 90px; resize: vertical; }
 }
 </style>
   <style>
+    @media (pointer:coarse){ *,*::before,*::after{ -webkit-backdrop-filter:none !important; backdrop-filter:none !important; } }
     html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:#e5e3e0;
       /* Text size is controlled only by the in-app setting, so stop the browser
          from scaling it: no double-tap zoom, no iOS text inflation. */
@@ -12360,7 +12361,7 @@ class Component extends DCLogic {
       else if (e.key === 'ArrowRight') { this.vrPopStep(1); e.preventDefault(); }
       else if (e.key === 'Escape') { this.setState({ vrDetail: null }); e.preventDefault(); }
     });
-    window.addEventListener('resize', () => { const w = this._vrWide(); if (w !== this.state.vrWide) this.setState({ vrWide: w }); });
+    window.addEventListener('resize', () => { clearTimeout(this._vrWideT); this._vrWideT = setTimeout(() => { const w = this._vrWide(); if (w !== this.state.vrWide) this.setState({ vrWide: w }); }, 250); });
     window.addEventListener('hashchange', () => { if (/[#&](qr|t)=/.test(location.hash)) this.checkQrLogin(); });
     this.primeVoices();
     this.startUsageTracking();
@@ -15177,7 +15178,7 @@ class Component extends DCLogic {
       ov.style.setProperty('--rd-rt', furiSt.color);
       furiPop.querySelectorAll('.rd-clr button').forEach(b => b.classList.toggle('on', b.dataset.c.toLowerCase() === furiSt.color.toLowerCase()));
     };
-    const applyFuri = () => { paintFuri(); pages.forEach(furiPage); pages.forEach(p => { if (p.querySelector('.tab')) this._tabsLayout(p, PAD); }); renderHl(); applyView(); };
+    const applyFuri = () => { paintFuri(); pages.forEach(furiPage); pages.forEach(p => { if (p.querySelector('.tab')) this._tabsLayout(p, PAD); }); renderHl(); hDirty = true; applyView(); };
     furiPop.querySelectorAll('.rd-tog').forEach(b => b.addEventListener('click', () => { furiSt = { ...furiSt, [b.dataset.k]: !furiSt[b.dataset.k] }; this._rdSetFuri(furiSt); applyFuri(); }));
     furiPop.querySelectorAll('.rd-fz button').forEach(b => b.addEventListener('click', () => { furiSt = { ...furiSt, size: b.dataset.z }; this._rdSetFuri(furiSt); applyFuri(); }));
     furiPop.querySelectorAll('.rd-clr button').forEach(b => b.addEventListener('click', () => { furiSt = { ...furiSt, color: b.dataset.c }; this._rdSetFuri(furiSt); paintFuri(); }));
@@ -15188,6 +15189,7 @@ class Component extends DCLogic {
     const area = document.createElement('div'); area.className = 'rd-area';
     const stage = document.createElement('div');
     stage.style.cssText = 'margin:auto;flex:none;position:relative;';
+    const pgBox = document.createElement('div'); pgBox.style.cssText = 'position:absolute;left:0;top:0;transform-origin:0 0;'; stage.appendChild(pgBox);
     this._rd = { ov, row };
     area.appendChild(stage); bookWrap.appendChild(area); row.appendChild(bookWrap); ov.appendChild(row);
     // — paginate the content into A4 sheets (absolutely stacked; only one shown) —
@@ -15199,7 +15201,7 @@ class Component extends DCLogic {
     // is never cut off / lost — that page just grows a little
     const mkPage = () => { const p = document.createElement('div'); p.className = 'a4page report';
       p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-family:var(--font-jp),system-ui,sans-serif;letter-spacing:normal;font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;`;
-      stage.appendChild(p); return p; };
+      pgBox.appendChild(p); return p; };
     let page = mkPage();
     const blocks = [...src.childNodes].filter(n => n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim()));
     const isBrk = n => n.nodeType === 1 && n.classList && n.classList.contains('pgbrk');
@@ -15267,15 +15269,21 @@ class Component extends DCLogic {
     const resetScroll = () => { area.scrollTop = 0; area.scrollLeft = 0; };
     // every sheet is shown, one under the other with a grey gap, so the reader scrolls smoothly from page to page;
     // "cur" is the page in view (read from the scroll position). A zoom keeps the same spot of the same page on screen.
-    let tops = [], lastZ = 0;
+    let tops = [], lastZ = 0, topsU = [], totalU = 0, hDirty = true;   // tops: scaled (for scrolling); topsU: unscaled
     const layout = () => {
-      const z = fitZoom * scale, gap = 22 * z;
+      const z = fitZoom * scale, gap = 22;
       let keep = null;
       if (lastZ && lastZ !== z && tops.length) keep = { i: cur, rel: (area.scrollTop - stage.offsetTop - tops[cur]) / lastZ };
-      pages.forEach(p => { p.style.display = 'block'; p.style.transform = 'scale(' + z + ')'; });
-      const hs = pages.map(p => p.offsetHeight || A4H); let y = 0; tops = [];
-      pages.forEach((p, i) => { tops.push(y); p.style.top = y + 'px'; y += hs[i] * z + gap; });
-      stage.style.width = (A4W * z) + 'px'; stage.style.height = Math.max(0, y - gap) + 'px';
+      if (hDirty) {   // page heights only change when the content does (furigana, pictures), never with the zoom
+        hDirty = false;
+        pages.forEach(p => { if (p.style.display !== 'block') p.style.display = 'block'; });
+        const hs = pages.map(p => p.offsetHeight || A4H); let y = 0; topsU = [];
+        pages.forEach((p, i) => { topsU.push(y); p.style.top = y + 'px'; y += hs[i] + gap; });
+        totalU = Math.max(0, y - gap);
+      }
+      pgBox.style.width = A4W + 'px'; pgBox.style.transform = 'scale(' + z + ')';
+      tops = topsU.map(t => t * z);
+      stage.style.width = (A4W * z) + 'px'; stage.style.height = (totalU * z) + 'px';
       if (keep) area.scrollTop = stage.offsetTop + tops[keep.i] + keep.rel * z;
       lastZ = z;
     };
@@ -15302,7 +15310,7 @@ class Component extends DCLogic {
       if (area.scrollTop + area.clientHeight >= area.scrollHeight - 2) i = total - 1;
       if (i !== cur) { cur = i; paintCur(); } }, 60); }, { passive: true });
     // a page that grows (pictures loading, readings shown) pushes the ones below it down
-    if (window.ResizeObserver) { let roT = 0; const pro = new ResizeObserver(() => { clearTimeout(roT); roT = setTimeout(() => { if (!document.body.contains(ov)) { pro.disconnect(); return; } layout(); }, 60); }); pages.forEach(p => pro.observe(p)); }
+    if (window.ResizeObserver) { let roT = 0; const pro = new ResizeObserver(() => { clearTimeout(roT); roT = setTimeout(() => { if (!document.body.contains(ov)) { pro.disconnect(); return; } hDirty = true; layout(); }, 60); }); pages.forEach(p => pro.observe(p)); }
     // tap-to-translate words are wrapped as a page comes near the screen
     if (window.IntersectionObserver) { const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) queueWrap(e.target); }), { root: area, rootMargin: '600px 0px' }); pages.forEach(p => io.observe(p)); }
     // prev / next — fixed on screen, do NOT scroll with the paper
@@ -15463,7 +15471,7 @@ class Component extends DCLogic {
       if (ah > 0 && aw > 0) fitZoom = Math.max(0.15, fitWidth ? aw / A4W : Math.min(ah / A4H, aw / A4W));
       applyView();
     };
-    const onResize = () => fit();
+    let rzF = 0; const onResize = () => { if (rzF) cancelAnimationFrame(rzF); rzF = requestAnimationFrame(() => { rzF = 0; fit(); }); };
     window.addEventListener('resize', onResize);
     // pinch zooms toward the point between the fingers (keep that spot in place)
     this._attachPinchZoom(area, () => scale, (s, cx, cy) => {
@@ -15478,7 +15486,7 @@ class Component extends DCLogic {
     let lastBox = '';
     if (window.ResizeObserver) {
       if (this._rdRO) this._rdRO.disconnect();
-      this._rdRO = new ResizeObserver(() => { const k = area.clientWidth + 'x' + area.clientHeight; if (k !== lastBox) { lastBox = k; fit(); } });
+      this._rdRO = new ResizeObserver(() => { const k = area.clientWidth + 'x' + area.clientHeight; if (k !== lastBox) { lastBox = k; onResize(); } });
       this._rdRO.observe(area);
     }
     // — highlighter: select text → pick a colour (kept per book on this device). Uses the browser's
