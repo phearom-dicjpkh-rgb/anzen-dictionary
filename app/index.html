@@ -15222,19 +15222,31 @@ class Component extends DCLogic {
     area.addEventListener('click', e => {   // in-book links (Insert › Link › Place in this book)
       const a = e.target.closest && e.target.closest('a[href^="#"]'); if (!a) return; e.preventDefault(); e.stopPropagation();
       const id = decodeURIComponent(a.getAttribute('href').slice(1)); const pi = id === 'book-top' ? 0 : pages.findIndex(p => p.querySelector('[id="' + CSS.escape(id) + '"]'));
-      if (pi >= 0) { cur = pi; applyView(); resetScroll(); }
+      if (pi >= 0) goPage(pi);
     }, true);
     const total = pages.length;
     jin.max = String(total); jtot.textContent = '/ ' + total;
     // reopen where the reader left off last time
     let cur = Math.max(0, Math.min(total - 1, this._getLastReadPage(bookId))), fitZoom = 1, scale = 1;   // scale 1..5 = 100%..500%
     const resetScroll = () => { area.scrollTop = 0; area.scrollLeft = 0; };
-    const applyView = () => {
-      const z = fitZoom * scale;
-      wrapOne(pages[cur]); wrapOne(pages[cur + 1]);   // wrap the shown page + look one ahead
-      pages.forEach((p, i) => { const show = i === cur; p.style.display = show ? 'block' : 'none'; if (show) p.style.transform = `scale(${z})`; });
-      const ph = pages[cur] ? pages[cur].offsetHeight : A4H;   // real height (grows for tall pages)
-      stage.style.width = (A4W * z) + 'px'; stage.style.height = (ph * z) + 'px';
+    // every sheet is shown, one under the other with a grey gap, so the reader scrolls smoothly from page to page;
+    // "cur" is the page in view (read from the scroll position). A zoom keeps the same spot of the same page on screen.
+    let tops = [], lastZ = 0;
+    const layout = () => {
+      const z = fitZoom * scale, gap = 22 * z;
+      let keep = null;
+      if (lastZ && lastZ !== z && tops.length) keep = { i: cur, rel: (area.scrollTop - stage.offsetTop - tops[cur]) / lastZ };
+      pages.forEach(p => { p.style.display = 'block'; p.style.transform = 'scale(' + z + ')'; });
+      const hs = pages.map(p => p.offsetHeight || A4H); let y = 0; tops = [];
+      pages.forEach((p, i) => { tops.push(y); p.style.top = y + 'px'; y += hs[i] * z + gap; });
+      stage.style.width = (A4W * z) + 'px'; stage.style.height = Math.max(0, y - gap) + 'px';
+      if (keep) area.scrollTop = stage.offsetTop + tops[keep.i] + keep.rel * z;
+      lastZ = z;
+    };
+    const goPage = (i, smooth) => { cur = Math.max(0, Math.min(total - 1, i)); applyView(); area.scrollTo({ top: Math.max(0, stage.offsetTop + (tops[cur] || 0) - 8), behavior: smooth === false ? 'auto' : 'smooth' }); };
+    const applyView = () => { layout(); paintCur(); };
+    const paintCur = () => {
+      wrapOne(pages[cur]); wrapOne(pages[cur + 1]);   // wrap the page in view + look one ahead
       jin.value = cur + 1; zlabel.textContent = Math.round(scale * 100) + '%';
       prevB.style.display = cur === 0 ? 'none' : 'flex';
       nextB.style.display = cur === total - 1 ? 'none' : 'flex';
@@ -15244,11 +15256,21 @@ class Component extends DCLogic {
       zslider.value = String(scale); progBar.style.width = (total > 1 ? (cur + 1) / total * 100 : 100) + '%'; dockPage.textContent = (cur + 1) + ' / ' + total;
       this._setLastReadPage(bookId, cur);
     };
+    // which page is in view: the last one whose top is above 40% of the screen (the last page once scrolled to the end)
+    let scT = 0;
+    area.addEventListener('scroll', () => { if (scT) return; scT = setTimeout(() => { scT = 0;
+      const y = area.scrollTop - stage.offsetTop + area.clientHeight * 0.4; let i = 0; while (i + 1 < tops.length && tops[i + 1] <= y) i++;
+      if (area.scrollTop + area.clientHeight >= area.scrollHeight - 2) i = total - 1;
+      if (i !== cur) { cur = i; paintCur(); } }, 60); }, { passive: true });
+    // a page that grows (pictures loading, readings shown) pushes the ones below it down
+    if (window.ResizeObserver) { let roT = 0; const pro = new ResizeObserver(() => { clearTimeout(roT); roT = setTimeout(() => { if (!document.body.contains(ov)) { pro.disconnect(); return; } layout(); }, 60); }); pages.forEach(p => pro.observe(p)); }
+    // tap-to-translate words are wrapped as a page comes near the screen
+    if (window.IntersectionObserver) { const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) wrapOne(e.target); }), { root: area, rootMargin: '600px 0px' }); pages.forEach(p => io.observe(p)); }
     // prev / next — fixed on screen, do NOT scroll with the paper
     const edge = (txt, fn, side) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.className = 'rd-arrow ' + (side === 'left' ? 'l' : 'r');
       b.addEventListener('click', fn); return b; };
-    const prevB = edge('‹', () => { cur = Math.max(0, cur - 1); applyView(); resetScroll(); }, 'left');
-    const nextB = edge('›', () => { cur = Math.min(total - 1, cur + 1); applyView(); resetScroll(); }, 'right');
+    const prevB = edge('‹', () => goPage(cur - 1), 'left');
+    const nextB = edge('›', () => goPage(cur + 1), 'right');
     const prog = document.createElement('div'); prog.className = 'rd-prog'; const progBar = document.createElement('i'); prog.appendChild(progBar);
     bookWrap.appendChild(prog);
     bookWrap.appendChild(prevB); bookWrap.appendChild(nextB);
@@ -15268,7 +15290,7 @@ class Component extends DCLogic {
         go.textContent = '🔖 ' + (named || ('ទំព័រ ' + (START + idx)));
         go.title = named ? ('ទំព័រ ' + (START + idx)) : '';
         go.style.cssText = 'flex:1;min-width:0;text-align:left;background:transparent;border:none;color:#fff;font-size:14px;padding:9px 8px;border-radius:8px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-        go.addEventListener('click', () => { cur = Math.max(0, Math.min(total - 1, idx)); applyView(); resetScroll(); bmPanel.style.display = 'none'; });
+        go.addEventListener('click', () => { goPage(idx); bmPanel.style.display = 'none'; });
         // ✎ — rename in place; Enter or leaving the box saves, Esc cancels
         const ren = document.createElement('button'); ren.type = 'button'; ren.textContent = '✎'; ren.title = 'ប្ដូរឈ្មោះ';
         ren.style.cssText = 'width:28px;height:32px;background:transparent;border:none;color:#fff;opacity:0.55;font-size:13px;cursor:pointer;flex:none;';
@@ -15359,8 +15381,10 @@ class Component extends DCLogic {
       if (!hits.length) return;
       hitAt = (k + hits.length) % hits.length;
       clearMarks();
-      cur = hits[hitAt]; applyView(); resetScroll();
+      cur = hits[hitAt]; applyView();
       markOn(pages[cur]);
+      const mk = pages[cur].querySelector('span.bkfind');   // glide to the word itself, a third of the way down the screen
+      if (mk) { const mr = mk.getBoundingClientRect(), ar = area.getBoundingClientRect(); area.scrollTo({ top: Math.max(0, area.scrollTop + mr.top - ar.top - area.clientHeight / 3), behavior: 'smooth' }); } else goPage(cur);
       fCount.textContent = (hitAt + 1) + ' / ' + hits.length;
     };
     const runFind = () => {
@@ -15386,7 +15410,7 @@ class Component extends DCLogic {
       bmPanel.style.display = 'none'; themePop.style.display = 'none'; themeBtn.classList.remove('on'); furiPop.style.display = 'none';
       if (open) { fInp.focus(); } else { clearMarks(); findQ = ''; hits = []; }
     };
-    const goInput = () => { const v = parseInt(jin.value, 10); if (!isNaN(v)) { cur = Math.max(0, Math.min(total - 1, v - 1)); applyView(); resetScroll(); } };
+    const goInput = () => { const v = parseInt(jin.value, 10); if (!isNaN(v)) goPage(v - 1); };
     jin.addEventListener('change', goInput);
     jin.addEventListener('keydown', e => { if (e.key === 'Enter') { goInput(); jin.blur(); } });
     // fit = 100%: the largest size that shows the whole page with no top/bottom cut
@@ -15545,9 +15569,9 @@ class Component extends DCLogic {
     const spotBtn = icon('spot', () => { spotOn = !spotOn; spotBtn.classList.toggle('on', spotOn); spotEl.style.display = spotOn ? 'block' : 'none'; }, 'ផ្ដោតបន្ទាត់');
     const laserBtn = icon('laser', () => { laserOn = !laserOn; laserBtn.classList.toggle('on', laserOn); if (!laserOn) laserEl.style.display = 'none'; }, 'ចង្អុល');
     const peekBtn = icon('eye', () => { ov.classList.toggle('rd-peek'); peekBtn.classList.toggle('on', ov.classList.contains('rd-peek')); setTimeout(fit, 30); }, 'បង្ហាញ/លាក់របារ');
-    dock.appendChild(icon('prev', () => { cur = Math.max(0, cur - 1); applyView(); resetScroll(); }, 'ទំព័រមុន'));
+    dock.appendChild(icon('prev', () => goPage(cur - 1), 'ទំព័រមុន'));
     dock.appendChild(dockPage);
-    dock.appendChild(icon('next', () => { cur = Math.min(total - 1, cur + 1); applyView(); resetScroll(); }, 'ទំព័របន្ទាប់'));
+    dock.appendChild(icon('next', () => goPage(cur + 1), 'ទំព័របន្ទាប់'));
     dock.appendChild(sep());
     dock.appendChild(icon('minus', () => { scale = Math.max(1, Math.round((scale - 0.5) * 2) / 2); applyView(); }, 'អក្សរតូចជាង'));
     dock.appendChild(icon('plus', () => { scale = Math.min(5, Math.round((scale + 0.5) * 2) / 2); applyView(); }, 'អក្សរធំជាង'));
@@ -15565,7 +15589,7 @@ class Component extends DCLogic {
       themePop.style.display = 'none'; themeBtn.classList.remove('on'); bmPanel.style.display = 'none';
       if (!on) { spotEl.style.display = 'none'; laserEl.style.display = 'none'; spotOn = false; spotBtn.classList.remove('on'); togglePen(false); }
       else { wake(); }
-      fit(); setTimeout(fit, 60); resetScroll();
+      fit(); setTimeout(fit, 60); area.scrollLeft = 0;
     };
     // the spotlight band and the red pointer follow the mouse / finger
     const track = e => {
@@ -15591,14 +15615,17 @@ class Component extends DCLogic {
       if (!document.body.contains(ov)) { document.removeEventListener('keydown', this._rdKey); this._rdKey = null; return; }
       const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      if (e.key === 'ArrowRight' || e.key === 'PageDown') { cur = Math.min(total - 1, cur + 1); applyView(); resetScroll(); e.preventDefault(); }
-      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { cur = Math.max(0, cur - 1); applyView(); resetScroll(); e.preventDefault(); }
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') { goPage(cur + 1); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { goPage(cur - 1); e.preventDefault(); }
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { area.scrollBy({ top: (e.key === 'ArrowDown' ? 1 : -1) * area.clientHeight * 0.25, behavior: 'smooth' }); e.preventDefault(); }
+      else if (e.key === 'Home' || e.key === 'End') { goPage(e.key === 'Home' ? 0 : total - 1); e.preventDefault(); }
       else if (e.key === 'Escape' && teach) { setTeach(false); e.preventDefault(); }
     };
     document.addEventListener('keydown', this._rdKey);
     paintFuri();
     renderHl();
     fit();                 // fit now so the first paint is centred and full-screen
+    goPage(cur, false);    // open at the page read last time
     setTimeout(fit, 60);   // re-fit once the real layout height is known
     setTimeout(fit, 250);
   }
@@ -20492,16 +20519,20 @@ class Component extends DCLogic {
     const pgNumField = document.createElement('input'); pgNumField.type = 'text'; pgNumField.inputMode = 'numeric'; pgNumField.maxLength = 6;
     pgNumField.title = 'លេខទំព័រផ្ទាល់ខ្លួន (ទុកទទេ = រាប់ស្វ័យប្រវត្តិ)';
     pgNumField.style.cssText = 'position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;width:64px;height:26px;text-align:center;font-size:13px;border:1px dashed rgba(0,0,0,0.4);border-radius:6px;background:rgba(255,255,255,0.92);color:#333;';
-    pgNumField.addEventListener('mousedown', e => e.stopPropagation());
-    pgNumField.addEventListener('input', () => { const p = this._edPages[this._edCur]; if (p) { p.dataset.pn = pgNumField.value.trim(); this._edDirty = true; } });
+    // one box per sheet (copies of this one are made in _edPaintPn); each knows its sheet by data-i
+    this._edPnHook = f => {
+      f.addEventListener('mousedown', e => e.stopPropagation());
+      f.addEventListener('input', () => { const p = this._edPages[+f.dataset.i || 0]; if (p) { p.dataset.pn = f.value.trim(); this._edDirty = true; this._edPaintPn(); } });
+    };
+    this._edPnHook(pgNumField);
     stage.appendChild(pgNumField);
-    this._edPnField = pgNumField;
+    this._edPnField = pgNumField; this._edPnFields = [pgNumField]; this._edTops = []; this._edLastZ = 0;
     const edge = (txt, fn, side) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt;
       b.style.cssText = `position:absolute;${side}:${side === 'left' ? 26 : 6}px;top:50%;transform:translateY(-50%);width:40px;height:40px;border:none;border-radius:50%;background:rgba(0,0,0,0.5);color:#fff;font-size:24px;line-height:1;cursor:pointer;z-index:8;display:flex;align-items:center;justify-content:center;`;
       b.addEventListener('mousedown', e => e.preventDefault());
       b.addEventListener('click', fn); return b; };
-    const prevB = edge('‹', () => this._edShowPage(this._edCur - 1), 'left');
-    const nextB = edge('›', () => this._edShowPage(this._edCur + 1), 'right');
+    const prevB = edge('‹', () => this._edShowPage(this._edCur - 1, 'top'), 'left');
+    const nextB = edge('›', () => this._edShowPage(this._edCur + 1, 'top'), 'right');
     canvasWrap.appendChild(prevB); canvasWrap.appendChild(nextB);
     this._edPrevB = prevB; this._edNextB = nextB;
     ov.appendChild(canvasWrap);
@@ -20526,13 +20557,13 @@ class Component extends DCLogic {
     this._edViewHook = () => {
       if (!hRul.isConnected) return;
       const pages = this._edPages || [], pg = pages[this._edCur]; if (!pg) return;
-      const z = (this._edFitZoom || 1) * (this._edScale || 1), sr = this._edStage.getBoundingClientRect();
+      const z = (this._edFitZoom || 1) * (this._edScale || 1), sr = this._edStage.getBoundingClientRect(), pgr = pg.getBoundingClientRect();
       const hr = hRul.getBoundingClientRect(), vr = vRul.getBoundingClientRect();
       const W = this._edA4W * z, H = pg.offsetHeight * z, m = PAD * z;
       const shade = '#c8c6c4';
       hBar.style.left = (sr.left - hr.left) + 'px'; hBar.style.width = W + 'px';
       hBar.style.background = 'linear-gradient(90deg,' + shade + ' 0 ' + m + 'px,transparent ' + m + 'px ' + (W - m) + 'px,' + shade + ' ' + (W - m) + 'px) no-repeat,' + tickBg(z, false) + ' 0 9px/100% 5px repeat-x,#fff';
-      vBar.style.top = (sr.top - vr.top) + 'px'; vBar.style.height = H + 'px';
+      vBar.style.top = (pgr.top - vr.top) + 'px'; vBar.style.height = H + 'px';
       vBar.style.background = 'linear-gradient(180deg,' + shade + ' 0 ' + m + 'px,transparent ' + m + 'px ' + (H - (PAD + 24) * z) + 'px,' + shade + ' ' + (H - (PAD + 24) * z) + 'px) no-repeat,' + tickBg(z, true) + ' 9px 0/5px 100% repeat-y,#fff';
       stPage.textContent = tr('ទំព័រ ' + (this._edCur + 1) + ' នៃ ' + pages.length);
       if (this._edSelImg) { if (this._edSelImg.closest('.lib-epage') !== pg) this._deselectEditorImage(); else this._edImgOverlay(); }
@@ -20540,6 +20571,13 @@ class Component extends DCLogic {
       if (this._edRulerPaint) this._edRulerPaint();
     };
     canvas.addEventListener('scroll', () => { if (this._edViewHook) this._edViewHook(); }, { passive: true });
+    let edScT = 0;
+    canvas.addEventListener('scroll', () => { if (edScT) return; edScT = setTimeout(() => { edScT = 0; this._edScrollSync(); }, 60); }, { passive: true });
+    // the sheet you click into becomes the current one (ruler, page box, status bar)
+    stage.addEventListener('focusin', e => { const pg = e.target && e.target.closest ? e.target.closest('.lib-epage') : null; const i = pg ? this._edPages.indexOf(pg) : -1; if (i >= 0 && i !== this._edCur) { this._edCur = i; this._edCurSync(); } });
+    // a sheet that grows (a picture loading, a block taller than the page) pushes the ones below it down
+    if (this._edRO) this._edRO.disconnect();
+    this._edRO = window.ResizeObserver ? new ResizeObserver(() => { clearTimeout(this._edROT); this._edROT = setTimeout(() => { if (!stage.isConnected) { this._edRO.disconnect(); return; } const t0 = (this._edTops || []).join(','); this._edLayoutPages(); if (t0 !== (this._edTops || []).join(',') && this._edViewHook) this._edViewHook(); }, 80); }) : null;
     // ── working ruler (Word): ▽ first-line indent, △ hanging indent, ▭ left indent (moves both), △ right indent for the caret's
     // paragraph(s); click the ruler to set a tab stop of the kind shown in the corner (or the first-line / hanging indent);
     // drag a tab stop to move it, drag it off the ruler (or double-tap it) to clear it; drag the grey margin edge to change
@@ -20660,7 +20698,7 @@ class Component extends DCLogic {
     this._edReflow(0, true);
     setTimeout(() => this._edFnLayout(), 80);
     refit();
-    this._edShowPage(this._edOpenAtPage || 0);   // e.g. jump to the page just read, when opened via ✏️
+    this._edShowPage(this._edOpenAtPage || 0, 'jump');   // e.g. jump to the page just read, when opened via ✏️
     this._edOpenAtPage = 0;
     setTimeout(refit, 60);
     setTimeout(refit, 250);
@@ -20727,6 +20765,7 @@ class Component extends DCLogic {
     p.querySelectorAll('img').forEach(im => { const s = normalizeImgUrl(im.getAttribute('src') || ''); if (s) im.src = s; this._edHookImage(im); });
     p.querySelectorAll('.lib-shape').forEach(sh => this._edHookShape(sh));
     this._edStage.appendChild(p); this._edPages.push(p);
+    if (this._edRO) this._edRO.observe(p);
     return p;
   }
   // page break (Word's Insert > Page Break / Ctrl+Enter): everything after the caret moves onto a new sheet placed
@@ -20779,44 +20818,88 @@ class Component extends DCLogic {
     pg.remove(); pages.splice(idx, 1);
     this._edShowPage(Math.min(idx, pages.length - 1));
   }
-  // show one sheet (hide the rest), update nav, focus it for writing
-  _edShowPage(idx){
+  // make a sheet the current one, scroll it into view (smoothly) and focus it for writing.
+  // how: 'top' = always bring its top to the top of the screen, 'jump' = the same without the glide,
+  // otherwise only scroll when the sheet is not on screen at all
+  _edShowPage(idx, how){
     if (!this._edPages || !this._edPages.length) return;
     idx = Math.max(0, Math.min(this._edPages.length - 1, idx));
     this._edCur = idx;
     this._edApplyView();
-    const p = this._edPages[idx]; if (p) setTimeout(() => { try { p.focus(); } catch(e){} }, 0);
+    this._edScrollToPage(idx, how);
+    const p = this._edPages[idx]; if (p && !p.contains(document.activeElement)) setTimeout(() => { try { p.focus({ preventScroll: true }); } catch(e){} }, 0);
   }
-  // apply the current page + zoom: only the current sheet is visible & scaled,
-  // and the stage is sized to the scaled sheet so scrolling reaches both edges
+  _edScrollToPage(i, how){
+    const cv = this._edCanvas, st = this._edStage, T = (this._edTops || [])[i], pg = (this._edPages || [])[i]; if (!cv || !st || T == null || !pg) return;
+    const z = (this._edFitZoom || 1) * (this._edScale || 1), y = st.offsetTop + T, ph = pg.offsetHeight * z;
+    if (how !== 'top' && how !== 'jump' && y < cv.scrollTop + cv.clientHeight - 40 && y + ph > cv.scrollTop + 40) return;   // already on screen
+    cv.scrollTo({ top: Math.max(0, y - 10), behavior: how === 'jump' ? 'auto' : 'smooth' });
+  }
+  // after a scroll: the current sheet is the one with the caret while it is still on screen, else the one in view
+  _edScrollSync(){
+    const cv = this._edCanvas, st = this._edStage, pages = this._edPages, tops = this._edTops; if (!cv || !st || !pages || !tops || !tops.length || !cv.isConnected) return;
+    const z = (this._edFitZoom || 1) * (this._edScale || 1);
+    const y = cv.scrollTop - st.offsetTop + cv.clientHeight * 0.4; let i = 0; while (i + 1 < tops.length && tops[i + 1] <= y) i++;
+    if (cv.scrollTop + cv.clientHeight >= cv.scrollHeight - 2) i = pages.length - 1;
+    const ae = document.activeElement, sp = ae && ae.closest ? ae.closest('.lib-epage') : null, si = sp ? pages.indexOf(sp) : -1;
+    if (si >= 0 && tops[si] != null) { const a = st.offsetTop + tops[si], b = a + sp.offsetHeight * z; if (b > cv.scrollTop + 30 && a < cv.scrollTop + cv.clientHeight - 30) i = si; }
+    if (i !== this._edCur && pages[i]) { this._edCur = i; this._edCurSync(); }
+  }
+  // light refresh when only the current sheet changed (no re-layout)
+  _edCurSync(){
+    const pages = this._edPages; if (!pages || !pages.length) return;
+    if (this._edJin) this._edJin.value = this._edCur + 1;
+    if (this._edPrevB) this._edPrevB.style.display = this._edCur === 0 ? 'none' : 'flex';
+    if (this._edNextB) this._edNextB.style.display = this._edCur === pages.length - 1 ? 'none' : 'flex';
+    if (this._edViewHook) this._edViewHook();
+    if (this._edNavHook) this._edNavHook();
+    if (this._edSelPaneHook) this._edSelPaneHook();
+  }
+  // every sheet is shown, one under the other with a grey gap (scaled with the zoom); a zoom keeps the same spot on screen
+  _edLayoutPages(){
+    const pages = this._edPages, st = this._edStage, cv = this._edCanvas; if (!pages || !pages.length || !st) return;
+    const z = (this._edFitZoom || 1) * (this._edScale || 1), gap = 18 * z, lz = this._edLastZ, old = this._edTops || [], oldPg = this._edTopsPg || [];
+    let keep = null;
+    if (cv && lz && lz !== z && old.length) { const y = cv.scrollTop - st.offsetTop; let i = 0; while (i + 1 < old.length && old[i + 1] <= y) i++; keep = { pg: oldPg[i], rel: (y - old[i]) / lz }; }
+    pages.forEach(p => { p.style.display = 'block'; p.style.transform = 'scale(' + z + ')'; });
+    const hs = pages.map(p => p.offsetHeight || this._edA4H); let y = 0; const tops = [];
+    pages.forEach((p, i) => { tops.push(y); p.style.top = y + 'px'; y += hs[i] * z + gap; });
+    st.style.width = (this._edA4W * z) + 'px'; st.style.height = Math.max(0, y - gap) + 'px';
+    this._edTops = tops; this._edTopsPg = pages.slice(); this._edLastZ = z;
+    if (keep && cv) { const k = pages.indexOf(keep.pg); if (k >= 0) cv.scrollTop = st.offsetTop + tops[k] + keep.rel * z; }
+    this._edPaintPn(); this._edHFPaint(); this._edFnPaint();
+  }
+  // the page-number box at the bottom (or top) margin of every sheet — type a number to override the auto count from there on
+  _edPaintPn(){
+    const st = this._edStage, pages = this._edPages, F0 = this._edPnField; if (!st || !pages || !pages.length || !F0) return;
+    const L = this._edPnFields || (this._edPnFields = [F0]);
+    while (L.length < pages.length) { const f = F0.cloneNode(false); f.value = ''; this._edPnHook(f); st.appendChild(f); L.push(f); }
+    while (L.length > pages.length) { const f = L.pop(); if (f === F0) { L.push(f); break; } f.remove(); }
+    const anchors = pages.map(pg => { const v = (pg.dataset.pn || '').trim(); return v ? parseInt(v, 10) : null; });
+    const nums = this._computePageNumbers(anchors, this._libStartPage || 1);
+    const pos = this._libPnPos || 'bottom-center', z = (this._edFitZoom || 1) * (this._edScale || 1), PADz = (this._edPAD || 64) * z, tops = this._edTops || [];
+    pages.forEach((p, i) => {
+      const F = L[i]; F.dataset.i = String(i);
+      let [v, hz] = pos.split('-'); if (hz === 'outside') hz = i % 2 ? 'left' : 'right';
+      F.style.display = (pos === 'none' || (i === 0 && this._libPnFirst === '0')) ? 'none' : '';
+      const T = tops[i] || 0, ph = p.offsetHeight * z;
+      F.style.bottom = ''; F.style.top = (T + (v === 'top' ? 10 : ph - 36)) + 'px';
+      F.style.left = hz === 'left' ? PADz + 'px' : hz === 'right' ? '' : '50%'; F.style.right = hz === 'right' ? PADz + 'px' : ''; F.style.transform = (hz === 'left' || hz === 'right') ? 'none' : 'translateX(-50%)';
+      F.style.width = /kmword|of|kmof/.test(this._libPnFmt || '') ? '96px' : '72px';
+      if (document.activeElement !== F) F.value = p.dataset.pn || '';
+      F.placeholder = this._pnText(nums[i], this._libPnFmt, nums[nums.length - 1]);
+    });
+  }
   _edApplyView(){
     const pages = this._edPages; if (!pages || !pages.length) return;
-    const A4W = this._edA4W, A4H = this._edA4H;
-    const z = (this._edFitZoom || 1) * (this._edScale || 1);
-    pages.forEach((p, i) => { const show = i === this._edCur; p.style.display = show ? 'block' : 'none'; if (show) p.style.transform = `scale(${z})`; });
-    const ph = pages[this._edCur] ? pages[this._edCur].offsetHeight : A4H;
-    this._edStage.style.width = (A4W * z) + 'px'; this._edStage.style.height = (ph * z) + 'px';
+    this._edCur = Math.max(0, Math.min(pages.length - 1, this._edCur | 0));
+    this._edLayoutPages();
     if (this._edJin) { this._edJin.value = this._edCur + 1; this._edJin.max = String(pages.length); }
     if (this._edLabelTot) this._edLabelTot.textContent = '/ ' + pages.length;
     if (this._edZlabel) this._edZlabel.textContent = Math.round((this._edScale || 1) * 100) + '%';
     if (this._edPrevB) this._edPrevB.style.display = this._edCur === 0 ? 'none' : 'flex';
     if (this._edNextB) this._edNextB.style.display = this._edCur === pages.length - 1 ? 'none' : 'flex';
-    if (this._edPnField) {
-      const p = pages[this._edCur];
-      const anchors = pages.map(pg => { const v = (pg.dataset.pn || '').trim(); return v ? parseInt(v, 10) : null; });
-      const nums = this._computePageNumbers(anchors, this._libStartPage || 1);
-      const F = this._edPnField, pos = this._libPnPos || 'bottom-center', z = (this._edFitZoom || 1) * (this._edScale || 1), PADz = (this._edPAD || 64) * z;
-      let [v, hz] = pos.split('-'); if (hz === 'outside') hz = this._edCur % 2 ? 'left' : 'right';
-      F.style.display = (pos === 'none' || (this._edCur === 0 && this._libPnFirst === '0')) ? 'none' : '';
-      F.style.top = v === 'top' ? '10px' : ''; F.style.bottom = v === 'top' ? '' : '10px';
-      F.style.left = hz === 'left' ? PADz + 'px' : hz === 'right' ? '' : '50%'; F.style.right = hz === 'right' ? PADz + 'px' : ''; F.style.transform = (hz === 'left' || hz === 'right') ? 'none' : 'translateX(-50%)';
-      F.style.width = /kmword|of|kmof/.test(this._libPnFmt || '') ? '96px' : '72px';
-      F.value = (p && p.dataset.pn) || '';
-      F.placeholder = this._pnText(nums[this._edCur], this._libPnFmt, nums[nums.length - 1]);
-    }
     if (this._edViewHook) this._edViewHook();
-    this._edHFPaint();
-    this._edFnPaint();
     this._edXrefRefresh();
     if (this._edNavHook) this._edNavHook();
     if (this._edSelPaneHook) this._edSelPaneHook();
@@ -20858,30 +20941,40 @@ class Component extends DCLogic {
   // the current sheet's footnotes, drawn over its bottom margin (tap a line to edit it)
   _edFnPaint(){
     const st = this._edStage, pages = this._edPages; if (!st || !pages) return;
-    const pg = pages[this._edCur]; let el = st.querySelector('.ed-fn-area');
-    const notes = (pg && pg._fnNotes) || [];
-    if (!notes.length) { if (el) el.remove(); return; }
-    if (!el) { el = document.createElement('div'); el.className = 'ed-fn-area'; el.addEventListener('click', e => { const ln = e.target.closest('[data-fn]'); if (ln && this._edFnEdit) this._edFnEdit(ln.dataset.fn); }); st.appendChild(el); }
-    const z = (this._edFitZoom || 1) * (this._edScale || 1), PAD = this._edPAD || 64, ph = pg.offsetHeight || this._edA4H;
-    el.innerHTML = this._fnHtml(notes);
-    el.style.cssText = 'position:absolute;z-index:5;left:' + (PAD * z) + 'px;width:' + ((this._edA4W - 2 * PAD) * z) + 'px;transform-origin:0 0;transform:scale(' + z + ');cursor:pointer;';
-    el.style.width = (this._edA4W - 2 * PAD) + 'px'; el.style.fontSize = '11.5px'; el.style.lineHeight = '1.45'; el.style.color = '#333';
-    el.style.top = ((ph - PAD - 8) * z - el.offsetHeight * z) + 'px';
+    st.querySelectorAll('.ed-fn-area').forEach(e => e.remove());
+    const z = (this._edFitZoom || 1) * (this._edScale || 1), PAD = this._edPAD || 64, tops = this._edTops || [];
+    pages.forEach((pg, i) => {
+      const notes = pg._fnNotes || []; if (!notes.length) return;
+      const el = document.createElement('div'); el.className = 'ed-fn-area'; el.addEventListener('click', e => { const ln = e.target.closest('[data-fn]'); if (ln && this._edFnEdit) this._edFnEdit(ln.dataset.fn); }); st.appendChild(el);
+      const ph = pg.offsetHeight || this._edA4H;
+      el.innerHTML = this._fnHtml(notes);
+      el.style.cssText = 'position:absolute;z-index:5;left:' + (PAD * z) + 'px;transform-origin:0 0;transform:scale(' + z + ');cursor:pointer;';
+      el.style.width = (this._edA4W - 2 * PAD) + 'px'; el.style.fontSize = '11.5px'; el.style.lineHeight = '1.45'; el.style.color = '#333';
+      el.style.top = ((tops[i] || 0) + (ph - PAD - 8) * z - el.offsetHeight * z) + 'px';
+    });
   }
+  // header / footer drawn over every sheet (outside its editable content, so never part of the text); double-tap to edit
   _edHFPaint(){
     const st = this._edStage, pages = this._edPages; if (!st || !pages || !pages.length) return;
-    const pg = pages[this._edCur]; if (!pg) return;
-    const z = (this._edFitZoom || 1) * (this._edScale || 1), PAD = this._edPAD || 64, ph = pg.offsetHeight || this._edA4H;
-    const bare = this._edCur === 0 && this._libPnFirst === '0';   // different first page (a cover): no header / footer
-    [['hdr', this._libHdr, this._libHdrAl], ['ftr', this._libFtr, this._libFtrAl]].forEach(([k, txt, al]) => {
-      let el = st.querySelector('.ed-hf-' + k);
-      if (!txt || bare) { if (el) el.remove(); return; }
-      if (!el) { el = document.createElement('div'); el.className = 'ed-hf-' + k; el.title = k === 'hdr' ? 'ក្បាលទំព័រ — ចុចពីរដងដើម្បីកែ' : 'បាតទំព័រ — ចុចពីរដងដើម្បីកែ'; el.addEventListener('dblclick', () => { if (this._edHFEdit) this._edHFEdit(k); }); st.appendChild(el); }
-      al = al || 'center';
-      const off = Math.max(10, Math.round(PAD / 2) - 8), top = k === 'hdr' ? off : ph - (off + (al === 'center' ? 20 : 2)) - 17;
-      el.style.cssText = 'position:absolute;z-index:5;left:' + (PAD * z) + 'px;width:' + ((this._edA4W - 2 * PAD) * z) + 'px;top:' + (top * z) + 'px;font-size:' + (12 * z) + 'px;line-height:1.4;color:#666;text-align:' + al + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-bottom:' + (k === 'hdr' ? '1px dashed rgba(43,87,154,.25)' : 'none') + ';border-top:' + (k === 'ftr' ? '1px dashed rgba(43,87,154,.25)' : 'none') + ';';
-      el.textContent = txt;
+    st.querySelectorAll('.ed-hf-hdr,.ed-hf-ftr').forEach(e => e.remove());
+    const z = (this._edFitZoom || 1) * (this._edScale || 1), PAD = this._edPAD || 64, tops = this._edTops || [];
+    pages.forEach((pg, i) => {
+      if (i === 0 && this._libPnFirst === '0') return;   // different first page (a cover): no header / footer
+      const ph = pg.offsetHeight || this._edA4H, T = tops[i] || 0;
+      [['hdr', this._libHdr, this._libHdrAl], ['ftr', this._libFtr, this._libFtrAl]].forEach(([k, txt, al]) => {
+        if (!txt) return;
+        const el = document.createElement('div'); el.className = 'ed-hf-' + k; el.title = k === 'hdr' ? 'ក្បាលទំព័រ — ចុចពីរដងដើម្បីកែ' : 'បាតទំព័រ — ចុចពីរដងដើម្បីកែ'; el.addEventListener('dblclick', () => { if (this._edHFEdit) this._edHFEdit(k); }); st.appendChild(el);
+        al = al || 'center';
+        const off = Math.max(10, Math.round(PAD / 2) - 8), top = k === 'hdr' ? off : ph - (off + (al === 'center' ? 20 : 2)) - 17;
+        el.style.cssText = 'position:absolute;z-index:5;left:' + (PAD * z) + 'px;width:' + ((this._edA4W - 2 * PAD) * z) + 'px;top:' + (T + top * z) + 'px;font-size:' + (12 * z) + 'px;line-height:1.4;color:#666;text-align:' + al + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-bottom:' + (k === 'hdr' ? '1px dashed rgba(43,87,154,.25)' : 'none') + ';border-top:' + (k === 'ftr' ? '1px dashed rgba(43,87,154,.25)' : 'none') + ';';
+        el.textContent = txt;
+      });
     });
+  }
+  _edCaretIntoView(){
+    try { const cv = this._edCanvas, s = window.getSelection(); if (!cv || !s.rangeCount) return;
+      const rg = s.getRangeAt(0); let rc = rg.getBoundingClientRect(); if (!rc.height) { const n = rg.startContainer; const el = n.nodeType === 1 ? n : n.parentElement; if (!el) return; rc = el.getBoundingClientRect(); }
+      const c = cv.getBoundingClientRect(); if (rc.top < c.top + 20 || rc.bottom > c.bottom - 20) cv.scrollBy({ top: rc.top - c.top - c.height / 3, behavior: 'smooth' }); } catch(e){}
   }
   _edIsEmpty(p){ return !(p.textContent || '').trim() && !p.querySelector('img,hr'); }
   // Debounced: several requests inside the window are merged (earliest sheet wins, any "full" wins).
@@ -20948,8 +21041,9 @@ class Component extends DCLogic {
     this._edApplyView();
     if (pages.some(pg => pg.querySelector('.fn-ref'))) setTimeout(() => this._edFnLayout(), 0);   // notes may have moved to another sheet
     if (cn) {
-      const tp = pages[this._edCur]; if (tp) { try { tp.focus(); } catch(e){} }
+      const tp = pages[this._edCur]; if (tp) { try { tp.focus({ preventScroll: true }); } catch(e){} }
       try { const r = document.createRange(); const max = cn.nodeType === 3 ? cn.length : cn.childNodes.length; r.setStart(cn, Math.min(co, max)); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); } catch(e){}
+      setTimeout(() => this._edCaretIntoView(), 0);
     }
   }
   async saveBookVis(book, patch){
