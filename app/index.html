@@ -14845,7 +14845,7 @@ class Component extends DCLogic {
 .rd-arrow.l{left:8px}.rd-arrow.r{right:8px}
 .rd-prog{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.12);z-index:7;pointer-events:none}
 .rd-prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--rdA2),#9be0ff);border-radius:0 3px 3px 0;transition:width .25s}
-.rd-ov .a4page{border-radius:6px;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 14px 40px rgba(0,0,0,.55) !important}
+.rd-ov .a4page{border-radius:6px;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 6px 18px rgba(0,0,0,.45) !important}
 .rd-ov .a4page h1,.rd-ov .a4page h2,.rd-ov .a4page h3{letter-spacing:.01em}
 .rd-t-cream .a4page{background:#f4ead2 !important}
 .rd-t-dark .a4page{filter:invert(.92) hue-rotate(180deg)}
@@ -14963,13 +14963,37 @@ class Component extends DCLogic {
   // two-finger pinch to zoom the paper (native page-zoom is off, so we do our own)
   // setZoom receives (newZoom, cx, cy) where cx/cy is the pinch midpoint relative
   // to el — so a caller can zoom toward the point between the fingers
-  _attachPinchZoom(el, getZoom, setZoom){
-    let d0 = 0, z0 = 1, on = false;
+  // opt.visual: the element to scale with a CSS transform while the fingers move (no re-layout per move — smooth on
+  // tablets); the real zoom is applied once when they lift: setZoom(z, cx, cy) keeps the point that was between the
+  // fingers in place, then the view is shifted by how far the fingers travelled. opt.min / opt.max bound the preview.
+  _attachPinchZoom(el, getZoom, setZoom, opt){
+    let d0 = 0, z0 = 1, on = false, k = 1, m0 = null, m1 = null, raf = 0;
+    const o = opt || {}, V = o.visual || null, lo = o.min || 0.1, hi = o.max || 5;
     const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const mid = t => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 });
     el.style.touchAction = 'pan-x pan-y';
-    el.addEventListener('touchstart', e => { if (e.touches.length === 2) { on = true; d0 = dist(e.touches) || 1; z0 = getZoom(); } }, { passive: true });
-    el.addEventListener('touchmove', e => { if (on && e.touches.length === 2) { e.preventDefault(); const t = e.touches, r = el.getBoundingClientRect(); setZoom(z0 * (dist(t) / d0), (t[0].clientX + t[1].clientX) / 2 - r.left, (t[0].clientY + t[1].clientY) / 2 - r.top); } }, { passive: false });
-    const end = e => { if (!e.touches || e.touches.length < 2) on = false; };
+    const paint = () => { raf = 0; if (!on || !V || !m0 || !m1) return; V.style.transform = 'translate(' + (m1.x - m0.x) + 'px,' + (m1.y - m0.y) + 'px) scale(' + k + ')'; };
+    el.addEventListener('touchstart', e => {
+      if (e.touches.length !== 2) return;
+      on = true; d0 = dist(e.touches) || 1; z0 = getZoom(); k = 1; m0 = m1 = mid(e.touches);
+      if (V) { const vr = V.getBoundingClientRect(); V.style.transformOrigin = (m0.x - vr.left) + 'px ' + (m0.y - vr.top) + 'px'; V.style.willChange = 'transform'; }
+    }, { passive: true });
+    el.addEventListener('touchmove', e => {
+      if (!on || e.touches.length !== 2) return; e.preventDefault();
+      const t = e.touches; m1 = mid(t);
+      const z = Math.max(lo, Math.min(hi, z0 * (dist(t) / d0)));
+      if (!V) { const r = el.getBoundingClientRect(); setZoom(z, m1.x - r.left, m1.y - r.top); return; }
+      k = z / (z0 || 1); if (!raf) raf = requestAnimationFrame(paint);
+    }, { passive: false });
+    const end = e => {
+      if (!on || (e.touches && e.touches.length >= 2)) return;
+      on = false; if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      if (!V) return;
+      const r = el.getBoundingClientRect(), dx = m1 ? m1.x - m0.x : 0, dy = m1 ? m1.y - m0.y : 0;
+      V.style.transform = ''; V.style.transformOrigin = ''; V.style.willChange = '';
+      if (Math.abs(k - 1) > 0.002) setZoom(z0 * k, m0.x - r.left, m0.y - r.top);
+      el.scrollLeft -= dx; el.scrollTop -= dy;
+    };
     el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
   }
   // preload the images first — paginating before they load measures wrong page
@@ -15174,7 +15198,7 @@ class Component extends DCLogic {
     // min-height (not fixed height) + no clipping, so a block taller than a page
     // is never cut off / lost — that page just grows a little
     const mkPage = () => { const p = document.createElement('div'); p.className = 'a4page report';
-      p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-family:var(--font-jp),system-ui,sans-serif;letter-spacing:normal;font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;will-change:transform;`;
+      p.style.cssText = `position:absolute;top:0;left:0;width:${A4W}px;min-height:${A4H}px;background:#fff;color:#111;padding:${PAD}px ${PAD}px ${PAD + 24}px;box-sizing:border-box;box-shadow:0 4px 22px rgba(0,0,0,0.5);font-family:var(--font-jp),system-ui,sans-serif;letter-spacing:normal;font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;transform-origin:0 0;`;
       stage.appendChild(p); return p; };
     let page = mkPage();
     const blocks = [...src.childNodes].filter(n => n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim()));
@@ -15257,8 +15281,11 @@ class Component extends DCLogic {
     };
     const goPage = (i, smooth) => { cur = Math.max(0, Math.min(total - 1, i)); applyView(); area.scrollTo({ top: Math.max(0, stage.offsetTop + (tops[cur] || 0) - 8), behavior: smooth === false ? 'auto' : 'smooth' }); };
     const applyView = () => { layout(); paintCur(); };
+    const wq = []; let wqT = 0;
+    const pump = () => { wqT = 0; if (!document.body.contains(ov)) return; const p = wq.shift(); if (p) wrapOne(p); if (wq.length) wqT = window.requestIdleCallback ? requestIdleCallback(pump, { timeout: 250 }) : setTimeout(pump, 30); };
+    const queueWrap = (p, first) => { if (!p || p._bwWrapped) return; const i = wq.indexOf(p); if (i >= 0) wq.splice(i, 1); if (first) wq.unshift(p); else wq.push(p); if (!wqT) wqT = window.requestIdleCallback ? requestIdleCallback(pump, { timeout: 120 }) : setTimeout(pump, 16); };
     const paintCur = () => {
-      wrapOne(pages[cur]); wrapOne(pages[cur + 1]);   // wrap the page in view + look one ahead
+      queueWrap(pages[cur + 1], true); queueWrap(pages[cur], true);   // wrap the page in view first, then the next one
       jin.value = cur + 1; zlabel.textContent = Math.round(scale * 100) + '%';
       prevB.style.display = cur === 0 ? 'none' : 'flex';
       nextB.style.display = cur === total - 1 ? 'none' : 'flex';
@@ -15277,7 +15304,7 @@ class Component extends DCLogic {
     // a page that grows (pictures loading, readings shown) pushes the ones below it down
     if (window.ResizeObserver) { let roT = 0; const pro = new ResizeObserver(() => { clearTimeout(roT); roT = setTimeout(() => { if (!document.body.contains(ov)) { pro.disconnect(); return; } layout(); }, 60); }); pages.forEach(p => pro.observe(p)); }
     // tap-to-translate words are wrapped as a page comes near the screen
-    if (window.IntersectionObserver) { const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) wrapOne(e.target); }), { root: area, rootMargin: '600px 0px' }); pages.forEach(p => io.observe(p)); }
+    if (window.IntersectionObserver) { const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) queueWrap(e.target); }), { root: area, rootMargin: '600px 0px' }); pages.forEach(p => io.observe(p)); }
     // prev / next — fixed on screen, do NOT scroll with the paper
     const edge = (txt, fn, side) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.className = 'rd-arrow ' + (side === 'left' ? 'l' : 'r');
       b.addEventListener('click', fn); return b; };
@@ -15393,7 +15420,7 @@ class Component extends DCLogic {
       if (!hits.length) return;
       hitAt = (k + hits.length) % hits.length;
       clearMarks();
-      cur = hits[hitAt]; applyView();
+      cur = hits[hitAt]; applyView(); wrapOne(pages[cur]);
       markOn(pages[cur]);
       const mk = pages[cur].querySelector('span.bkfind');   // glide to the word itself, a third of the way down the screen
       if (mk) { const mr = mk.getBoundingClientRect(), ar = area.getBoundingClientRect(); area.scrollTo({ top: Math.max(0, area.scrollTop + mr.top - ar.top - area.clientHeight / 3), behavior: 'smooth' }); } else goPage(cur);
@@ -15446,7 +15473,7 @@ class Component extends DCLogic {
       scale = nz; applyView();
       area.scrollLeft = stage.offsetLeft + px * zNew - cx;
       area.scrollTop = stage.offsetTop + py * zNew - cy;
-    });
+    }, { visual: stage, min: 1, max: 5 });
     // refit whenever the book's own box changes — the translation panel opening / closing, a rotation
     let lastBox = '';
     if (window.ResizeObserver) {
@@ -15638,6 +15665,8 @@ class Component extends DCLogic {
     renderHl();
     fit();                 // fit now so the first paint is centred and full-screen
     goPage(cur, false);    // open at the page read last time
+    wrapOne(pages[cur]);   // the page on screen is ready to tap at once
+    if (window.CSS && CSS.supports && CSS.supports('content-visibility', 'auto')) setTimeout(() => pages.forEach(p => { p.style.containIntrinsicSize = 'auto ' + A4W + 'px auto ' + A4H + 'px'; p.style.contentVisibility = 'auto'; }), 400);
     setTimeout(fit, 60);   // re-fit once the real layout height is known
     setTimeout(fit, 250);
     if (this._rdOnBuilt) { const f = this._rdOnBuilt; this._rdOnBuilt = null; f(); }
@@ -20860,7 +20889,13 @@ class Component extends DCLogic {
     err.style.cssText = 'position:absolute;left:0;right:0;bottom:0;display:none;color:#fff;background:#c0342c;font-size:13px;text-align:center;padding:8px;z-index:9;';
     ov.appendChild(err);
     // two-finger pinch to zoom the sheet
-    this._attachPinchZoom(canvas, () => this._edScale, (s) => { this._edScale = Math.max(0.1, Math.min(2, s)); this._edApplyView(); });
+    this._attachPinchZoom(canvas, () => this._edScale, (s, cx, cy) => {
+      const zOld = (this._edFitZoom || 1) * (this._edScale || 1), cr = canvas.getBoundingClientRect(), sr = stage.getBoundingClientRect();
+      const px = (cr.left + cx - sr.left) / zOld, py = (cr.top + cy - sr.top) / zOld;
+      this._edScale = Math.max(0.1, Math.min(2, s)); this._edApplyView();
+      const zNew = (this._edFitZoom || 1) * this._edScale, sr2 = stage.getBoundingClientRect();
+      canvas.scrollLeft += sr2.left + px * zNew - (cr.left + cx); canvas.scrollTop += sr2.top + py * zNew - (cr.top + cy);
+    }, { visual: stage, min: 0.1, max: 2 });
     // build the sheets from the stored content (split at saved page breaks)
     const segs = this._edSplitSegments(bmeta.html);
     segs.forEach(h => this._edMakePage(h));
