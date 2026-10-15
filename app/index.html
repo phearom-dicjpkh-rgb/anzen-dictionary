@@ -23,6 +23,9 @@ document.addEventListener('wheel', function(e){ if(e.ctrlKey) e.preventDefault()
      downloads; execution order is preserved and the runtime only needs the
      parsed document, which defer guarantees -->
 <script defer src="vendor/fa54af41-7e64-40dd-9170-fc4da6658880.js"></script>
+<!-- the app template below is only read by the runtime (it mounts a fresh #dc-root): never lay it out, and its
+     <img src="{{ … }}"> placeholders (loading=lazy) are never requested -->
+<style>x-dc{display:none !important}</style>
 </head>
 <body>
 
@@ -1138,7 +1141,7 @@ textarea.input { min-height: 90px; resize: vertical; }
     <sc-if value="{{ needsRole }}" hint-placeholder-val="{{ false }}">
     <div style="padding:calc(58px + env(safe-area-inset-top, 0px)) 24px calc(24px + env(safe-area-inset-bottom, 0px));height:100%;overflow-y:auto;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;">
       <sc-if value="{{ hasLogo }}">
-        <img src="{{ appLogo }}" alt="logo" style="width:72px;height:72px;border-radius:14px;object-fit:cover;">
+        <img loading="lazy" src="{{ appLogo }}" alt="logo" style="width:72px;height:72px;border-radius:14px;object-fit:cover;">
       </sc-if>
       <sc-if value="{{ noLogo }}">
         <div style="font-size:44px;line-height:1;font-family:Georgia,serif;color:var(--color-accent);">辞</div>
@@ -1207,7 +1210,7 @@ textarea.input { min-height: 90px; resize: vertical; }
     <sc-if value="{{ hasRole }}" hint-placeholder-val="{{ true }}">
     <div style="flex:none;width:100%;height:calc(56px + env(safe-area-inset-top, 0px));padding-top:env(safe-area-inset-top, 0px);display:flex;align-items:center;gap:11px;padding-left:18px;padding-right:18px;background:var(--color-accent);border-bottom:1px solid rgba(0,0,0,0.10);box-shadow:0 2px 10px rgba(0,0,0,0.10);color:#fff;box-sizing:border-box;z-index:15;">
       <sc-if value="{{ hasLogo }}">
-        <img src="{{ appLogo }}" alt="logo" title="ចុចដើម្បីផ្ទុកឡើងវិញ" sc-camel-on-click="{{ reloadPage }}" style="width:34px;height:34px;flex:none;border-radius:8px;object-fit:cover;background:rgba(255,255,255,0.9);cursor:pointer;">
+        <img loading="lazy" src="{{ appLogo }}" alt="logo" title="ចុចដើម្បីផ្ទុកឡើងវិញ" sc-camel-on-click="{{ reloadPage }}" style="width:34px;height:34px;flex:none;border-radius:8px;object-fit:cover;background:rgba(255,255,255,0.9);cursor:pointer;">
       </sc-if>
       <sc-if value="{{ noLogo }}">
         <div title="ចុចដើម្បីផ្ទុកឡើងវិញ" sc-camel-on-click="{{ reloadPage }}" style="width:34px;height:34px;flex:none;border-radius:8px;background:rgba(255,255,255,0.20);color:#fff;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:19px;line-height:1;cursor:pointer;">辞</div>
@@ -1579,7 +1582,7 @@ textarea.input { min-height: 90px; resize: vertical; }
           </div>
           <sc-if value="{{ quizHasImg }}">
             <div style="display:flex;justify-content:center;margin-bottom:20px;">
-              <img src="{{ quizImg }}" alt="" style="max-width:100%;max-height:200px;border-radius:12px;border:1px solid var(--color-divider);">
+              <img loading="lazy" src="{{ quizImg }}" alt="" style="max-width:100%;max-height:200px;border-radius:12px;border:1px solid var(--color-divider);">
             </div>
           </sc-if>
 
@@ -1647,7 +1650,7 @@ textarea.input { min-height: 90px; resize: vertical; }
           </div>
           <div style="font-size:16.5px;line-height:1.95;margin-bottom:16px;"><sc-for list="{{ examSegments }}" as="sg" hint-placeholder-count="6"><sc-if value="{{ sg.isLink }}"><span style="color:var(--color-accent-700);border-bottom:1px dotted var(--color-accent-400);cursor:pointer;" sc-camel-on-click="{{ sg.onOpen }}">{{ sg.text }}</span></sc-if><sc-if value="{{ sg.isPlain }}"><span>{{ sg.text }}</span></sc-if></sc-for></div>
           <sc-if value="{{ examHasImg }}">
-            <div style="display:flex;justify-content:center;margin-bottom:20px;"><img src="{{ examImg }}" alt="" style="max-width:100%;max-height:200px;border-radius:12px;border:1px solid var(--color-divider);"></div>
+            <div style="display:flex;justify-content:center;margin-bottom:20px;"><img loading="lazy" src="{{ examImg }}" alt="" style="max-width:100%;max-height:200px;border-radius:12px;border:1px solid var(--color-divider);"></div>
           </sc-if>
           <sc-if value="{{ examIsTf }}">
           <div style="display:flex;gap:12px;">
@@ -2665,7 +2668,7 @@ textarea.input { min-height: 90px; resize: vertical; }
             <div class="ew-row2">
               <div class="ew-f" style="flex:1;min-width:0;width:100%;"><label>តំណភ្ជាប់រូបភាព <i>(Google Drive ក៏បាន)</i></label>
                 <div class="ew-bx"><i class="ew-lg url">URL</i><input type="text" value="{{ awImg }}" sc-camel-on-change="{{ onAwImg }}" placeholder="https://…"></div></div>
-              <div class="ew-th"><sc-if value="{{ awHasImgPrev }}"><img src="{{ awImgSrc }}" alt=""></sc-if><sc-if value="{{ awNoImgPrev }}"><span>មើលរូបជាមុន<br>(មិនទាន់មាន)</span></sc-if></div>
+              <div class="ew-th"><sc-if value="{{ awHasImgPrev }}"><img loading="lazy" src="{{ awImgSrc }}" alt=""></sc-if><sc-if value="{{ awNoImgPrev }}"><span>មើលរូបជាមុន<br>(មិនទាន់មាន)</span></sc-if></div>
             </div>
             <div class="ew-star" sc-camel-on-click="{{ toggleAwStar }}">
               <span style="font-size:24px;line-height:1;color:{{ awStarColor }};">{{ awStarGlyph }}</span>
@@ -2752,7 +2755,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               </sc-if>
               <sc-if value="{{ t.isNotEditing }}">
                 <div class="card elev-sm" style="flex-direction:row;align-items:center;gap:10px;">
-                  <sc-if value="{{ t.hasImg }}"><img src="{{ t.img }}" alt="" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex:none;background:var(--color-surface);"></sc-if>
+                  <sc-if value="{{ t.hasImg }}"><img loading="lazy" src="{{ t.img }}" alt="" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex:none;background:var(--color-surface);"></sc-if>
                   <div style="flex:1;min-width:0;">
                     <div style="font-size:14px;font-weight:600;">{{ t.km }}</div>
                     <div style="font-size:13px;opacity:0.7;font-family:var(--font-heading);">{{ t.jp }}</div>
@@ -3055,7 +3058,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               </div>
               <button sc-camel-on-click="{{ closeTermPopup }}" aria-label="បិទ" style="width:38px;height:38px;border:1px solid var(--color-divider);border-radius:10px;background:var(--color-surface);cursor:pointer;font-size:16px;flex:none;">✕</button>
             </div>
-            <sc-if value="{{ termPopup.hasImg }}"><img src="{{ termPopup.img }}" alt="" style="display:block;max-width:100%;max-height:44vh;margin:0 auto;border-radius:12px;object-fit:contain;"></sc-if>
+            <sc-if value="{{ termPopup.hasImg }}"><img loading="lazy" src="{{ termPopup.img }}" alt="" style="display:block;max-width:100%;max-height:44vh;margin:0 auto;border-radius:12px;object-fit:contain;"></sc-if>
           </div>
         </div>
         </sc-if>
@@ -3334,7 +3337,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               <sc-for list="{{ rbBooks }}" as="b" hint-placeholder-count="6">
                 <div class="card elev-sm" style="position:relative;flex-direction:column;gap:0;padding:0;overflow:hidden;{{ b.dimStyle }}">
                   <div style="position:relative;width:100%;aspect-ratio:3/4;background:{{ b.coverBg }};display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;" sc-camel-on-click="{{ b.onRead }}">
-                    <sc-if value="{{ b.hasCover }}"><img src="{{ b.cover }}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;"></sc-if>
+                    <sc-if value="{{ b.hasCover }}"><img loading="lazy" src="{{ b.cover }}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;"></sc-if>
                     <sc-if value="{{ b.noCover }}"><span style="font-size:28px;opacity:0.85;">📖</span></sc-if>
                     <sc-if value="{{ b.locked }}"><div style="position:absolute;inset:0;background:rgba(0,0,0,0.28);display:flex;align-items:center;justify-content:center;font-size:26px;pointer-events:none;">🔒</div></sc-if>
                   </div>
@@ -3387,7 +3390,7 @@ textarea.input { min-height: 90px; resize: vertical; }
           </sc-if>
 
           <div class="shr-stage">
-            <sc-if value="{{ shareHasImg }}"><span class="shr-badge">{{ shareDims }}</span><img src="{{ shareImgData }}" alt=""></sc-if>
+            <sc-if value="{{ shareHasImg }}"><span class="shr-badge">{{ shareDims }}</span><img loading="lazy" src="{{ shareImgData }}" alt=""></sc-if>
             <sc-if value="{{ shareBusy }}"><div style="opacity:0.6;font-size:13px;">កំពុងបង្កើត…</div></sc-if>
             <sc-if value="{{ shareNoWord }}"><div style="text-align:center;padding:30px 20px;opacity:0.5;font-size:13px;">ស្វែងរក រួចជ្រើសរើសពាក្យដើម្បីបង្កើតរូបភាព</div></sc-if>
             <sc-if value="{{ shareHasErr }}"><div style="font-size:12px;color:#c0392b;line-height:1.6;text-align:center;">{{ shareErr }}</div></sc-if>
@@ -3407,7 +3410,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               <div class="shr-tts">
                 <sc-for list="{{ shareTplItems }}" as="t" hint-placeholder-count="7">
                   <button class="shr-tt {{ t.cls }}" sc-camel-on-click="{{ t.onSelect }}">
-                    <div class="ph"><sc-if value="{{ t.hasThumb }}"><img src="{{ t.thumb }}" alt=""></sc-if></div>
+                    <div class="ph"><sc-if value="{{ t.hasThumb }}"><img loading="lazy" src="{{ t.thumb }}" alt=""></sc-if></div>
                     <span>{{ t.label }}</span>
                   </button>
                 </sc-for>
@@ -3595,7 +3598,7 @@ textarea.input { min-height: 90px; resize: vertical; }
             <sc-if value="{{ createRoleSchool }}">
             <div class="field"><label>និមិត្តសញ្ញាសាលា/សាខា</label>
               <div style="display:flex;align-items:center;gap:12px;">
-                <sc-if value="{{ hasAdminLogo }}"><img src="{{ adminLogo }}" alt="" style="width:52px;height:52px;border-radius:10px;object-fit:cover;border:1px solid var(--color-divider);flex:none;"></sc-if>
+                <sc-if value="{{ hasAdminLogo }}"><img loading="lazy" src="{{ adminLogo }}" alt="" style="width:52px;height:52px;border-radius:10px;object-fit:cover;border:1px solid var(--color-divider);flex:none;"></sc-if>
                 <sc-if value="{{ noAdminLogo }}"><div style="width:52px;height:52px;border-radius:10px;background:var(--color-surface);border:1px dashed var(--color-divider);display:flex;align-items:center;justify-content:center;font-size:20px;flex:none;">🏫</div></sc-if>
                 <input type="file" accept="image/*" sc-camel-on-change="{{ onAdminLogoFile }}" style="font-size:12px;flex:1;min-width:0;">
                 <sc-if value="{{ hasAdminLogo }}"><button class="btn btn-ghost" style="flex:none;font-size:12px;color:#c0342c;padding:4px 6px;" sc-camel-on-click="{{ clearAdminLogo }}">លុប</button></sc-if>
@@ -3642,7 +3645,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               <button class="btn btn-icon btn-ghost" sc-camel-on-click="{{ closeQr }}" aria-label="បិទ" style="font-size:16px;">✕</button>
             </div>
             <div style="font-size:12px;opacity:0.7;line-height:1.6;">ឲ្យ <b>{{ qrName }}</b> ស្កេន QR នេះ ដើម្បីចូលគណនីតែម្ដង។ ទាញយករូបទុក ឬ ផ្ញើឲ្យគាត់។ គាត់នៅតែអាចចូលដោយអ៊ីមែល និងពាក្យសម្ងាត់បានដដែល។</div>
-            <img src="{{ qrImg }}" alt="QR" style="display:block;width:100%;max-width:300px;margin:0 auto;border-radius:12px;border:1px solid var(--color-divider);background:#fff;">
+            <img loading="lazy" src="{{ qrImg }}" alt="QR" style="display:block;width:100%;max-width:300px;margin:0 auto;border-radius:12px;border:1px solid var(--color-divider);background:#fff;">
             <button class="btn btn-block" style="background:var(--color-accent);color:#fff;border:none;" sc-camel-on-click="{{ downloadQr }}">⬇ ទាញយក QR</button>
             <div style="display:flex;gap:8px;">
               <sc-if value="{{ qrCanShare }}"><button class="btn btn-ghost" style="flex:1;border:1px solid var(--color-divider);" sc-camel-on-click="{{ shareQr }}">ចែករំលែក</button></sc-if>
@@ -3852,7 +3855,7 @@ textarea.input { min-height: 90px; resize: vertical; }
             <div class="set-row">
               <div class="set-ico"><svg sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg></div>
               <div class="set-tx" style="flex:1;"><b>Logo</b></div>
-              <sc-if value="{{ hasSettingsLogo }}"><img src="{{ settingsLogo }}" alt="logo" style="width:38px;height:38px;flex:none;border-radius:9px;object-fit:cover;border:1px solid var(--color-divider);"></sc-if>
+              <sc-if value="{{ hasSettingsLogo }}"><img loading="lazy" src="{{ settingsLogo }}" alt="logo" style="width:38px;height:38px;flex:none;border-radius:9px;object-fit:cover;border:1px solid var(--color-divider);"></sc-if>
             </div>
             <div class="set-row" style="padding-top:2px;">
               <div style="width:34px;flex:none;"></div>
@@ -4043,7 +4046,7 @@ textarea.input { min-height: 90px; resize: vertical; }
       <div style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:16px;display:flex;justify-content:center;">
         <div id="print-sheet" class="report" style="width:100%;max-width:780px;background:#fff;padding:28px 30px;box-shadow:0 8px 30px rgba(0,0,0,0.35);box-sizing:border-box;">
           <div style="display:flex;align-items:center;gap:14px;border-bottom:3px solid #1a4b8c;padding-bottom:12px;">
-            <sc-if value="{{ prHasLogo }}"><img src="{{ pr.logo }}" alt="" style="width:56px;height:56px;border-radius:8px;object-fit:cover;flex:none;"></sc-if>
+            <sc-if value="{{ prHasLogo }}"><img loading="lazy" src="{{ pr.logo }}" alt="" style="width:56px;height:56px;border-radius:8px;object-fit:cover;flex:none;"></sc-if>
             <sc-if value="{{ prNoLogo }}"><div style="width:56px;height:56px;border-radius:8px;background:#1a4b8c;color:#fff8ec;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:32px;flex:none;">辞</div></sc-if>
             <div style="flex:1;min-width:0;">
               <div style="font-size:21px;font-weight:700;color:#1a4b8c;line-height:1.2;">{{ pr.school }}</div>
@@ -4074,7 +4077,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <div style="width:36px;padding:6px 7px;color:#555;border-right:1px solid #eef1f6;display:flex;align-items:center;justify-content:center;">{{ it.n }}</div>
                 <div style="flex:2;padding:6px 7px;border-right:1px solid #eef1f6;color:#111;line-height:1.5;display:flex;flex-direction:column;justify-content:center;">
                   <div class="qcell">{{ it.q }}</div>
-                  <sc-if value="{{ it.hasImg }}"><img src="{{ it.img }}" alt="" style="margin-top:5px;max-width:150px;max-height:110px;border-radius:6px;border:1px solid #d7deea;object-fit:contain;display:block;"></sc-if>
+                  <sc-if value="{{ it.hasImg }}"><img loading="lazy" src="{{ it.img }}" alt="" style="margin-top:5px;max-width:150px;max-height:110px;border-radius:6px;border:1px solid #d7deea;object-fit:contain;display:block;"></sc-if>
                   <sc-if value="{{ it.hasExplain }}"><div style="font-size:11px;line-height:1.6;margin-top:5px;padding:5px 8px;border-radius:6px;background:#f5f7fb;border-left:3px solid #1a4b8c;color:#333;"><span style="opacity:0.6;">ការពន្យល់៖ </span>{{ it.explain }}</div></sc-if>
                 </div>
                 <div style="flex:1.5;padding:6px 7px;border-right:1px solid #eef1f6;font-weight:600;display:flex;align-items:center;{{ it.pickedColor }}">{{ it.picked }}</div>
@@ -4104,7 +4107,7 @@ textarea.input { min-height: 90px; resize: vertical; }
                 <div style="width:36px;padding:8px 7px;color:#555;border-right:1px solid #eef1f6;display:flex;align-items:flex-start;justify-content:center;font-weight:700;">{{ it.n }}</div>
                 <div style="flex:1;padding:8px 9px;color:#111;line-height:1.6;">
                   <div class="qcell">{{ it.q }}</div>
-                  <sc-if value="{{ it.hasImg }}"><img src="{{ it.img }}" alt="" style="margin-top:6px;max-width:190px;max-height:140px;border-radius:6px;border:1px solid #d7deea;object-fit:contain;display:block;"></sc-if>
+                  <sc-if value="{{ it.hasImg }}"><img loading="lazy" src="{{ it.img }}" alt="" style="margin-top:6px;max-width:190px;max-height:140px;border-radius:6px;border:1px solid #d7deea;object-fit:contain;display:block;"></sc-if>
                   <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;">
                     <sc-for list="{{ it.opts }}" as="o" hint-placeholder-count="3">
                       <div style="display:flex;align-items:flex-start;gap:5px;padding:4px 8px;border-radius:6px;font-size:11.5px;line-height:1.5;{{ o.optStyle }}">
@@ -4155,7 +4158,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               <sc-if value="{{ a.scheduled }}"><div style="font-size:10px;color:#8a6d1b;background:#fbf3dc;border-radius:6px;padding:3px 8px;align-self:flex-start;">{{ a.schedLabel }}</div></sc-if>
               <sc-if value="{{ a.hasTitle }}"><div style="font-weight:700;font-size:15px;line-height:1.4;">{{ a.title }}</div></sc-if>
               <sc-if value="{{ a.hasBody }}"><div style="font-size:13px;line-height:1.65;white-space:pre-wrap;">{{ a.body }}</div></sc-if>
-              <sc-if value="{{ a.hasImage }}"><img src="{{ a.image }}" alt="" style="width:100%;border-radius:10px;margin-top:2px;border:1px solid var(--color-divider);"></sc-if>
+              <sc-if value="{{ a.hasImage }}"><img loading="lazy" src="{{ a.image }}" alt="" style="width:100%;border-radius:10px;margin-top:2px;border:1px solid var(--color-divider);"></sc-if>
               <sc-if value="{{ a.hasDue }}"><div style="font-size:11px;{{ a.dueStyle }}">⏰ {{ a.dueLabel }}</div></sc-if>
               <sc-if value="{{ a.hasAssign }}"><button class="btn btn-primary" style="align-self:flex-start;padding:8px 16px;font-size:13px;margin-top:2px;" sc-camel-on-click="{{ a.onDo }}">{{ a.assignLabel }}</button></sc-if>
               <sc-if value="{{ a.showAdmin }}">
@@ -4193,7 +4196,7 @@ textarea.input { min-height: 90px; resize: vertical; }
           <label>ភ្ជាប់រូបភាព (ស្រេចចិត្ត)</label>
           <sc-if value="{{ hasAnnImage }}">
             <div style="display:flex;align-items:flex-start;gap:12px;">
-              <img src="{{ annImage }}" alt="" style="max-width:140px;max-height:120px;border-radius:10px;border:1px solid var(--color-divider);object-fit:cover;">
+              <img loading="lazy" src="{{ annImage }}" alt="" style="max-width:140px;max-height:120px;border-radius:10px;border:1px solid var(--color-divider);object-fit:cover;">
               <a href="#" style="font-size:12px;" sc-camel-on-click="{{ clearAnnImage }}">លុបរូបចេញ</a>
             </div>
           </sc-if>
@@ -4317,7 +4320,7 @@ textarea.input { min-height: 90px; resize: vertical; }
         <div class="hr"></div>
         <sc-if value="{{ detailWord.hasImg }}">
           <div style="display:flex;justify-content:center;margin:16px 0;">
-            <img src="{{ detailWord.img }}" alt="" style="max-width:100%;max-height:200px;border-radius:12px;border:1px solid var(--color-divider);">
+            <img loading="lazy" src="{{ detailWord.img }}" alt="" style="max-width:100%;max-height:200px;border-radius:12px;border:1px solid var(--color-divider);">
           </div>
         </sc-if>
         <div style="margin:16px 0;">
@@ -4403,7 +4406,7 @@ textarea.input { min-height: 90px; resize: vertical; }
             <div class="ew-row2">
               <div class="ew-f" style="flex:1;min-width:0;width:100%;"><label>តំណភ្ជាប់រូបភាព <i>(Google Drive ក៏បាន)</i></label>
                 <div class="ew-bx"><i class="ew-lg url">URL</i><input type="text" value="{{ edImg }}" sc-camel-on-change="{{ onEdImg }}" placeholder="https://…"></div></div>
-              <div class="ew-th"><sc-if value="{{ edHasImgPrev }}"><img src="{{ edImgSrc }}" alt=""></sc-if><sc-if value="{{ edNoImgPrev }}"><span>មិនទាន់មាន<br>រូបភាព</span></sc-if></div>
+              <div class="ew-th"><sc-if value="{{ edHasImgPrev }}"><img loading="lazy" src="{{ edImgSrc }}" alt=""></sc-if><sc-if value="{{ edNoImgPrev }}"><span>មិនទាន់មាន<br>រូបភាព</span></sc-if></div>
             </div>
           </div>
 
