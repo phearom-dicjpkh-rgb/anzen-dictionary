@@ -17444,7 +17444,8 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
     // ── title bar (Word blue): quick-access save · undo · redo · book title · PDF · close ──
     const top = document.createElement('div'); top.className = 'ewd-tit';
     const qb = (key, fn, tip, keepSel) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ewd-q'; b.innerHTML = svg(key, 17); b.title = tip; b.setAttribute('aria-label', tip); if (keepSel) keep(b); b.addEventListener('click', fn); top.appendChild(b); return b; };
-    const save = qb('save', async () => { const ok = await this.saveBook(); if (ok !== false && this._edReturnToRead) this._edLeave(); }, 'រក្សាទុក'); save.id = 'lib-save';
+    // saving keeps you in the editor; the 📖 button goes back to reading
+    const save = qb('save', async () => { await this.saveBook(); }, 'រក្សាទុក'); save.id = 'lib-save';
     save.dataset.ico = save.innerHTML;
     qb('undo', () => exec('undo'), 'ថយក្រោយ (undo)', true);
     qb('redo', () => exec('redo'), 'ទៅមុខវិញ (redo)', true);
@@ -20723,7 +20724,8 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
     const rmB = document.createElement('button'); rmB.type = 'button'; rmB.className = 'rm'; rmB.title = 'របៀបអាន';
     rmB.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 6.5C10 5 7 4.5 3 5v13c4-.5 7 0 9 1.5 2-1.5 5-2 9-1.5V5c-4-.5-7 0-9 1.5z"/><path d="M12 6.5v13"/></svg>';
     rmB.addEventListener('mousedown', e => e.preventDefault());
-    rmB.addEventListener('click', () => this._edReadMode());
+    // opened from the reader (✎): 📖 goes back to it (asking first about unsaved edits); otherwise Read Mode over the editor
+    rmB.addEventListener('click', () => { if (this._edReturnToRead) this._edTryExit(); else this._edReadMode(); });
     const zWrap = document.createElement('span'); zWrap.className = 'zr'; zWrap.appendChild(zRange);
     stZ.appendChild(rmB); stZ.appendChild(zMinus); stZ.appendChild(zWrap); stZ.appendChild(zPlus); stZ.appendChild(zPct); stBar.appendChild(stZ);
     ov.appendChild(stBar);
