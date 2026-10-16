@@ -20457,7 +20457,8 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
     const sCell = stack(gCell);
     [['vtop', 'តម្រឹមលើ', 'top'], ['vmid', 'តម្រឹមកណ្ដាល', 'middle'], ['vbot', 'តម្រឹមក្រោម', 'bottom']].forEach(([k, l, v]) => sm(sCell, k, l, tblOp(c => { c.style.verticalAlign = v; }), true));
     const gCsz = group(pTbl, 'ទំហំក្រឡា'); const sCsz = stack(gCsz);
-    sm(sCsz, 'hgt', 'ចែកជួរដេកស្មើគ្នា', tblOp((c, tr, tb) => { const rs = [...tb.rows], z = (tb.closest('.lib-epage').getBoundingClientRect().width / (tb.closest('.lib-epage').offsetWidth || 1)) || 1; const hh = Math.round(rs.reduce((s, rw) => s + rw.getBoundingClientRect().height / z, 0) / (rs.length || 1));   // Word: every row gets the average height rs.forEach(rw => [...rw.cells].forEach(x => { x.style.height = hh + 'px'; })); }), true);
+    // Distribute Rows (Word): every row gets the average height
+    sm(sCsz, 'hgt', 'ចែកជួរដេកស្មើគ្នា', tblOp((c, tr, tb) => { const rs = [...tb.rows], z = (tb.closest('.lib-epage').getBoundingClientRect().width / (tb.closest('.lib-epage').offsetWidth || 1)) || 1; const hh = Math.round(rs.reduce((s, rw) => s + rw.getBoundingClientRect().height / z, 0) / (rs.length || 1)); rs.forEach(rw => [...rw.cells].forEach(x => { x.style.height = hh + 'px'; })); }), true);
     sm(sCsz, 'wid', 'ចែកជួរឈរស្មើគ្នា', tblOp((c, tr, tb) => { tb.style.tableLayout = 'fixed'; [...tb.rows].forEach(rw => { const n = rw.cells.length; [...rw.cells].forEach(x => { x.style.width = (100 / n).toFixed(2) + '%'; }); }); }), true);
     const afB = sm(sCsz, 'fit', 'ទំហំស្វ័យប្រវត្តិ ▾', () => menuUnder(afB, [
       ['តាមអត្ថបទក្នុងក្រឡា', () => tblOp((c, tr, tb) => { tb.style.tableLayout = 'auto'; tb.style.width = 'auto'; [...tb.rows].forEach(rw => [...rw.cells].forEach(x => { x.style.width = ''; })); })()],
