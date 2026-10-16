@@ -15030,7 +15030,8 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
   // #lib-read-root/#rb-read-root no longer takes a body-level node down with it.
   // while the reader is open the page behind it is the reader's own dark colour: when a tablet turns, the browser shows the
   // old frame for a moment and the uncovered strip is that colour (it was the light-grey page background — a flash)
-  _clearBodyOverlay(){ const el = document.getElementById('book-reader-overlay'); if (el && el.parentNode) el.parentNode.removeChild(el); document.documentElement.classList.remove('rd-open'); }
+  _clearBodyOverlay(){ const el = document.getElementById('book-reader-overlay'); if (el && el.parentNode) el.parentNode.removeChild(el); document.documentElement.classList.remove('rd-open'); this._rdRotFree(); }
+  _rdRotFree(){ if (!this._rdRotLocked) return; this._rdRotLocked = false; try { screen.orientation.unlock(); } catch(e){} }
   _buildReadViewNow(book, root, html, margin, startPage, savedBreaks){
     const bookHF = this._bookHF((book && book.content) || '');
     root.innerHTML = '';
@@ -15119,6 +15120,18 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
     };
     const toggleAuto = () => { this._rdSetAuto(!this._rdAuto()); paintAuto(); };
     autoSw.addEventListener('click', toggleAuto);
+    // keep the screen from turning while reading (Android: works in the installed app); off again when the reader closes
+    const SO = window.screen && screen.orientation;
+    if (SO && SO.lock) {
+      const rotSw = document.createElement('button'); rotSw.type = 'button'; rotSw.className = 'rd-auto';
+      const paintRot = () => { rotSw.classList.toggle('on', !!this._rdRotLocked); rotSw.textContent = this._rdRotLocked ? '🔒 ចាក់សោការបង្វិលអេក្រង់' : '🔄 អេក្រង់បង្វិលតាមឧបករណ៍'; };
+      rotSw.addEventListener('click', async () => {
+        if (this._rdRotLocked) { try { SO.unlock(); } catch(e){} this._rdRotLocked = false; paintRot(); return; }
+        try { await SO.lock(String(SO.type || '').indexOf('portrait') === 0 ? 'portrait' : 'landscape'); this._rdRotLocked = true; paintRot(); }
+        catch(e) { rotSw.textContent = '⚠ មិនអនុញ្ញាតនៅទីនេះ — សូមបិទ «បង្វិលស្វ័យប្រវត្តិ» ក្នុង Android'; setTimeout(paintRot, 3500); }
+      });
+      autoSw.after(rotSw); paintRot();
+    }
     themePop.querySelector('.rd-hlclr').addEventListener('click', () => { hls = hls.filter(x => x.p !== cur); this._hlSet(bookId, hls); renderHl(); });
     zslider.addEventListener('input', () => { scale = parseFloat(zslider.value) || 1; applyView(); });
     const setTheme = t => {
@@ -15477,7 +15490,9 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
       if (ah > 0 && aw > 0) fitZoom = Math.max(0.15, fitWidth ? aw / A4W : Math.min(ah / A4H, aw / A4W));
       applyView();
     };
-    let rzF = 0; const onResize = () => { if (rzF) cancelAnimationFrame(rzF); rzF = requestAnimationFrame(() => { rzF = 0; fit(); }); };
+    // a turn of the tablet: re-fit at once, inside the resize event, so the very first frame drawn at the new size is already
+    // laid out for it (waiting a frame showed one frame of the old layout — the paper off to one side); the box observer then skips
+    const onResize = () => { fit(); try { lastBox = area.clientWidth + 'x' + area.clientHeight; } catch(e){} };
     window.addEventListener('resize', onResize);
     // pinch zooms toward the point between the fingers (keep that spot in place)
     this._attachPinchZoom(area, () => scale, (s, cx, cy) => {
@@ -16297,7 +16312,7 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
   // the reader overlay fades away (instead of vanishing) — used when going to the editor
   _fadeOutReader(){
     const el = document.getElementById('book-reader-overlay'); if (!el) return;
-    el.removeAttribute('id'); el.classList.add('rd-out'); document.documentElement.classList.remove('rd-open'); setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 200);
+    el.removeAttribute('id'); el.classList.add('rd-out'); document.documentElement.classList.remove('rd-open'); this._rdRotFree(); setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 200);
   }
   _edSerializePages(){
     this._edXrefRefresh();
