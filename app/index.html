@@ -14827,6 +14827,7 @@ class Component extends DCLogic {
     st.textContent = String.raw`
 @keyframes rdIn{from{opacity:0}to{opacity:1}}
 .rd-ov.rd-out{opacity:0!important;pointer-events:none;transition:opacity .18s ease}
+html.rd-open,html.rd-open body{background:#171a24 !important}
 .rd-ov{animation:rdIn .18s ease-out;position:fixed;inset:0;z-index:120;display:flex;flex-direction:column;background:radial-gradient(120% 140% at 20% 0%,#2b3550 0%,#171a24 55%,#0f1117 100%);font-family:var(--font-body);--rdA:var(--color-accent,#2f6fb0);--rdA2:color-mix(in srgb,var(--color-accent,#2f6fb0) 60%,#9ad0ff)}
 .rd-bar{position:relative;z-index:20;flex:none;display:flex;align-items:center;gap:7px;margin:calc(10px + env(safe-area-inset-top,0px)) 12px 8px;padding:6px 8px;border-radius:16px;background:rgba(24,27,36,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.2);box-shadow:0 10px 28px rgba(0,0,0,.5);overflow-x:auto;scrollbar-width:none}
 .rd-bar::-webkit-scrollbar{display:none}
@@ -15027,7 +15028,9 @@ class Component extends DCLogic {
   // whenever the app leaves reading mode by a path other than the reader's own
   // ✕ (bottom-nav taps, the bell, etc.), since React unmounting
   // #lib-read-root/#rb-read-root no longer takes a body-level node down with it.
-  _clearBodyOverlay(){ const el = document.getElementById('book-reader-overlay'); if (el && el.parentNode) el.parentNode.removeChild(el); }
+  // while the reader is open the page behind it is the reader's own dark colour: when a tablet turns, the browser shows the
+  // old frame for a moment and the uncovered strip is that colour (it was the light-grey page background — a flash)
+  _clearBodyOverlay(){ const el = document.getElementById('book-reader-overlay'); if (el && el.parentNode) el.parentNode.removeChild(el); document.documentElement.classList.remove('rd-open'); }
   _buildReadViewNow(book, root, html, margin, startPage, savedBreaks){
     const bookHF = this._bookHF((book && book.content) || '');
     root.innerHTML = '';
@@ -15049,7 +15052,7 @@ class Component extends DCLogic {
     this._rdEnsureCss();
     let theme = 'white'; try { const t0 = localStorage.getItem('dict_reader_theme'); if (t0 === 'cream' || t0 === 'dark') theme = t0; } catch(e) {}
     const ov = document.createElement('div');
-    ov.id = 'book-reader-overlay'; ov.className = 'rd-ov rd-t-' + theme;
+    ov.id = 'book-reader-overlay'; ov.className = 'rd-ov rd-t-' + theme; document.documentElement.classList.add('rd-open');
     document.body.appendChild(ov);
     const SVG = {
       close: '<path d="M6 6l12 12M18 6L6 18"/>', bookmark: '<path d="M6 3h12v18l-6-4-6 4z"/>', list: '<path d="M4 6h16M4 12h16M4 18h16"/>',
@@ -16294,7 +16297,7 @@ class Component extends DCLogic {
   // the reader overlay fades away (instead of vanishing) — used when going to the editor
   _fadeOutReader(){
     const el = document.getElementById('book-reader-overlay'); if (!el) return;
-    el.removeAttribute('id'); el.classList.add('rd-out'); setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 200);
+    el.removeAttribute('id'); el.classList.add('rd-out'); document.documentElement.classList.remove('rd-open'); setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 200);
   }
   _edSerializePages(){
     this._edXrefRefresh();
