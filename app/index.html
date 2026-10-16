@@ -1119,6 +1119,17 @@ textarea.input { min-height: 90px; resize: vertical; }
     .vr-vi span{ font-size:11px; opacity:.6; }
     .vr-vi .cnt{ margin-left:auto; flex:none; text-align:right; font-size:11px; opacity:.85; }
     .vr-vi .cnt b{ font-size:13px; color:var(--color-accent-700); }
+    .tt-sug{ margin-top:6px; border:1px solid var(--color-divider); border-radius:12px; background:var(--color-surface); overflow:hidden; }
+    .tt-sh{ font-size:11px; opacity:.6; padding:7px 10px 5px; }
+    .tt-sg{ display:flex; align-items:center; gap:10px; width:100%; padding:7px 10px; border:none; border-top:1px solid var(--color-divider); background:transparent; color:inherit; font:inherit; text-align:left; cursor:pointer; }
+    .tt-sg:hover,.tt-sg:active{ background:color-mix(in srgb, var(--color-accent) 10%, transparent); }
+    .tt-sg img,.tt-sg .ph{ width:38px; height:38px; flex:none; border-radius:8px; object-fit:cover; background:var(--color-neutral-100); display:flex; align-items:center; justify-content:center; font-style:normal; opacity:1; }
+    .tt-sg .ph{ opacity:.35; font-size:16px; }
+    .tt-sg .tx{ flex:1; min-width:0; display:flex; flex-direction:column; }
+    .tt-sg .tx b{ font-family:var(--font-heading); font-size:15px; }
+    .tt-sg .tx small{ font-size:12px; opacity:.65; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .tt-sg em{ flex:none; font-style:normal; font-size:10.5px; font-weight:700; color:var(--color-accent-700); background:color-mix(in srgb, var(--color-accent) 12%, transparent); padding:2px 7px; border-radius:99px; }
+    .tt-prev{ margin-top:6px; width:84px; height:84px; border-radius:10px; object-fit:cover; display:block; background:var(--color-neutral-100); }
     .vl-st{ display:inline-block; margin-top:5px; font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:99px; }
   </style>
 </helmet>
@@ -2730,9 +2741,11 @@ textarea.input { min-height: 90px; resize: vertical; }
             <div class="field"><label>ឃ្លាខ្មែរ (ដូចលេចនៅក្នុងតេស្ត)</label>
               <input class="input" type="text" value="{{ ttKm }}" sc-camel-on-change="{{ onTtKm }}" placeholder="ឧ. សញ្ញាដៃ"></div>
             <div class="field"><label>ពាក្យជប៉ុន</label>
-              <input class="input" type="text" value="{{ ttJp }}" sc-camel-on-change="{{ onTtJp }}" placeholder="ឧ. 手信号"></div>
+              <input class="input" type="text" value="{{ ttJp }}" sc-camel-on-change="{{ onTtJp }}" placeholder="ឧ. 手信号 — វាយ ដើម្បីរកក្នុងវចនានុក្រម ឬសរសេរថ្មី">
+              <sc-if value="{{ ttHasSug }}"><div class="tt-sug"><div class="tt-sh">📖 ពីវចនានុក្រម — ចុចដើម្បីយក (ឬសរសេរបន្តជាពាក្យថ្មី)</div><sc-for list="{{ ttSug }}" as="g" hint-placeholder-count="3"><button type="button" class="tt-sg" sc-camel-on-click="{{ g.onPick }}"><sc-if value="{{ g.hasImg }}"><img loading="lazy" src="{{ g.img }}" alt=""></sc-if><sc-if value="{{ g.noImg }}"><i class="ph">🖼</i></sc-if><span class="tx"><b>{{ g.jp }}</b><small>{{ g.sub }}</small></span><sc-if value="{{ g.hasImg }}"><em>មានរូប</em></sc-if></button></sc-for></div></sc-if></div>
             <div class="field"><label>តំណភ្ជាប់រូបភាព (ស្រេចចិត្ត · Drive ក៏បាន)</label>
-              <input class="input" type="text" value="{{ ttImg }}" sc-camel-on-change="{{ onTtImg }}" placeholder="https://…"></div>
+              <input class="input" type="text" value="{{ ttImg }}" sc-camel-on-change="{{ onTtImg }}" placeholder="https://…">
+              <sc-if value="{{ hasTtImgPrev }}"><img loading="lazy" src="{{ ttImgPrev }}" alt="" class="tt-prev"></sc-if></div>
             <sc-if value="{{ hasTtError }}"><div style="font-size:12px;color:#c0392b;">{{ ttError }}</div></sc-if>
             <sc-if value="{{ hasTtMsg }}"><div style="font-size:12px;color:var(--color-accent-700);">{{ ttMsg }}</div></sc-if>
             <button class="btn btn-primary btn-block" style="margin-top:0;" sc-camel-on-click="{{ saveTechTerm }}">{{ ttSaveLabel }}</button>
@@ -2745,7 +2758,7 @@ textarea.input { min-height: 90px; resize: vertical; }
               <sc-if value="{{ t.isEditing }}">
                 <div class="card">
                   <div class="field"><label>ឃ្លាខ្មែរ</label><input class="input" type="text" value="{{ t.editKm }}" sc-camel-on-change="{{ t.onEditKm }}"></div>
-                  <div class="field"><label>ពាក្យជប៉ុន</label><input class="input" type="text" value="{{ t.editJp }}" sc-camel-on-change="{{ t.onEditJp }}"></div>
+                  <div class="field"><label>ពាក្យជប៉ុន</label><input class="input" type="text" value="{{ t.editJp }}" sc-camel-on-change="{{ t.onEditJp }}"><sc-if value="{{ t.hasEditSug }}"><div class="tt-sug"><div class="tt-sh">📖 ពីវចនានុក្រម — ចុចដើម្បីយក (ឬសរសេរបន្តជាពាក្យថ្មី)</div><sc-for list="{{ t.editSug }}" as="g" hint-placeholder-count="3"><button type="button" class="tt-sg" sc-camel-on-click="{{ g.onPick }}"><sc-if value="{{ g.hasImg }}"><img loading="lazy" src="{{ g.img }}" alt=""></sc-if><sc-if value="{{ g.noImg }}"><i class="ph">🖼</i></sc-if><span class="tx"><b>{{ g.jp }}</b><small>{{ g.sub }}</small></span><sc-if value="{{ g.hasImg }}"><em>មានរូប</em></sc-if></button></sc-for></div></sc-if></div>
                   <div class="field"><label>តំណភ្ជាប់រូបភាព</label><input class="input" type="text" value="{{ t.editImg }}" sc-camel-on-change="{{ t.onEditImg }}"></div>
                   <div style="display:flex;gap:8px;">
                     <button class="btn btn-secondary" style="flex:1;margin-top:0;" sc-camel-on-click="{{ t.onCancel }}">បោះបង់</button>
@@ -13847,9 +13860,34 @@ class Component extends DCLogic {
   // separate from the main word dictionary so it never leaks into search or
   // tests; only used to link a Khmer term in test text back to its real
   // Japanese name.
-  goTechTerms(){ this.setState({ screen: 'techterms', ttKm: '', ttJp: '', ttImg: '', ttError: '', ttMsg: '', ttEditId: null }); }
+  goTechTerms(){ this.setState({ screen: 'techterms', ttKm: '', ttJp: '', ttImg: '', ttError: '', ttMsg: '', ttEditId: null, ttSugOn: false, ttEditSugOn: false }); }
   onTtKm(e){ this.setState({ ttKm: e.target.value }); }
-  onTtJp(e){ this.setState({ ttJp: e.target.value }); }
+  onTtJp(e){ this.setState({ ttJp: e.target.value, ttSugOn: true }); }
+  // dictionary words matching what is typed in the Japanese field (kanji, kana or Khmer), best first, at most 8
+  _ttSuggest(q){
+    q = String(q || '').trim(); if (!q) return [];
+    const lq = q.toLowerCase(), hits = [];
+    for (const w of WORDS) {
+      if (!w || !w.jp || w.cat === 'grammar') continue;
+      const jp = w.jp, ka = w.kana || '', km = String(w.km || '').toLowerCase();
+      const sc = jp === q ? 0 : jp.startsWith(q) ? 1 : ka.startsWith(q) ? 2 : jp.includes(q) ? 3 : ka.includes(q) ? 4 : km.includes(lq) ? 5 : -1;
+      if (sc >= 0) hits.push([sc, w.img ? 0 : 1, jp.length, w]);
+    }
+    hits.sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2]);
+    const seen = new Set(), out = [];
+    for (const x of hits) { const w = x[3]; if (seen.has(w.jp)) continue; seen.add(w.jp); out.push(w); if (out.length >= 8) break; }
+    return out;
+  }
+  _ttSugRows(q, edit){
+    return this._ttSuggest(q).map(w => { const img = w.img ? normalizeImgUrl(w.img) : '';
+      return { jp: w.jp, sub: [w.kana && w.kana !== w.jp ? w.kana : '', w.km || ''].filter(Boolean).join(' · '), img, hasImg: !!img, noImg: !img, onPick: () => this.pickTtWord(w, edit) }; });
+  }
+  // take a dictionary word: its Japanese, its picture (when it has one) and, if the Khmer box is still empty, its meaning
+  pickTtWord(w, edit){
+    const img = w.img ? normalizeImgUrl(w.img) : '', km1 = String(w.km || '').split(/[\/,、;]/)[0].trim();
+    if (edit) this.setState(s => ({ ttEditJp: w.jp, ttEditImg: img || s.ttEditImg, ttEditKm: s.ttEditKm || km1, ttEditSugOn: false }));
+    else this.setState(s => ({ ttJp: w.jp, ttImg: img || s.ttImg, ttKm: s.ttKm || km1, ttSugOn: false, ttMsg: img ? 'យករូបភាពពីវចនានុក្រមមកដាក់ ✓' : '', ttError: '' }));
+  }
   onTtImg(e){ this.setState({ ttImg: e.target.value }); }
   async saveTechTerm(){
     if (this.state.ttBusy) return;
@@ -13860,11 +13898,11 @@ class Component extends DCLogic {
     const { row: saved, error } = await Backend.addTechTerm(row);
     if (error) { this.setState({ ttBusy: false, ttError: error }); return; }
     applyTechTerms([...TECH_TERMS, saved || { id: 'tt-' + Date.now(), ...row }]);
-    this.setState({ ttBusy: false, ttKm: '', ttJp: '', ttImg: '', ttMsg: `បន្ថែម «${km}» → «${jp}» រួចរាល់ ✓` });
+    this.setState({ ttBusy: false, ttKm: '', ttJp: '', ttImg: '', ttSugOn: false, ttMsg: `បន្ថែម «${km}» → «${jp}» រួចរាល់ ✓` });
   }
-  startEditTechTerm(id){ const t = TERM_BY_ID.get(id); if (!t) return; this.setState({ ttEditId: id, ttEditKm: t.km, ttEditJp: t.jp, ttEditImg: t.img || '', ttError: '' }); }
+  startEditTechTerm(id){ const t = TERM_BY_ID.get(id); if (!t) return; this.setState({ ttEditId: id, ttEditKm: t.km, ttEditJp: t.jp, ttEditImg: t.img || '', ttError: '', ttEditSugOn: false }); }
   onTtEditKm(e){ this.setState({ ttEditKm: e.target.value }); }
-  onTtEditJp(e){ this.setState({ ttEditJp: e.target.value }); }
+  onTtEditJp(e){ this.setState({ ttEditJp: e.target.value, ttEditSugOn: true }); }
   onTtEditImg(e){ this.setState({ ttEditImg: e.target.value }); }
   cancelEditTechTerm(){ this.setState({ ttEditId: null }); }
   async saveEditTechTerm(){
@@ -24160,6 +24198,8 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
       ttKm: s.ttKm, onTtKm: e => this.onTtKm(e),
       ttJp: s.ttJp, onTtJp: e => this.onTtJp(e),
       ttImg: s.ttImg, onTtImg: e => this.onTtImg(e),
+      ...(() => { const L = s.screen === 'techterms' && s.ttSugOn ? this._ttSugRows(s.ttJp, false) : []; return { ttSug: L, ttHasSug: L.length > 0 }; })(),
+      hasTtImgPrev: !!(s.ttImg && /^https?:/i.test(String(s.ttImg).trim())), ttImgPrev: normalizeImgUrl(String(s.ttImg || '').trim()),
       saveTechTerm: () => this.saveTechTerm(),
       ttSaveLabel: s.ttBusy ? 'កំពុងរក្សាទុក…' : 'បន្ថែម',
       hasTtMsg: !!s.ttMsg, ttMsg: s.ttMsg,
@@ -24169,6 +24209,7 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
       ttList: TECH_TERMS.map(t => ({
         id: t.id, km: t.km, jp: t.jp, img: t.img, hasImg: !!t.img,
         isEditing: s.ttEditId === t.id, isNotEditing: s.ttEditId !== t.id,
+        ...(() => { const L = s.ttEditId === t.id && s.ttEditSugOn ? this._ttSugRows(s.ttEditJp, true) : []; return { editSug: L, hasEditSug: L.length > 0 }; })(),
         editKm: s.ttEditKm, editJp: s.ttEditJp, editImg: s.ttEditImg,
         onEditKm: e => this.onTtEditKm(e), onEditJp: e => this.onTtEditJp(e), onEditImg: e => this.onTtEditImg(e),
         onEdit: () => this.startEditTechTerm(t.id), onCancel: () => this.cancelEditTechTerm(),
