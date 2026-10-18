@@ -16360,7 +16360,35 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
     const el = document.getElementById('book-reader-overlay'); if (!el) return;
     el.removeAttribute('id'); el.classList.add('rd-out'); document.documentElement.classList.remove('rd-open'); this._rdRotFree(); setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 200);
   }
+  _edCellSelPaint(){
+    document.querySelectorAll('.ed-csel').forEach(c => c.classList.remove('ed-csel'));
+    document.querySelectorAll('.ed-cs-tbl').forEach(t => t.classList.remove('ed-cs-tbl'));
+    const C = this._edCellSel; if (!C || !C.tb.isConnected) return;
+    C.tb.classList.add('ed-cs-tbl'); C.cells.forEach(c => c.classList.add('ed-csel'));
+  }
+  _edCellSelClear(){ if (!this._edCellSel && !document.querySelector('.ed-csel,.ed-cs-tbl')) return; this._edCellSel = null; this._edCellSelPaint();
+    document.querySelectorAll('.lib-epage [class=""]').forEach(x => x.removeAttribute('class')); }
+  // which cells a selection covers: the rectangle between the cell where it starts and the one where it ends
+  _edCellSelFrom(rg){
+    const cellOf = n => { const e = n && (n.nodeType === 3 ? n.parentElement : n); return e && e.closest ? e.closest('td,th') : null; };
+    let a = cellOf(rg.startContainer), b = cellOf(rg.endContainer);
+    if (!b && rg.endContainer && rg.endContainer.nodeType === 1 && /^(TR|TBODY|TABLE)$/.test(rg.endContainer.tagName)) { const kids = rg.endContainer.tagName === 'TR' ? rg.endContainer.cells : null; if (kids && rg.endOffset > 0) b = kids[rg.endOffset - 1]; }
+    if (!a || !b || a === b) return null;
+    const tb = a.closest('table'); if (!tb || b.closest('table') !== tb || !tb.closest('.lib-epage')) return null;
+    const M = this._tModel(tb), ia = M.cells.find(q => q.el === a), ib = M.cells.find(q => q.el === b); if (!ia || !ib) return null;
+    const r0 = Math.min(ia.r, ib.r), r1 = Math.max(ia.r + ia.rs - 1, ib.r + ib.rs - 1), c0 = Math.min(ia.c, ib.c), c1 = Math.max(ia.c + ia.cs - 1, ib.c + ib.cs - 1);
+    return { tb, cells: M.cells.filter(q => q.r <= r1 && q.r + q.rs - 1 >= r0 && q.c <= c1 && q.c + q.cs - 1 >= c0).map(q => q.el), range: rg.cloneRange() };
+  }
+  // run fn on each selected cell with that cell's content selected (the editing commands then touch only the cells)
+  _edCellEach(fn){
+    const C = this._edCellSel; if (!C) return; const s = window.getSelection(); this._edCellBusy = true;
+    C.cells.slice().forEach(c => { if (!c.isConnected) return; try { const r1 = document.createRange(); r1.selectNodeContents(c); s.removeAllRanges(); s.addRange(r1); fn(c); } catch(e){} });
+    try { if (C.range) { s.removeAllRanges(); s.addRange(C.range); } } catch(e){}
+    setTimeout(() => { this._edCellBusy = false; this._edCellSelPaint(); }, 0);
+    this._edDirty = true; this._edScheduleReflow(this._edCur);
+  }
   _edSerializePages(){
+    this._edCellSelClear();
     this._edXrefRefresh();
     const brk = '<div class="pgbrk" style="display:none"></div>';
     return (this._edPages || []).map(p => {
@@ -16467,6 +16495,11 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
   _restoreLibSel(){ if (this._edAll) { this._edAllBusy = true; this._edAllShow(); setTimeout(() => { this._edAllBusy = false; }, 0); return; } try { const ed = this._edCurPage(); if (ed) ed.focus(); if (!this._libRange) return; const s = window.getSelection(); s.removeAllRanges(); s.addRange(this._libRange); } catch(e){} }
   // set an exact pixel font size on the selection (execCommand only knows 1–7)
   _setFontSize(px){
+    if (this._edCellSel && !this._edCellBusy) {
+      this._edCellEach(c => { try { document.execCommand('styleWithCSS', false, false); } catch(e){} document.execCommand('fontSize', false, '7'); try { document.execCommand('styleWithCSS', false, true); } catch(e){}
+        c.querySelectorAll('font[size="7"]').forEach(f => { f.removeAttribute('size'); f.style.fontSize = px + 'px'; }); });
+      return;
+    }
     if (this._edAll && !this._edAllBusy) {
       this._edAllEach(p => { try { document.execCommand('styleWithCSS', false, false); } catch(e){} document.execCommand('fontSize', false, '7'); try { document.execCommand('styleWithCSS', false, true); } catch(e){}
         p.querySelectorAll('font[size="7"]').forEach(f => { f.removeAttribute('size'); f.style.fontSize = px + 'px'; }); });
@@ -16503,6 +16536,7 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
   // selected). It writes an inline line-height, which is kept in the saved HTML so
   // the reader shows the exact same spacing.
   _edTblTargets(caretCell){
+    { const C = this._edCellSel, pg0 = this._edCurPage(); if (C && C.tb.isConnected && pg0 && pg0.contains(C.tb)) return { tb: C.tb, cells: C.cells.filter(c => c.isConnected) }; }
     const pg = this._edCurPage(), s = window.getSelection(); if (!pg || !s || !s.rangeCount) return null;
     const rg = s.getRangeAt(0); let n = rg.startContainer; if (n && n.nodeType === 3) n = n.parentElement;
     const td = n && n.closest ? n.closest('td,th') : null; if (!td || !pg.contains(td)) return null;
@@ -17222,6 +17256,17 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
   // copy / cut on a sheet: the clipboard gets the selection as it is in the book (a part of a table comes out as a
   // table), marked so that pasting it back into the book keeps it all
   _edCopy(e, cut){
+    const sNow = window.getSelection(), C0 = sNow && sNow.rangeCount && !sNow.isCollapsed ? this._edCellSelFrom(sNow.getRangeAt(0)) : null;   // from the selection as it is now
+    if (C0) {
+      const C = C0, t2 = C.tb.cloneNode(false), lines = [];
+      t2.classList.remove('ed-cs-tbl'); if (!t2.getAttribute('class')) t2.removeAttribute('class');
+      [...C.tb.rows].forEach(tr => { const picks = [...tr.cells].filter(c => C.cells.includes(c)); if (!picks.length) return;
+        const nr = tr.cloneNode(false); picks.forEach(c => { const cc = c.cloneNode(true); cc.classList.remove('ed-csel'); if (!cc.getAttribute('class')) cc.removeAttribute('class'); nr.appendChild(cc); }); t2.appendChild(nr);
+        lines.push(picks.map(c => (c.innerText || '').trim()).join('\t')); });
+      try { e.clipboardData.setData('text/html', '<div data-anzen-copy="1">' + t2.outerHTML + '</div>'); e.clipboardData.setData('text/plain', lines.join('\n')); e.preventDefault(); } catch(err) { return; }
+      if (cut) { C.cells.forEach(c => { c.innerHTML = '<br>'; }); this._edDirty = true; this._edScheduleReflow(this._edCur); }
+      return;
+    }
     if (this._edAll) {
       const P = this._edPages || [], html = P.map(p => { const c = p.cloneNode(true); c.querySelectorAll('.ed-hf-hdr,.ed-hf-ftr,.ed-fn-area').forEach(x => x.remove()); return c.innerHTML; }).join('');
       try { e.clipboardData.setData('text/html', '<div data-anzen-copy="1">' + html + '</div>'); e.clipboardData.setData('text/plain', P.map(p => p.innerText).join('\n')); e.preventDefault(); } catch(err) { return; }
@@ -17490,6 +17535,7 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
         '.ewd-st{flex:none;height:26px;background:#f3f2f1;border-top:1px solid #e1dfdd;display:flex;align-items:center;gap:14px;padding:0 10px;padding-bottom:env(safe-area-inset-bottom,0px);font-size:11.5px;color:#323130;white-space:nowrap}',
         '.ewd-st .z{margin-left:auto;display:flex;align-items:center;gap:6px}',
         '.ewd-st button{border:none;background:transparent;color:#323130;font:inherit;font-size:14px;width:22px;height:22px;border-radius:4px;cursor:pointer;padding:0}.ewd-st button:hover{background:#e1dfdd}',
+        '.ed-cs-tbl ::selection,.ed-cs-tbl::selection{background:transparent!important}.ed-cs-tbl .ed-csel{background-image:linear-gradient(rgba(43,87,154,.24),rgba(43,87,154,.24))!important}',
         '.ed-rs-col .lib-epage td,.ed-rs-col .lib-epage th,body.ed-rs-col-g,body.ed-rs-col-g *{cursor:col-resize!important}.ed-rs-row .lib-epage td,.ed-rs-row .lib-epage th,body.ed-rs-row-g,body.ed-rs-row-g *{cursor:row-resize!important}body.ed-rs-col-g,body.ed-rs-row-g{user-select:none;-webkit-user-select:none}',
         '.ewd-st input[type=range]{width:110px;accent-color:#2b579a;margin:0;display:block}.ewd-st .zr{position:relative;display:inline-flex;align-items:center}.ewd-st .zr::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:10px;margin:-5px 0 0 -1px;background:#8a8886;border-radius:1px;pointer-events:none}.ewd-st button.rm{width:26px;display:inline-flex;align-items:center;justify-content:center;margin-right:6px}',
         '.ewd-sm.on,.ewd-b.on2{background:#c7dcf3;box-shadow:inset 0 0 0 1px #9cbce3}',
@@ -17631,7 +17677,8 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
     const svg = (k, s) => '<svg width="' + (s || 18) + '" height="' + (s || 18) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
       + IC[k].split('M').filter(Boolean).map(d => '<path d="M' + d + '"/>').join('') + '</svg>';
     // toolbar commands run on whichever sheet has focus (only one is shown)
-    const exec = (cmd, val) => { if (this._edAll && !this._edAllBusy) { this._edAllEach(() => document.execCommand(cmd, false, val == null ? null : val)); return; } const p = this._edCurPage(); if (p) p.focus(); document.execCommand(cmd, false, val == null ? null : val); if (p) p.focus(); this._edScheduleReflow(this._edCur); };
+    const CELLCMD = /^(bold|italic|underline|strikeThrough|foreColor|hiliteColor|backColor|fontName|justify\w+|removeFormat|subscript|superscript|insertUnorderedList|insertOrderedList|indent|outdent)$/;
+    const exec = (cmd, val) => { if (this._edCellSel && !this._edCellBusy && CELLCMD.test(cmd)) { this._edCellEach(() => document.execCommand(cmd, false, val == null ? null : val)); return; } if (this._edAll && !this._edAllBusy) { this._edAllEach(() => document.execCommand(cmd, false, val == null ? null : val)); return; } const p = this._edCurPage(); if (p) p.focus(); document.execCommand(cmd, false, val == null ? null : val); if (p) p.focus(); this._edScheduleReflow(this._edCur); };
     const keep = b => { b.addEventListener('mousedown', e => e.preventDefault()); return b; };
     const closePops = () => ov.querySelectorAll('.ewd-pop,.ewd-menu,.ewd-tpick,.ewd-sym').forEach(n => n.remove());
     ov.addEventListener('mousedown', e => { if (!e.target.closest('.ewd-pop,.ewd-menu,.ewd-tpick,.ewd-sym,[data-pop]')) closePops(); });
@@ -21238,6 +21285,18 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
     stage.addEventListener('copy', e => { if (this._edAll && e.target === stage) this._edCopy(e, false); });
     stage.addEventListener('cut', e => { if (this._edAll && e.target === stage) this._edCopy(e, true); });
     stage.addEventListener('paste', e => { if (!this._edAll || e.target !== stage) return; e.preventDefault(); const cd = e.clipboardData; this._edAllClear(); const p0 = this._edPages[0]; try { p0.dispatchEvent(new ClipboardEvent('paste', { clipboardData: cd, bubbles: false, cancelable: true })); } catch(err){} });
+    if (this._edCellSelH) document.removeEventListener('selectionchange', this._edCellSelH);
+    this._edCellSelH = () => { if (this._edCellBusy || this._edAll) return; const s = window.getSelection();
+      if (!s || !s.rangeCount || s.isCollapsed) { this._edCellSelClear(); return; }
+      const C = this._edCellSelFrom(s.getRangeAt(0)); if (!C) { this._edCellSelClear(); return; }
+      this._edCellSel = C; this._edCellSelPaint(); };
+    document.addEventListener('selectionchange', this._edCellSelH);
+    stage.addEventListener('keydown', e => {
+      if (!this._edCellSel || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); e.stopPropagation(); const C = this._edCellSel; C.cells.forEach(c => { c.innerHTML = '<br>'; });
+        try { const r1 = document.createRange(); r1.setStart(C.cells[0], 0); r1.collapse(true); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r1); } catch(err){}
+        this._edCellSelClear(); this._edDirty = true; this._edScheduleReflow(this._edCur); }
+    }, true);
     // leaving the all-sheets selection (a click, an arrow key …) ends it
     if (this._edAllSelH) document.removeEventListener('selectionchange', this._edAllSelH);
     this._edAllSelH = () => { if (!this._edAll || this._edAllBusy) return; const s = window.getSelection(), P = this._edPages || [];
