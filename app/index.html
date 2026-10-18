@@ -16383,7 +16383,7 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
   _edCellSelSet(a, b){
     if (!a || !b) return; const pg = a.closest('.lib-epage'); if (!pg) return;
     try { pg.focus({ preventScroll: true }); const rg = document.createRange(); rg.setStart(a, 0); rg.setEnd(b, b.childNodes.length); const s = window.getSelection(); s.removeAllRanges(); s.addRange(rg);
-      const C = this._edCellSelFrom(rg); if (C) { this._edCellSel = C; this._edCellSelPaint(); } } catch(e){}
+      const C = this._edCellSelFrom(rg); if (C) { this._edCellSel = C; this._edCellSelPaint(); } this._saveLibSel(); } catch(e){}
   }
   // rows r0..r1 / columns c0..c1 of a table (grid positions), or all of it
   _edSelRows(tb, r0, r1){ const M = this._tModel(tb); r0 = Math.max(0, Math.min(r0, r1)); r1 = Math.min(M.nr - 1, Math.max(r0, r1)); const A = M.occ[r0] && M.occ[r0][0], B = M.occ[r1] && M.occ[r1][M.nc - 1]; if (A && B) this._edCellSelSet(A.el, B.el); }
@@ -17700,7 +17700,7 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
     // saving keeps you in the editor; the 📖 button goes back to reading
     const save = qb('save', async () => { await this.saveBook(); }, 'រក្សាទុក'); save.id = 'lib-save';
     save.dataset.ico = save.innerHTML;
-    qb('undo', () => { if (!this._edAllUndoNow()) exec('undo'); }, 'ថយក្រោយ (undo)', true);
+    qb('undo', () => { if (!this._edSnapUndo() && !this._edAllUndoNow()) exec('undo'); }, 'ថយក្រោយ (undo)', true);
     qb('redo', () => exec('redo'), 'ទៅមុខវិញ (redo)', true);
     const title = document.createElement('input');
     title.id = 'lib-title'; title.className = 'ewd-title'; title.placeholder = 'ចំណងជើងសៀវភៅ'; title.value = book.title || '';
@@ -20693,16 +20693,13 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
       const nb = right ? n - 1 : n, half = (px[nb] || 60) / 2; px[nb] = half; px.splice(n, 0, half);
       M.nc++; this._tRender(tb, M); if (keepW) this._tSetCols(tb, px); });
     // delete the caret cell's row / column: a merged cell crossing it just gets one row / column smaller
-    const delRow = tblOp((c, tr, tb) => { const { M, it } = gridOf(tb, c); if (!it) return; if (M.nr <= 1) { tb.remove(); return; }
-      const k = it.r, gone = [];
-      M.cells.forEach(q => { if (q.r <= k && k < q.r + q.rs) { if (q.rs > 1) q.rs--; else gone.push(q); } else if (q.r > k) q.r--; });
-      gone.forEach(q => { q.el.remove(); M.cells.splice(M.cells.indexOf(q), 1); });
-      if (!M.cells.length) { tb.remove(); return; } M.nr--; this._tRender(tb, M); });
-    const delCol = tblOp((c, tr, tb) => { const { M, it } = gridOf(tb, c); if (!it) return; if (M.nc <= 1) { tb.remove(); return; }
-      const keepW = hasCols(tb), px = this._tColPx(tb, M), k = it.c, gone = [];
-      M.cells.forEach(q => { if (q.c <= k && k < q.c + q.cs) { if (q.cs > 1) q.cs--; else gone.push(q); } else if (q.c > k) q.c--; });
-      gone.forEach(q => { q.el.remove(); M.cells.splice(M.cells.indexOf(q), 1); });
-      if (!M.cells.length) { tb.remove(); return; } px.splice(k, 1); M.nc--; this._tRender(tb, M); if (keepW) this._tSetCols(tb, px); });
+    const selSpanIn = tb => { const C = this._edCellSel; return C && C.tb === tb ? this._tSpan(tb, C.cells) : null; };
+    const delRow = tblOp((c, tr, tb) => { const { it } = gridOf(tb, c); if (!it) return; const S = selSpanIn(tb);
+      const r0 = S ? S.r0 : it.r, r1 = S ? S.r1 : it.r; this._edCellSelClear(); this._tDelRows(tb, r0, r1);
+      toast((r1 > r0 ? 'បានលុប ' + (r1 - r0 + 1) + ' ជួរដេក' : 'បានលុបជួរដេក') + ' — Ctrl+Z ដើម្បីយកមកវិញ'); });
+    const delCol = tblOp((c, tr, tb) => { const { it } = gridOf(tb, c); if (!it) return; const S = selSpanIn(tb);
+      const c0 = S ? S.c0 : it.c, c1 = S ? S.c1 : it.c; this._edCellSelClear(); this._tDelCols(tb, c0, c1);
+      toast((c1 > c0 ? 'បានលុប ' + (c1 - c0 + 1) + ' ជួរឈរ' : 'បានលុបជួរឈរ') + ' — Ctrl+Z ដើម្បីយកមកវិញ'); });
     // Merge Cells (Word): the selected cells (drag across them), or the caret cell with the one on its right / below;
     // the area grows until no merged cell sticks out of it; the text of every cell is kept, one cell after the other
     const mergeCells = mode => tblOp((c, tr, tb) => {
@@ -21332,9 +21329,21 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
       const C = this._edCellSelFrom(s.getRangeAt(0)); if (!C) { this._edCellSelClear(); return; }
       this._edCellSel = C; this._edCellSelPaint(); };
     document.addEventListener('selectionchange', this._edCellSelH);
+    stage.addEventListener('keydown', e => {   // Ctrl+Z right after deleting rows / columns / a table
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 'z' || e.key === 'Z') && this._edPgUndo && this._edSnapUndo()) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
     stage.addEventListener('keydown', e => {
       if (!this._edCellSel || e.ctrlKey || e.metaKey || e.altKey) return;
-      if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); e.stopPropagation(); const C = this._edCellSel; C.cells.forEach(c => { c.innerHTML = '<br>'; });
+      if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); e.stopPropagation(); const C = this._edCellSel, S = this._tSpan(C.tb, C.cells);
+        if (S && (S.rows || S.cols)) {
+          const tb = C.tb, pg = tb.closest('.lib-epage'), next = tb.nextElementSibling; this._edCellSelClear();
+          if (S.rows && S.cols) { this._edSnap(pg); tb.remove(); this._edSnapDone(pg); toast('បានលុបតារាង — Ctrl+Z ដើម្បីយកមកវិញ'); }
+          else if (S.rows) { this._tDelRows(tb, S.r0, S.r1); toast('បានលុប ' + (S.r1 - S.r0 + 1) + ' ជួរដេក — Ctrl+Z ដើម្បីយកមកវិញ'); }
+          else { this._tDelCols(tb, S.c0, S.c1); toast('បានលុប ' + (S.c1 - S.c0 + 1) + ' ជួរឈរ — Ctrl+Z ដើម្បីយកមកវិញ'); }
+          try { const at = tb.isConnected ? (tb.rows[Math.min(S.r0, tb.rows.length - 1)] || tb.rows[0]).cells[0] : (next || pg.lastElementChild); const r1 = document.createRange(); r1.setStart(at, 0); r1.collapse(true); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r1); this._saveLibSel(); } catch(err){}
+          return;
+        }
+        C.cells.forEach(c => { c.innerHTML = '<br>'; });
         try { const r1 = document.createRange(); r1.setStart(C.cells[0], 0); r1.collapse(true); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r1); } catch(err){}
         this._edCellSelClear(); this._edDirty = true; this._edScheduleReflow(this._edCur); }
     }, true);
@@ -21439,6 +21448,7 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
     p.addEventListener('input', e => {
       // redo of a pasted table: the command replays its style clean-up, so give the pasted elements their own styles back
       if (e && e.inputType === 'historyRedo' && this._edPasteStyles) p.querySelectorAll('[style], table, col, td, th, tr, span, p, div').forEach(el => { const v = this._edPasteStyles.get(el); if (v != null && el.getAttribute('style') !== v) el.setAttribute('style', v); });
+      if (this._edPgUndo && this._edPgUndo.pg === p && !(e && /^history/.test(e.inputType || ''))) this._edPgUndo = null;
       this._edDirty = true; this._edScheduleReflow(this._edPages.indexOf(p));
     });
     // clean paste — strip the source's layout styling so text flows the full width
@@ -21764,6 +21774,39 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
       if (it.cs > 1) it.el.colSpan = it.cs; else it.el.removeAttribute('colspan');
       if (rows[it.r]) rows[it.r].appendChild(it.el);
     });
+  }
+  // remove grid row k / column k (a merged cell crossing it just gets smaller); false when the table is gone
+  _tDelRow(tb, k){
+    const M = this._tModel(tb); if (M.nr <= 1) { tb.remove(); return false; }
+    const gone = []; M.cells.forEach(q => { if (q.r <= k && k < q.r + q.rs) { if (q.rs > 1) q.rs--; else gone.push(q); } else if (q.r > k) q.r--; });
+    gone.forEach(q => { q.el.remove(); M.cells.splice(M.cells.indexOf(q), 1); });
+    if (!M.cells.length) { tb.remove(); return false; } M.nr--; this._tRender(tb, M); return true;
+  }
+  _tDelCol(tb, k){
+    const M = this._tModel(tb); if (M.nc <= 1) { tb.remove(); return false; }
+    const keepW = !![...tb.children].find(x => x.tagName === 'COLGROUP') || [...tb.querySelectorAll('td,th')].some(x => x.style.width), px = this._tColPx(tb, M), gone = [];
+    M.cells.forEach(q => { if (q.c <= k && k < q.c + q.cs) { if (q.cs > 1) q.cs--; else gone.push(q); } else if (q.c > k) q.c--; });
+    gone.forEach(q => { q.el.remove(); M.cells.splice(M.cells.indexOf(q), 1); });
+    if (!M.cells.length) { tb.remove(); return false; } px.splice(k, 1); M.nc--; this._tRender(tb, M); if (keepW) this._tSetCols(tb, px); return true;
+  }
+  // the grid rectangle a set of cells covers, and whether it is whole rows / whole columns
+  _tSpan(tb, cells){
+    const M = this._tModel(tb), its = M.cells.filter(q => cells.includes(q.el)); if (!its.length) return null;
+    const r0 = Math.min(...its.map(q => q.r)), r1 = Math.max(...its.map(q => q.r + q.rs - 1)), c0 = Math.min(...its.map(q => q.c)), c1 = Math.max(...its.map(q => q.c + q.cs - 1));
+    return { r0, r1, c0, c1, rows: c0 === 0 && c1 === M.nc - 1, cols: r0 === 0 && r1 === M.nr - 1 };
+  }
+  // delete rows r0..r1 / columns c0..c1 (from the far end, so the indexes stay right); Ctrl+Z puts the sheet back
+  _tDelRows(tb, r0, r1){ const pg = tb.closest('.lib-epage'); this._edSnap(pg); for (let k = r1; k >= r0; k--) { if (!tb.isConnected || !this._tDelRow(tb, k)) break; } this._edSnapDone(pg); }
+  _tDelCols(tb, c0, c1){ const pg = tb.closest('.lib-epage'); this._edSnap(pg); for (let k = c1; k >= c0; k--) { if (!tb.isConnected || !this._tDelCol(tb, k)) break; } this._edSnapDone(pg); }
+  _edSnap(pg){ if (pg) this._edPgUndo = { pg, before: pg.innerHTML, after: null }; }
+  _edSnapDone(pg){ const U = this._edPgUndo; if (U && U.pg === pg) U.after = pg.innerHTML; this._edDirty = true; this._edScheduleReflow(Math.max(0, (this._edPages || []).indexOf(pg)), true); }
+  _edSnapUndo(){
+    const U = this._edPgUndo; if (!U || !U.pg || !U.pg.isConnected || U.after == null) { this._edPgUndo = null; return false; }   // typing on that sheet since then drops the snapshot (see the input listener)
+    this._edPgUndo = null; U.pg.innerHTML = U.before;
+    U.pg.querySelectorAll('img').forEach(im => this._edHookImage(im)); U.pg.querySelectorAll('.lib-shape').forEach(sh => { try { this._edHookShape(sh); } catch(e){} });
+    this._edDirty = true; this._edScheduleReflow(Math.max(0, (this._edPages || []).indexOf(U.pg)), true);
+    try { U.pg.focus({ preventScroll: true }); } catch(e){}
+    return true;
   }
   // the width of every grid column, in page px
   _tColPx(tb, M){
