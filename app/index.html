@@ -16386,8 +16386,15 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
       const C = this._edCellSelFrom(rg); if (C) { this._edCellSel = C; this._edCellSelPaint(); } this._saveLibSel(); } catch(e){}
   }
   // rows r0..r1 / columns c0..c1 of a table (grid positions), or all of it
-  _edSelRows(tb, r0, r1){ const M = this._tModel(tb); r0 = Math.max(0, Math.min(r0, r1)); r1 = Math.min(M.nr - 1, Math.max(r0, r1)); const A = M.occ[r0] && M.occ[r0][0], B = M.occ[r1] && M.occ[r1][M.nc - 1]; if (A && B) this._edCellSelSet(A.el, B.el); }
-  _edSelCols(tb, c0, c1){ const M = this._tModel(tb); c0 = Math.max(0, Math.min(c0, c1)); c1 = Math.min(M.nc - 1, Math.max(c0, c1)); const A = M.occ[0] && M.occ[0][c0], B = M.occ[M.nr - 1] && M.occ[M.nr - 1][c1]; if (A && B) this._edCellSelSet(A.el, B.el); }
+  _edSelRect(tb, rect){
+    const M = this._tModel(tb), { r0, r1, c0, c1 } = rect;
+    const cells = M.cells.filter(q => q.r <= r1 && q.r + q.rs - 1 >= r0 && q.c <= c1 && q.c + q.cs - 1 >= c0).map(q => q.el); if (!cells.length) return;
+    const order = [...tb.querySelectorAll('td,th')].filter(c => cells.includes(c)), a = order[0], b = order[order.length - 1], pg = tb.closest('.lib-epage');
+    try { pg.focus({ preventScroll: true }); const rg = document.createRange(); rg.setStart(a, 0); rg.setEnd(b, b.childNodes.length); const s = window.getSelection(); s.removeAllRanges(); s.addRange(rg);
+      this._edCellSel = { tb, cells, range: rg, rect: { r0, r1, c0, c1 }, key: [a, b] }; this._edCellSelPaint(); this._saveLibSel(); } catch(e){}
+  }
+  _edSelRows(tb, r0, r1){ const M = this._tModel(tb); const a = Math.max(0, Math.min(r0, r1)), b = Math.min(M.nr - 1, Math.max(r0, r1)); this._edSelRect(tb, { r0: a, r1: b, c0: 0, c1: M.nc - 1 }); }
+  _edSelCols(tb, c0, c1){ const M = this._tModel(tb); const a = Math.max(0, Math.min(c0, c1)), b = Math.min(M.nc - 1, Math.max(c0, c1)); this._edSelRect(tb, { r0: 0, r1: M.nr - 1, c0: a, c1: b }); }
   // run fn on each selected cell with that cell's content selected (the editing commands then touch only the cells)
   _edCellEach(fn){
     const C = this._edCellSel; if (!C) return; const s = window.getSelection(); this._edCellBusy = true;
@@ -17265,7 +17272,8 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
   // copy / cut on a sheet: the clipboard gets the selection as it is in the book (a part of a table comes out as a
   // table), marked so that pasting it back into the book keeps it all
   _edCopy(e, cut){
-    const sNow = window.getSelection(), C0 = sNow && sNow.rangeCount && !sNow.isCollapsed ? this._edCellSelFrom(sNow.getRangeAt(0)) : null;   // from the selection as it is now
+    const sNow = window.getSelection(), rgN = sNow && sNow.rangeCount && !sNow.isCollapsed ? sNow.getRangeAt(0) : null, K = this._edCellSel;
+    const C0 = !rgN ? null : (K && K.rect && K.key && rgN.startContainer === K.key[0] && rgN.endContainer === K.key[1]) ? K : this._edCellSelFrom(rgN);   // from the selection as it is now
     if (C0) {
       const C = C0, t2 = C.tb.cloneNode(false), lines = [];
       t2.classList.remove('ed-cs-tbl'); if (!t2.getAttribute('class')) t2.removeAttribute('class');
@@ -20693,7 +20701,7 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
       const nb = right ? n - 1 : n, half = (px[nb] || 60) / 2; px[nb] = half; px.splice(n, 0, half);
       M.nc++; this._tRender(tb, M); if (keepW) this._tSetCols(tb, px); });
     // delete the caret cell's row / column: a merged cell crossing it just gets one row / column smaller
-    const selSpanIn = tb => { const C = this._edCellSel; return C && C.tb === tb ? this._tSpan(tb, C.cells) : null; };
+    const selSpanIn = tb => { const C = this._edCellSel; return C && C.tb === tb ? this._tSpan(tb, C.cells, C.rect) : null; };
     const delRow = tblOp((c, tr, tb) => { const { it } = gridOf(tb, c); if (!it) return; const S = selSpanIn(tb);
       const r0 = S ? S.r0 : it.r, r1 = S ? S.r1 : it.r; this._edCellSelClear(); this._tDelRows(tb, r0, r1);
       toast((r1 > r0 ? 'បានលុប ' + (r1 - r0 + 1) + ' ជួរដេក' : 'បានលុបជួរដេក') + ' — Ctrl+Z ដើម្បីយកមកវិញ'); });
@@ -21307,11 +21315,12 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
       for (const tb of pg.querySelectorAll('table')) {
         if (tb.closest('td,th')) continue; const tr = tb.getBoundingClientRect();
         if (x >= tr.left - 30 && x <= tr.left + 1 && y >= tr.top && y <= tr.bottom) { const ri = [...tb.rows].findIndex(rw => { const q = rw.getBoundingClientRect(); return y >= q.top && y <= q.bottom; }); if (ri >= 0) return { kind: 'row', tb, i: this._tModel(tb).cells.find(q => q.el === tb.rows[ri].cells[0]) ? ri : ri }; }
-        if (y >= tr.top - 14 && y <= tr.top + 1 && x >= tr.left && x <= tr.right) { const M = this._tModel(tb), top = M.occ[0] || []; const k = top.findIndex(it => { const q = it && it.el.getBoundingClientRect(); return q && x >= q.left && x <= q.right; }); if (k >= 0) return { kind: 'col', tb, i: k }; }
+        if (y >= tr.top - 14 && y <= tr.top + 1 && x >= tr.left && x <= tr.right) { return { kind: 'col', tb, i: colAt(tb, x) }; }
       }
       return null;
     };
-    const colAt = (tb, x) => { const top = this._tModel(tb).occ[0] || []; let best = 0; top.forEach((it, k) => { const q = it && it.el.getBoundingClientRect(); if (q && x >= q.left) best = k; }); return best; };
+    // the grid column under x, from cells that sit in a single column (a merged title row spans them all)
+    const colAt = (tb, x) => { const M = this._tModel(tb); let best = 0; for (let k = 0; k < M.nc; k++) { const it = M.cells.find(q => q.c === k && q.cs === 1) || M.cells.find(q => q.c <= k && k < q.c + q.cs); if (!it) continue; const q = it.el.getBoundingClientRect(); const left = it.cs === 1 ? q.left : q.left + (k - it.c) * q.width / it.cs; if (x >= left - 1) best = k; } return best; };
     const rowAt = (tb, y) => { let best = 0; [...tb.rows].forEach((rw, i) => { if (y >= rw.getBoundingClientRect().top) best = i; }); return best; };
     stage.addEventListener('pointermove', e => { if (e.buttons || e.pointerType === 'touch') return; const hit = rcHit(e); stage.classList.toggle('ed-pick-row', !!hit && hit.kind === 'row'); stage.classList.toggle('ed-pick-col', !!hit && hit.kind === 'col'); });
     stage.addEventListener('pointerdown', e => {
@@ -21326,7 +21335,9 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
     if (this._edCellSelH) document.removeEventListener('selectionchange', this._edCellSelH);
     this._edCellSelH = () => { if (this._edCellBusy || this._edAll) return; const s = window.getSelection();
       if (!s || !s.rangeCount || s.isCollapsed) { this._edCellSelClear(); return; }
-      const C = this._edCellSelFrom(s.getRangeAt(0)); if (!C) { this._edCellSelClear(); return; }
+      const rg0 = s.getRangeAt(0), K = this._edCellSel;
+      if (K && K.rect && K.key && rg0.startContainer === K.key[0] && rg0.startOffset === 0 && rg0.endContainer === K.key[1] && rg0.endOffset === K.key[1].childNodes.length) { this._edCellSelPaint(); return; }
+      const C = this._edCellSelFrom(rg0); if (!C) { this._edCellSelClear(); return; }
       this._edCellSel = C; this._edCellSelPaint(); };
     document.addEventListener('selectionchange', this._edCellSelH);
     stage.addEventListener('keydown', e => {   // Ctrl+Z right after deleting rows / columns / a table
@@ -21334,7 +21345,7 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
     }, true);
     stage.addEventListener('keydown', e => {
       if (!this._edCellSel || e.ctrlKey || e.metaKey || e.altKey) return;
-      if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); e.stopPropagation(); const C = this._edCellSel, S = this._tSpan(C.tb, C.cells);
+      if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); e.stopPropagation(); const C = this._edCellSel, S = this._tSpan(C.tb, C.cells, C.rect);
         if (S && (S.rows || S.cols)) {
           const tb = C.tb, pg = tb.closest('.lib-epage'), next = tb.nextElementSibling; this._edCellSelClear();
           if (S.rows && S.cols) { this._edSnap(pg); tb.remove(); this._edSnapDone(pg); toast('បានលុបតារាង — Ctrl+Z ដើម្បីយកមកវិញ'); }
@@ -21790,8 +21801,10 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
     if (!M.cells.length) { tb.remove(); return false; } px.splice(k, 1); M.nc--; this._tRender(tb, M); if (keepW) this._tSetCols(tb, px); return true;
   }
   // the grid rectangle a set of cells covers, and whether it is whole rows / whole columns
-  _tSpan(tb, cells){
-    const M = this._tModel(tb), its = M.cells.filter(q => cells.includes(q.el)); if (!its.length) return null;
+  _tSpan(tb, cells, rect){
+    const M = this._tModel(tb);
+    if (rect) { const { r0, r1, c0, c1 } = rect; return { r0, r1, c0, c1, rows: c0 === 0 && c1 === M.nc - 1, cols: r0 === 0 && r1 === M.nr - 1 }; }
+    const its = M.cells.filter(q => cells.includes(q.el)); if (!its.length) return null;
     const r0 = Math.min(...its.map(q => q.r)), r1 = Math.max(...its.map(q => q.r + q.rs - 1)), c0 = Math.min(...its.map(q => q.c)), c1 = Math.max(...its.map(q => q.c + q.cs - 1));
     return { r0, r1, c0, c1, rows: c0 === 0 && c1 === M.nc - 1, cols: r0 === 0 && r1 === M.nr - 1 };
   }
