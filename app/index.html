@@ -871,6 +871,8 @@ textarea.input { min-height: 90px; resize: vertical; }
   @page book-page { size:A4; margin:0; }
   .book-pdf-pages .a4page { page: book-page; box-shadow:none !important; page-break-after:always !important; break-after:page !important; }
   .book-pdf-pages .a4page:last-child { page-break-after:auto !important; break-after:auto !important; }
+  /* a "no borders" table: the dashed lines are only a guide while writing */
+  .book-pdf-pages table[data-tstyle="none"] td,.book-pdf-pages table[data-tstyle="none"] th,.book-pdf-pages td[style*="dashed rgb(208, 208, 208)"],.book-pdf-pages th[style*="dashed rgb(208, 208, 208)"],.book-pdf-pages td[style*="dashed #d0d0d0"],.book-pdf-pages th[style*="dashed #d0d0d0"]{ border-color:transparent !important; }
 }
 </style>
   <style>
@@ -14888,6 +14890,7 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
 .rd-arrow.l{left:8px}.rd-arrow.r{right:8px}
 .rd-prog{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.12);z-index:7;pointer-events:none}
 .rd-prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--rdA2),#9be0ff);border-radius:0 3px 3px 0;transition:width .25s}
+.rd-ov .a4page table[data-tstyle="none"] td,.rd-ov .a4page table[data-tstyle="none"] th,.rd-ov .a4page td[style*="dashed rgb(208, 208, 208)"],.rd-ov .a4page th[style*="dashed rgb(208, 208, 208)"],.rd-ov .a4page td[style*="dashed #d0d0d0"],.rd-ov .a4page th[style*="dashed #d0d0d0"]{border-color:transparent !important}
 .rd-ov .a4page{border-radius:6px;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 6px 18px rgba(0,0,0,.45) !important}
 .rd-ov .a4page h1,.rd-ov .a4page h2,.rd-ov .a4page h3{letter-spacing:.01em}
 .rd-t-cream .a4page{background:#f4ead2 !important}
