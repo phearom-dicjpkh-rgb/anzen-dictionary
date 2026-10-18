@@ -21241,7 +21241,11 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
     p.innerHTML = (html && html.trim()) ? html : '<p><br></p>';
     const pnMark = p.querySelector('.pgnum-mark[data-pn]');
     if (pnMark) { p.dataset.pn = pnMark.getAttribute('data-pn') || ''; pnMark.remove(); }
-    p.addEventListener('input', () => { this._edDirty = true; this._edScheduleReflow(this._edPages.indexOf(p)); });
+    p.addEventListener('input', e => {
+      // redo of a pasted table: the command replays its style clean-up, so give the pasted elements their own styles back
+      if (e && e.inputType === 'historyRedo' && this._edPasteStyles) p.querySelectorAll('[style], table, col, td, th, tr, span, p, div').forEach(el => { const v = this._edPasteStyles.get(el); if (v != null && el.getAttribute('style') !== v) el.setAttribute('style', v); });
+      this._edDirty = true; this._edScheduleReflow(this._edPages.indexOf(p));
+    });
     // clean paste — strip the source's layout styling so text flows the full width
     const noPics = () => { try { this.showToast('មិនអាចបិទភ្ជាប់រូបភាពបានទេ — សូមប្រើ «បញ្ចូល › រូបភាព (Link)» ជាមួយ link Google Drive'); } catch(e2){} };
     p.addEventListener('paste', e => {
@@ -21257,7 +21261,17 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
         if (dropped) { clean = tmp.innerHTML; noPics(); }
       }
       if (!clean.replace(/<[^>]*>/g, '').trim() && !/<(img|table|hr)\b/i.test(clean)) return;
-      if (!(/<table\b/i.test(clean) && this._edInsertBlocks(p, clean))) document.execCommand('insertHTML', false, clean);
+      // a table goes in through the editing command (so Ctrl+Z / Ctrl+Y work) with its inline styles parked in
+      // data-anz-st: the command rewrites real styles to "fit" the spot (widths, fonts, borders), it leaves data-* alone;
+      // the styles are put back straight after. Should the command refuse, the blocks are put in directly.
+      if (/<table\b/i.test(clean)) {
+        const tmp = document.createElement('div'); tmp.innerHTML = clean;
+        tmp.querySelectorAll('[style]').forEach(el => { el.setAttribute('data-anz-st', el.getAttribute('style')); el.removeAttribute('style'); });
+        let ok = false; try { ok = document.execCommand('insertHTML', false, tmp.innerHTML); } catch(err){}
+        const SM = this._edPasteStyles || (this._edPasteStyles = new WeakMap());   // Ctrl+Y replays the command's own style edits: put them back again then
+        p.querySelectorAll('[data-anz-st]').forEach(el => { const v = el.getAttribute('data-anz-st'); el.setAttribute('style', v); el.removeAttribute('data-anz-st'); SM.set(el, v); });
+        if (!ok) this._edInsertBlocks(p, clean);
+      } else document.execCommand('insertHTML', false, clean);
       this._edDirty = true; this._edScheduleReflow(this._edPages.indexOf(p));
     });
     p.addEventListener('drop', e => { const dt = e.dataTransfer; if (dt && dt.files && dt.files.length) { e.preventDefault(); noPics(); } });   // a picture file dropped on the page
