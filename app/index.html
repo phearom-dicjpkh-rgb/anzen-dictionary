@@ -22270,6 +22270,8 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
       const pd0 = this._pageDims(hf && hf.psize, hf && hf.orient), A4W = pd0.w, A4H = pd0.h, PAD = margin || 48, START = startPage || 1;
       const src = document.createElement('div'); src.innerHTML = html || '';
       this._edStripJpSpacesIn(src);
+      // a "no borders" table prints with no lines: its dashed lines are only the editor's guide (written inline, so any print engine follows it)
+      src.querySelectorAll('table').forEach(tb => { const none = tb.dataset.tstyle === 'none'; tb.querySelectorAll('td,th').forEach(c => { if (c.closest('table') !== tb) return; if (none || /dashed\s+(rgb\(208,\s*208,\s*208\)|#d0d0d0)/i.test(c.getAttribute('style') || '')) c.style.borderColor = 'transparent'; }); });
       src.querySelectorAll('model-viewer').forEach(mv => { const p = mv.getAttribute('poster'), el = document.createElement(p ? 'img' : 'div'); el.setAttribute('style', (mv.getAttribute('style') || '') + ';object-fit:contain;'); if (p) el.src = p; else { el.textContent = '🧊 ' + (mv.getAttribute('alt') || '3D'); el.style.display = 'flex'; el.style.alignItems = 'center'; el.style.justifyContent = 'center'; el.style.color = '#888'; } mv.replaceWith(el); });   // 3D models print as their snapshot
       // with furigana the lines are taller — the same spacing the reader uses — and the pages re-flow accordingly
       let LH = '1.85';
