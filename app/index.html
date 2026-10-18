@@ -17129,6 +17129,37 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
     if (tbls.length) outHtml = outHtml.replace(/<x-anzen-tbl>@@ANZTBL(\d+)@@<\/x-anzen-tbl>/g, (m0, i) => tbls[+i] || '');
     return outHtml;
   }
+  // insert block content (tables) at the caret exactly as given: the paragraph the caret is in is split there (the
+  // half after the caret follows the pasted blocks); an empty paragraph is replaced. Works on the sheet or inside a cell.
+  _edInsertBlocks(pg, html){
+    const s = window.getSelection(); if (!s || !s.rangeCount) return false;
+    const rg = s.getRangeAt(0); if (!pg.contains(rg.startContainer)) return false;
+    rg.deleteContents();
+    const tmp = document.createElement('div'); tmp.innerHTML = html;
+    const nodes = [...tmp.childNodes]; if (!nodes.length) return false;
+    let at = rg.startContainer; const el0 = at.nodeType === 3 ? at.parentElement : at;
+    const cell = el0 && el0.closest ? el0.closest('td,th') : null, box = cell && pg.contains(cell) ? cell : pg;
+    let top = at; while (top && top.parentNode !== box) top = top.parentNode;
+    const blank = n => !(n.textContent || '').replace(/[\s\u200B]/g, '') && !(n.querySelector && n.querySelector('img,table,svg,hr,.lib-shape,.tab'));
+    let after = null;   // the node the pasted blocks go after (null = at the very start of box)
+    if (!top) { after = box.lastChild; }
+    else if (top === at && at.nodeType === 3) {   // caret in a bare text node on the box
+      const tail = at.splitText(Math.min(rg.startOffset, at.nodeValue.length)); after = at; if (!tail.nodeValue) tail.remove();
+    } else if (top.nodeType === 1 && /^(TABLE|UL|OL)$/.test(top.tagName)) { after = top; }
+    else if (top.nodeType === 1) {
+      const tailR = document.createRange(); tailR.setStart(rg.startContainer, rg.startOffset); tailR.setEnd(top, top.childNodes.length);
+      const tailF = tailR.extractContents(), t2 = top.cloneNode(false); t2.removeAttribute('id'); t2.appendChild(tailF);
+      if (!blank(t2)) top.after(t2);
+      if (blank(top)) { after = top.previousSibling; top.remove(); } else after = top;
+    } else after = top;
+    let ref = after; nodes.forEach(n => { if (ref) ref.after(n); else box.insertBefore(n, box.firstChild); ref = n; });
+    const last = nodes[nodes.length - 1];
+    // a block at the very end gets an empty line after it, so writing can go on below the table
+    if (last && last.nodeType === 1 && /^(TABLE|HR)$/.test(last.tagName) && !last.nextSibling) { const p2 = document.createElement('p'); p2.innerHTML = '<br>'; last.after(p2); }
+    nodes.forEach(n => { if (n.querySelectorAll) n.querySelectorAll('img').forEach(im => this._edHookImage(im)); });
+    try { const r2 = document.createRange(), nx = last.nextSibling; if (nx && nx.nodeType === 1) { r2.setStart(nx, 0); } else r2.setStartAfter(last); r2.collapse(true); s.removeAllRanges(); s.addRange(r2); this._saveLibSel(); } catch(e){}
+    return true;
+  }
   // our own copy (from a sheet of this app): kept exactly — styles, merged cells, column widths — only unsafe bits and ids go
   _edOwnPaste(html){
     const doc = new DOMParser().parseFromString(html || '', 'text/html');
@@ -21226,7 +21257,7 @@ html.rd-open,html.rd-open body{background:#171a24 !important}
         if (dropped) { clean = tmp.innerHTML; noPics(); }
       }
       if (!clean.replace(/<[^>]*>/g, '').trim() && !/<(img|table|hr)\b/i.test(clean)) return;
-      document.execCommand('insertHTML', false, clean);
+      if (!(/<table\b/i.test(clean) && this._edInsertBlocks(p, clean))) document.execCommand('insertHTML', false, clean);
       this._edDirty = true; this._edScheduleReflow(this._edPages.indexOf(p));
     });
     p.addEventListener('drop', e => { const dt = e.dataTransfer; if (dt && dt.files && dt.files.length) { e.preventDefault(); noPics(); } });   // a picture file dropped on the page
